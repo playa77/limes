@@ -7,6 +7,121 @@ Nothing here is a status report; unlogged decisions are unmade decisions.
 
 ---
 
+## 2026-08-01 — Phase 3 invariants (WP-21…WP-24), derived and tagged
+
+Guarded (automated check, named guard installed and green):
+- **G1** — A cache hit on the current version triple issues no paid call
+  (AC-12) → `test_extraction_cache.py::test_full_rebuild_with_unchanged_triple_hits_every_document`,
+  `test_extraction_evidence_span.py::test_cache_hit_short_circuits_before_any_paid_call`.
+- **G2** — An assertion whose mapped evidence span contains neither surface
+  is rejected as `EVIDENCE_SPAN_MISMATCH` and counted (AC-13) →
+  `test_extraction_evidence_span.py`, `test_extractor.py::test_evidence_span_not_containing_surfaces_is_rejected`.
+- **G3** — Documents below the mention threshold are rejected with the reason
+  recorded, never silently dropped (AC-11) →
+  `test_gate.py::test_below_mention_threshold_rejects_with_reason`.
+- **G4** — §11 retry policy: 429/5xx/connect/timeout retried (max 4, backoff),
+  other 4xx never → `test_openrouter_client.py::test_retry_on_429_then_success`,
+  `test_no_retry_on_other_4xx`, `test_exhausted_retries_raise_extraction_error`.
+- **G5** — `governor.check` before and `governor.commit` after every paid
+  request; ledger entries only for attempts that returned token usage →
+  `test_openrouter_client.py::test_complete_checks_before_and_commits_after`,
+  `test_no_ledger_entry_when_usage_missing`.
+- **G6** — The API key never reaches a log line →
+  `test_openrouter_client.py::test_api_key_never_reaches_a_log_line`.
+- **G7** — GDELT events carry `ACTOR_IN`/`TARGET_OF` with correct directional
+  asymmetry and ontology-bounded actor typing →
+  `test_gdelt_adapter.py::test_normalize_emits_event_with_actor_target_and_location_edges`.
+- **G8** — `cache_key` deterministic across processes and sensitive to any
+  triple component (AC-33 partial) →
+  `test_extraction_cache.py::test_cache_key_is_deterministic_across_processes`.
+- **G9** — Every passage satisfies `text[doc_start:doc_end] == passage.text`
+  (the invariant the extractor's offset mapping anchors to) →
+  `test_gate.py::test_passage_offsets_are_correct_relative_to_document`,
+  `test_extractor.py::test_extract_batches_and_parses_assertions`.
+
+Triggered (review-flag paths, no automated guard):
+- **T1** — Untrusted document text stays inside the explicit `<PASSAGES>`
+  delimiters, never in the instruction portion (§7.5): any diff touching
+  `extraction/prompts/*.md` or `extraction/base.py::build_extraction_messages`
+  is flagged for review before commit.
+- **T2** — Adapters write nothing to the graph and the loader stays the sole
+  writer of ontology-typed nodes (DD-19): any diff touching the new
+  `sources/gdelt.py`/`sources/feeds.py` that introduces a graph write or a
+  `MERGE` outside `graph/loader.py` is flagged.
+
+---
+
+## 2026-08-01 — D-25 (R1) — Feed language and GDELT vintage semantics
+
+The feeds adapter uses the feed's declared language (`feeds.yaml`) when
+present and the dependency-free detector only as the fallback — the curator
+knows the feed. GDELT documents carry `published_at` = the file's latest
+SQLDATE (the events' vintage), never the fetch instant; feeds fall back to
+the fetch instant for undated entries with a counted log line.
+
+## 2026-08-01 — D-24 (R1) — One cache entry per document, merged across calls
+
+The cache key (§8.7.5) has no batch index, so per-call cache entries would
+collide for a multi-call document. `extract()` merges every batch's
+assertions and token counts into one `ExtractionResult`; WP-27 caches one
+entry per document. Rejected alternative: extending the key with a batch
+index (deviates from the fixed §8.7.5 key).
+
+## 2026-08-01 — D-23 (R2) — Model pricing from the OpenRouter catalogue with a conservative fallback
+
+`OpenRouterClient` prices calls from `GET /models` (lazy, cached per model);
+catalogue prices are per-token USD. A model absent from the catalogue falls
+back to 0.50 USD/M in and out — deliberately conservative, because the
+governor's safe failure direction is refusal, and a wrong *cheap* price
+silently breaches the budget. The fallback is always logged. Rejected
+alternatives: fixed pricing (wrong for nearly every model); refusing calls
+without catalogue pricing (over-strict — the catalogue is not load-bearing).
+
+## 2026-08-01 — D-22 (R1) — `GateContext` defined in `pipeline/gate.py`
+
+The roadmap says WP-24 may define a local type; the §8.15 shape (settings,
+driver, nlp_de, nlp_en) is a frozen dataclass in `pipeline/gate.py`, the
+module that consumes it. WP-26 imports and constructs it. Rejected:
+defining it in `composition.py` now (that file is WP-26's scope).
+
+## 2026-08-01 — D-21 (R2) — Evidence-span check is the AC-13 literal reading
+
+An assertion is rejected as `EVIDENCE_SPAN_MISMATCH` when its mapped span
+contains *neither* the subject nor the object surface (case-insensitive);
+containing either passes. The extraction prompt states the same rule.
+Rejected alternative: requiring both surfaces — stricter than the AC, and
+the AC is the binding form.
+
+## 2026-08-01 — D-20 (R2) — Per-feed trust override is a produced seam for WP-27
+
+`NormalizedRecord` and `DocumentPayload` carry no trust field and §15.2 has
+`execute_run` stamp `source_trust` from the registry, so a per-feed
+`trust_rank` in `feeds.yaml` cannot flow through the record types. The
+adapter exposes `FeedsAdapter.trust_rank_for(url)` as the seam WP-27 uses to
+stamp per-document trust; the class-level 0.60 remains the registry value.
+Rejected alternative: leaving the config override as dead weight.
+
+## 2026-08-01 — D-19 (R2) — Feed entry payloads are deterministic JSON envelopes, not feed XML
+
+The archive stores one record per feed *entry*; the payload is a
+deterministic JSON envelope of the feedparser-extracted fields. If the
+payload were the whole feed XML, every entry of a feed would share one
+content hash and collapse into a single document. The XML is a transport
+format, re-fetchable; the envelope is the system of record for re-derivation.
+
+## 2026-08-01 — D-18 (R2) — GDELT actor typing bounded by the ontology; state actors counted, not typed
+
+`ACTOR_IN`/`TARGET_OF` take an `Agent` domain and `Country` is a `Place`,
+so the ontology has no Agent type for a sovereign state: bare-country GDELT
+actor codes (USA, RUS, …) cannot be represented and their edges are skipped
+— counted, never silent. GDELT's own actor type codes drive the typing:
+GOV/MIL/COP/JUD → `PublicBody`, BUS → `Corporation` (the table is the
+refresh point). Event identity follows D-10 (stampable
+`source_event_id` key, full identity in the hash). Rejected alternative:
+inventing an Agent type for states (ontology change = R3, migration).
+
+---
+
 ## 2026-08-01 — D-17 (R2) — Source URLs are module constants; unverified endpoints are declared
 
 The source layer's URLs were verified live where reachable (GISCO hierarchy

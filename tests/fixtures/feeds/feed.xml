@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>Fixture Feed</title>
+    <link>https://example.com/</link>
+    <description>A respx-mocked fixture feed for the FeedsAdapter tests.</description>
+    <item>
+      <title>EU-Kommission legt neues Sanktionspaket vor</title>
+      <link>https://example.com/de/1</link>
+      <guid>fixture-1</guid>
+      <pubDate>Fri, 31 Jul 2026 09:30:00 +0200</pubDate>
+      <description><![CDATA[<p>Die Kommission hat am Freitag ein <b>neues Sanktionspaket</b> gegen russische Unternehmen vorgelegt. Der Vorschlag wird nun vom Rat geprüft.</p>]]></description>
+    </item>
+    <item>
+      <title>Commission proposes new sanctions package</title>
+      <link>https://example.com/en/1</link>
+      <guid>fixture-2</guid>
+      <pubDate>Fri, 31 Jul 2026 09:45:00 +0200</pubDate>
+      <description><![CDATA[<p>The Commission today proposed a <b>new sanctions package</b> targeting Russian companies. The Council will examine the proposal.</p>]]></description>
+    </item>
+    <item>
+      <title>Undated entry without declared language</title>
+      <link>https://example.com/undated/1</link>
+      <guid>fixture-3</guid>
+      <description><![CDATA[<p>This entry carries no publication date in the feed.</p>]]></description>
+    </item>
+  </channel>
+</rss>

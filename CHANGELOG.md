@@ -6,6 +6,88 @@ gold set, prompts) are recorded in their own changelogs.
 
 ---
 
+## 2026-08-01 — WP-24 (Gate: spaCy NER, passage selection, idempotency)
+
+- `pipeline/gate.py`: `GateContext` (settings, driver, nlp_de, nlp_en — the
+  §8.15 shape, defined here for WP-26 to construct), `gate_document` (cache
+  short-circuit first, then spaCy NER with date/number labels filtered, then
+  passage selection; `cache_hit` / `unsupported_language` /
+  `below_mention_threshold` reasons, every rejection logged — AC-11), and
+  `select_passages` (the pure mention-threshold half). The label filter set
+  is a named refresh-point constant.
+- `pipeline/passages.py`: dependency-free `split_sentences` and
+  `window_passages` (merged overlapping windows with exact document offsets —
+  `text[doc_start:doc_end] == text`, the invariant the extractor's
+  evidence-span mapping anchors to).
+- `pipeline/idempotency.py`: `is_already_extracted` — the zero-cost
+  short-circuit over `cache.exists` (AC-12 partial).
+- 9 unit tests with the real installed de/en spaCy models; cache-hit and
+  zero-passage paths exercised with driver stubs.
+
+## 2026-08-01 — WP-23 (Extraction cache)
+
+- `extraction/cache.py`: `:ExtractionCacheEntry` write/read/exists keyed by
+  `SHA-256(content_hash | prompt_version | schema_version | model_id)` —
+  deterministic across processes (proven by a subprocess test), version
+  triple in the key (DD-08: a prompt/schema/model change is a miss, AC-12).
+  The cache is the sole writer of the node type (§15.2). Full-rebuild test
+  shows every document short-circuits with zero paid calls (AC-33 partial).
+- 8 integration tests against the disposable Neo4j container.
+
+## 2026-08-01 — WP-22 (Extractor: protocol, OpenRouter client, schema, prompts)
+
+- `extraction/base.py`: `Extractor` protocol, `ExtractionResult`, shared
+  batching (`batch_passages` — count and token bounds, oversized passage
+  stays its own batch, never dropped) and `build_extraction_messages`
+  (passages inside explicit `<PASSAGES>` delimiters, §7.5).
+- `extraction/openrouter_client.py`: the single `OpenRouterClient` for
+  chat/embeddings/catalogue; `governor.check` before and `commit` after every
+  request (the only module writing `:CostLedgerEntry`, §15.2); ledger entries
+  only for attempts that returned token usage; §11 retry policy (2s
+  exponential jitter, max 4, on connect/timeout/429/5xx — never other 4xx);
+  API key only ever in the Authorization header, never a log line; pricing
+  from the model catalogue with a conservative, always-logged fallback
+  (D-23).
+- `extraction/schema.py`: versioned `EXTRACTION_SCHEMA` (additionalProperties
+  false throughout) and `parse_extraction_response` — schema, ontology
+  relation/type validation, passage-local → document offset mapping, and the
+  AC-13 evidence-span check (rejected when the mapped span contains neither
+  surface, D-21). Stable rejection reason prefixes for counting.
+- `extraction/openrouter.py`: `OpenRouterExtractor` — per-version prompt
+  loading (a missing prompt file fails loudly), schema-version validation,
+  per-batch calls merged into one per-document `ExtractionResult` (D-24).
+- `extraction/ollama.py`: `OllamaExtractor` — laptop-only local path (C-05),
+  same protocol and parsing, no governor/ledger, §11 retries.
+- `extraction/prompts/extraction_v1.0.0.md` and
+  `extraction/prompts/adjudication_v1.0.0.md` (the latter consumed by WP-25).
+- 34 unit tests (retry policy, redaction, governor ordering, budget refusal
+  without a request, batching, every rejection reason) and 4 integration
+  tests (AC-13 across the full extractor, AC-12 partial via a pre-populated
+  cache).
+
+## 2026-08-01 — WP-21 (Unstructured adapters: GDELT + feeds)
+
+- `ontology/feeds.yaml`: the curated feed set — Commission RAPID,
+  Bundesregierung press releases (0.70), tagesschau, EUobserver (0.60);
+  URLs are the named refresh point.
+- `sources/gdelt.py`: `GdeltAdapter` (trust 0.50) — one 15-minute event file
+  per window slot, sequential; `Event` nodes (D-10 multi-key identity,
+  stampable `source_event_id`), directional `ACTOR_IN`/`TARGET_OF` (Doc 1
+  §5.4) typed by GDELT's own actor type codes (GOV/MIL/COP/JUD →
+  PublicBody, BUS → Corporation; state actors are counted skips — D-18),
+  `OCCURRED_IN` to `Country` (ISO2) or coordinate-hash `Location` (D-13
+  rounding); one per-file `DocumentPayload` with the event-vintage
+  `published_at`.
+- `sources/feeds.py`: `FeedsAdapter` (trust 0.60) — per-entry deterministic
+  JSON envelopes from `feedparser` (D-19: entry-unique content hashes),
+  HTML body extraction, declared-language-wins detection (D-25), undated
+  entries fall back to the fetch instant with a count, per-feed trust
+  override exposed as `trust_rank_for` for WP-27 (D-20); config defects are
+  `ConfigurationError` at construction.
+- Two registry lines; 21 unit tests, respx-mocked, no live network.
+
+---
+
 ## 2026-08-01 — WP-20 (OffeneRegister adapter)
 
 - `sources/offeneregister.py`: `OffeneRegisterAdapter` (trust 0.30, lowest

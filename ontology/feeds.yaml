@@ -1,0 +1,30 @@
+# Feed configuration for the FeedsAdapter (WP-21) — the curated RSS/Atom set.
+# Consumed by src/limes/sources/feeds.py; the path is LIMES_FEEDS_CONFIG_PATH.
+#
+# Each entry: url (RSS/Atom), name (curator label), language (de|en — the
+# feed's declared language, used as the document language), trust_rank
+# (per-feed override of the adapter's 0.60 default; Doc 1 §5.8 ranks
+# Commission RAPID and Bundesregierung releases at 0.70 and curated news
+# outlets at 0.60). Feeds without a trust_rank default to 0.60.
+#
+# The URLs are the single refresh point: a feed that moves is updated here
+# and nowhere else. They are the documented public endpoints of the listed
+# publishers; the first live backfill (WP-27) is the verification.
+version: "1.0.0"
+feeds:
+  - url: https://ec.europa.eu/commission/presscorner/api/rss
+    name: European Commission RAPID press releases
+    language: en
+    trust_rank: 0.70
+  - url: https://www.bundesregierung.de/breg-de/service/rss-feed-presse
+    name: Bundesregierung press releases
+    language: de
+    trust_rank: 0.70
+  - url: https://www.tagesschau.de/xml/rss2/
+    name: tagesschau
+    language: de
+    trust_rank: 0.60
+  - url: https://euobserver.com/rss.xml
+    name: EUobserver
+    language: en
+    trust_rank: 0.60

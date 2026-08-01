@@ -76,9 +76,17 @@ def build_default_registry() -> SourceRegistry:
 
     registry.register(EurlexAdapter())
 
+    from limes.sources.feeds import FeedsAdapter
+
+    registry.register(FeedsAdapter())
+
     from limes.sources.fsd import FsdAdapter
 
     registry.register(FsdAdapter())
+
+    from limes.sources.gdelt import GdeltAdapter
+
+    registry.register(GdeltAdapter())
 
     from limes.sources.gesetze_im_internet import GesetzeImInternetAdapter
 
