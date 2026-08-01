@@ -1,0 +1,155 @@
+version: "1.0.0"
+supertypes: [Agent, Place, Artifact]
+entity_types:
+  - name: Person
+    supertype: Agent
+    identifying_keys: [wikidata_qid, bundestag_id]
+    properties:
+      - {name: label, type: string, required: true}
+      - {name: wikidata_qid, type: string, required: false, unique: true}
+      - {name: bundestag_id, type: string, required: false}
+  - name: PublicBody
+    supertype: Agent
+    identifying_keys: [wikidata_qid, ted_buyer_id]
+    properties:
+      - {name: label, type: string, required: true}
+      - {name: wikidata_qid, type: string, required: false, unique: true}
+      - {name: ted_buyer_id, type: string, required: false}
+  - name: Corporation
+    supertype: Agent
+    identifying_keys: [lei, german_register_number]
+    properties:
+      - {name: label, type: string, required: true}
+      - {name: lei, type: string, required: false, unique: true}
+      - {name: german_register_number, type: string, required: false}
+      - {name: legal_form, type: string, required: false}
+  - name: PoliticalParty
+    supertype: Agent
+    identifying_keys: [wikidata_qid]
+    properties:
+      - {name: label, type: string, required: true}
+      - {name: wikidata_qid, type: string, required: false, unique: true}
+  - name: IGO
+    supertype: Agent
+    identifying_keys: [wikidata_qid]
+    properties:
+      - {name: label, type: string, required: true}
+      - {name: wikidata_qid, type: string, required: false, unique: true}
+  - name: InterestGroup
+    supertype: Agent
+    identifying_keys: [transparency_register_id]
+    properties:
+      - {name: label, type: string, required: true}
+      - {name: transparency_register_id, type: string, required: false, unique: true}
+  - name: Country
+    supertype: Place
+    identifying_keys: [iso2]
+    properties:
+      - {name: label, type: string, required: true}
+      - {name: iso2, type: string, required: false, unique: true}
+  - name: AdministrativeRegion
+    supertype: Place
+    identifying_keys: [nuts_code]
+    properties:
+      - {name: label, type: string, required: true}
+      - {name: nuts_code, type: string, required: false, unique: true}
+  - name: Location
+    supertype: Place
+    identifying_keys: [geonames_id, coordinate_hash]
+    properties:
+      - {name: label, type: string, required: true}
+      - {name: geonames_id, type: string, required: false, unique: true}
+      - {name: coordinate_hash, type: string, required: false, unique: true}
+      - {name: latitude, type: float, required: false}
+      - {name: longitude, type: float, required: false}
+  - name: LegalAct
+    supertype: Artifact
+    identifying_keys: [celex, bgb_citation]
+    properties:
+      - {name: label, type: string, required: true}
+      - {name: celex, type: string, required: false, unique: true}
+      - {name: bgb_citation, type: string, required: false}
+  - name: Contract
+    supertype: Artifact
+    identifying_keys: [ted_notice_id]
+    properties:
+      - {name: label, type: string, required: true}
+      - {name: ted_notice_id, type: string, required: false, unique: true}
+  - name: Document
+    supertype: Artifact
+    identifying_keys: [content_hash]
+    properties:
+      - {name: label, type: string, required: true}
+      - {name: content_hash, type: string, required: false, unique: true}
+      - {name: title, type: string, required: false}
+      - {name: body, type: string, required: false}
+      - {name: published_at, type: datetime, required: false}
+      - {name: url, type: string, required: false}
+  - name: Sanction
+    supertype: Artifact
+    identifying_keys: [fsd_id, regime]
+    properties:
+      - {name: label, type: string, required: true}
+      - {name: fsd_id, type: string, required: false}
+      - {name: regime, type: string, required: false}
+  - name: Asset
+    supertype: Artifact
+    identifying_keys: [osm_id]
+    properties:
+      - {name: label, type: string, required: true}
+      - {name: osm_id, type: string, required: false, unique: true}
+      - {name: osm_type, type: string, required: false}
+  - name: Event
+    identifying_keys: [source_event_id, occurred_at]
+    properties:
+      - {name: label, type: string, required: true}
+      - {name: source_event_id, type: string, required: false}
+      - {name: occurred_at, type: datetime, required: false}
+  - name: Office
+    identifying_keys: [body_id, office_title, valid_from]
+    properties:
+      - {name: label, type: string, required: true}
+      - {name: body_id, type: string, required: false}
+      - {name: office_title, type: string, required: false}
+      - {name: valid_from, type: datetime, required: false}
+  - name: Topic
+    identifying_keys: [vocabulary, code]
+    properties:
+      - {name: label, type: string, required: true}
+      - {name: vocabulary, type: string, required: false}
+      - {name: code, type: string, required: false}
+relation_types:
+  - {name: MEMBER_OF, domain: [Person, Corporation, Country], range: [PoliticalParty, InterestGroup, PublicBody, IGO], temporal: true}
+  - {name: HOLDS_OFFICE, domain: [Person], range: [Office], temporal: true}
+  - {name: OFFICE_AT, domain: [Office], range: [PublicBody, IGO, Corporation, PoliticalParty], temporal: true}
+  - {name: DIRECTOR_OF, domain: [Person], range: [Corporation], temporal: true}
+  - {name: OWNS_STAKE_IN, domain: [Agent], range: [Corporation], temporal: true}
+  - {name: SUBSIDIARY_OF, domain: [Corporation], range: [Corporation], temporal: true}
+  - {name: HEADQUARTERED_IN, domain: [Corporation, PublicBody, IGO, InterestGroup, PoliticalParty], range: [Location], temporal: true}
+  - {name: LOCATED_IN, domain: [Location, Asset], range: [AdministrativeRegion], temporal: true}
+  - {name: PART_OF_REGION, domain: [AdministrativeRegion], range: [AdministrativeRegion, Country], temporal: true}
+  - {name: TARGETS, domain: [Sanction], range: [Person, Corporation, Country, Topic], temporal: true}
+  - {name: IMPOSED_BY, domain: [Sanction], range: [Country, IGO], temporal: true}
+  - {name: ESTABLISHED_BY, domain: [Sanction], range: [LegalAct], temporal: false}
+  - {name: ADOPTED, domain: [PublicBody, IGO], range: [LegalAct, Document], temporal: true}
+  - {name: AMENDS, domain: [LegalAct], range: [LegalAct], temporal: false}
+  - {name: REPEALS, domain: [LegalAct], range: [LegalAct], temporal: false}
+  - {name: CITES, domain: [LegalAct, Document], range: [LegalAct, Document], temporal: false}
+  - {name: APPLIES_TO, domain: [LegalAct], range: [Topic, Corporation, PublicBody], temporal: true}
+  - {name: AWARDED_TO, domain: [Contract], range: [Corporation], temporal: true}
+  - {name: BUYER_OF, domain: [PublicBody, IGO], range: [Contract], temporal: true}
+  - {name: SUPPLIES, domain: [Corporation], range: [Corporation], temporal: true}
+  - {name: LOBBIES_FOR, domain: [InterestGroup], range: [Corporation, PoliticalParty, Topic], temporal: true}
+  - {name: MET_WITH, domain: [Person, InterestGroup], range: [Person, PublicBody], temporal: true}
+  - {name: PARTICIPANT_IN, domain: [Agent], range: [Event], temporal: false}
+  - {name: ACTOR_IN, domain: [Agent], range: [Event], temporal: false}
+  - {name: TARGET_OF, domain: [Agent], range: [Event], temporal: false}
+  - {name: OCCURRED_IN, domain: [Event], range: [Location, AdministrativeRegion, Country], temporal: false}
+  - {name: OPERATES, domain: [Corporation, PublicBody], range: [Asset], temporal: true}
+  - {name: ABOUT_TOPIC, domain: [LegalAct, Contract, Document, Event], range: [Topic], temporal: true}
+  - {name: MENTIONS, domain: [Document], range: [Agent, Place, Asset, LegalAct, Topic], temporal: false}
+  - {name: REPRESENTS, domain: [Person], range: [Country, Agent], temporal: true}
+vocabularies:
+  - {name: EuroVoc, applies_to: Topic}
+  - {name: CPV, applies_to: Topic}
+  - {name: KRITIS, applies_to: Topic}
