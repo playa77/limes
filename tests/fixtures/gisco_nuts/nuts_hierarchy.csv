@@ -1,0 +1,11 @@
+CNTR_CODE,NUTS_ID,NAME_LATN,NUTS_NAME,MOUNT_TYPE,URBN_TYPE,COAST_TYPE
+DE,DE,Deutschland,Deutschland,,,
+DE,DE1,Baden-Württemberg,Baden-Württemberg,,,
+DE,DE11,Stuttgart,Stuttgart,,,
+DE,DE111,"Stuttgart, Stadtkreis","Stuttgart, Stadtkreis",,1,
+DE,DE112,Böblingen,Böblingen,,1,
+DE,DE12,Karlsruhe,Karlsruhe,,,
+DE,DE121,"Baden-Baden, Stadtkreis","Baden-Baden, Stadtkreis",1,1,
+DE,DE122,"Karlsruhe, Stadtkreis","Karlsruhe, Stadtkreis",,1,
+DE,DE2,Bayern,Bayern,,,
+DE,DE21,Oberbayern,Oberbayern,,,

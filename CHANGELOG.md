@@ -6,7 +6,127 @@ gold set, prompts) are recorded in their own changelogs.
 
 ---
 
-## 2026-08-01 — WP-08 (Graph lookups)
+## 2026-08-01 — WP-20 (OffeneRegister adapter)
+
+- `sources/offeneregister.py`: `OffeneRegisterAdapter` (trust 0.30, lowest
+  deliberately). The vintage rule: `recorded_at` on every assertion is the
+  dataset's publication date from the metadata record, never the ingestion
+  timestamp — and a data record normalized without a prior metadata record is
+  refused with `SourceParseError` rather than wall-clock-stamped (DD-15).
+  Metadata date is in-process instance state within one run (C-07 concerns
+  cross-process state); `DIRECTOR_OF` from officer records with start/end
+  intervals; register-number Corporation keys; German officer names verbatim.
+- 10 unit tests including the refusal path and `recorded_at != fetched_at`.
+
+## 2026-08-01 — WP-19 (OSM adapter)
+
+- `sources/osm.py`: `OsmAdapter` (trust 0.75) — Overpass query over the
+  German bounding box for KRITIS-tagged elements; `Asset` (OSM ID keys),
+  `OPERATES` (operator), `LOCATED_IN` via the postal-code lookup only (region
+  assignment is a lookup, never geometry), standalone KRITIS `Topic` and
+  coordinate-hash `Location` entities. Ontology-gap reading documented: no
+  Asset→Topic and no Asset→Location edge exists, so sectors and points are
+  represented as standalone nodes with the raw payload in the archive.
+- 8 unit tests, respx-mocked.
+
+## 2026-08-01 — WP-18 (Wikidata adapter, enrichment only)
+
+- `sources/wikidata.py`: `WikidataAdapter` with `enrich(entity_type, label)
+  -> WikidataMatch | None` — wbsearchentities + wbsgetentities (P31 class
+  filter per a closed type→class map), exact-label match only, `None` on any
+  ambiguity (never guessing). `fetch`/`normalize` raise `NotImplementedError`;
+  registered in `build_default_registry` as enrichment-only.
+- 11 unit tests, respx-mocked.
+
+## 2026-08-01 — WP-17 (Gesetze im Internet adapter)
+
+- `sources/gesetze_im_internet.py`: `GesetzeImInternetAdapter` — TOC
+  (`gii-toc.xml`, verified live) then per-law `xml.zip` (BJNR member);
+  `LegalAct` keyed by the Bundesgesetzblatt citation from the XML's
+  `fundstelle` (`BGBl I 2000, 2045`), `ABOUT_TOPIC`/`APPLIES_TO` to
+  source-namespaced `topic:Sachgebiet:*` topics where the XML declares them.
+- 10 unit tests, respx-mocked.
+
+## 2026-08-01 — WP-16 (Bundestag DIP adapter)
+
+- `sources/bundestag_dip.py`: `BundestagDipAdapter` — DIP API (operator API
+  key accepted via constructor, no config key added; 401 surfaces honestly as
+  `SourceFetchError`); `Person` (Bundestag ID keys), reified `Office` nodes
+  (body+title+interval identity, DD-13), temporal `HOLDS_OFFICE`/`OFFICE_AT`
+  and `MEMBER_OF`; Wahlperiode start dates from a documented refresh-point
+  constant.
+- 10 unit tests, respx-mocked.
+
+## 2026-08-01 — WP-15 (Transparency Register adapter)
+
+- `sources/transparency_register.py`: `TransparencyRegisterAdapter` — export
+  XML; `InterestGroup` (TR IDs), `MEMBER_OF` (head persons), `LOBBIES_FOR`
+  to source-namespaced `topic:EU_TR:*` interests, `MET_WITH` for declared
+  meetings.
+- 7 unit tests, respx-mocked.
+
+## 2026-08-01 — WP-14 (TED adapter)
+
+- `sources/ted.py`: `TedAdapter` — notice search API (POST, shared retry
+  policy) then per-notice XML; `Contract` (TED notice IDs), `PublicBody`
+  buyers (stable `ted_buyer_id` surrogate digest), `AWARDED_TO`/`BUYER_OF`/
+  `ABOUT_TOPIC` (CPV), `HEADQUARTERED_IN`+`LOCATED_IN` region assignment via
+  the postal lookup (BUYER_NUTS preferred when present).
+- 10 unit tests, respx-mocked.
+
+## 2026-08-01 — WP-13 (FSD adapter)
+
+- `sources/fsd.py`: `FsdAdapter` — consolidated XML; the three-way sanction
+  decomposition (TARGETS, IMPOSED_BY, ESTABLISHED_BY as separate assertions,
+  Doc 1 §5.4); Sanction key `("fsd_id", "<id>:<regime>")`; regime→IGO
+  mapping (EU→Q458, UN→Q1065); rotating public token isolated in the
+  `FSD_URL` constant.
+- 15 unit tests, respx-mocked.
+
+## 2026-08-01 — WP-12 (EUR-Lex adapter)
+
+- `sources/eurlex.py`: `EurlexAdapter` — Cellar SPARQL (verified live),
+  window compiled into the query; `LegalAct` (CELEX keys), `ADOPTED`
+  (closed author→QID map), `AMENDS`/`REPEALS`/`CITES` (non-temporal),
+  `ABOUT_TOPIC`/`APPLIES_TO` to `topic:EuroVoc:*`.
+- 8 unit tests, respx-mocked.
+
+## 2026-08-01 — WP-11 (GLEIF adapter)
+
+- `sources/gleif.py`: `GleifAdapter` — golden-copy zips (entity +
+  relationships CSV); `Corporation` (LEI keys), `HEADQUARTERED_IN` to
+  address-hash `Location` nodes, `SUBSIDIARY_OF`, `OWNS_STAKE_IN` gated on a
+  positive direct percentage, `LOCATED_IN` via `postal_lookup` (misses
+  counted, never guessed).
+- 10 unit tests, respx-mocked.
+
+## 2026-08-01 — WP-10 (GISCO/NUTS adapter)
+
+- `sources/gisco_nuts.py`: `GiscoNutsAdapter` — verified live files: the
+  2024 NUTS hierarchy CSV (level from `NUTS_ID` length, parent by prefix,
+  country row from the 2-char id) and the postcode correspondence at
+  `/v2/pcode/csv/` (mixed single/double quoting handled by quote
+  normalization); `AdministrativeRegion`/`Country`/`PART_OF_REGION` plus
+  `LookupRow(kind="postal_code")` — the first cross-process reference data
+  (C-07).
+- 8 unit tests, respx-mocked, fixtures from real file rows.
+
+## 2026-08-01 — WP-09 (Source adapter protocol, registry, normalizer)
+
+- `sources/base.py`: `SourceAdapter` protocol (§8.5.1, runtime-checkable),
+  shared fetch helpers with the §11 retry policy (GET + POST, 2s→factor
+  2→jitter, 4 attempts, 429/5xx/connect/timeout only), `ONTOLOGY_VERSION`
+  constant (single bump point for WP-31), deterministic `entity_id` and
+  `assertion_id` schemes (cross-run idempotency, AC-05).
+- `sources/registry.py`: `SourceRegistry` (`get` names unknown + registered
+  sources, AC-38) and `build_default_registry` — the authoritative source
+  set; no import-time self-registration.
+- `pipeline/normalize.py`: `detect_language` (stopword heuristic, no new
+  dependency), `normalize_timestamp` (day-first European default, naive→UTC),
+  `extract_text_from_html`, `extract_text_from_xml`.
+- 17 unit tests.
+
+
 
 - `graph/lookups.py`: `postal_code_to_nuts` per §8.16 — graph query plus
   in-process LRU cache; misses return `None` and are cached; the

@@ -1,0 +1,46 @@
+{
+  "version": 0.6,
+  "generator": "Overpass API 0.7.62.1 84b0fefb",
+  "osm3s": {
+    "timestamp_osm_base": "2026-08-01T10:00:00Z",
+    "copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL."
+  },
+  "elements": [
+    {
+      "type": "node",
+      "id": 123456789,
+      "lat": 52.52,
+      "lon": 13.7,
+      "tags": {
+        "power": "substation",
+        "name": "Umspannwerk Neuenhagen",
+        "operator": "Stromnetz Berlin GmbH",
+        "addr:postcode": "15366",
+        "addr:country": "DE"
+      }
+    },
+    {
+      "type": "way",
+      "id": 987654321,
+      "center": {
+        "lat": 52.58333,
+        "lon": 13.25
+      },
+      "tags": {
+        "man_made": "water_works",
+        "name": "Wasserwerk Tegel",
+        "operator": "Berliner Wasserbetriebe"
+      }
+    },
+    {
+      "type": "node",
+      "id": 555555555,
+      "lat": 52.45,
+      "lon": 13.3,
+      "tags": {
+        "shop": "bakery",
+        "name": "Bäckerei am Markt"
+      }
+    }
+  ]
+}

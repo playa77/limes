@@ -1,0 +1,33 @@
+{
+  "searchinfo": {
+    "totalhits": 2
+  },
+  "search": [
+    {
+      "id": "Q458",
+      "title": "Q458",
+      "pageid": 271,
+      "label": "European Union",
+      "description": "politische Union aus europäischen Mitgliedstaaten",
+      "aliases": ["EU", "Europäische Union"],
+      "match": {
+        "type": "label",
+        "language": "en",
+        "text": "European Union"
+      }
+    },
+    {
+      "id": "Q111481241",
+      "title": "Q111481241",
+      "pageid": 1285271,
+      "label": "European Union",
+      "description": "association of European universities in Copenhagen",
+      "aliases": ["EU", "European University Association"],
+      "match": {
+        "type": "label",
+        "language": "en",
+        "text": "European Union"
+      }
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gesetz>
+  <metadaten>
+    <jurabk>1-DM-GoldmünzG</jurabk>
+    <ausfertigung-datum manuell="ja">2000-12-27</ausfertigung-datum>
+    <fundstelle typ="amtlich">
+      <periodikum>BGBl. I</periodikum>
+      <zitstelle>2000, 2045</zitstelle>
+    </fundstelle>
+    <langue>Gesetz über die Ausprägung einer 1-DM-Goldmünze</langue>
+    <sachgebiet>
+      <gebiet>
+        <sachgebiet-code>21</sachgebiet-code>
+        <sachgebiet-label>Geld, Währung</sachgebiet-label>
+      </gebiet>
+    </sachgebiet>
+    <anwendungsbereich>
+      <gebiet>
+        <anwendungsbereich-code>21</anwendungsbereich-code>
+        <anwendungsbereich-label>Geld, Währung</anwendungsbereich-label>
+      </gebiet>
+    </anwendungsbereich>
+  </metadaten>
+</gesetz>

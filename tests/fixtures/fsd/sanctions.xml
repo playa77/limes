@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root>
+	<Sanctions>
+		<Sanction>
+			<Id>123</Id>
+			<Regime>EU</Regime>
+			<SubjectType>P</SubjectType>
+			<NameAlias>
+				<WholeName>MUSTER, Erwin</WholeName>
+			</NameAlias>
+			<NameAlias>
+				<WholeName>Mustermann, Erwin</WholeName>
+			</NameAlias>
+			<LegalBasis>
+				<LegalAct>2014/145/EU</LegalAct>
+				<Regulation>269/2014/EU</Regulation>
+			</LegalBasis>
+			<Nationality>
+				<Country>DE</Country>
+				<Country>AT</Country>
+			</Nationality>
+			<Address>
+				<Country>DE</Country>
+			</Address>
+		</Sanction>
+		<Sanction>
+			<Id>456</Id>
+			<Regime>EU</Regime>
+			<SubjectType>E</SubjectType>
+			<NameAlias>
+				<WholeName>Example Corporation</WholeName>
+			</NameAlias>
+			<LegalBasis>
+				<LegalAct>2014/145/EU</LegalAct>
+			</LegalBasis>
+			<Address>
+				<Country>DE</Country>
+			</Address>
+		</Sanction>
+		<Sanction>
+			<Id>789</Id>
+			<Regime>EU</Regime>
+			<SubjectType>O</SubjectType>
+			<NameAlias>
+				<WholeName>Mystery Vessel</WholeName>
+			</NameAlias>
+			<LegalBasis>
+				<LegalAct>2014/145/EU</LegalAct>
+			</LegalBasis>
+		</Sanction>
+	</Sanctions>
+</root>

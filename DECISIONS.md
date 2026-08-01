@@ -7,7 +7,77 @@ Nothing here is a status report; unlogged decisions are unmade decisions.
 
 ---
 
-## 2026-08-01 — D-09 (R1) — Changelog divergence reconciled at merge
+## 2026-08-01 — D-17 (R2) — Source URLs are module constants; unverified endpoints are declared
+
+The source layer's URLs were verified live where reachable (GISCO hierarchy
+and postcode files, EUR-Lex Cellar SPARQL, gii-toc.xml and the per-law
+`xml.zip` pattern, Overpass, wikidata.org API, data.europa.eu, DIP 401
+without key). GLEIF golden copy, FSD consolidated list (token), TED search,
+and the OffeneRegister data files could not be fully verified from this host;
+their documented canonical URLs are module constants with docstrings naming
+them as the single refresh point. A live fetch failure surfaces as
+`SourceFetchError` (403/404 are not retried), never as silent misbehavior.
+
+## 2026-08-01 — D-16 (R2) — Wikidata enrichment uses wbsearchentities, not SPARQL
+
+The source table (§8.5.2) names SPARQL for Wikidata enrichment; the SPARQL
+endpoint is unreachable in practice while the search/entities API answers.
+`WikidataAdapter.enrich` uses `action=wbsearchentities` + `wbsgetentities`
+(P31 class filter), both read-only. Rejected alternative: inventing a SPARQL
+URL that does not answer.
+
+## 2026-08-01 — D-15 (R1) — Structured assertions carry confidence 1.0
+
+Structured adapters are deterministic data, not model output, so every
+structured assertion's `Provenance.confidence` is 1.0; trust differentiation
+happens through `source_trust` (Doc 1 §5.8), and the effective trust of
+extracted assertions is the document-trust × extraction-confidence product —
+there is no product for structured data.
+
+## 2026-08-01 — D-14 (R1) — Roadmap key name overridden by the ontology: `bgb_citation`
+
+WP-17's roadmap names the deterministic key
+`("bundesgesetzblatt_citation", ...)`; the ontology artifact declares
+`bgb_citation` in LegalAct's `identifying_keys`. Precedence (Roadmap →
+Specification) makes the artifact authoritative: the adapter emits
+`("bgb_citation", citation)` or the loader would refuse to stamp it.
+
+## 2026-08-01 — D-13 (R1) — Location identity is an address hash; NUTS rides `LOCATED_IN`
+
+Locations without a GeoNames ID get `coordinate_hash` identity over the
+normalized address (GLEIF/TED) or rounded coordinates (OSM) — the hash is
+identity, never location. Region membership is expressed as
+`Location/Asset → LOCATED_IN → AdministrativeRegion` (the only Place→Region
+edge the ontology has), resolved by postal lookup only: never geometry
+(C-06, NG-06), misses counted.
+
+## 2026-08-01 — D-12 (R2) — Postal lookup injected into `normalize`, not held by the adapter
+
+GLEIF/TED/OSM accept `normalize(record, *, postal_lookup=None)`; the caller
+(WP-27 `execute_run`, which holds the driver) passes the bound
+`postal_code_to_nuts`. A None lookup or a miss leaves the region unassigned
+and counted — the adapter never guesses and never holds a driver (AC-40:
+composition root owns construction). The production wiring point is WP-27.
+
+## 2026-08-01 — D-11 (R2) — Adapters stamp `ontology_version` from one constant
+
+`Provenance.ontology_version` is required, and no seam stamps it after
+normalize (§15.2 lists only `source_id`/`source_trust`/`content_hash`).
+Every adapter therefore reads `ONTOLOGY_VERSION` from `sources/base.py` —
+one bump point for the WP-31 migration instead of eleven.
+
+## 2026-08-01 — D-10 (R2) — Shared deterministic `entity_id` and `assertion_id` schemes
+
+Cross-source node identity works because the loader merges on `entity_id`:
+endpoints with a deterministic key use `"<keyname>:<value>"` (`key_entity_id`),
+endpoints without one use a typed SHA-256 namespace (`hash_entity_id`).
+`assertion_id` is a digest over (source, relation, subject, object,
+valid_from, valid_to), so re-runs over an identical window produce zero new
+edges (AC-05) and changed facts produce new assertions alongside old ones.
+Multi-key types (Topic, Sanction, Office, Event) stamp the single declared
+key the loader can stamp and encode the full identity in `entity_id`.
+
+
 
 The `CHANGELOG.md` diverged across the WP-04…WP-08 branches because each
 branch was cut from `wp-04-graph-driver` and recorded only its own entries.

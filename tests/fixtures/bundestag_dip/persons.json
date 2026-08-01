@@ -1,0 +1,40 @@
+{
+  "numFound": 3,
+  "start": 0,
+  "rows": [
+    {
+      "id": 11004755,
+      "typ": "Person",
+      "nachname": "Weber",
+      "vorname": "Saskia",
+      "fraktion": "SPD",
+      "wahlperioden": [20, 21],
+      "geburtsjahr": 1985,
+      "wkrName": "Berlin-Reinickendorf",
+      "verstorben": null
+    },
+    {
+      "id": 11003611,
+      "typ": "Person",
+      "nachname": "Fischer",
+      "vorname": "Martin",
+      "fraktion": "CDU/CSU",
+      "wahlperioden": [19],
+      "geburtsjahr": 1972,
+      "wkrName": "München-Nord",
+      "verstorben": null
+    },
+    {
+      "id": 11005230,
+      "typ": "Person",
+      "nachname": "Becker",
+      "vorname": "Julia",
+      "fraktion": null,
+      "wahlperioden": null,
+      "geburtsjahr": 1990,
+      "wkrName": null,
+      "verstorben": null
+    }
+  ],
+  "facets": {}
+}

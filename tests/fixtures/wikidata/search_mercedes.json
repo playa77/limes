@@ -1,0 +1,26 @@
+{
+  "searchinfo": {
+    "totalhits": 1,
+    "suggestion": "Mercedes-Benz Group AG"
+  },
+  "search": [
+    {
+      "id": "Q283036",
+      "title": "Q283036",
+      "pageid": 267165,
+      "label": "Mercedes-Benz Group",
+      "description": "deutscher Automobil- und Nutzfahrzeughersteller",
+      "aliases": [
+        "Mercedes-Benz Group AG",
+        "Daimler AG",
+        "Daimler-Benz",
+        "DaimlerChrysler"
+      ],
+      "match": {
+        "type": "label",
+        "language": "de",
+        "text": "Mercedes-Benz Group"
+      }
+    }
+  ]
+}
