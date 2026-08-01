@@ -30,7 +30,7 @@ import hashlib
 import logging
 from collections.abc import Iterator
 from datetime import UTC, datetime
-from typing import Literal, Protocol
+from typing import Literal, Protocol, runtime_checkable
 
 import httpx
 import structlog
@@ -67,8 +67,13 @@ RETRYABLE_STATUSES = frozenset({429, 500, 502, 503, 504})
 USER_AGENT = "limes/0.1.0 (personal research artifact)"
 
 
+@runtime_checkable
 class SourceAdapter(Protocol):
     """One ingestable source (Doc 2 §8.5.1).
+
+    `runtime_checkable` so the registry can `isinstance`-check adapters at
+    registration time; the check is structural (attribute presence), which is
+    exactly the honesty the registry needs.
 
     `supports_incremental` governs window resolution (§8.6.2): an incremental
     source fetches only since `Source.last_success_at`, a non-incremental one
@@ -209,9 +214,7 @@ def _fetch(
             headers={"User-Agent": USER_AGENT, "Accept": "*/*"},
         ) as client:
             try:
-                response = (
-                    client.post(url, json=json_body) if method == "POST" else client.get(url)
-                )
+                response = client.post(url, json=json_body) if method == "POST" else client.get(url)
             except (httpx.ConnectError, httpx.ConnectTimeout, httpx.ReadTimeout) as exc:
                 raise _RetryableFetch(str(exc)) from exc
             if response.status_code in RETRYABLE_STATUSES:

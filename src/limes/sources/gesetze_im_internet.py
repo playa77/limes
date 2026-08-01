@@ -48,6 +48,7 @@ import zipfile
 from collections import Counter
 from collections.abc import Iterator
 from datetime import UTC, datetime
+from typing import Literal
 
 import structlog
 from lxml import etree  # type: ignore[import-untyped]
@@ -86,12 +87,12 @@ _BJNR_MEMBER = re.compile(r"BJNR\d+\.xml$")
 class GesetzeImInternetAdapter:
     """Gesetze im Internet — German federal laws and their Sachgebiet topics."""
 
-    source_id = "gesetze_im_internet"
-    name = "Gesetze im Internet"
-    kind = "structured"
-    trust_rank = 1.00
-    supports_backfill = True
-    supports_incremental = True
+    source_id: str = "gesetze_im_internet"
+    name: str = "Gesetze im Internet"
+    kind: Literal["structured", "unstructured"] = "structured"
+    trust_rank: float = 1.00
+    supports_backfill: bool = True
+    supports_incremental: bool = True
 
     def fetch(self, since: datetime | None, until: datetime | None) -> Iterator[RawRecord]:
         """The index, then one record per law zip in index order.

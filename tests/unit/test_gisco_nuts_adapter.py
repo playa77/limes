@@ -114,7 +114,7 @@ def test_postcode_normalize_produces_lookup_rows_with_mixed_quoting():
 def test_postcode_rows_with_empty_key_fields_are_counted_and_skipped():
     payload = (
         b"POSTCODE,CNTR_ID,SOURCE,LAU_NAME,PC_CNTR,CODE,NUTS3_2024\n"
-        b'"15701",FI,3,Lahti,FI_15701,\'15701\',\'FI1C6\'\n'
+        b"\"15701\",FI,3,Lahti,FI_15701,'15701','FI1C6'\n"
         b'"",,3,Nowhere,,,\n'
     )
     normalized = ADAPTER.normalize(_record(payload, POSTCODE_URL))

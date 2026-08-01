@@ -27,6 +27,7 @@ import csv
 import re
 from collections.abc import Iterator
 from datetime import datetime
+from typing import Literal
 
 import structlog
 
@@ -67,12 +68,12 @@ _SINGLE_QUOTED = re.compile(r"'([^']*)'")
 class GiscoNutsAdapter:
     """GISCO/NUTS — administrative regions, hierarchy, postal correspondence."""
 
-    source_id = "gisco_nuts"
-    name = "GISCO/NUTS"
-    kind = "structured"
-    trust_rank = 1.00
-    supports_backfill = False
-    supports_incremental = False
+    source_id: str = "gisco_nuts"
+    name: str = "GISCO/NUTS"
+    kind: Literal["structured", "unstructured"] = "structured"
+    trust_rank: float = 1.00
+    supports_backfill: bool = False
+    supports_incremental: bool = False
 
     def fetch(self, since: datetime | None, until: datetime | None) -> Iterator[RawRecord]:
         """Fetch both CSV files. The window is ignored: static snapshots are
@@ -102,9 +103,7 @@ class GiscoNutsAdapter:
             return self._normalize_hierarchy(text, record)
         if "POSTCODE" in header:
             return self._normalize_postcodes(text, record)
-        raise SourceParseError(
-            f"gisco_nuts: unrecognized payload (first line: {header[:80]!r})"
-        )
+        raise SourceParseError(f"gisco_nuts: unrecognized payload (first line: {header[:80]!r})")
 
     def _normalize_hierarchy(self, text: str, record: RawRecord) -> NormalizedRecord:
         rows = _parse_rows(text)

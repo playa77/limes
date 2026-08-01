@@ -49,6 +49,7 @@ import json
 import re
 from collections.abc import Callable, Iterator
 from datetime import datetime
+from typing import Literal
 
 import structlog
 
@@ -117,12 +118,12 @@ OVERPASS_QUERY = _overpass_query()
 class OsmAdapter:
     """OpenStreetMap via Overpass - KRITIS assets in the German bbox."""
 
-    source_id = "osm"
-    name = "OpenStreetMap"
-    kind = "structured"
-    trust_rank = 0.75
-    supports_backfill = False
-    supports_incremental = False
+    source_id: str = "osm"
+    name: str = "OpenStreetMap"
+    kind: Literal["structured", "unstructured"] = "structured"
+    trust_rank: float = 0.75
+    supports_backfill: bool = False
+    supports_incremental: bool = False
 
     def fetch(self, since: datetime | None, until: datetime | None) -> Iterator[RawRecord]:
         """Query the Overpass API for KRITIS-relevant tags in the German bbox.

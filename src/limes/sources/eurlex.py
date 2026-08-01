@@ -39,7 +39,7 @@ import json
 from collections import Counter
 from collections.abc import Iterator
 from datetime import UTC, datetime
-from typing import Any
+from typing import Any, Literal
 from urllib.parse import urlencode
 
 import structlog
@@ -119,12 +119,12 @@ WHERE {
 class EurlexAdapter:
     """EUR-Lex — EU legal acts, adopting bodies, citations, topics."""
 
-    source_id = "eurlex"
-    name = "EUR-Lex"
-    kind = "structured"
-    trust_rank = 1.00
-    supports_backfill = True
-    supports_incremental = True
+    source_id: str = "eurlex"
+    name: str = "EUR-Lex"
+    kind: Literal["structured", "unstructured"] = "structured"
+    trust_rank: float = 1.00
+    supports_backfill: bool = True
+    supports_incremental: bool = True
 
     def fetch(self, since: datetime | None, until: datetime | None) -> Iterator[RawRecord]:
         """Query Cellar SPARQL for acts adopted in the window.

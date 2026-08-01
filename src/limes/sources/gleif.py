@@ -53,6 +53,7 @@ import re
 import zipfile
 from collections.abc import Callable, Iterator
 from datetime import UTC, datetime
+from typing import Literal
 
 import structlog
 
@@ -99,12 +100,12 @@ _LEI_PATTERN = re.compile(r"[A-Z0-9]{20}")
 class GleifAdapter:
     """GLEIF — legal-entity backbone: corporations, addresses, ownership."""
 
-    source_id = "gleif"
-    name = "GLEIF"
-    kind = "structured"
-    trust_rank = 1.00
-    supports_backfill = True
-    supports_incremental = True
+    source_id: str = "gleif"
+    name: str = "GLEIF"
+    kind: Literal["structured", "unstructured"] = "structured"
+    trust_rank: float = 1.00
+    supports_backfill: bool = True
+    supports_incremental: bool = True
 
     def fetch(self, since: datetime | None, until: datetime | None) -> Iterator[RawRecord]:
         """Download both golden-copy zips. The window is ignored: the golden

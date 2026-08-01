@@ -34,7 +34,7 @@ from __future__ import annotations
 import json
 from collections.abc import Iterator
 from datetime import datetime
-from typing import Any
+from typing import Any, Literal
 from urllib.parse import urlencode
 
 import structlog
@@ -78,12 +78,12 @@ class WikidataMatch(BaseModel):
 class WikidataAdapter:
     """Wikidata — read-only enrichment of labels to unambiguous QIDs."""
 
-    source_id = "wikidata"
-    name = "Wikidata"
-    kind = "structured"
-    trust_rank = 0.90
-    supports_backfill = False
-    supports_incremental = False
+    source_id: str = "wikidata"
+    name: str = "Wikidata"
+    kind: Literal["structured", "unstructured"] = "structured"
+    trust_rank: float = 0.90
+    supports_backfill: bool = False
+    supports_incremental: bool = False
 
     def fetch(self, since: datetime | None, until: datetime | None) -> Iterator[RawRecord]:
         """Not part of the protocol surface for this source: enrichment only,

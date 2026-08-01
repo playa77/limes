@@ -44,6 +44,7 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from datetime import UTC, datetime
+from typing import Literal
 
 import structlog
 from lxml import etree  # type: ignore[import-untyped]
@@ -89,12 +90,12 @@ class TransparencyRegisterAdapter:
     """EU Transparency Register — interest groups, declared interests, head
     persons, and declared Commission meetings."""
 
-    source_id = "transparency_register"
-    name = "EU Transparency Register"
-    kind = "structured"
-    trust_rank = 1.00
-    supports_backfill = True
-    supports_incremental = True
+    source_id: str = "transparency_register"
+    name: str = "EU Transparency Register"
+    kind: Literal["structured", "unstructured"] = "structured"
+    trust_rank: float = 1.00
+    supports_backfill: bool = True
+    supports_incremental: bool = True
 
     def fetch(self, since: datetime | None, until: datetime | None) -> Iterator[RawRecord]:
         """GET the full export. The window is ignored: the export is the

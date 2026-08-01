@@ -56,6 +56,7 @@ import gzip
 import json
 from collections.abc import Iterator
 from datetime import UTC, datetime
+from typing import Literal
 
 import structlog
 from dateutil import parser as dateutil_parser  # type: ignore[import-untyped]
@@ -104,12 +105,12 @@ _COMPANY_KEY = "company"
 class OffeneRegisterAdapter:
     """OffeneRegister — German company directorships with honest vintage."""
 
-    source_id = "offeneregister"
-    name = "OffeneRegister"
-    kind = "structured"
-    trust_rank = 0.30
-    supports_backfill = False
-    supports_incremental = False
+    source_id: str = "offeneregister"
+    name: str = "OffeneRegister"
+    kind: Literal["structured", "unstructured"] = "structured"
+    trust_rank: float = 0.30
+    supports_backfill: bool = False
+    supports_incremental: bool = False
 
     def __init__(self) -> None:
         # The dataset's publication date, set by the metadata record's

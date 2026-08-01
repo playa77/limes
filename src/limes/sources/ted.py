@@ -36,6 +36,7 @@ import hashlib
 import json
 from collections.abc import Callable, Iterator
 from datetime import UTC, datetime
+from typing import Literal
 
 import structlog
 from lxml import etree  # type: ignore[import-untyped]
@@ -74,12 +75,12 @@ NOTICE_CONTENT_TYPE = "application/xml"
 class TedAdapter:
     """TED — public procurement notices: contracts, buyers, awards."""
 
-    source_id = "ted"
-    name = "TED"
-    kind = "structured"
-    trust_rank = 1.00
-    supports_backfill = True
-    supports_incremental = True
+    source_id: str = "ted"
+    name: str = "TED"
+    kind: Literal["structured", "unstructured"] = "structured"
+    trust_rank: float = 1.00
+    supports_backfill: bool = True
+    supports_incremental: bool = True
 
     def fetch(self, since: datetime | None, until: datetime | None) -> Iterator[RawRecord]:
         """Search for notices in the window, then GET each notice XML.

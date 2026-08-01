@@ -43,7 +43,7 @@ from __future__ import annotations
 import json
 from collections.abc import Iterator
 from datetime import UTC, datetime
-from typing import Any
+from typing import Any, Literal
 from urllib.parse import urlencode
 
 import structlog
@@ -93,12 +93,12 @@ _OFFICE_TITLE_PREFIX = "Mitglied des Deutschen Bundestages"
 class BundestagDipAdapter:
     """Bundestag DIP — members, parties, and reified offices."""
 
-    source_id = "bundestag_dip"
-    name = "Bundestag DIP"
-    kind = "structured"
-    trust_rank = 1.00
-    supports_backfill = True
-    supports_incremental = True
+    source_id: str = "bundestag_dip"
+    name: str = "Bundestag DIP"
+    kind: Literal["structured", "unstructured"] = "structured"
+    trust_rank: float = 1.00
+    supports_backfill: bool = True
+    supports_incremental: bool = True
 
     def __init__(self, api_key: str | None = None) -> None:
         self._api_key = api_key

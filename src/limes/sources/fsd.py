@@ -52,6 +52,7 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from datetime import datetime
+from typing import Literal
 
 import structlog
 from lxml import etree  # type: ignore[import-untyped]
@@ -100,12 +101,12 @@ _SUBJECT_TYPES: dict[str, str] = {"P": "Person", "E": "Corporation"}
 class FsdAdapter:
     """EU FSD — the consolidated list of financial sanctions."""
 
-    source_id = "fsd"
-    name = "EU FSD"
-    kind = "structured"
-    trust_rank = 1.00
-    supports_backfill = True
-    supports_incremental = True
+    source_id: str = "fsd"
+    name: str = "EU FSD"
+    kind: Literal["structured", "unstructured"] = "structured"
+    trust_rank: float = 1.00
+    supports_backfill: bool = True
+    supports_incremental: bool = True
 
     def fetch(self, since: datetime | None, until: datetime | None) -> Iterator[RawRecord]:
         """GET the consolidated list. The window is ignored: the endpoint
