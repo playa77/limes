@@ -62,6 +62,20 @@ untouched here (out of scope), flagged for the human.
 
 ---
 
+## 2026-08-01 — Approval — phase-4-v1.0.0 (WP-25a, WP-25)
+
+The human approved phase-4-v1.0.0 (entity resolution: the `label_embedding`
+merge stamp and backfill, and the resolution pipeline — keys, blocking,
+adjudication, linking, minting) on 2026-08-01 and instructed merge, commit,
+and push. Delivered as branches `wp-25a-embedding-merge-stamp` and
+`wp-25-entity-resolution`, merged to `main` as `6c3962a` and `d1fc305` and
+pushed; the topic branches are pushed as well. This approval names the
+presented version and cannot be reused for any other version of the phase.
+The phase's seam conflict was resolved before delivery per the human's
+decision recorded above (the §5.6 merge stamp); no conflict markers remain.
+
+---
+
 ## 2026-08-01 — Phase 4 invariants (WP-25a, WP-25), derived and tagged
 
 Guarded (automated check, named guard installed and green):
