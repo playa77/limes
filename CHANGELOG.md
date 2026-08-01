@@ -6,6 +6,76 @@ gold set, prompts) are recorded in their own changelogs.
 
 ---
 
+## 2026-08-01 — WP-26 (Composition root)
+
+- `composition.py`: the single module that constructs every component in
+  dependency order, once per process (AC-40 — repo-wide grep proves no
+  other module constructs a driver, registry, archive, governor, client,
+  extractor, or gate). `build_run_context(settings, *, needs_inference,
+  budget_eur=None)`: ontology, driver, idempotent `provision()` with the
+  downgrade guard, default registry, archive, governor (monthly, or an
+  envelope when `budget_eur` is given); `needs_inference` gates spaCy model
+  loading and extractor construction (AC-41 — a structured-only build loads
+  no model and leaves the inference slots None). `build_nlq_context` for
+  the API path. Context types follow the D-22/D-28 precedent: `RunContext`
+  stays in `resolution/resolve.py`, `GateContext` in `pipeline/gate.py`;
+  `NlqContext` is defined here (§8.15 home). `embedder_for(settings,
+  client)` is the loader-embedder wiring point D-26 named: dimension-
+  checked, L2-normalized, None when no client exists.
+- The §8.7.1 protocol declares a settable `model_id`, WP-22's extractor a
+  read-only property — the seam site narrows with a `cast` and a why-
+  comment (D-41); the spec block keeps its literal shape.
+- 9 integration tests: AC-40 grep guard, AC-41 inference gating (with
+  `spacy.load` made to explode on a structured build), provision-on-every-
+  build, frozen contexts, envelope governor, `embedder_for` wiring, and
+  clean import circularity.
+
+## 2026-08-01 — WP-27 (Pipeline run orchestration + window resolution)
+
+- `pipeline/window.py`: `resolve_window(spec, adapter, source_node,
+  settings, now=None)` — explicit `since` wins; an incremental source
+  anchors at `Source.last_success_at`, a never-run one at
+  `now − LIMES_BACKFILL_DAYS_UNSTRUCTURED`; a non-incremental source is a
+  full load `(None, None)` (AC-42). `settings`/`now` are the D-40 additions
+  the §8.6.2 signature cannot reach.
+- `pipeline/run.py`: `RunSpec` and `execute_run(spec, ctx)` — the §15.3
+  traces 1 and 2: `:Source` MERGE and `:IngestionRun` lifecycle (the two
+  node types run.py owns), registry-based window, fetch → archive
+  (content-addressed, `content_hash` re-stamped from `ArchiveStore.put`) →
+  normalize → structured records validate and load; document records gate
+  (cache-hit/gate-out counted with reason), extract, cache, resolve, load
+  with the wired embedder. §15.2 provenance: `source_id`/`source_trust`
+  stamped from the registry on every assertion; the resolver's five
+  pipeline-known intermediates re-stamped before load and `assertion_id`
+  recomputed with the real `source_id` (D-29) — the intermediates never
+  reach the graph. The D-20 per-feed trust seam is keyed on
+  `RawRecord.source_url` (the feed's URL — `doc.url` is the entry link and
+  would never match).
+- Failure semantics (§8.6.1): record-level parse errors counted in
+  `errors` and skipped; fetch/config failures abort with the record closed;
+  `BudgetExhausted` closes the run cleanly — `finished_at` set,
+  `last_success_at` untouched — logs the queued remainder, and re-raises
+  (AC-14). `cost_eur` is the governor `remaining()` delta (D-38). Reextract
+  (D-39) retracts only the source's prior assertions for the document that
+  the new extraction did not reproduce — after extraction and resolution
+  succeed, so a failed re-extraction never destroys the prior record.
+  `cache.put` runs only after the document's load succeeded (D-38).
+- SAME_AS semantics documented (D-42): first-run deterministic mentions of
+  backbone-absent entities carry no link — the loader materializes after
+  resolution by the trace order, and the resolver may not create entity
+  nodes (AC-17); the structured backbone pre-loads the LEI space and a
+  version-change reextract creates the links on the second pass.
+- 7 window unit tests and 9 pipeline integration tests: Trace 1 end-to-end
+  with the GISCO adapter, AC-05 re-ingest (zero new nodes, skip count
+  reported), record-level error counting, fetch-abort with the record
+  closed and `last_success_at` untouched, `:Source`/`:IngestionRun`
+  durability; Trace 2 end-to-end with the feeds adapter, per-feed trust
+  override, provenance never carrying the resolver's intermediates, gate-
+  out counting, budget exhaustion closing the run, cache-hit re-ingest,
+  and reextract relinking plus superseded retraction.
+
+---
+
 ## 2026-08-01 — WP-25 (Entity resolution)
 
 - `resolution/keys.py`: `deterministic_key` — the mention-carried key honored

@@ -1,0 +1,659 @@
+# src/limes/pipeline/run.py | v1.0.0 | introduced by WP-27
+"""Pipeline run orchestration per Technical Specification §8.6.1 and
+§15.3 traces 1 and 2 (Doc 1 §3.4–3.5, §9.1–9.2).
+
+`execute_run` is the one function that runs an ingestion end-to-end:
+adapter fetch → archive → normalize → (structured: validate + load;
+document: gate → extract → cache → resolve → validate + load) → close the
+`:IngestionRun` record. It constructs nothing (§8.15) and owns exactly two
+node types — `:Source` and `:IngestionRun` (§15.2). Nothing is dropped
+without a counter: every skip, rejection, and gate-out lands in the run
+record with its reason logged.
+
+**Provenance stamping (§15.2).** `source_id` and `source_trust` are stamped
+here from the registry on every assertion — the binding authority, idempotent
+over the adapters' own stamps — and `content_hash` from `ArchiveStore.put`.
+For document records the resolver's five pipeline-known intermediates
+(D-29) are re-stamped before load and `assertion_id` is recomputed with the
+real `source_id`; the intermediates never reach the graph.
+
+**Failure semantics (§8.6.1).** Record-level failures (`SourceParseError` —
+the only record-level error any module raises today; `ExtractionSchemaError`,
+`ValidationRejected`, and `EndpointUnidentified` are specified for future
+raisers and land in `errors` when they arrive) are counted in `errors` and
+skipped. Fetch and configuration failures (`SourceFetchError`,
+`ExtractionError`, `GraphWriteError`) abort the run: the run record is
+closed with `errors` counted, then re-raised. `BudgetExhausted` closes the
+run cleanly — `finished_at` set, `last_success_at` untouched — logs the
+queued remainder, and re-raises so the CLI can report the termination
+(AC-14).
+
+**The cache ordering (D-38).** `cache.put` runs only after the document's
+load succeeded; a mid-document failure leaves no cache entry that would
+gate the document out on retry and lose its assertions permanently.
+"""
+
+from __future__ import annotations
+
+import uuid
+from datetime import UTC, datetime
+from decimal import Decimal
+from typing import TYPE_CHECKING, Literal
+
+import structlog
+from pydantic import BaseModel
+
+from limes.composition import embedder_for
+from limes.errors import (
+    BudgetExhausted,
+    ExtractionError,
+    GraphWriteError,
+    SourceFetchError,
+    SourceParseError,
+)
+from limes.extraction.cache import put as cache_put
+from limes.graph.loader import load, retract
+from limes.ontology.validator import validate_assertions
+from limes.pipeline import window as window_module
+from limes.pipeline.gate import gate_document
+from limes.resolution.resolve import resolve_assertions
+from limes.sources.base import SourceAdapter, deterministic_assertion_id
+from limes.types import (
+    Assertion,
+    IngestionRunRecord,
+    NormalizedRecord,
+    RawRecord,
+    SourceRecord,
+)
+
+if TYPE_CHECKING:
+    from limes.resolution.resolve import RunContext
+
+logger = structlog.get_logger(__name__)
+
+_SOURCE_MERGE = """
+MERGE (s:Source {source_id: $source_id})
+ON CREATE SET s.name = $name,
+              s.kind = $kind,
+              s.trust_rank = $trust_rank
+ON MATCH SET s.name = $name,
+             s.kind = $kind,
+             s.trust_rank = $trust_rank
+RETURN s
+"""
+
+_SOURCE_READ = """
+MATCH (s:Source {source_id: $source_id})
+RETURN s.source_id AS source_id,
+       s.name AS name,
+       s.kind AS kind,
+       s.trust_rank AS trust_rank,
+       s.last_success_at AS last_success_at,
+       s.last_run_id AS last_run_id
+"""
+
+_RUN_OPEN = """
+CREATE (r:IngestionRun {
+    run_id: $run_id,
+    source_id: $source_id,
+    mode: $mode,
+    started_at: $started_at,
+    window_from: $window_from,
+    window_to: $window_to
+})
+"""
+
+_RUN_CLOSE = """
+MATCH (r:IngestionRun {run_id: $run_id})
+SET r.finished_at = $finished_at,
+    r.records_fetched = $records_fetched,
+    r.nodes_created = $nodes_created,
+    r.nodes_matched = $nodes_matched,
+    r.assertions_written = $assertions_written,
+    r.assertions_skipped = $assertions_skipped,
+    r.assertions_rejected = $assertions_rejected,
+    r.documents_gated_out = $documents_gated_out,
+    r.errors = $errors,
+    r.cost_eur = $cost_eur
+"""
+
+_SOURCE_SUCCESS = """
+MATCH (s:Source {source_id: $source_id})
+SET s.last_success_at = $last_success_at,
+    s.last_run_id = $last_run_id
+"""
+
+_PRIOR_DOCUMENT_ASSERTIONS = """
+MATCH ()-[r]->()
+WHERE r.evidence_document_id = $content_hash
+  AND r.source_id = $source_id
+  AND r.retracted_at IS NULL
+RETURN r.assertion_id AS assertion_id
+"""
+
+
+class RunSpec(BaseModel):
+    """One ingestion run request (Doc 2 §8.6.1). `budget_eur` is required
+    for backfill and reextract — the CLI refuses to call without it."""
+
+    source_id: str
+    mode: Literal["ingest", "backfill", "reextract"]
+    since: datetime | None = None
+    until: datetime | None = None
+    budget_eur: Decimal | None = None
+
+
+def execute_run(spec: RunSpec, ctx: RunContext) -> IngestionRunRecord:
+    """Execute one ingestion run end-to-end and return its durable record.
+
+    `ctx` is the composition root's `RunContext` (owned by
+    `resolution/resolve.py` per D-28); `execute_run` constructs nothing
+    and consumes only what the context carries (§8.15).
+    """
+    adapter = ctx.registry.get(spec.source_id)
+    if spec.mode in ("backfill", "reextract") and spec.budget_eur is None:
+        raise ValueError(f"{spec.mode} requires an explicit budget (RunSpec.budget_eur)")
+
+    ctx.driver.write_batch([(_SOURCE_MERGE, _source_params(adapter))])
+    source_node = _read_source(ctx, spec.source_id)
+    since, until = window_module.resolve_window(spec, adapter, source_node, ctx.settings)
+
+    record = IngestionRunRecord(
+        run_id=uuid.uuid4().hex,
+        source_id=spec.source_id,
+        mode=spec.mode,
+        started_at=datetime.now(UTC),
+        window_from=since,
+        window_to=until,
+    )
+    ctx.driver.write_batch(
+        [
+            (
+                _RUN_OPEN,
+                {
+                    "run_id": record.run_id,
+                    "source_id": record.source_id,
+                    "mode": record.mode,
+                    "started_at": record.started_at,
+                    "window_from": since,
+                    "window_to": until,
+                },
+            )
+        ]
+    )
+    logger.info(
+        "ingestion run opened",
+        run_id=record.run_id,
+        source_id=spec.source_id,
+        mode=spec.mode,
+        window_from=since,
+        window_to=until,
+        budget_eur=spec.budget_eur,
+    )
+
+    cost_before = _governor_remaining(ctx)
+    try:
+        for raw in adapter.fetch(since, until):
+            record.records_fetched += 1
+            _process_record(spec, ctx, adapter, raw, record)
+    except BudgetExhausted:
+        _close_run(ctx, record, cost_before, budget_terminated=True)
+        logger.warning(
+            "ingestion run closed by budget exhaustion; remaining records queued",
+            run_id=record.run_id,
+            source_id=spec.source_id,
+            processed_records=record.records_fetched,
+            budget_eur=spec.budget_eur,
+        )
+        raise
+    except (SourceFetchError, ExtractionError, GraphWriteError) as exc:
+        # Fetch and configuration failures abort the run; the durable record
+        # still closes with the error counted (Doc 2 §8.6.1).
+        record.errors += 1
+        _close_run(ctx, record, cost_before, budget_terminated=False)
+        logger.error(
+            "ingestion run aborted",
+            run_id=record.run_id,
+            source_id=spec.source_id,
+            error_type=type(exc).__name__,
+            error=str(exc),
+        )
+        raise
+
+    _close_run(ctx, record, cost_before, budget_terminated=False)
+    ctx.driver.write_batch(
+        [
+            (
+                _SOURCE_SUCCESS,
+                {
+                    "source_id": spec.source_id,
+                    "last_success_at": record.finished_at,
+                    "last_run_id": record.run_id,
+                },
+            )
+        ]
+    )
+    logger.info(
+        "ingestion run finished",
+        run_id=record.run_id,
+        source_id=spec.source_id,
+        records_fetched=record.records_fetched,
+        nodes_created=record.nodes_created,
+        nodes_matched=record.nodes_matched,
+        assertions_written=record.assertions_written,
+        assertions_skipped=record.assertions_skipped,
+        assertions_rejected=record.assertions_rejected,
+        documents_gated_out=record.documents_gated_out,
+        errors=record.errors,
+        cost_eur=str(record.cost_eur),
+    )
+    return record
+
+
+def _process_record(
+    spec: RunSpec,
+    ctx: RunContext,
+    adapter: SourceAdapter,
+    raw: RawRecord,
+    record: IngestionRunRecord,
+) -> None:
+    """Archive, normalize, and route one raw record. Every record-level
+    failure is counted in `record.errors` and skipped — nothing aborts the
+    run but fetch/configuration failures and budget exhaustion."""
+    try:
+        content_hash = ctx.archive.put(spec.source_id, raw.payload, raw.content_type)
+        normalized = adapter.normalize(raw)
+    except SourceParseError as exc:
+        record.errors += 1
+        logger.warning(
+            "record skipped: parse error",
+            source_id=spec.source_id,
+            error=str(exc),
+        )
+        return
+    normalized.content_hash = content_hash
+    if normalized.kind == "structured":
+        _process_structured(spec, ctx, normalized, record)
+        return
+    if normalized.document is None:
+        record.errors += 1
+        logger.warning(
+            "record skipped: document kind without payload",
+            source_id=spec.source_id,
+        )
+        return
+    normalized.document.content_hash = content_hash
+    _process_document(spec, ctx, adapter, raw, normalized, record)
+
+
+def _process_structured(
+    spec: RunSpec,
+    ctx: RunContext,
+    normalized: NormalizedRecord,
+    record: IngestionRunRecord,
+) -> None:
+    """Structured path (Trace 1): stamp, validate, load. No inference is
+    involved; the loader's embedder is only present on inference-capable
+    contexts, so structured-only runs write null embeddings (backfilled by
+    the §13.3 one-shot)."""
+    trust = ctx.registry.trust_rank(spec.source_id)
+    for assertion in normalized.assertions:
+        _stamp_pipeline_provenance(assertion, spec.source_id, trust, ctx, None)
+        assertion.assertion_id = deterministic_assertion_id(
+            spec.source_id,
+            assertion.relation,
+            assertion.subject.entity_id,
+            assertion.object.entity_id,
+            assertion.validity.valid_from,
+            assertion.validity.valid_to,
+        )
+    accepted, rejected = validate_assertions(normalized.assertions, ctx.ontology)
+    record.assertions_rejected += len(rejected)
+    for error in rejected:
+        logger.warning(
+            "assertion rejected",
+            reason=error.reason,
+            assertion_index=error.assertion_index,
+            detail=error.detail,
+        )
+    if not accepted and not normalized.entities and not normalized.lookup_rows:
+        logger.info(
+            "structured record produced no loadable content",
+            source_id=spec.source_id,
+            content_hash=normalized.content_hash,
+        )
+        return
+    result = load(
+        ctx.driver,
+        accepted,
+        ctx.ontology,
+        standalone_entities=normalized.entities,
+        lookup_rows=normalized.lookup_rows,
+        embedder=embedder_for(ctx.settings, ctx.client),
+    )
+    record.nodes_created += result.nodes_created
+    record.nodes_matched += result.nodes_matched
+    record.assertions_written += result.written
+    record.assertions_skipped += result.skipped
+    record.assertions_rejected += result.rejected
+    logger.info(
+        "structured record loaded",
+        source_id=spec.source_id,
+        content_hash=normalized.content_hash,
+        assertions=len(accepted),
+        lookup_rows=len(normalized.lookup_rows),
+        written=result.written,
+        skipped=result.skipped,
+    )
+
+
+def _process_document(
+    spec: RunSpec,
+    ctx: RunContext,
+    adapter: SourceAdapter,
+    raw: RawRecord,
+    normalized: NormalizedRecord,
+    record: IngestionRunRecord,
+) -> None:
+    """Document path (Trace 2): gate → extract → cache → resolve → stamp →
+    validate → load. The gate needs the inference context; a document record
+    on a structured-only context is a configuration failure."""
+    assert normalized.document is not None  # checked by the caller
+    doc = normalized.document
+    if ctx.gate is None or ctx.extractor is None or ctx.client is None:
+        # A configuration failure: the count lands in the abort branch of
+        # execute_run, which closes the run record with the error counted.
+        raise ExtractionError(
+            f"document record for source '{spec.source_id}' on a context without inference; "
+            "rebuild with needs_inference=True"
+        )
+    decision = gate_document(doc, ctx.gate)
+    if not decision.passed:
+        record.documents_gated_out += 1
+        logger.info(
+            "document gated out",
+            source_id=spec.source_id,
+            content_hash=doc.content_hash,
+            reason=decision.reason,
+        )
+        return
+
+    settings = ctx.settings
+    result = ctx.extractor.extract(
+        decision.passages,
+        ctx.ontology,
+        settings.extraction_prompt_version,
+        settings.extraction_schema_version,
+    )
+    record.assertions_rejected += len(result.parse_errors)
+    for error in result.parse_errors:
+        logger.warning(
+            "extraction item rejected",
+            source_id=spec.source_id,
+            content_hash=doc.content_hash,
+            error=error,
+        )
+    logger.info(
+        "document extracted",
+        source_id=spec.source_id,
+        content_hash=doc.content_hash,
+        assertions=len(result.assertions),
+        rejected=len(result.parse_errors),
+        input_tokens=result.input_tokens,
+        output_tokens=result.output_tokens,
+    )
+    if not result.assertions:
+        # A document that passed the gate but yielded no assertions still
+        # contributes nothing to the graph — counted as gated out, and its
+        # extraction cached so the paid call is not repeated on every run.
+        record.documents_gated_out += 1
+        cache_put(
+            ctx.driver,
+            doc.content_hash,
+            settings.extraction_prompt_version,
+            settings.extraction_schema_version,
+            ctx.extractor.model_id,
+            result,
+        )
+        logger.info(
+            "document produced no assertions; cached and counted",
+            source_id=spec.source_id,
+            content_hash=doc.content_hash,
+        )
+        return
+
+    assertions, stats = resolve_assertions(result.assertions, ctx, doc)
+    trust = _document_trust(adapter, spec.source_id, ctx, raw.source_url)
+    for assertion in assertions:
+        _stamp_pipeline_provenance(
+            assertion,
+            spec.source_id,
+            trust,
+            ctx,
+            ctx.extractor.model_id,
+        )
+        assertion.assertion_id = deterministic_assertion_id(
+            spec.source_id,
+            assertion.relation,
+            assertion.subject.entity_id,
+            assertion.object.entity_id,
+            assertion.validity.valid_from,
+            assertion.validity.valid_to,
+        )
+
+    accepted, rejected = validate_assertions(assertions, ctx.ontology)
+    record.assertions_rejected += len(rejected)
+    for validation_error in rejected:
+        logger.warning(
+            "assertion rejected",
+            reason=validation_error.reason,
+            assertion_index=validation_error.assertion_index,
+            detail=validation_error.detail,
+        )
+
+    if spec.mode == "reextract":
+        _retract_superseded(
+            ctx,
+            doc.content_hash,
+            spec.source_id,
+            {a.assertion_id for a in accepted},
+        )
+
+    load_result = load(
+        ctx.driver,
+        accepted,
+        ctx.ontology,
+        embedder=embedder_for(settings, ctx.client),
+    )
+    record.nodes_created += load_result.nodes_created
+    record.nodes_matched += load_result.nodes_matched
+    record.assertions_written += load_result.written
+    record.assertions_skipped += load_result.skipped
+    record.assertions_rejected += load_result.rejected
+
+    cache_put(
+        ctx.driver,
+        doc.content_hash,
+        settings.extraction_prompt_version,
+        settings.extraction_schema_version,
+        ctx.extractor.model_id,
+        result,
+    )
+    logger.info(
+        "document processed and cached",
+        source_id=spec.source_id,
+        content_hash=doc.content_hash,
+        resolved=len(assertions),
+        deterministic=stats.deterministic,
+        auto_linked=stats.auto_linked,
+        adjudicated=stats.adjudicated,
+        minted=stats.minted,
+        written=load_result.written,
+        skipped=load_result.skipped,
+    )
+
+
+def _retract_superseded(
+    ctx: RunContext,
+    content_hash: str,
+    source_id: str,
+    new_assertion_ids: set[str],
+) -> None:
+    """Reextract: retract the source's prior non-retracted assertions for
+    this document that the new extraction did not reproduce (D-39). The
+    retraction happens only after extraction and resolution succeeded, so a
+    failed re-extraction leaves the prior record intact."""
+    rows = ctx.driver.read(
+        _PRIOR_DOCUMENT_ASSERTIONS,
+        {"content_hash": content_hash, "source_id": source_id},
+        timeout_s=60,
+    )
+    superseded = [
+        str(row["assertion_id"])
+        for row in rows
+        if str(row["assertion_id"]) not in new_assertion_ids
+    ]
+    if not superseded:
+        return
+    retracted = retract(ctx.driver, superseded, datetime.now(UTC))
+    logger.info(
+        "reextract retracted superseded assertions",
+        source_id=source_id,
+        content_hash=content_hash,
+        superseded=len(superseded),
+        retracted=retracted,
+    )
+
+
+def _document_trust(
+    adapter: SourceAdapter,
+    source_id: str,
+    ctx: RunContext,
+    source_url: str | None,
+) -> float:
+    """The trust stamped on a document's assertions: the per-feed override
+    when the adapter exposes it, keyed on the record's `source_url` — the
+    feed's own URL (feeds.py stamps `RawRecord.source_url = feed.url`),
+    which is the D-20 seam's key. The entry link (`doc.url`) is a different
+    URL and never matches. Falls back to the registry value."""
+    per_url = getattr(adapter, "trust_rank_for", None)
+    if per_url is not None and source_url:
+        return float(per_url(source_url))
+    return ctx.registry.trust_rank(source_id)
+
+
+def _stamp_pipeline_provenance(
+    assertion: Assertion,
+    source_id: str,
+    trust: float,
+    ctx: RunContext,
+    extractor_model: str | None,
+) -> None:
+    """The §15.2 stamps execute_run owns: source identity from the registry
+    (the binding authority), and the D-29 pipeline-known fields — the
+    resolver's intermediates never reach the graph. For structured records
+    the adapter's own stamps are idempotently overwritten with the same
+    registry values; `extractor_model` stays None there."""
+    assertion.provenance.source_id = source_id
+    assertion.provenance.source_trust = trust
+    assertion.provenance.extractor_model = extractor_model
+    if extractor_model is not None:
+        assertion.provenance.prompt_version = ctx.settings.extraction_prompt_version
+        assertion.provenance.schema_version = ctx.settings.extraction_schema_version
+
+
+def _governor_remaining(ctx: RunContext) -> Decimal | None:
+    """The governor's remaining budget at this instant, or None when the
+    context carries none (structured-only run — no paid calls possible, so
+    the run cost is zero by construction)."""
+    if ctx.governor is None:
+        return None
+    return ctx.governor.remaining()
+
+
+def _close_run(
+    ctx: RunContext,
+    record: IngestionRunRecord,
+    cost_before: Decimal | None,
+    *,
+    budget_terminated: bool,
+) -> None:
+    """Write the closed run record. `cost_eur` is the governor delta across
+    the run (D-38), floored at zero; on budget termination the remaining
+    spend is still counted and `last_success_at` is deliberately not
+    updated — the run did not succeed."""
+    finished_at = datetime.now(UTC)
+    cost = Decimal("0")
+    if cost_before is not None:
+        remaining = _governor_remaining(ctx)
+        if remaining is not None:
+            cost = max(Decimal("0"), cost_before - remaining)
+    record.finished_at = finished_at
+    record.cost_eur = cost
+    ctx.driver.write_batch(
+        [
+            (
+                _RUN_CLOSE,
+                {
+                    "run_id": record.run_id,
+                    "finished_at": finished_at,
+                    "records_fetched": record.records_fetched,
+                    "nodes_created": record.nodes_created,
+                    "nodes_matched": record.nodes_matched,
+                    "assertions_written": record.assertions_written,
+                    "assertions_skipped": record.assertions_skipped,
+                    "assertions_rejected": record.assertions_rejected,
+                    "documents_gated_out": record.documents_gated_out,
+                    "errors": record.errors,
+                    "cost_eur": float(cost),
+                },
+            )
+        ]
+    )
+    logger.info(
+        "ingestion run closed",
+        run_id=record.run_id,
+        source_id=record.source_id,
+        budget_terminated=budget_terminated,
+        errors=record.errors,
+        cost_eur=str(cost),
+    )
+
+
+def _source_params(adapter: SourceAdapter) -> dict[str, object]:
+    return {
+        "source_id": adapter.source_id,
+        "name": adapter.name,
+        "kind": adapter.kind,
+        "trust_rank": adapter.trust_rank,
+    }
+
+
+def _read_source(ctx: RunContext, source_id: str) -> SourceRecord | None:
+    rows = ctx.driver.read(_SOURCE_READ, {"source_id": source_id}, timeout_s=30)
+    if not rows:
+        return None
+    row = rows[0]
+    return SourceRecord(
+        source_id=str(row["source_id"]),
+        name=str(row["name"]),
+        kind=str(row["kind"]),  # type: ignore[arg-type]
+        trust_rank=float(row["trust_rank"]),
+        # Neo4j returns its own DateTime type; the model accepts native
+        # datetimes only.
+        last_success_at=_native_datetime(row["last_success_at"]),
+        last_run_id=row["last_run_id"],
+    )
+
+
+def _native_datetime(value: object) -> datetime | None:
+    """The neo4j driver's DateTime converted to a native datetime; None
+    passes through (a source that never ran)."""
+    if value is None:
+        return None
+    to_native = getattr(value, "to_native", None)
+    if to_native is not None:
+        converted = to_native()
+        assert isinstance(converted, datetime)
+        return converted
+    raise TypeError(f"unexpected datetime value from the driver: {type(value).__name__}")

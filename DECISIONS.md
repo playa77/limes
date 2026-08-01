@@ -7,6 +7,153 @@ Nothing here is a status report; unlogged decisions are unmade decisions.
 
 ---
 
+## 2026-08-01 — D-42 (R2) — First-run deterministic links to backbone-absent entities no-op by design
+
+The trace test's original expectation (SAME_AS on the first ingest of an
+unknown LEI) failed against spec-consistent behavior: `link.link` MATCHes
+the `:Entity` node, which does not exist until the loader runs — and the
+loader runs after resolution per §15.3's trace order. The resolver cannot
+create the node (AC-17) or the relationship that would create it (the
+mint-band rationale, §8.8.5, applies to every band whose entity is
+absent). Every stated requirement is satisfied literally: a `:Mention`
+exists for every endpoint; `link` creates SAME_AS when the entity exists;
+minted mentions never link. Not a [CONFLICT] — the corner is production-
+marginal because the structured backbone (GLEIF golden copy) pre-loads the
+LEI space before any extraction, and a version-change reextract re-runs
+resolution against the now-materialized nodes, creating the links. The
+phase's tests assert this: first ingest → zero SAME_AS (documented), and
+the reextract test proves the links materialize on the second pass.
+
+## 2026-08-01 — D-41 (R1) — Extractor seam cast in `composition.py`; the §8.7.1 protocol keeps its literal shape
+
+WP-22's `OpenRouterExtractor.model_id` is a read-only property (the pinned
+model is immutable by design), but the §8.7.1 protocol block declares
+`model_id: str`, which mypy treats as settable — the first real consumer
+(the composition root) hit the mismatch. Resolution: `cast(Extractor, ...)`
+at the seam site with a why-comment, matching the repo's existing pattern
+(`# type: ignore[arg-type]` in `resolve.py`). Rejected alternatives:
+changing the protocol to a `@property` member (deviates from the spec's
+literal §8.7.1 block and would break attribute-style implementers);
+changing the extractor to a settable attribute (removes WP-22's deliberate
+immutability and touches a WP-22 file).
+
+## 2026-08-01 — D-40 (R1) — `resolve_window` gains `settings` and `now` beyond the §8.6.2 signature
+
+The §8.6.2 signature `resolve_window(spec, adapter, source_node)` cannot
+compute `now − LIMES_BACKFILL_DAYS_UNSTRUCTURED`: the days value lives in
+Settings, which the signature does not carry (same class of gap as D-32).
+`settings` is added as a keyword parameter, and `now` as an injectable
+clock for deterministic tests; the first two parameters and the return
+shape are unchanged, and `execute_run` is the only caller.
+
+## 2026-08-01 — Phase 5 invariants (WP-26, WP-27), derived and tagged
+
+Guarded (automated check, named guard installed and green):
+- **G1** — AC-40: `composition.py` is the only constructor of driver,
+  registry, archive, governor, client, extractor, gate → guard
+  `test_composition_root.py::test_ac40_composition_is_the_only_constructor`
+  (grep over `src/limes/` for the constructor calls, tests excluded) plus
+  the roadmap's verification greps run at phase end.
+- **G2** — AC-41: `build_run_context(needs_inference=False)` constructs no
+  extractor, loads no spaCy model, and leaves the inference slots None;
+  `needs_inference=True` fills them all → guard
+  `test_build_run_context_inference_gating`.
+- **G3** — `provision()` runs on every `build_run_context` invocation (and
+  with it the ontology downgrade guard) → guard
+  `test_provision_called_on_every_build`.
+- **G4** — `RunContext`/`GateContext`/`NlqContext` are frozen dataclasses;
+  mutation after construction raises → guard `test_contexts_are_frozen`.
+- **G5** — AC-42: an explicit `since` always wins; an incremental source
+  anchors at `Source.last_success_at`; a never-run incremental source starts
+  at `now − LIMES_BACKFILL_DAYS_UNSTRUCTURED`; a non-incremental source is a
+  full load `(None, None)` → guard `tests/unit/test_pipeline_window.py`
+  (four routing tests, clock injected).
+- **G6** — AC-05: re-running an identical ingest writes zero new nodes and
+  zero new relationships and reports the skip count → guard
+  `test_pipeline_run_structured.py::test_ac05_reingest_writes_nothing_new`.
+- **G7** — Trace 1 end-to-end: a structured run (GISCO adapter, stubbed
+  fetch, fixture payload) archives, normalizes, stamps provenance from the
+  registry, validates, loads, and closes the run record with honest counts
+  → guard `test_trace1_structured_run_end_to_end`.
+- **G8** — Trace 2 end-to-end: a document run (feeds adapter, stubbed
+  fetch, fake gate models, respx-mocked transport, deterministic-key
+  mentions) passes the gate, extracts, caches, resolves, stamps
+  pipeline-known provenance (never the resolver's intermediates), loads
+  with the wired embedder, and reports per-band counts → guard
+  `test_trace2_document_run_end_to_end` and
+  `test_assertion_provenance_stamped_by_pipeline`.
+- **G9** — Gated-out documents are counted (`documents_gated_out`) with
+  their reason; nothing is dropped silently → guard
+  `test_documents_gated_out_are_counted`.
+- **G10** — `BudgetExhausted` closes the run record with `finished_at` set,
+  does not update `:Source.last_success_at`, and re-raises; the remaining
+  documents are logged as queued → guard
+  `test_budget_exhausted_closes_run_cleanly`.
+
+Triggered (review-flag paths, no automated guard):
+- **T1** — `pipeline/run.py` is the sole writer of `:Source` and
+  `:IngestionRun` (§15.2): any diff touching `run.py` that writes another
+  node type, or any new write to `:Source`/`:IngestionRun` outside it, is
+  flagged for review before commit.
+- **T2** — The run's cost figure is a governor `remaining()` delta (D-38),
+  not a new ledger query: any diff that adds a spend read or a second
+  budget-check path to the pipeline is flagged (the governor is the only
+  refusal point, §10).
+
+## 2026-08-01 — D-39 (R2) — Reextract retracts only superseded assertions, after the new load's id set is known
+
+`retract()` needs explicit `assertion_id`s, and the loader skips any
+existing `assertion_id` (AC-05) — so retract-then-load would kill an
+unchanged fact (same digest, now retracted, skipped forever). Reextract
+therefore: extract + resolve the document first, then read the source's
+non-retracted assertions for that document
+(`evidence_document_id = content_hash, source_id = run's source`), retract
+exactly those whose `assertion_id` is not in the new set, then load. A
+failed extraction never retracts anything — the prior record survives as
+the only record. The cache triple (prompt/schema/model) is in the key, so
+reextract with an unchanged version hits the gate's cache check and is a
+no-op — deliberate re-extraction always carries a version. Rejected
+alternative: retract-all-before-load (destroys unchanged facts).
+
+## 2026-08-01 — D-38 (R2) — Run cost is a governor `remaining()` delta; `cache.put` after load
+
+The `:IngestionRun` record's `cost_eur` is the delta of
+`governor.remaining()` across the run, floored at zero: exact for the
+envelope scope (in-process running total), and the ledger-anchored period
+delta for the monthly scope. Rejected alternatives: extending
+`cost/ledger.py` with a per-run read (outside WP-27's file scope, §15.2
+binds ledger writes but the module is WP-06's), or stamping `run_id` in
+the client (WP-22 change). Also: `cache.put` runs **after** the document's
+load succeeds, not before resolution — the roadmap's literal order lets a
+mid-document resolve/load failure leave a cache entry that gates the
+document out on retry, losing its assertions permanently; re-paying
+extraction is the safe failure direction.
+
+## 2026-08-01 — D-37 (R1) — Loader embedder wiring lives in `composition.py` as `embedder_for`
+
+D-26 named the wiring point as WP-26 and `RunContext` has no embedder slot
+(§8.15 shape, AC-44). `composition.embedder_for(settings, client)` returns
+the callable `load(..., embedder=)` receives: `client.embed(labels,
+settings.embedding_model)`, dimension-checked and L2-normalized through
+`normalize_embedding` (the declared-dimension check the loader cannot
+perform). `execute_run` passes `embedder_for(...)` on every load when the
+client exists; structured-only runs pass None and write null embeddings,
+which the §13.3 backfill fills. This is a wiring function, not a fourth
+infrastructure constructor — AC-40's greps are unaffected.
+
+## 2026-08-01 — D-36 (R1) — `NlqContext` defined in `composition.py`; the two build functions there are the construction surface
+
+Following D-22/D-28, `RunContext` lives in `resolution/resolve.py` and
+`GateContext` in `pipeline/gate.py`; `NlqContext` (no consumer module
+exists yet — WP-32 creates `api/deps.py`) is defined in `composition.py`
+next to `build_nlq_context`, the §8.15 home. `build_run_context` stamps
+`source_id`/`source_trust` from the registry — the binding §15.2 authority,
+idempotent over the adapters' own stamps — and the document path re-stamps
+the D-29 intermediates and recomputes `assertion_id` with the real
+`source_id` before load.
+
+---
+
 ## 2026-08-01 — WP-25 [CONFLICT] resolved (human decision) — the `label_embedding` merge stamp
 
 The halt on WP-25 was correct: the §5.3 vector index over `:Entity.label_embedding`
