@@ -6,6 +6,16 @@ gold set, prompts) are recorded in their own changelogs.
 
 ---
 
+## 2026-08-01 — WP-08 (Graph lookups)
+
+- `graph/lookups.py`: `postal_code_to_nuts` per §8.16 — graph query plus
+  in-process LRU cache; misses return `None` and are cached; the
+  correspondence itself lives in `:PostalCode` nodes, never module state
+  (C-07, DD-20, AC-39).
+- 5 integration tests: hit, miss-without-raise, cache hits proven by read
+  counts, LRU eviction, and a real subprocess crossing the process boundary
+  (Doc 2 §12.2 rule 2).
+
 ## 2026-08-01 — WP-07 (Graph loader)
 
 - `graph/loader.py`: `load` (batches ≤500 assertions, §5.6 semantics: node
