@@ -6,6 +6,41 @@ gold set, prompts) are recorded in their own changelogs.
 
 ---
 
+## 2026-08-01 — WP-25a (Embedding merge stamp and backfill)
+
+Closes the seam conflict found while starting WP-25: the §5.3 vector index
+over `:Entity.label_embedding` had no registered writer (§15.2, verified by
+repo-wide search). Human decision (DECISIONS.md 2026-08-01): the fix is a
+missing stamp in the §5.6 merge contract, upstream at one choke point.
+
+- `graph/embeddings.py`: `normalize_embedding` — unit L2 norm with optional
+  dimension check, the single write-side enforcement of the §5.3 cosine
+  contract; zero vectors fail loudly.
+- `graph/queries.py`: `merge_entity` stamps `label_embedding = $label_embedding`
+  on `ON CREATE` only — `ON MATCH` never touches it, mirroring the stored
+  label's immutability (AC-09) — plus the read/stamp statements for the
+  backfill.
+- `graph/loader.py`: `load(..., embedder=None)` — one read per batch
+  establishes which endpoints have no node yet; only those labels are
+  embedded (never re-embedding existing nodes); the loader normalizes
+  defensively; `embedder=None` writes nulls with a logged line.
+  `stamp_missing_embeddings(driver, embedder, batch_size=500)` — the one-shot
+  backfill over `label_embedding IS NULL`, idempotent, the only path that
+  fills a null.
+- Documentation set: Technical Specification v2.1.0 (§5.2, §5.3, §5.6, §8.3,
+  §13.3, §15.2, revision history), Implementation Roadmap v2.1.0 (WP-25a
+  entry; phase 4, dependencies, critical path, file ownership updated),
+  Design Document companion references, README and AGENTS.md filename
+  references; `tools/check_docs.py` external-type set gains `Callable`.
+- 6 unit tests (normalization contract) and 8 integration tests through the
+  production `load` path (ON CREATE stamping, re-merge immutability, no
+  re-embedding, nulls, backfill exactness and idempotency, embedder contract
+  violations, defensive normalization).
+- Baseline deviation discovered, left untouched (out of scope): `ruff format
+  --check` fails on `src/limes/graph/lookups.py:28` on the pristine main.
+
+---
+
 ## 2026-08-01 — WP-24 (Gate: spaCy NER, passage selection, idempotency)
 
 - `pipeline/gate.py`: `GateContext` (settings, driver, nlp_de, nlp_en — the

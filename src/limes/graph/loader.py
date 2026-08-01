@@ -1,4 +1,4 @@
-# src/limes/graph/loader.py | v1.0.0 | introduced by WP-07
+# src/limes/graph/loader.py | v1.1.0 | introduced by WP-07, amended by WP-25a
 """The sole writer of ontology-typed nodes, relationships, and lookup rows
 (Technical Specification §15.2, DD-19).
 
@@ -10,6 +10,16 @@ same `source_id`, non-destructive re-merge (AC-05, AC-06, AC-08, AC-09).
 An assertion whose endpoint lacks an `entity_id` is rejected as
 `ENDPOINT_UNIDENTIFIED`, counted, never written (AC-10).
 
+Since WP-25a, the §5.6 merge stamp includes `label_embedding = embed(label)`
+on node creation — the property that populates the §5.3 vector index. The
+embedder is injected as a plain callable so the loader stays free of any
+inference dependency: `load` computes which endpoints have no node yet (one
+read per batch), embeds exactly those labels, and normalizes defensively
+(L2 — the index declares cosine). Endpoints whose node already exists are
+never re-embedded; without an embedder the omission is logged, and the
+one-shot `stamp_missing_embeddings` backfill is the only path that fills a
+null embedding (nodes created before the stamp existed).
+
 The batch transaction runs through the driver's underlying session rather
 than `GraphDriver.write_batch` because honest per-statement outcomes
 (written/skipped/closed) are required, and `write_batch` returns only
@@ -19,6 +29,7 @@ schema.py: `GraphDriver._driver` is the only seam into the raw driver.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import UTC, datetime
 from typing import Any
 
@@ -29,6 +40,7 @@ from pydantic import BaseModel
 from limes.errors import GraphWriteError
 from limes.graph import queries
 from limes.graph.driver import GraphDriver
+from limes.graph.embeddings import normalize_embedding
 from limes.ontology.model import Ontology
 from limes.ontology.validator import validate_assertions
 from limes.types import Assertion, EntityEndpoint, LookupRow, ValidationError
@@ -63,6 +75,7 @@ def load(
     ontology: Ontology,
     standalone_entities: list[EntityEndpoint] | None = None,
     lookup_rows: list[LookupRow] | None = None,
+    embedder: Callable[[list[str]], list[list[float]]] | None = None,
 ) -> LoadResult:
     """Validate, partition, and write one batch of assertions bitemporally.
 
@@ -70,6 +83,14 @@ def load(
     dropped. Assertions are processed in transactions of at most
     `BATCH_SIZE`; standalone entities and lookup rows ride with the first
     batch's transaction.
+
+    The embedder contract (WP-25a): `embedder(labels)` returns one vector
+    per input text, in order, each exactly `LIMES_EMBEDDING_DIMENSIONS`
+    long and intended for the §5.3 cosine index. The loader re-normalizes
+    every vector defensively; a length mismatch between labels and vectors
+    is a programming error and raises. When `embedder` is None — or an
+    endpoint's node already exists — no embedding is computed or stamped,
+    and the omission is logged.
     """
     result = LoadResult()
     valid, rejected = _partition(assertions, ontology)
@@ -95,9 +116,52 @@ def load(
             ontology,
             standalone if index == 0 else [],
             lookup if index == 0 else [],
+            embedder,
             result,
         )
     return result
+
+
+def stamp_missing_embeddings(
+    driver: GraphDriver,
+    embedder: Callable[[list[str]], list[list[float]]],
+    batch_size: int = 500,
+) -> int:
+    """One-shot backfill: stamp `label_embedding` on every `:Entity` whose
+    embedding is null (nodes created before the §5.6 merge stamp existed, or
+    by a `load` without an embedder).
+
+    Pages over the nulls in `batch_size` chunks, embeds each page's labels
+    in one call, and stamps. Idempotent: a second run finds no nulls and
+    returns zero. This is the only path that fills a null embedding; the
+    merge statement itself never touches a matched node's embedding.
+    """
+    stamped = 0
+    while True:
+        rows = driver.read(queries.MISSING_EMBEDDINGS_READ, {"batch_size": batch_size}, 60)
+        if not rows:
+            break
+        labels = [str(row["label"]) for row in rows]
+        vectors = embedder(labels)
+        if len(vectors) != len(labels):
+            raise ValueError(f"embedder returned {len(vectors)} vectors for {len(labels)} labels")
+        statements = [
+            (
+                queries.EMBEDDING_STAMP,
+                {"entity_id": str(row["entity_id"]), "label_embedding": normalize_embedding(v)},
+            )
+            for row, v in zip(rows, vectors, strict=True)
+        ]
+        driver.write_batch(statements)
+        stamped += len(rows)
+        logger.info(
+            "embedding backfill stamped",
+            stamped_in_page=len(rows),
+            total=stamped,
+        )
+        if len(rows) < batch_size:
+            break
+    return stamped
 
 
 def retract(driver: GraphDriver, assertion_ids: list[str], at: datetime) -> int:
@@ -211,6 +275,7 @@ def _load_batch(
     ontology: Ontology,
     standalone: list[EntityEndpoint],
     lookup_rows: list[LookupRow],
+    embedder: Callable[[list[str]], list[list[float]]] | None,
     result: LoadResult,
 ) -> None:
     """One batch in one transaction: nodes, lookup rows, relationships, and
@@ -219,6 +284,7 @@ def _load_batch(
     §5.7)."""
     now = datetime.now(UTC)
     endpoints = _distinct_endpoints(batch, standalone)
+    embeddings = _embeddings_for(driver, endpoints, embedder)
 
     by_labels: dict[tuple[str, ...], list[EntityEndpoint]] = {}
     for endpoint in endpoints:
@@ -230,14 +296,13 @@ def _load_batch(
         for endpoint in group:
             key_prop = _key_property(endpoint, ontology)
             key_value = (
-                endpoint.deterministic_key[1]
-                if endpoint.deterministic_key is not None
-                else None
+                endpoint.deterministic_key[1] if endpoint.deterministic_key is not None else None
             )
             params: dict[str, Any] = {
                 "entity_id": endpoint.entity_id,
                 "label": endpoint.label,
                 "aliases": endpoint.aliases,
+                "label_embedding": embeddings.get(endpoint.entity_id),
                 "ontology_version": ontology.version,
                 "created_at": now,
                 "key_value": key_value,
@@ -307,3 +372,41 @@ def _load_batch(
 
     result.nodes_created += created_in_batch
     result.nodes_matched += max(0, len(endpoints) - created_in_batch)
+
+
+def _embeddings_for(
+    driver: GraphDriver,
+    endpoints: list[EntityEndpoint],
+    embedder: Callable[[list[str]], list[list[float]]] | None,
+) -> dict[str, list[float]]:
+    """`entity_id -> label_embedding` for the endpoints whose node does not
+    exist yet (WP-25a §5.6 stamp).
+
+    One read per batch establishes which ids are absent; existing nodes are
+    never re-embedded (their embedding is immutable on re-merge). The
+    embedder output is normalized defensively — the §5.3 index declares
+    cosine, and the loader is the merge choke point that must not stamp an
+    unnormalized vector. Without an embedder, new nodes get a null embedding
+    and the omission is logged with the entity count — visible, never
+    silent; `stamp_missing_embeddings` is the backfill for exactly this
+    case."""
+    if embedder is None:
+        if endpoints:
+            logger.info(
+                "load without embedder; new nodes carry null label_embedding",
+                entities=len(endpoints),
+            )
+        return {}
+    ids = [endpoint.entity_id for endpoint in endpoints]
+    rows = driver.read(queries.MISSING_ENTITY_IDS, {"ids": ids}, 60)
+    existing = {str(row["entity_id"]) for row in rows}
+    missing = [endpoint for endpoint in endpoints if endpoint.entity_id not in existing]
+    if not missing:
+        return {}
+    vectors = embedder([endpoint.label for endpoint in missing])
+    if len(vectors) != len(missing):
+        raise ValueError(f"embedder returned {len(vectors)} vectors for {len(missing)} labels")
+    return {
+        endpoint.entity_id: normalize_embedding(vector)
+        for endpoint, vector in zip(missing, vectors, strict=True)
+    }

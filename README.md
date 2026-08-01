@@ -159,8 +159,8 @@ Properties of the available data, not defects. Read the coverage report before d
 | Document | Location |
 |---|---|
 | Design Document v2.0.0 | `docs/LIMES_Design_Document_v2.0.0.md` |
-| Technical Specification v2.0.0 | `docs/LIMES_Technical_Specification_v2.0.0.md` |
-| Implementation Roadmap v2.0.0 | `docs/LIMES_Implementation_Roadmap_v2.0.0.md` |
+| Technical Specification v2.1.0 | `docs/LIMES_Technical_Specification_v2.1.0.md` |
+| Implementation Roadmap v2.1.0 | `docs/LIMES_Implementation_Roadmap_v2.1.0.md` |
 | Coding agent contract | `AGENTS.md` |
 
 The v1.x document set is withdrawn. It passed every internal consistency check and still stalled implementation three times, because those checks all pass for a specification whose modules cannot reach each other. Technical Specification §15 — a seam register derived from end-to-end call traces — is the artifact whose absence allowed it.

@@ -7,6 +7,61 @@ Nothing here is a status report; unlogged decisions are unmade decisions.
 
 ---
 
+## 2026-08-01 — WP-25 [CONFLICT] resolved (human decision) — the `label_embedding` merge stamp
+
+The halt on WP-25 was correct: the §5.3 vector index over `:Entity.label_embedding`
+had no writer in §15.2 or in any WP task list (rg over docs and code finds only
+the index definition), so `candidates()` would query an always-empty index and
+every key-less mention would mint a fresh entity against the backbone. The
+resolution is the human's, in the human's own words, 2026-08-01: this is not a
+WP-25 code fix but a missing stamp in the §5.6 merge contract, resolved
+upstream at one choke point. The merge stamp includes
+`label_embedding = embed(label)` on ON CREATE, and re-stamps on ON MATCH only
+when `label` changed (the stored label is immutable on merge, AC-09, so the
+embedding is immutable in practice). §15.2 attributes the property to the
+merge choke point through which every entity creation — structured loads and
+resolver-approved mints alike — passes, not to a new eighth writer. The
+resolver remains strictly read-only against the index; AC-17, §8.8.3, and
+Doc 1 §4.6 stay intact. A one-shot backfill walks `(:Entity) WHERE
+label_embedding IS NULL`, computes, stamps — a migration, not part of WP-25.
+Embeddings must be exactly `LIMES_EMBEDDING_DIMENSIONS` long and L2-normalized
+for the §5.3 cosine metric, or `queryNodes` similarity is invalid and
+candidates() silently under-recalls. Implemented as Technical Specification
+v2.1.0 (§5.2, §5.3, §5.6, §8.3, §13.3, §15.2) and Implementation Roadmap
+v2.1.0 (new upstream WP-25a). Resume gate: WP-25 resumes with the stamp
+registered and the backfill path in place; integration tests populate the
+index through the production `load` path with an injected embedder.
+
+## 2026-08-01 — D-26 (R1) — Loader embedder seam is a plain callable; the loader normalizes defensively
+
+`load(..., embedder: Callable[[list[str]], list[list[float]]] | None = None)`
+returns one vector per label, in order, each exactly
+`LIMES_EMBEDDING_DIMENSIONS` long; the dimension check lives at the wiring
+point (WP-26), because the loader never sees Settings. The loader re-normalizes
+(L2) whatever it stamps — `normalize_embedding` in the new `graph/embeddings.py`
+— because the merge choke point must not stamp an unnormalized vector into a
+cosine index. `embedder=None` writes null embeddings with a logged line; the
+backfill `stamp_missing_embeddings` is the only path that fills a null.
+Rejected alternatives: a named `Embedder` type (AC-44 pins every §8 signature
+type to §5.5/§8.15); a client inside the loader (the loader stays
+inference-free); re-embedding existing endpoints (paid, and the embedding is
+immutable on re-merge anyway — one read per batch establishes which endpoints
+have no node yet).
+
+## 2026-08-01 — D-27 (R1) — Spec amendment mechanics: v2.1.0 renames both amended documents
+
+Technical Specification and Implementation Roadmap move to v2.1.0 with their
+filenames (the repo convention embeds the version in the name); references in
+README, AGENTS.md, and the Design Document companion line are updated. The
+Design Document stays v2.0.0 (its companion line and revision history record
+the reference update; no substantive change). `tools/check_docs.py` gains
+`Callable` in its external-type set, required by the amended §8.3 signature.
+Pre-existing baseline deviation discovered during verification: `ruff format
+--check` fails on `src/limes/graph/lookups.py:28` on the pristine main —
+untouched here (out of scope), flagged for the human.
+
+---
+
 ## 2026-08-01 — Approval — phase-3-v1.0.0 (WP-21…WP-24)
 
 The human approved phase-3-v1.0.0 (unstructured pipeline: GDELT/feeds

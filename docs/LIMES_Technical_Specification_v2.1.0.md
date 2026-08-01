@@ -1,20 +1,21 @@
-<!-- LIMES — Technical Specification | v2.0.0 | 2026-07-28 | Status: Draft -->
+<!-- LIMES — Technical Specification | v2.1.0 | 2026-08-01 | Status: Draft -->
 
 # LIMES — Technical Specification
 
 | Field | Value |
 |---|---|
 | Document | LIMES — Technical Specification (Document 2 of 3) |
-| Version | 2.0.0 |
-| Date | 2026-07-28 |
+| Version | 2.1.0 |
+| Date | 2026-08-01 |
 | Status | Draft |
 | Depends on | LIMES — Design Document v2.0.0 (all sections) |
-| Supersedes | v1.0.0 – v1.3.0, all withdrawn |
+| Supersedes | v2.0.0 (amended in §5.2, §5.3, §5.6, §8.3, §13.3, §15.2); v1.0.0 – v1.3.0, all withdrawn |
 
 ## Revision History
 
 | Version | Date | Changes |
 |---|---|---|
+| 2.1.0 | 2026-08-01 | Embedding merge-stamp amendment (WP-25a). §5.6 stamps `label_embedding = embed(label)` in the loader's merge — the single choke point every entity creation passes through — closing the seam conflict found during WP-25: the §5.3 vector index previously had no registered writer. §5.2 and §15.2 attribute the property to the shared merge routine, not a new writer; §8.3 documents the `embedder` seam and the one-shot backfill `stamp_missing_embeddings`; §13.3 orders the backfill before the first unstructured backfill. The resolver remains read-only against the index (§8.8.3). |
 | 2.0.0 | 2026-07-28 | Clean re-issue. Resolves all six open questions in Design Document v2.0.0 §11.2 and all fifteen defects found in the v1.x set. §15 is new and mandatory: a seam register derived from end-to-end call traces, which is the artifact whose absence allowed the v1.x defects. |
 
 ### Resolution of Design Document v2.0.0 §11.2
@@ -314,7 +315,7 @@ Self-validation rejects: a relation naming an undeclared type in domain or range
 
 Canonical entities carry concrete type, supertype, and `:Entity`: a corporation is `:Entity:Agent:Corporation`. Mentions carry `:Mention` plus inferred type. System nodes carry one label and never `:Entity`.
 
-**Node ownership is partitioned and exclusive.** The complete table is in §15.2. Summary: `graph/loader.py` writes ontology-typed nodes and relationships plus lookup rows; `resolution/link.py` writes `:Mention` and `SAME_AS`; `pipeline/run.py` writes `:Source` and `:IngestionRun`; `cost/ledger.py` writes `:CostLedgerEntry`; `extraction/cache.py` writes `:ExtractionCacheEntry`; `api/routers/saved_queries.py` writes `:SavedQuery`; `cli/main.py` writes `:AdvisoryLock`. No other module writes any node. **Source adapters write nothing.**
+**Node ownership is partitioned and exclusive.** The complete table is in §15.2. Summary: `graph/loader.py` writes ontology-typed nodes and relationships plus lookup rows and the `label_embedding` merge stamp (§5.6); `resolution/link.py` writes `:Mention` and `SAME_AS`; `pipeline/run.py` writes `:Source` and `:IngestionRun`; `cost/ledger.py` writes `:CostLedgerEntry`; `extraction/cache.py` writes `:ExtractionCacheEntry`; `api/routers/saved_queries.py` writes `:SavedQuery`; `cli/main.py` writes `:AdvisoryLock`. No other module writes any node. **Source adapters write nothing.**
 
 ### 5.3 Constraints and Indexes
 
@@ -355,6 +356,8 @@ CREATE VECTOR INDEX entity_label_embedding IF NOT EXISTS
   FOR (n:Entity) ON (n.label_embedding)
   OPTIONS { indexConfig: { `vector.dimensions`: $dims, `vector.similarity_function`: 'cosine' } };
 ```
+
+The index is populated by the merge stamp of §5.6 — every entity creation passes through the loader's merge, which is the choke point that stamps `label_embedding` — and by the one-shot backfill `stamp_missing_embeddings` (§8.3); there is no other writer. An empty index is not an error: resolution falls through to minting. A partially populated index silently under-recalls, which is why the backfill runs before the first unstructured backfill (§13.3) and why `load` without an `embedder` logs the omission.
 
 Relationship property indexes on `valid_from`, `valid_to`, `recorded_at` are generated from the ontology for every `temporal: true` relation.
 
@@ -565,7 +568,7 @@ Three further types are defined at their owning module rather than here, because
 
 Per batch, in one transaction:
 
-1. **Materialize endpoint nodes.** For each `EntityEndpoint`, merge on `entity_id` and apply the concrete type label plus every supertype from `Ontology.labels_for`. `ON CREATE` stamps `label`, the deterministic key property, `ontology_version`, `created_at`. `ON MATCH` adds unseen aliases and nothing else — an existing label, key, and original ontology version are never overwritten, so a lower-trust source cannot degrade an entity a higher-trust source established.
+1. **Materialize endpoint nodes.** For each `EntityEndpoint`, merge on `entity_id` and apply the concrete type label plus every supertype from `Ontology.labels_for`. `ON CREATE` stamps `label`, the deterministic key property, `label_embedding` — the L2-normalized embedding of the label, exactly `LIMES_EMBEDDING_DIMENSIONS` long, cosine-compatible with the §5.3 index — `ontology_version`, `created_at`. `ON MATCH` adds unseen aliases and nothing else — an existing label, key, `label_embedding`, and original ontology version are never overwritten, so a lower-trust source cannot degrade an entity a higher-trust source established. The embedding is a function of the stored label, which the merge never changes, so it is immutable on re-merge; a node created before this contract (null `label_embedding`) is stamped by the one-shot backfill (§8.3) — the only path that fills a null embedding.
 2. **Materialize lookup rows** as system nodes per `LookupRow.kind`.
 3. If a relationship with the same `assertion_id` exists, skip. This is the idempotency path.
 4. Otherwise create it with `recorded_at` now and `valid_from` from the source.
@@ -714,10 +717,14 @@ class LoadResult(BaseModel):
 
 def load(driver: GraphDriver, assertions: list[Assertion], ontology: Ontology,
          standalone_entities: list[EntityEndpoint] | None = None,
-         lookup_rows: list[LookupRow] | None = None) -> LoadResult: ...
+         lookup_rows: list[LookupRow] | None = None,
+         embedder: Callable[[list[str]], list[list[float]]] | None = None) -> LoadResult: ...
 def retract(driver: GraphDriver, assertion_ids: list[str], at: datetime) -> int: ...
+def stamp_missing_embeddings(driver: GraphDriver,
+                             embedder: Callable[[list[str]], list[list[float]]],
+                             batch_size: int = 500) -> int: ...
 ```
-`GraphDriver.read` opens sessions in read access mode (§7.2). `load` applies §5.6 in batches of at most 500 assertions per transaction and is the sole writer of ontology-typed nodes, relationships, and lookup rows. An assertion whose endpoint lacks an `entity_id` is rejected as `ENDPOINT_UNIDENTIFIED`, counted, never written.
+`GraphDriver.read` opens sessions in read access mode (§7.2). `load` applies §5.6 in batches of at most 500 assertions per transaction and is the sole writer of ontology-typed nodes, relationships, lookup rows — and, since v2.1.0, the `label_embedding` merge stamp. The `embedder` contract: one vector per input text, in order, each exactly `LIMES_EMBEDDING_DIMENSIONS` long; `load` embeds only endpoints whose node does not exist yet (one read per batch), normalizes every vector defensively, and logs when it runs without an `embedder` — new nodes then carry a null `label_embedding`. `stamp_missing_embeddings` is the one-shot backfill: it pages over `(:Entity) WHERE label_embedding IS NULL`, embeds and stamps each page, returns the count stamped, and is idempotent. An assertion whose endpoint lacks an `entity_id` is rejected as `ENDPOINT_UNIDENTIFIED`, counted, never written.
 
 ### 8.4 Archive
 ```python
@@ -1108,7 +1115,7 @@ Base file: four services, one internal network, volumes `neo4j_data`, `neo4j_log
 11. make evaluate                        # records the baseline
 ```
 
-Steps 4–6 must precede 7–8: extraction against an empty backbone produces mentions with nothing to resolve against, and the work is paid for twice. Step 9 precedes 10 precedes 11 — a measurement taken before the corpus exists is not a measurement. There is no separate `bootstrap-db` step; C-01 offers no roles to create, and provisioning happens on every context build.
+Steps 4–6 must precede 7–8: extraction against an empty backbone produces mentions with nothing to resolve against, and the work is paid for twice. After step 6 and before step 7, run the one-shot embedding backfill (`stamp_missing_embeddings`, §8.3) once, so the structured backbone is fully indexed before the first unstructured backfill — a partially populated index silently under-recalls. Step 9 precedes 10 precedes 11 — a measurement taken before the corpus exists is not a measurement. There is no separate `bootstrap-db` step; C-01 offers no roles to create, and provisioning happens on every context build.
 
 ### 13.4 Neo4j Runtime
 Heap 2 GB initial and max, page cache 2 GB, transaction memory cap 512 MB, transaction timeout 120 s. Total resident near 4.5 GB, consistent with Design Document §8.2.
@@ -1208,7 +1215,8 @@ Every context type used in a signature anywhere in §8 is defined in §8.15: `Ru
 | `NormalizedRecord.content_hash` | `execute_run`, from `ArchiveStore.put` |
 | `ExtractedAssertion` → `Assertion` | `resolution/resolve.py::resolve_assertions` |
 | `:Mention`, `SAME_AS` | `resolution/link.py` |
-| Ontology-typed nodes and relationships | `graph/loader.py::load` |
+| Ontology-typed nodes and relationships; `label_embedding` merge stamp | `graph/loader.py::load` |
+| `label_embedding` backfill (nulls only) | `graph/loader.py::stamp_missing_embeddings` |
 | `:PostalCode` and lookup rows | `graph/loader.py::load` |
 | Lookup reads | `graph/lookups.py` |
 | `:ExtractionCacheEntry` | `extraction/cache.py` |
@@ -1225,6 +1233,8 @@ Every context type used in a signature anywhere in §8 is defined in §8.15: `Ru
 | `nlq/service.py::answer` | `api/routers/query.py` |
 | `coverage/report.py`, `coverage/diagnose.py` | `api/routers/query.py` |
 | FastAPI application | `api/main.py`, entry point; constructs settings, ontology, driver |
+
+The `label_embedding` property is part of the merge choke point's stamp (§5.6): every entity creation — structured loads and resolver-approved mints alike — passes through `graph/loader.py::load`, so the property is attributed to the shared routine through which all writers create entities, not to an eighth writer. Its null-filling path is the one-shot backfill `stamp_missing_embeddings`, also in `graph/loader.py`; the resolver only reads the index.
 
 ### 15.3 Call Traces
 

@@ -1,21 +1,22 @@
-<!-- LIMES — Implementation Roadmap | v2.0.0 | 2026-07-28 | Status: Draft -->
+<!-- LIMES — Implementation Roadmap | v2.1.0 | 2026-08-01 | Status: Draft -->
 
 # LIMES — Implementation Roadmap
 
 | Field | Value |
 |---|---|
 | Document | LIMES — Implementation Roadmap (Document 3 of 3) |
-| Version | 2.0.0 |
-| Date | 2026-07-28 |
+| Version | 2.1.0 |
+| Date | 2026-08-01 |
 | Status | Draft |
-| Depends on | LIMES — Design Document v2.0.0 (all sections); LIMES — Technical Specification v2.0.0 (all sections) |
-| Supersedes | v1.x roadmap, withdrawn with the v1.x document set |
+| Depends on | LIMES — Design Document v2.0.0 (all sections); LIMES — Technical Specification v2.1.0 (all sections) |
+| Supersedes | v2.0.0 (WP-25a added); v1.x roadmap, withdrawn with the v1.x document set |
 
 ## Revision History
 
 | Version | Date | Changes |
 |---|---|---|
-| 2.0.0 | 2026-07-28 | Clean re-issue for the v2.0.0 document set. Decomposes Technical Specification v2.0.0 §1 scope items S-01…S-28 into 39 work packages across 11 phases. Every WP references exact Doc 1 / Doc 2 sections that fully define it; no WP invents specification beyond Docs 1–2. Dependency graph is acyclic and verified. Coverage matrix accounts for all 28 scope items and every module in Doc 2 §2. |
+| 2.1.0 | 2026-08-01 | WP-25a added (embedding merge stamp and backfill), upstream of WP-25, per the WP-25 seam-conflict resolution recorded in DECISIONS.md. WP-25 now depends on WP-25a; phase 4, the critical path, and the file-ownership table updated. The amendments to Technical Specification v2.1.0 (§5.2, §5.3, §5.6, §8.3, §13.3, §15.2) are the spec this roadmap now decomposes. |
+| 2.0.0 | 2026-07-28 | Clean re-issue for the v2.0.0 document set (superseded by the v2.1.0 amendment below). Decomposes Technical Specification v2.0.0 §1 scope items S-01…S-28 into 39 work packages across 11 phases. Every WP references exact Doc 1 / Doc 2 sections that fully define it; no WP invents specification beyond Docs 1–2. Dependency graph is acyclic and verified. Coverage matrix accounts for all 28 scope items and every module in Doc 2 §2. |
 
 ---
 
@@ -23,7 +24,7 @@
 
 ### 1.1 Implementation Strategy
 
-The project is decomposed into **39 work packages (WPs)** across **11 phases**. Each WP is scoped to be completable in a single coding-agent session: one cohesive concern, a bounded file set, objective acceptance criteria, and a verification procedure that produces a pass/fail signal.
+The project is decomposed into **40 work packages (WPs)** across **11 phases**. Each WP is scoped to be completable in a single coding-agent session: one cohesive concern, a bounded file set, objective acceptance criteria, and a verification procedure that produces a pass/fail signal.
 
 The fundamental ordering principle mirrors the system's own architecture (Doc 1 §3.1): **strict downward dependency**. Foundation layers (configuration, ontology, graph driver) are built before storage layers, storage before sources, sources before pipeline, pipeline before CLI, CLI before API, API before UI. The composition root (Doc 2 §8.15) is the keystone: it is built only after every component it constructs exists, and nothing downstream of it can be built until it is in place.
 
@@ -35,7 +36,7 @@ The fundamental ordering principle mirrors the system's own architecture (Doc 1 
 | 1 | WP-05 – WP-08 | Storage and cost: archive, ledger/governor, loader, lookups | Graph loader writes bitemporal assertions; lookups cross process boundaries |
 | 2 | WP-09 – WP-20 | Source layer: protocol, registry, 11 structured adapters + normalizer | All structured adapters produce correct records from fixtures |
 | 3 | WP-21 – WP-24 | Unstructured pipeline: feeds/GDELT, extractor, cache, gate | Gate filters documents; extractor returns pre-resolution assertions |
-| 4 | WP-25 | Entity resolution | Mentions resolve to identified endpoints through all four bands |
+| 4 | WP-25a, WP-25 | Embedding merge stamp + entity resolution | The `label_embedding` merge stamp and backfill (§5.6, v2.1.0) are registered; mentions resolve to identified endpoints through all four bands |
 | 5 | WP-26 – WP-27 | Composition root and pipeline orchestration | `execute_run` traces 1 and 2 run end-to-end against a Neo4j container |
 | 6 | WP-28 – WP-31 | CLI: ingest/backfill/reextract/backup, model selection, evaluation, migration | All `make` targets from Doc 2 §8.14 available and functional |
 | 7 | WP-32 – WP-35 | Query API: foundation, NL-to-Cypher, coverage, query routers | Trace 3 (`POST /query/nl`) runs end-to-end |
@@ -131,7 +132,8 @@ The agent runs this tool after every WP. A failure is a `[CONFLICT]` and halts t
 | WP-22 | Extractor: protocol, OpenRouter client, schema, prompts | 3 | WP-02, WP-03, WP-06 | WP-21, WP-23 |
 | WP-23 | Extraction cache | 3 | WP-02, WP-04 | WP-21, WP-22 |
 | WP-24 | Gate: spaCy NER, passage selection, idempotency | 3 | WP-02, WP-23 | WP-25 |
-| WP-25 | Entity resolution | 4 | WP-03, WP-04, WP-22 | WP-24 |
+| WP-25a | Embedding merge stamp and backfill | 4 | WP-04, WP-07 | WP-25 |
+| WP-25 | Entity resolution | 4 | WP-03, WP-04, WP-22, WP-25a | WP-24 |
 | WP-26 | Composition root | 5 | WP-02, WP-03, WP-04, WP-05, WP-06, WP-09, WP-22, WP-24, WP-25 | — |
 | WP-27 | Pipeline run orchestration + window resolution | 5 | WP-07, WP-09, WP-22, WP-24, WP-25, WP-26 | — |
 | WP-28 | CLI core: ingest, backfill, reextract, backup | 6 | WP-26, WP-27 | WP-29, WP-30, WP-31 |
@@ -174,7 +176,7 @@ No WP at level *n* depends on a WP at level ≥ *n*. **The graph is acyclic.**
 The longest dependency chain determines the minimum sequential execution:
 
 ```
-WP-01 → WP-02 → WP-03 → WP-04 → WP-06 → WP-22 → WP-25 → WP-26 → WP-27 → WP-28 → WP-38 → WP-39
+WP-01 → WP-02 → WP-03 → WP-04 → WP-06 → WP-22 → WP-25a → WP-25 → WP-26 → WP-27 → WP-28 → WP-38 → WP-39
 ```
 
 12 WPs on the critical path. The remaining 27 WPs can be parallelized across multiple agents where the dependency graph permits.
@@ -217,7 +219,7 @@ WP-01 → WP-02 → WP-03 → WP-04 → WP-06 → WP-22 → WP-25 → WP-26 → 
 2. Write `pyproject.toml` with all dependencies from Doc 2 §3, pinned to the stated minimum constraints. Configure `ruff` with line length 100, `mypy` with `strict = true` for `src/limes/`.
 3. Write `README.md` including: project name, one-paragraph description from Doc 1 §1.1, and the personal-artifact disclaimer from Doc 1 §7.5 verbatim.
 4. Write `AGENTS.md` with: instruction to read Docs 1–3 before any work, the Definition of Done from §2.4 of this document, the test-construction rule from Doc 2 §12.2, and the `[CONFLICT]` reporting protocol.
-5. Write `tools/check_docs.py` implementing the three checks from §2.5 of this document. The tool reads `docs/LIMES_Design_Document_v2.0.0.md` and `docs/LIMES_Technical_Specification_v2.0.0.md` and validates: (a) every type name in a `§8` signature has a definition in `§5.5` or `§8.15`; (b) every module listed in `§2` has at least one entry in `§15.2`; (c) the tool exits non-zero with a precise message on failure.
+5. Write `tools/check_docs.py` implementing the three checks from §2.5 of this document. The tool reads `docs/LIMES_Design_Document_v2.0.0.md` and `docs/LIMES_Technical_Specification_v2.1.0.md` and validates: (a) every type name in a `§8` signature has a definition in `§5.5` or `§8.15`; (b) every module listed in `§2` has at least one entry in `§15.2`; (c) the tool exits non-zero with a precise message on failure.
 6. Write `.gitignore` for Python, Docker, Neo4j data, and `.env`.
 7. Run `uv lock` to generate `uv.lock`.
 
@@ -1430,12 +1432,72 @@ python tools/check_docs.py
 
 ---
 
+### WP-25a — Embedding Merge Stamp and Backfill
+
+| Field | Value |
+|---|---|
+| Phase | 4 |
+| Depends on | WP-04, WP-07 |
+| Sizing | Single session |
+
+**Objective:** Close the missing-writer seam for the §5.3 `entity_label_embedding`
+vector index, which the phase-4 seam-conflict resolution (DECISIONS.md,
+2026-08-01) found to have no registered writer: the loader's merge becomes
+the single choke point that stamps `label_embedding = embed(label)` on every
+entity node it creates, and a one-shot backfill stamps nodes created before
+the stamp existed. WP-25 depends on this WP; its candidate retrieval reads
+the index and never writes it.
+
+**Spec references:** Doc 2 §5.2, §5.3, §5.6, §8.3, §13.3, §15.2 (amended in
+v2.1.0).
+
+**Scope — files created:**
+- `src/limes/graph/embeddings.py` — `normalize_embedding`
+- `tests/fixtures/embeddings.py`, `tests/unit/test_graph_embeddings.py`,
+  `tests/integration/test_embedding_stamp.py`
+
+**Scope — files modified:** `src/limes/graph/queries.py` and
+`src/limes/graph/loader.py` (the §5.6 merge stamp and the backfill); the
+documentation set (Technical Specification v2.1.0, Implementation Roadmap
+v2.1.0, Design Document companion reference, README, AGENTS.md file
+references).
+
+**Task list:**
+1. Implement `graph/embeddings.py::normalize_embedding(vector, dimensions=None)` — unit L2 norm, `ValueError` on zero norm and on a dimension mismatch when declared. The §5.3 index declares cosine; unnormalized vectors silently under-recall, which is the failure class the seam conflict was about.
+2. Extend `graph/queries.py::merge_entity` to stamp `label_embedding = $label_embedding` on `ON CREATE` only; `ON MATCH` never touches it — the stored label is immutable on merge (AC-09) and the embedding is a function of the stored label. Add the read and stamp statements for the backfill.
+3. Extend `graph/loader.py::load(..., embedder=None)`: one read per batch establishes which endpoints have no node yet; `embedder(labels)` runs only on those (one vector per label, in order), the loader normalizes defensively, and the merge stamps the result. Existing endpoints are never re-embedded; `embedder=None` logs the omission.
+4. Implement `graph/loader.py::stamp_missing_embeddings(driver, embedder, batch_size=500)` — pages over `(:Entity) WHERE label_embedding IS NULL`, embeds, stamps, returns the count. Idempotent; the only path that fills a null embedding.
+5. Integration tests through the production `load` path: ON CREATE stamping; re-merge immutability; no re-embedding of existing nodes; nulls without an embedder; backfill fills exactly the nulls and is idempotent; embedder contract violations raise.
+6. Amend Technical Specification to v2.1.0 (§5.2, §5.3, §5.6, §8.3, §13.3, §15.2, revision history), the Implementation Roadmap to v2.1.0 (this WP), and the Design Document companion reference; record the resolution in DECISIONS.md.
+
+**Contracts consumed:** `GraphDriver` (WP-04) — read and batch-write seams; `load`/`merge_entity` (WP-07).
+
+**Contracts produced:**
+- `load(..., embedder=...)` — consumed by WP-26 (embedder wiring), WP-27 (every load in `execute_run` must pass the wired embedder)
+- `stamp_missing_embeddings()` — consumed by the bootstrap (§13.3) and by WP-38 (Makefile target wiring)
+- `normalize_embedding()` — consumed by WP-25 (`blocking.py`, query-vector normalization)
+
+**Acceptance criteria:**
+- Every entity node created by `load` with an embedder carries a normalized `label_embedding`; a re-merge never changes it.
+- `stamp_missing_embeddings` fills exactly the nulls and returns the count; a second run stamps zero.
+- `embedder=None` writes nulls with a logged line, never silently.
+
+**Verification:**
+```bash
+ruff check src/limes/graph/embeddings.py src/limes/graph/loader.py src/limes/graph/queries.py
+mypy src/limes/graph/embeddings.py src/limes/graph/loader.py src/limes/graph/queries.py
+pytest tests/unit/test_graph_embeddings.py tests/integration/test_embedding_stamp.py -v
+python tools/check_docs.py
+```
+
+---
+
 ### WP-25 — Entity Resolution
 
 | Field | Value |
 |---|---|
 | Phase | 4 |
-| Depends on | WP-03, WP-04, WP-22 |
+| Depends on | WP-03, WP-04, WP-22, WP-25a |
 | Sizing | Single session |
 
 **Objective:** Implement the entity resolution pipeline that converts pre-resolution `ExtractedAssertion` objects into resolved `Assertion` objects — the named converter from mentions to identified endpoints, using deterministic keys, vector blocking, adjudication, and minting.
@@ -1455,8 +1517,8 @@ python tools/check_docs.py
 1. Implement `keys.py`:
    - `deterministic_key(mention: Mention, ontology: Ontology) -> tuple[str, str] | None`: extracts a deterministic key from the mention's surface text using patterns appropriate to the inferred type (e.g., LEI pattern for Corporation, QID for Person). Returns `None` when no key is found. When present, resolution terminates with confidence 1.0 (Doc 2 §8.8.1).
 2. Implement `blocking.py`:
-   - `embed(texts: list[str], client: OpenRouterClient, model_id: str) -> list[list[float]]`: embeds mention surface + type + contextual qualifier. Uses a permanent cache keyed by text and model.
-   - `candidates(driver: GraphDriver, embedding: list[float], entity_type: str, limit: int) -> list[dict]`: queries the vector index for nearest entities of the given type. Returns candidates with cosine similarity scores.
+   - `embed(texts: list[str], client: OpenRouterClient, model_id: str) -> list[list[float]]`: embeds mention surface + type + contextual qualifier. Uses a permanent cache keyed by text and model. Since WP-25a the output is L2-normalized (the §5.3 index declares cosine), with an optional `dimensions` argument for the dimension contract.
+   - `candidates(driver: GraphDriver, embedding: list[float], entity_type: str, limit: int) -> list[dict]`: queries the vector index for nearest entities of the given type. Returns candidates with cosine similarity scores. **Read-only against the index** — the index is populated by the loader's merge stamp and backfill (WP-25a, Doc 2 §5.6), never by the resolver (Doc 2 §8.8.3).
 3. Implement `adjudicate.py`:
    - `adjudicate(mention: Mention, candidates: list[dict], client: OpenRouterClient, prompt_version: str) -> tuple[str | None, float]`: calls the adjudication model with the mention and top candidates. Returns `(entity_id, confidence)` or `(None, 0.0)`. Confidence capped at 0.90 (Doc 2 §8.8.3).
 4. Implement `link.py`:
@@ -2710,8 +2772,9 @@ Every module from Doc 2 §2 is mapped to the WP that creates it.
 | `src/limes/graph/driver.py` | WP-04 |
 | `src/limes/graph/schema.py` | WP-04 |
 | `src/limes/graph/temporal.py` | WP-04 |
-| `src/limes/graph/loader.py` | WP-07 |
-| `src/limes/graph/queries.py` | WP-07 |
+| `src/limes/graph/loader.py` | WP-07 (merge stamp and backfill: WP-25a) |
+| `src/limes/graph/queries.py` | WP-07 (merge stamp and backfill statements: WP-25a) |
+| `src/limes/graph/embeddings.py` | WP-25a |
 | `src/limes/graph/lookups.py` | WP-08 |
 | `src/limes/archive/store.py` | WP-05 |
 | `src/limes/sources/base.py` | WP-09 |
