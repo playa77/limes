@@ -48,24 +48,6 @@ gold set, prompts) are recorded in their own changelogs.
   temporary name and rename; `put` idempotent.
 - 9 unit tests including cross-process hash stability (Doc 2 §12.1).
 
-## 2026-08-01 — WP-06 (Cost ledger and budget governor)
-
-- `cost/ledger.py`: `write_entry` (`:CostLedgerEntry` per §5.8, MERGE on the
-  unique ledger_id) and `read_period_spend` (period sum read from the graph,
-  never process memory — C-07).
-- `cost/governor.py`: `Governor` per §8.9 — `check`/`commit`/`remaining`;
-  monthly metering reads the graph every call (cross-process spend visible),
-  envelope metering is in-process and never draws on the monthly ceiling
-  (AC-15); refusal at the soft-stop fraction of the ceiling (AC-14).
-- 10 unit tests plus 6 integration tests green.
-
-## 2026-08-01 — WP-05 (Archive store)
-
-- `archive/store.py`: `ArchiveStore` per §8.4 — SHA-256 content addressing,
-  gzip compression, two-level hex prefix directories, atomic write by
-  temporary name and rename; `put` idempotent.
-- 9 unit tests including cross-process hash stability (Doc 2 §12.1).
-
 ## 2026-08-01 — WP-04 (Graph driver, schema provisioning, temporal fragments)
 
 - `graph/driver.py`: `GraphDriver` with read-access-mode sessions (§7.2),
