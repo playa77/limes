@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://limes.local/ontology.schema.json",
+  "title": "LIMES Ontology Artifact",
+  "description": "Validates ontology/ontology.yaml per Technical Specification §5.1. Structural validation only; semantic self-validation (undeclared types, duplicate names, key/property consistency) runs in load_ontology.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "supertypes", "entity_types", "relation_types", "vocabularies"],
+  "properties": {
+    "version": {"type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$"},
+    "supertypes": {
+      "type": "array",
+      "items": {"type": "string"},
+      "uniqueItems": true
+    },
+    "entity_types": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/entity_type"}
+    },
+    "relation_types": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/relation_type"}
+    },
+    "vocabularies": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/vocabulary"}
+    }
+  },
+  "$defs": {
+    "property": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "type", "required"],
+      "properties": {
+        "name": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
+        "type": {"enum": ["string", "integer", "float", "boolean", "datetime"]},
+        "required": {"type": "boolean"},
+        "unique": {"type": "boolean"}
+      }
+    },
+    "entity_type": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "identifying_keys", "properties"],
+      "properties": {
+        "name": {"type": "string", "pattern": "^[A-Z][A-Za-z0-9]*$"},
+        "supertype": {"type": "string", "pattern": "^[A-Z][A-Za-z0-9]*$"},
+        "identifying_keys": {
+          "type": "array",
+          "items": {"type": "string"},
+          "uniqueItems": true,
+          "minItems": 1
+        },
+        "properties": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/property"},
+          "uniqueItems": true
+        }
+      }
+    },
+    "relation_type": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "domain", "range", "temporal"],
+      "properties": {
+        "name": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]*$"},
+        "domain": {
+          "type": "array",
+          "items": {"type": "string"},
+          "uniqueItems": true,
+          "minItems": 1
+        },
+        "range": {
+          "type": "array",
+          "items": {"type": "string"},
+          "uniqueItems": true,
+          "minItems": 1
+        },
+        "temporal": {"type": "boolean"}
+      }
+    },
+    "vocabulary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "applies_to"],
+      "properties": {
+        "name": {"type": "string"},
+        "applies_to": {"type": "string"}
+      }
+    }
+  }
+}
