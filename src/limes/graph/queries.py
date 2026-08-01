@@ -13,11 +13,16 @@ def merge_entity(labels: list[str], key_prop: str | None = None) -> str:
     """MERGE one endpoint node by `entity_id`, applying the full label set
     (`[type, supertype..., Entity]`) from `Ontology.labels_for`.
 
-    `ON CREATE` stamps label, aliases, ontology version, creation time, and
-    the deterministic key property; `ON MATCH` only adds unseen aliases — an
-    existing label, key, and original ontology version are never overwritten,
-    so a lower-trust source cannot degrade an entity a higher-trust source
-    established (Doc 2 §5.6 step 1, AC-09).
+    `ON CREATE` stamps label, aliases, `label_embedding` (the merge stamp of
+    §5.6 — every entity creation passes through this choke point), ontology
+    version, creation time, and the deterministic key property. `ON MATCH`
+    only adds unseen aliases — an existing label, key, embedding, and
+    original ontology version are never overwritten, so a lower-trust source
+    cannot degrade an entity a higher-trust source established (Doc 2 §5.6
+    step 1, AC-09). The embedding is a function of the stored label, which
+    the merge never changes, so re-merges never touch it; nodes created
+    before the stamp existed are filled by the one-shot backfill
+    (`loader.stamp_missing_embeddings`), never by this statement.
     """
     label_segment = ":".join(labels)
     key_set = f",\n              n.{key_prop} = $key_value" if key_prop else ""
@@ -25,10 +30,30 @@ def merge_entity(labels: list[str], key_prop: str | None = None) -> str:
 MERGE (n:{label_segment} {{entity_id: $entity_id}})
 ON CREATE SET n.label = $label,
               n.aliases = $aliases,
+              n.label_embedding = $label_embedding,
               n.ontology_version = $ontology_version,
               n.created_at = $created_at{key_set}
 ON MATCH SET n.aliases =
     [a IN $aliases WHERE NOT a IN coalesce(n.aliases, [])] + coalesce(n.aliases, [])
+""".strip()
+
+
+MISSING_ENTITY_IDS = """
+MATCH (n:Entity)
+WHERE n.entity_id IN $ids
+RETURN n.entity_id AS entity_id
+""".strip()
+
+MISSING_EMBEDDINGS_READ = """
+MATCH (n:Entity)
+WHERE n.label_embedding IS NULL AND n.label IS NOT NULL
+RETURN n.entity_id AS entity_id, n.label AS label
+LIMIT $batch_size
+""".strip()
+
+EMBEDDING_STAMP = """
+MATCH (n:Entity {entity_id: $entity_id})
+SET n.label_embedding = $label_embedding
 """.strip()
 
 

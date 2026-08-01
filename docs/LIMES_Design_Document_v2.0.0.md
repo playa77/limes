@@ -10,7 +10,7 @@
 | Status | Draft |
 | Ontology version | 1.0.0 |
 | Supersedes | v1.0.0 (2026-07-23), withdrawn |
-| Companion documents | Technical Specification v2.0.0; Implementation Roadmap v2.0.0 |
+| Companion documents | Technical Specification v2.1.0; Implementation Roadmap v2.1.0 |
 
 ## Revision History
 
@@ -18,6 +18,7 @@
 |---|---|---|
 | 1.0.0 | 2026-07-23 | Initial issue. Withdrawn — see below. |
 | 2.0.0 | 2026-07-28 | Clean re-issue for a from-zero restart. The v1.x document set accumulated fifteen defects of two kinds: seams specified without a named constructor or invoker (twelve), and sections designing against constraints stated earlier in the same document set (three). Three were found by a coding agent during implementation, twelve by a call-trace audit afterward. All are resolved at source here rather than by revision. Substantive changes from v1.0.0: §7 no longer claims database-enforced read-only separation, which Neo4j Community cannot provide (C-01); §4.14 adds the composition root as a named component; §5.5 distinguishes pre-resolution from resolved assertions; §4.7 assigns node creation to the loader. |
+| 2.0.0 | 2026-08-01 | Companion-document references updated for the v2.1.0 amendments (Technical Specification v2.1.0, Implementation Roadmap v2.1.0 — the §5.6 `label_embedding` merge stamp and WP-25a). No substantive change; the design decisions this document records are unaffected. |
 
 ### Why v1.x Was Withdrawn
 

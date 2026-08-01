@@ -13,8 +13,8 @@ This repository is implemented from a complete specification set. You are not de
 | Order | Document | What it gives you |
 |---|---|---|
 | 1 | `docs/LIMES_Design_Document_v2.0.0.md` | Why the system is shaped this way; requirements, constraints, non-goals, decisions |
-| 2 | `docs/LIMES_Technical_Specification_v2.0.0.md` | What to build; module contracts, schemas, endpoints, thresholds, acceptance criteria. **§15 is the seam register — read it before writing any wiring.** |
-| 3 | `docs/LIMES_Implementation_Roadmap_v2.0.0.md` | The work package you are executing |
+| 2 | `docs/LIMES_Technical_Specification_v2.1.0.md` | What to build; module contracts, schemas, endpoints, thresholds, acceptance criteria. **§15 is the seam register — read it before writing any wiring.** |
+| 3 | `docs/LIMES_Implementation_Roadmap_v2.1.0.md` | The work package you are executing |
 
 **Precedence on conflict:** Roadmap → Technical Specification → Design Document. If the Roadmap and the Specification disagree, the Specification wins and the Roadmap is defective — report it.
 

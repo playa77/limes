@@ -32,8 +32,9 @@ from pathlib import Path
 # Types that are language builtins or third-party and need no local definition.
 EXTERNAL_TYPES = {
     "str", "int", "float", "bool", "bytes", "dict", "list", "tuple", "set",
-    "None", "Any", "Optional", "Literal", "Iterator", "Protocol", "Decimal",
-    "datetime", "Path", "BaseModel", "Exception", "Language", "Settings",
+    "None", "Any", "Optional", "Literal", "Callable", "Iterator", "Protocol",
+    "Decimal", "datetime", "Path", "BaseModel", "Exception", "Language",
+    "Settings",
 }
 
 
