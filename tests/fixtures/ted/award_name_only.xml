@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TED_EXPORT xmlns="http://publications.europa.eu/resource/schema/ted/2021">
+  <NOTICE_DATA>
+    <NO_DOC_OJS>654321-2025</NO_DOC_OJS>
+    <DT_PUBLISH>20250220</DT_PUBLISH>
+    <TITLE><VALUE>Lieferung Büromaterial Senatsverwaltung Berlin</VALUE></TITLE>
+  </NOTICE_DATA>
+  <CONTRACTING_BODY>
+    <ADDRESS_CONTRACTING_BODY>
+      <OFFICIALNAME>Senatsverwaltung Berlin</OFFICIALNAME>
+      <POSTAL_CODE>10115</POSTAL_CODE>
+      <TOWN>Berlin</TOWN>
+      <COUNTRY>DE</COUNTRY>
+    </ADDRESS_CONTRACTING_BODY>
+  </CONTRACTING_BODY>
+  <OBJECT_CONTRACT>
+    <CPV_MAIN>
+      <CPV_CODE CODE="30199730">Office equipment</CPV_CODE>
+      <CPV_CODE CODE="30199763">Office sundries</CPV_CODE>
+    </CPV_MAIN>
+  </OBJECT_CONTRACT>
+  <AWARDED_CONTRACT>
+    <CONTRACTORS>
+      <CONTRACTOR>
+        <ADDRESS_CONTRACTOR>
+          <OFFICIALNAME>Druckerei Beispiel GmbH</OFFICIALNAME>
+        </ADDRESS_CONTRACTOR>
+      </CONTRACTOR>
+    </CONTRACTORS>
+  </AWARDED_CONTRACT>
+</TED_EXPORT>

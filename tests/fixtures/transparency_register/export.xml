@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Templates>
+	<Organisation id="123456789012-34">
+		<OrganisationName>
+			<TransliteratedName>Acme Lobby GmbH</TransliteratedName>
+		</OrganisationName>
+		<OrganisationType>Company</OrganisationType>
+		<Status>ACTIVE</Status>
+		<EntryDate>2021-06-11</EntryDate>
+		<Head>
+			<PersonRef id="9001"/>
+		</Head>
+		<Interests>
+			<Interest>
+				<Code>10</Code>
+				<Label>Trade</Label>
+			</Interest>
+			<Interest>
+				<Code>20</Code>
+				<Label>Environment</Label>
+			</Interest>
+		</Interests>
+		<Meetings>
+			<Meeting>
+				<Date>13/06/2023</Date>
+				<Target>Anna Kowalski</Target>
+			</Meeting>
+		</Meetings>
+	</Organisation>
+	<Organisation id="987654321098-76">
+		<OrganisationName>
+			<TransliteratedName>Quiet Think Tank e.V.</TransliteratedName>
+		</OrganisationName>
+		<OrganisationType>Non-governmental organisation</OrganisationType>
+		<Status>ACTIVE</Status>
+	</Organisation>
+	<Organisation>
+		<OrganisationName>
+			<TransliteratedName>No ID Group</TransliteratedName>
+		</OrganisationName>
+	</Organisation>
+	<Person id="9001">
+		<PersonName>
+			<FirstName>Erna</FirstName>
+			<FamilyName>Mustermann</FamilyName>
+		</PersonName>
+	</Person>
+</Templates>
