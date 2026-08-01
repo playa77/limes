@@ -1,0 +1,4 @@
+{"company": {"company_number": "HRB 12345 B", "name": "Musterwerke GmbH", "jurisdiction_code": "de", "current_status": "Active", "officers": [{"name": "Mustermann, Max", "position": "Geschäftsführer", "start_date": "2019-03-01", "end_date": null, "current_status": "Active"}, {"name": "Beispiel, Erika", "position": "Prokuristin", "start_date": "2021-06-15", "end_date": "2024-02-29", "current_status": "Inactive"}]}}
+{"company": {"company_number": "HRB 99999 B", "name": "Bau AG", "jurisdiction_code": "de", "current_status": "Active", "officers": [{"name": "Zimmermann, Otto", "position": "Vorstand", "start_date": "2015-01-01", "end_date": null, "current_status": "Active"}]}}
+{"company": {"company_number": "HRA 54321", "name": "Handel KG", "jurisdiction_code": "de", "current_status": "Active", "officers": []}}
+{"this is not a company line": true}
