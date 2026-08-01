@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gesetz>
+  <metadaten>
+    <jurabk>EGovG</jurabk>
+    <ausfertigung-datum manuell="ja">2024-01-15</ausfertigung-datum>
+    <fundstelle typ="amtlich">
+      <periodikum>BGBl. I</periodikum>
+      <zitstelle>2024, 1</zitstelle>
+    </fundstelle>
+    <langue>Gesetz zur Verbesserung der Verwaltungsleistungen</langue>
+  </metadaten>
+</gesetz>

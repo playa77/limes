@@ -1,0 +1,33 @@
+{
+  "searchinfo": {
+    "totalhits": 2
+  },
+  "search": [
+    {
+      "id": "Q283036",
+      "title": "Q283036",
+      "pageid": 267165,
+      "label": "Mercedes-Benz Group",
+      "description": "deutscher Automobil- und Nutzfahrzeughersteller",
+      "aliases": ["Daimler", "DaimlerChrysler"],
+      "match": {
+        "type": "alias",
+        "language": "de",
+        "text": "Daimler"
+      }
+    },
+    {
+      "id": "Q1293293",
+      "title": "Q1293293",
+      "pageid": 123456,
+      "label": "Daimler",
+      "description": "deutscher Philosoph",
+      "aliases": [],
+      "match": {
+        "type": "description",
+        "language": "de",
+        "text": "deutscher Philosoph"
+      }
+    }
+  ]
+}

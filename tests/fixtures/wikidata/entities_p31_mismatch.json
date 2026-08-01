@@ -1,0 +1,37 @@
+{
+  "entities": {
+    "Q283036": {
+      "pageid": 267165,
+      "ns": 0,
+      "title": "Q283036",
+      "lastrevid": 2385600001,
+      "modified": "2026-05-01T10:00:00Z",
+      "type": "item",
+      "id": "Q283036",
+      "labels": {
+        "de": {"language": "de", "value": "Mercedes-Benz Group AG"},
+        "en": {"language": "en", "value": "Mercedes-Benz Group"}
+      },
+      "claims": {
+        "P31": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P31",
+              "datavalue": {
+                "value": {
+                  "entity-type": "item",
+                  "numeric-id": 5,
+                  "id": "Q5"
+                },
+                "type": "wikibase-entityid"
+              },
+              "datatype": "wikibase-item"
+            },
+            "type": "statement"
+          }
+        ]
+      }
+    }
+  }
+}
