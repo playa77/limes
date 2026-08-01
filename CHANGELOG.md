@@ -23,6 +23,13 @@ gold set, prompts) are recorded in their own changelogs.
   `registry.py` (`load_ontology`), `validator.py` (`validate_assertions`).
 - 46 unit tests in `test_ontology.py`.
 
+## 2026-08-01 — WP-05 (Archive store)
+
+- `archive/store.py`: `ArchiveStore` per §8.4 — SHA-256 content addressing,
+  gzip compression, two-level hex prefix directories, atomic write by
+  temporary name and rename; `put` idempotent.
+- 9 unit tests including cross-process hash stability (Doc 2 §12.1).
+
 ## 2026-08-01 — WP-04 (Graph driver, schema provisioning, temporal fragments)
 
 - `graph/driver.py`: `GraphDriver` with read-access-mode sessions (§7.2),
