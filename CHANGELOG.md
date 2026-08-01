@@ -6,7 +6,52 @@ gold set, prompts) are recorded in their own changelogs.
 
 ---
 
-## 2026-08-01 — WP-25a (Embedding merge stamp and backfill)
+## 2026-08-01 — WP-25 (Entity resolution)
+
+- `resolution/keys.py`: `deterministic_key` — the mention-carried key honored
+  only when declared for the type, plus a conservative surface-pattern table
+  whose produced values exactly equal the structured adapters' emitted key
+  values (LEI, QID, CELEX, BGBl citation with periodikum-dot normalization,
+  TED notice, transparency-register id, content hash). Formats without a
+  canonical surface form (register numbers with court suffixes, bare-digit
+  ids) are excluded: a wrong key costs a wrong identity.
+- `resolution/blocking.py`: `embed` (per-process cache keyed by text and
+  model, L2-normalized with the dimension contract) and `candidates`
+  (read-only vector-index query, type-filtered, k = limit×5 pre-filter).
+  **Finding:** the engine's cosine index reports `(1 + cosine) / 2`, not the
+  cosine — `candidates` converts back to cosine space, or the §8.8.3
+  thresholds would auto-link at a true cosine of only 0.86.
+- `resolution/adjudicate.py`: one pairwise call (v1.0.0 prompt) of the
+  mention against its top candidate, the remaining candidates riding in the
+  context slot; schema-validated response, confidence capped at 0.90; a
+  false verdict, malformed response, or schema violation is `(None, 0.0)`
+  and the caller mints, each logged.
+- `resolution/link.py`: deterministic `mention_id` (MERGE-idempotent across
+  re-extraction), `:Mention` per endpoint with §5.8 offsets, scored
+  `SAME_AS` with `method`/`score`/`decision_at`/`retracted_at`; `unlink`
+  retracts through a write session (the statement writes while returning a
+  count — `GraphDriver.read` would refuse it); re-linking re-activates.
+- `resolution/resolve.py`: `RunContext` (§8.15 shape, defined here per the
+  D-22 precedent, consumed by WP-26), `ResolutionStats`, and
+  `resolve_assertions` — per unique (type, surface): deterministic key →
+  Wikidata enrichment (only types declaring `wikidata_qid`, cached, network
+  failure = counted miss) → embed + candidates → §8.8.3 thresholds (margin
+  is top minus second, second zeroed when a single candidate) → deterministic
+  mint id. The resolver never writes an entity node; minted mentions get no
+  `SAME_AS` (the node does not exist until the loader runs). Provenance
+  contract: the resolver stamps what its context determines; `source_id`,
+  `source_trust`, model/prompt/schema versions are type-satisfying
+  intermediates that `execute_run` re-stamps before load per §15.2, which
+  also recomputes `assertion_id`.
+- 30 unit tests (keys, blocking, adjudicate) and 5 integration tests
+  (AC-16 short-circuit with zero reads and zero paid calls; AC-17 four-band
+  routing incl. the `≥ 0.93`-with-margin-`< 0.05` trigger and the mint
+  branch writing no entity node; AC-19 unlink retraction with assertion
+  attribution intact; AC-43 conversion, mention policy, and stats) — the
+  index populated through the production `load` path with an injected
+  embedder (WP-25a resume gate).
+
+---
 
 Closes the seam conflict found while starting WP-25: the §5.3 vector index
 over `:Entity.label_embedding` had no registered writer (§15.2, verified by

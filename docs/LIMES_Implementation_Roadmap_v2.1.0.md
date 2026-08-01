@@ -1520,24 +1520,24 @@ python tools/check_docs.py
    - `embed(texts: list[str], client: OpenRouterClient, model_id: str) -> list[list[float]]`: embeds mention surface + type + contextual qualifier. Uses a permanent cache keyed by text and model. Since WP-25a the output is L2-normalized (the §5.3 index declares cosine), with an optional `dimensions` argument for the dimension contract.
    - `candidates(driver: GraphDriver, embedding: list[float], entity_type: str, limit: int) -> list[dict]`: queries the vector index for nearest entities of the given type. Returns candidates with cosine similarity scores. **Read-only against the index** — the index is populated by the loader's merge stamp and backfill (WP-25a, Doc 2 §5.6), never by the resolver (Doc 2 §8.8.3).
 3. Implement `adjudicate.py`:
-   - `adjudicate(mention: Mention, candidates: list[dict], client: OpenRouterClient, prompt_version: str) -> tuple[str | None, float]`: calls the adjudication model with the mention and top candidates. Returns `(entity_id, confidence)` or `(None, 0.0)`. Confidence capped at 0.90 (Doc 2 §8.8.3).
+   - `adjudicate(mention: Mention, candidates: list[dict], client: OpenRouterClient, prompt_version: str, model_id: str) -> tuple[str | None, float]`: calls the adjudication model with the mention and its top candidate (the pairwise v1.0.0 prompt; the remaining candidates ride in the prompt's context slot). Returns `(entity_id, confidence)` or `(None, 0.0)`. Confidence capped at 0.90 (Doc 2 §8.8.3). `model_id` is passed explicitly because the adjudication model lives in Settings, not in the roadmap's original four parameters.
 4. Implement `link.py`:
-   - `create_mention(driver: GraphDriver, mention: Mention, document_id: str) -> str`: creates a `:Mention` node, returns `mention_id`. **Every extracted endpoint gets a `:Mention` node** (Doc 2 §8.8.5), including deterministic-key hits.
-   - `link(driver: GraphDriver, mention_id: str, entity_id: str, method: str, score: float, decision_at: datetime) -> None`: creates a scored `SAME_AS` relationship.
-   - `unlink(driver: GraphDriver, mention_id: str, entity_id: str, at: datetime) -> None`: retracts `SAME_AS` by setting `retracted_at`. No node is ever deleted (AC-19).
+   - `create_mention(driver: GraphDriver, mention: Mention, document_id: str, start: int, end: int) -> str`: creates a `:Mention` node, returns `mention_id`. **Every extracted endpoint gets a `:Mention` node** (Doc 2 §8.8.5), including deterministic-key hits. `start`/`end` are the mention's document offsets, which the §5.8 `:Mention` schema requires; the resolver locates them against the document anchored on the evidence span.
+   - `link(driver: GraphDriver, mention_id: str, entity_id: str, method: str, score: float, decision_at: datetime) -> None`: creates a scored `SAME_AS` relationship; re-linking after an unlink re-activates it.
+   - `unlink(driver: GraphDriver, mention_id: str, entity_id: str, at: datetime) -> None`: retracts `SAME_AS` by setting `retracted_at` (write session — the statement writes while returning a count). No node is ever deleted (AC-19).
 5. Implement `resolve.py`:
-   - `resolve_assertions(extracted: list[ExtractedAssertion], ctx: RunContext, doc: DocumentPayload) -> tuple[list[Assertion], ResolutionStats]` per Doc 2 §8.8.4.
+   - `resolve_assertions(extracted: list[ExtractedAssertion], ctx: RunContext, doc: DocumentPayload) -> tuple[list[Assertion], ResolutionStats]` per Doc 2 §8.8.4. `RunContext` (the §8.15 shape) is defined here, the module that consumes it, per the D-22 precedent; the composition root (WP-26) constructs it.
    - For each `ExtractedAssertion`:
      a. Create `:Mention` for subject and object endpoints.
-     b. Try `keys.deterministic_key` for each. If match, link with confidence 1.0.
-     c. If no key, `blocking.embed` + `blocking.candidates`.
+     b. Try `keys.deterministic_key` for each. If match, link with confidence 1.0. Then try `WikidataAdapter.enrich()` for key-less mentions of types declaring `wikidata_qid` — an unambiguous QID is likewise a deterministic link (confidence 1.0), which is the WP-18 contract's consumption point.
+     c. If no key, `blocking.embed` + `blocking.candidates` (one embedding call per document batch).
      d. Route by thresholds (Doc 2 §8.8.3):
         - `cosine ≥ 0.93` and margin ≥ 0.05 → auto-link.
         - `0.82 ≤ cosine < 0.93` or `≥ 0.93` with margin < 0.05 → adjudicate.
         - `cosine < 0.82` → mint new `entity_id`, return `EntityEndpoint`.
-     e. Assemble `Assertion` with full provenance.
-   - **The resolver never writes an entity node.** In the mint branch, it returns an `EntityEndpoint` with a new `entity_id`; the loader materializes it (Doc 2 §8.8.3).
-   - `ResolutionStats`: `deterministic`, `auto_linked`, `adjudicated`, `minted`.
+     e. Assemble `Assertion` with full provenance. `source_id`, `source_trust`, `extractor_model`, `prompt_version`, and `schema_version` are filled with type-satisfying intermediate values and contractually re-stamped by `execute_run` before load (Doc 2 §15.2), which also recomputes `assertion_id` with the real `source_id`; the intermediates never reach the graph.
+   - **The resolver never writes an entity node.** In the mint branch, it returns an `EntityEndpoint` with a new `entity_id`; the loader materializes it (Doc 2 §8.8.3). Minted mentions get no `SAME_AS` — the entity node does not exist until the loader runs, and creating the relationship would create the node.
+   - `ResolutionStats`: `deterministic`, `auto_linked`, `adjudicated`, `minted`, counting endpoint occurrences.
 6. Write unit and integration tests:
    - AC-16: Deterministic keys short-circuit with no embedding and no vector query issued.
    - AC-17: Resolution routes correctly across all four bands.

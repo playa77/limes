@@ -62,6 +62,103 @@ untouched here (out of scope), flagged for the human.
 
 ---
 
+## 2026-08-01 — D-28 (R2) — `RunContext` defined in `resolution/resolve.py`
+
+`resolve_assertions` consumes `RunContext` (the §8.15 shape), which is
+WP-26's to construct; following the D-22 precedent for `GateContext`, the
+frozen dataclass lives in the module that consumes it, and the composition
+root imports it from there. Rejected: defining it in `composition.py` now
+(that file is WP-26's scope).
+
+## 2026-08-01 — D-29 (R2) — Provenance completion is `execute_run`'s contract, not the resolver's
+
+Five provenance fields — `source_id`, `source_trust`, `extractor_model`,
+`prompt_version`, `schema_version` — are only known to the pipeline, and
+§15.2 binds their stamping to `execute_run`; the §8.8.4 signature gives the
+resolver no way to receive them. The resolver stamps what its context
+determines (ontology_version, confidence = the extraction confidence carried
+through — the resolution confidence lives on the SAME_AS link per §8.8.3 —
+evidence fields) and fills the five pipeline-known fields with
+type-satisfying intermediates (empty string, 0.0, None). `execute_run`
+re-stamps them before load — the intermediates never reach the graph — and
+recomputes `assertion_id` with the real `source_id` (the D-10 digest needs
+the source, and a source-less digest would collide across sources).
+Rejected alternatives: extending `RunContext` with source fields (§8.15
+deviation); empty-assertion refusal (the resolver is not the stamp point).
+
+## 2026-08-01 — D-30 (R1) — The deterministic-key table is exact-value, not pattern-only
+
+A pattern whose match does not equal the structured adapter's emitted key
+value would resolve to a different `entity_id` and duplicate the backbone
+node instead of hitting it. The table therefore matches only canonical
+surface forms and rebuilds values from capture groups where the surface
+differs (the BGBl citation's periodikum dot). Excluded despite plausible
+patterns: `german_register_number` (court suffixes like "HRB 12345 B"),
+`bundestag_id`/`osm_id`/`geonames_id` (bare digits match anything), `iso2`
+(two letters appear everywhere), `nuts_code`, `source_event_id` — a missed
+key costs one embed and possibly one mint; a wrong key costs a wrong
+identity, the failure that matters.
+
+## 2026-08-01 — D-31 (R2) — Wikidata enrichment sits between keys and embedding
+
+The roadmap's contracts list `WikidataAdapter.enrich()` as consumed by
+WP-25 but its routing omits the step; an unambiguous QID is a deterministic
+identity, so enrichment runs after `keys.deterministic_key` and before any
+embedding, gated on the type declaring `wikidata_qid` (a QID the loader
+cannot stamp would mint a second node). Results are cached per (type,
+surface) for the process — a backfill re-encounters the same surfaces, and
+each hit saved is a network round trip not made; misses are cached too.
+Network failure is a counted miss (`SourceFetchError` caught), never a
+guess. Rejected: dropping enrichment from the path (WP-18's contract names
+WP-25 as its consumer).
+
+## 2026-08-01 — D-32 (R1) — Adjudication is pairwise against the top candidate
+
+The v1.0.0 adjudication prompt is pairwise (Mention A vs Mention B), and
+the WP-30 calibration set is pairwise-shaped (parent-vs-subsidiary pairs);
+§8.8.3 budgets one adjudication call. `adjudicate` therefore presents the
+mention against its top candidate, with the remaining candidates riding in
+the prompt's context slot as evidence. The `model_id` parameter is passed
+explicitly because the adjudication model lives in Settings, which the
+roadmap's four-parameter signature cannot reach. Rejected: a list-form
+prompt rewrite plus version bump (the prompt and the calibration set are
+pairwise by design).
+
+## 2026-08-01 — D-33 (R1) — Deterministic `mention_id`; minted mentions never link
+
+`mention_id` is a digest over (document, type, normalized surface, offsets),
+so re-extracting a document merges into the same `:Mention` node instead of
+accumulating duplicates. The mint branch writes no `SAME_AS` at all: the
+minted entity node does not exist until the loader materializes it, and
+creating the relationship would create the node — the one write the
+resolver is forbidden. Traceability of a minted mention is via the
+assertion's `entity_id` and evidence span, never via a link.
+
+## 2026-08-01 — D-34 (R1) — Candidate scores are converted from the engine's `(1 + cosine) / 2`
+
+Measured against the Neo4j 2026.x cosine vector index: the returned score
+is `(1 + cosine) / 2`, not the cosine (its cosine distance is the half-angle
+form). `candidates()` converts back to cosine space — the §8.8.3 thresholds
+are cosines, and an unconverted score would auto-link at a true cosine of
+only 0.86 (observed: a 0.88-cosine mention scored 0.94 and auto-linked).
+The conversion is linear, so ordering is unchanged. This finding belongs to
+the merge-stamp amendment's correctness constraint (a wrong similarity
+silently under- or over-recalls) and was caught by the AC-17 integration
+test, not by reading docs.
+
+## 2026-08-01 — D-35 (R1) — Stats count endpoint occurrences; margin zeroes a missing second
+
+`ResolutionStats` counts endpoint occurrences — each extracted endpoint
+resolves in exactly one band, matching the mention policy (one `:Mention`
+per endpoint) — so a mention appearing in two assertions counts twice even
+though its resolution is computed once. The §8.8.3 margin is top minus
+second score, with second zeroed when only one candidate exists — a single
+candidate at 0.95 auto-links (margin 0.95), which is the intended reading
+of the table. Unstated `valid_from` on an extracted assertion defaults to
+the resolution instant.
+
+---
+
 ## 2026-08-01 — Approval — phase-3-v1.0.0 (WP-21…WP-24)
 
 The human approved phase-3-v1.0.0 (unstructured pipeline: GDELT/feeds

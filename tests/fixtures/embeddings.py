@@ -49,12 +49,14 @@ def vector_with_cosines(
     targets: list[tuple[list[float], float]],
 ) -> list[float]:
     """A unit vector whose cosine with each target equals the requested
-    value, solved in the targets' span.
+    value.
 
-    With one target: a rotation of the target into a perpendicular plane.
-    With two: the exact solution of the 2x2 Gram system. Used to place a
-    mention embedding in a specific §8.8.3 band against known entity
-    embeddings.
+    With one target: a rotation of the target into a perpendicular plane
+    (exact). With two: the exact construction in the targets' span — the
+    second cosine is determined by the geometry
+    `c2 = c1·g ± sqrt((1−c1²)(1−g²))` with `g = e1·e2`, and the sign is
+    chosen so that |q| = 1 holds exactly. Used to place a mention embedding
+    in a specific §8.8.3 band against known entity embeddings.
     """
     if len(targets) == 1:
         (e, c) = targets[0]
@@ -68,14 +70,14 @@ def vector_with_cosines(
         q = [c * ei + math.sqrt(max(0.0, 1.0 - c * c)) * pi for ei, pi in zip(e, perp, strict=True)]
         return normalize_embedding(q, len(e))
     if len(targets) == 2:
-        (e1, c1), (e2, c2) = targets
-        g11 = sum(a * b for a, b in zip(e1, e1, strict=True))
-        g12 = sum(a * b for a, b in zip(e1, e2, strict=True))
-        g22 = sum(a * b for a, b in zip(e2, e2, strict=True))
-        det = g11 * g22 - g12 * g12
-        assert det > 1e-9, "target embeddings must be linearly independent"
-        a1 = (c1 * g22 - c2 * g12) / det
-        a2 = (c2 * g11 - c1 * g12) / det
+        (e1, c1), (e2, _c2) = targets
+        g = sum(a * b for a, b in zip(e1, e2, strict=True))
+        assert abs(g) < 1.0 - 1e-9, "target embeddings must not be parallel"
+        # |q| = c1^2 + a2^2 (1 - g^2) = 1  ->  a2 = ±sqrt((1-c1^2)/(1-g^2)).
+        # The minus sign keeps the second cosine below the first, which is
+        # the ordering the candidate list needs.
+        a2 = -math.sqrt(max(0.0, (1.0 - c1 * c1) / (1.0 - g * g)))
+        a1 = c1 - a2 * g
         q = [a1 * x + a2 * y for x, y in zip(e1, e2, strict=True)]
-        return normalize_embedding(q, len(e1))
+        return q  # unit norm by construction
     raise AssertionError("vector_with_cosines supports one or two targets")
