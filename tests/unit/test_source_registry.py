@@ -82,7 +82,9 @@ def test_build_default_registry_contains_phase_two_sources():
     expected = {
         "bundestag_dip",
         "eurlex",
+        "feeds",
         "fsd",
+        "gdelt",
         "gesetze_im_internet",
         "gisco_nuts",
         "gleif",
@@ -102,6 +104,8 @@ def test_build_default_registry_trust_ranks_match_source_table():
     assert registry.trust_rank("wikidata") == 0.90
     assert registry.trust_rank("osm") == 0.75
     assert registry.trust_rank("offeneregister") == 0.30
+    assert registry.trust_rank("gdelt") == 0.50
+    assert registry.trust_rank("feeds") == 0.60
 
 
 def test_registry_get_is_the_only_public_construction_path():
