@@ -206,8 +206,10 @@ def test_validate_assertions_partitions_valid_and_invalid(ontology):
     domain_violation = _assertion(subject_type="Person", relation="SUBSIDIARY_OF")
     range_violation = _assertion(object_type="Topic", relation="SUBSIDIARY_OF")
     non_temporal_with_valid_to = _assertion(
-        subject_type="LegalAct", object_type="LegalAct",
-        relation="AMENDS", valid_to=NOW,
+        subject_type="LegalAct",
+        object_type="LegalAct",
+        relation="AMENDS",
+        valid_to=NOW,
     )
 
     accepted, rejected = validate_assertions(

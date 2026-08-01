@@ -51,6 +51,11 @@ exclude = ["ontology/migrations"]
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "UP", "B"]
 
+[tool.ruff.lint.per-file-ignores]
+# Cypher DDL statements are single strings; they cannot be split without
+# breaking the statement. Line length is waived for this module only.
+"src/limes/graph/schema.py" = ["E501"]
+
 [tool.mypy]
 python_version = "3.12"
 strict = true
