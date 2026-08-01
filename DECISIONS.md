@@ -62,6 +62,47 @@ untouched here (out of scope), flagged for the human.
 
 ---
 
+## 2026-08-01 — Phase 4 invariants (WP-25a, WP-25), derived and tagged
+
+Guarded (automated check, named guard installed and green):
+- **G1** — Every entity node created by `load` with an embedder carries a
+  normalized `label_embedding`; a re-merge never changes it (the §5.6 stamp,
+  AC-09 semantics) → `test_embedding_stamp.py::test_load_stamps_label_embedding_on_create`,
+  `test_remerge_never_overwrites_embedding`.
+- **G2** — `stamp_missing_embeddings` fills exactly the nulls and is
+  idempotent; `embedder=None` writes nulls with a logged line →
+  `test_backfill_stamps_exactly_the_nulls`, `test_load_without_embedder_writes_null`.
+- **G3** — Deterministic keys short-circuit with no embedding, no vector
+  query, and no paid call (AC-16) →
+  `test_resolution.py::test_ac16_deterministic_keys_short_circuit`.
+- **G4** — The four §8.8.3 bands route correctly, including the
+  `≥ 0.93`-with-margin-`< 0.05` trigger; the mint branch writes no entity
+  node (AC-17) → `test_ac17_routes_across_all_four_bands`,
+  `test_ac17_margin_below_threshold_adjudicates`.
+- **G5** — `unlink` retracts `SAME_AS` without deleting any node; prior
+  assertions remain attributed (AC-19) →
+  `test_ac19_unlink_retracts_without_deleting`.
+- **G6** — `resolve_assertions` converts `ExtractedAssertion` to
+  `Assertion`, creates one `:Mention` per endpoint, and returns stats
+  matching the four bands (AC-43) →
+  `test_ac43_conversion_mentions_and_stats`.
+- **G7** — Candidate scores are cosines: the engine's `(1 + cosine) / 2`
+  is converted in `candidates()` (D-34) →
+  `test_resolution_blocking.py::test_candidates_parses_rows_and_filters_type`
+  and the band tests' score assertions.
+
+Triggered (review-flag paths, no automated guard):
+- **T1** — The resolver never writes an entity node and `resolution/` writes
+  nothing but `:Mention`/`SAME_AS`: any diff touching
+  `resolution/link.py` or `resolution/resolve.py` that introduces a graph
+  write outside that surface is flagged for review before commit.
+- **T2** — The deterministic-key table (`resolution/keys.py`) and the
+  extraction/adjudication prompts are versioned artifacts: any diff touching
+  them that changes a pattern or prompt without the documented refresh
+  discipline is flagged.
+
+---
+
 ## 2026-08-01 — D-28 (R2) — `RunContext` defined in `resolution/resolve.py`
 
 `resolve_assertions` consumes `RunContext` (the §8.15 shape), which is
