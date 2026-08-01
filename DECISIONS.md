@@ -7,6 +7,17 @@ Nothing here is a status report; unlogged decisions are unmade decisions.
 
 ---
 
+## 2026-08-01 — Approval — phase-3-v1.0.0 (WP-21…WP-24)
+
+The human approved phase-3-v1.0.0 (unstructured pipeline: GDELT/feeds
+adapters, extractor, cache, gate) on 2026-08-01 and instructed merge, commit,
+and push. Delivered as branch `wp-21-24-unstructured-pipeline`, merged to
+`main` as `36fb8a7` and pushed; the topic branch is pushed as well. This
+approval names the presented version and cannot be reused for any other
+version of the phase.
+
+---
+
 ## 2026-08-01 — Phase 3 invariants (WP-21…WP-24), derived and tagged
 
 Guarded (automated check, named guard installed and green):
