@@ -1,0 +1,5 @@
+LEI,Entity.LegalName,Entity.LegalAddress.FirstAddressLine,Entity.LegalAddress.Country,Entity.LegalAddress.Subdivision,Entity.LegalAddress.PostalCode,Entity.LegalAddress.City,Entity.HeadquartersAddress.FirstAddressLine,Entity.HeadquartersAddress.Country,Entity.HeadquartersAddress.Subdivision,Entity.HeadquartersAddress.PostalCode,Entity.HeadquartersAddress.City,Entity.LegalForm.EntityLegalFormCode,Entity.EntityStatus,Entity.LegalJurisdiction,Entity.LegalNameLanguage
+"5493000TEST000000001","Beispiel AG","Musterstraße 1","DE","BW","70173","Stuttgart","Musterstraße 1","DE","BW","70173","Stuttgart","AG","ACTIVE","DE","de"
+"5493000TEST000000002","Esimerkki Oyj","Mannerheimintie 1","FI","","00100","Helsinki","Mannerheimintie 1","FI","","00100","Helsinki","OYJ","ACTIVE","FI","fi"
+"5493000TEST000000003","Standalone B.V.","Keizersgracht 1","NL","","1015","Amsterdam","","","","","","BV","ACTIVE","NL","nl"
+"5493000TEST000000004","Alte GmbH","Altstadtweg 2","DE","","10115","Berlin","Altstadtweg 2","DE","","10115","Berlin","GMBH","LAPSED","DE","de"
