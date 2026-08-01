@@ -6,6 +6,20 @@ gold set, prompts) are recorded in their own changelogs.
 
 ---
 
+## 2026-08-01 — WP-07 (Graph loader)
+
+- `graph/loader.py`: `load` (batches ≤500 assertions, §5.6 semantics: node
+  materialization by `Ontology.labels_for` label sets, idempotent
+  `assertion_id`-keyed relationship merge, same-source interval closure,
+  non-destructive re-merge, `ENDPOINT_UNIDENTIFIED` rejection AC-10) and
+  `retract`. Sole writer of ontology-typed nodes, relationships, and lookup
+  rows (§15.2, DD-19). Batch transactions run through the driver's raw
+  session to collect per-statement outcomes (write_batch aggregates only).
+- `graph/queries.py`: parameterized Cypher templates; label and relation-type
+  segments built only from ontology data, never source data (§5.6).
+- 8 unit tests (partitioning, key guard, metadata map) plus 11 integration
+  tests (AC-05, AC-06, AC-07 partial, AC-08, AC-09, AC-10) green.
+
 ## 2026-08-01 — WP-02 (Configuration, types, errors, logging)
 
 - `config.py` with one typed field per §4.2 key and `load_settings()` failing
