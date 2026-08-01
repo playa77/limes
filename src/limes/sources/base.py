@@ -169,6 +169,28 @@ def fetch_bytes(url: str, *, timeout_s: int = HTTP_TIMEOUT_SECONDS) -> bytes:
     final status or reason. HTTP 404 is a permanent miss (the URL constant is
     wrong or the resource moved) and is reported as such without retries.
     """
+    return _fetch("GET", url, timeout_s=timeout_s)
+
+
+def fetch_bytes_post(
+    url: str, json_body: dict[str, object], *, timeout_s: int = HTTP_TIMEOUT_SECONDS
+) -> bytes:
+    """POST a JSON body to a URL with the same §11 retry policy as `fetch_bytes`.
+
+    Needed by adapters whose source only accepts POST (TED's notice search).
+    The body is sent as JSON; a 4xx response that is not 429 is a permanent
+    miss and surfaces as `SourceFetchError` without retries.
+    """
+    return _fetch("POST", url, json_body=json_body, timeout_s=timeout_s)
+
+
+def _fetch(
+    method: str,
+    url: str,
+    *,
+    json_body: dict[str, object] | None = None,
+    timeout_s: int = HTTP_TIMEOUT_SECONDS,
+) -> bytes:
     attempts = 0
 
     @retry(
@@ -178,7 +200,7 @@ def fetch_bytes(url: str, *, timeout_s: int = HTTP_TIMEOUT_SECONDS) -> bytes:
         before_sleep=before_sleep_log(logger, logging.WARNING),
         reraise=True,
     )
-    def _get() -> bytes:
+    def _call() -> bytes:
         nonlocal attempts
         attempts += 1
         with httpx.Client(
@@ -187,7 +209,9 @@ def fetch_bytes(url: str, *, timeout_s: int = HTTP_TIMEOUT_SECONDS) -> bytes:
             headers={"User-Agent": USER_AGENT, "Accept": "*/*"},
         ) as client:
             try:
-                response = client.get(url)
+                response = (
+                    client.post(url, json=json_body) if method == "POST" else client.get(url)
+                )
             except (httpx.ConnectError, httpx.ConnectTimeout, httpx.ReadTimeout) as exc:
                 raise _RetryableFetch(str(exc)) from exc
             if response.status_code in RETRYABLE_STATUSES:
@@ -197,7 +221,7 @@ def fetch_bytes(url: str, *, timeout_s: int = HTTP_TIMEOUT_SECONDS) -> bytes:
             return response.content
 
     try:
-        return _get()
+        return _call()
     except SourceFetchError:
         raise
     except _RetryableFetch as exc:
