@@ -7,6 +7,21 @@ Nothing here is a status report; unlogged decisions are unmade decisions.
 
 ---
 
+## 2026-08-02 — Approval — phase-6-v1.0.0 (WP-28…WP-31 + the WP-28 conflict repair)
+
+The human approved phase-6-v1.0.0 (CLI core with the advisory lock —
+`ingest`, `ingest-all`, `backfill`, `reextract`, `backup`; model selection
+provisional and measured stages; the evaluation harness with gold set,
+calibration set, and reference questions; the ontology migration CLI; and
+the loader lookup-row batching repair D-46 that un-halted the phase,
+verified live against the production §13.4 configuration) on 2026-08-02 and
+instructed merge, commit, and push. Delivered as branch
+`wp-28-31-cli-and-evaluation`, merged to `main` as `753c955` and pushed;
+the topic branch is pushed as well. This approval names the presented
+version and cannot be reused for any other version of the phase.
+
+---
+
 ## 2026-08-02 — Phase 6 resumes: loader lookup-row batching repair (human decision, branch a)
 
 The human chose branch (a) of the halted-phase decision, in the human's own

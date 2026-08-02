@@ -6,6 +6,20 @@ gold set, prompts) are recorded in their own changelogs.
 
 ---
 
+## 2026-08-02 — Phase 6 delivered — phase-6-v1.0.0 (WP-28…WP-31)
+
+Approved by the human (DECISIONS.md, 2026-08-02) and merged to `main` as
+`753c955`, pushed. The halted phase resumed with the loader lookup-row
+batching repair (above): the live Trace 1 verification now passes, all 12
+guarded invariants (G1–G12) are green, and the four triggered paths (T1–T4)
+hold against the phase's diff. One roadmap verification remains
+operator-gated: the live `backfill --source feeds` run needs the operator's
+OpenRouter key and spends budget; its fixture-based end-to-end test is
+green. Pre-existing `tests/` ruff baseline deviations remain flagged, not
+fixed (D-27 precedent).
+
+---
+
 ## 2026-08-02 — Phase 6 [CONFLICT] repair: loader lookup-row batching
 
 The halted phase resumes per the human's decision (DECISIONS.md, 2026-08-02,
