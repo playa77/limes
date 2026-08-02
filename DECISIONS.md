@@ -7,6 +7,138 @@ Nothing here is a status report; unlogged decisions are unmade decisions.
 
 ---
 
+## 2026-08-02 — Phase 7 invariants (WP-32…WP-35), derived at phase start
+
+Derived from the roadmap's WP-32…WP-35 entries and Doc 2 §6–§8.12, per the
+global contract §6. Guarded (automatically tested) and triggered
+(review-trigger) invariants, logged when derived:
+
+- **G1 (guarded)** — The API's write surface is exactly the three
+  enumerated writes of §7.3 and nothing else in `src/limes/api/` →
+  `test_api_write_surface.py::test_ac18_grep_finds_only_the_sanctioned_writes`
+  and `test_ac18_write_attempt_corpus_is_rejected` (obfuscation corpus).
+- **G2 (guarded)** — Every §8.10 validation code is produced by a crafted
+  query and blocks execution →
+  `test_nlq_validate.py::test_ac20_every_validation_code_is_produced_and_blocks`.
+- **G3 (guarded)** — Every plan-gate rejection is produced by a crafted
+  query and blocks execution →
+  `test_nlq_plan.py::test_ac21_*`.
+- **G4 (guarded)** — An empty result produces a diagnosis naming the
+  correct failing clause → `test_diagnosis.py::test_ac22_*`.
+- **G5 (guarded)** — Every executed result carries a coverage report with
+  correct graph-wide counts and refresh stamps →
+  `test_coverage.py::test_ac23_coverage_counts_match_the_graph`.
+- **G6 (guarded)** — The builder cannot construct a query violating domain
+  or range; rejections are precise → `test_api_builder.py::test_ac24_*`
+  and `test_api_query_builder.py::test_ac24_invalid_spec_rejected_precisely`.
+- **G7 (guarded)** — Generated Cypher is returned and editable in every NL
+  outcome, including failures, with exactly one regeneration →
+  `test_nlq_service.py::test_answer_*`, `test_nlq_generate.py`.
+- **G8 (guarded)** — Every executed query is persisted as `:SavedQuery`
+  with question, Cypher, ontology version, and result count (AC-30) →
+  `test_api_query_nl.py::test_query_nl_runs_trace_3_end_to_end`.
+- **G9 (guarded)** — Every API response carries `X-LIMES-Ontology-Version`
+  and errors use the §6 envelope with the §11 HTTP mapping →
+  `test_api_health.py`, `test_api_query_cypher.py::test_query_cypher_write_attempt_is_rejected_400`.
+- **T1 (triggered)** — No example questions in `nl2cypher_v1.0.0.md`
+  (NG-08): review-trigger on the prompt file;
+  `test_nlq_generate.py::test_ng08_prompt_contains_no_example_questions`
+  guards the property mechanically.
+- **T2 (triggered)** — Validator stays parse-level (no substring search):
+  review-trigger on `nlq/validate.py`;
+  `test_nlq_validate.py::test_write_clause_hidden_in_string_or_comment_cannot_pass`
+  guards the mechanism.
+
+## 2026-08-02 — D-54 (R1) — The three enumerated writes, verified by grep
+
+The AC-18 grep over `src/limes/api/` finds write tokens in exactly one
+module — `routers/saved_queries.py` (the `:SavedQuery` create and delete
+statements plus their call sites). The third enumerated write
+(`:CostLedgerEntry` on the NL path) physically lives in `cost/ledger.py`
+via the OpenRouter client, outside `src/limes/api/` by the §5.2/§7.3
+ownership table — the grep's contract is the shape of the code in the API
+package, and that shape holds. The dedicated guard test
+`test_api_write_surface.py` freezes this property, including the
+obfuscation corpus (case variants, comments, `CALL {}` subqueries,
+`apoc.*` procedures, comment-embedded write text that must *pass*
+validation because it is data, not syntax).
+
+## 2026-08-02 — D-53 (R1) — API test isolation via sanctioned module wipes
+
+The integration suite shares one session container; the API tests that run
+a real gisco ingest (sources, ingest status, coverage) leave a `:Country`
+with `iso2 = 'DE'` behind, which breaks
+`test_loader.py::test_load_materializes_standalone_entities`'s
+fresh-graph premise, and the absolute-count assertions of the query tests
+assumed no prior SUBSIDIARY_OF edges. Fix: `wipe_graph` in
+`tests/fixtures/graph_data.py` (the `DETACH DELETE` fixture-teardown
+exception the CLI tests already use), wired as a module-scoped autouse
+fixture — reset at module start for the query/saved-query/write-surface
+modules, reset at module end for the gisco-ingesting modules. The suite is
+order-independent again (149 integration tests, any subset order).
+
+## 2026-08-02 — D-52 (R1) — `BuilderHop` gains `temporal_instant`
+
+Doc 2 §6's hop shape `{relation, direction, target_type, filters,
+temporal_qualifier}` cannot express the instant an `as_of`/`as_believed`
+qualifier needs. `BuilderHop` carries a companion `temporal_instant:
+datetime | None`; a qualifier without an instant is rejected precisely
+("temporal_qualifier 'as_of' needs temporal_instant"), so the invalid
+combination stays unrepresentable (AC-24).
+
+## 2026-08-02 — D-51 (R1) — Saved-query delete: existence read, then `write_batch`
+
+A `DELETE` cannot run in `GraphDriver.read`'s read-access-mode session,
+and `WriteResult` carries no deletion counter. `DELETE /saved-queries/{id}`
+therefore checks existence via a read (404 on absence) and deletes through
+`write_batch` — two round trips, no count recovery needed. The same split
+applies to the duplicate check before the `:SavedQuery` create.
+
+## 2026-08-02 — D-50 (R1) — Plan gate reads variable-length bounds from the query text
+
+An EXPLAIN plan cannot express a variable-length expansion's hop bound —
+the operator name carries no depth — so `UNBOUNDED_EXPANSION` and
+`EXPANSION_TOO_DEEP` are decided by the `nlq/validate.py` tokenizer over
+the query text (`[*]`, `[*N..]`, `[*N]`, `[*1..M]` forms), while
+`CARTESIAN_PRODUCT`, `OPERATOR_ROWS_EXCEEDED`, and `TOTAL_ROWS_EXCEEDED`
+come from the plan. `QueryPlanRejected` carries `code` and `plan_summary`
+as documented attributes on the §11 class rather than new subclasses — the
+specified error hierarchy stays untouched (two `type: ignore[attr-defined]`
+mark the attachment site).
+
+## 2026-08-02 — D-49 (R1) — The Cypher tokenizer lives in `nlq/validate.py`
+
+Doc 2 §2's module list is authoritative and has no `tokens.py`; parse-level
+inspection is §7.2's validator concern, so the tokenizer lives there and is
+consumed by the plan gate (`nlq/plan.py`), the diagnosis service
+(`coverage/diagnose.py`), and the coverage router's relation extraction —
+one parser, one set of clause boundaries, no second tokenizer drifting.
+
+## 2026-08-02 — D-48 (R1) — `/builder/schema` delivered whole in the phase
+
+The roadmap splits the endpoint across WPs (route registered in WP-32,
+projection logic in WP-35), but a registered route needs its projection to
+serve. Delivered as one piece: the route in `routers/ontology.py` and
+`project_for_builder` in `src/limes/api/builder.py` (the roadmap's
+sanctioned location for the projection). The spec-route (WP-32) is
+satisfied in the phase's final state.
+
+## 2026-08-02 — D-47 (R2) — AC-40 guard test: the API startup handler's driver exemption
+
+Doc 2 §8.15 exempts "the API startup handler" from the construction ban,
+§15.2's FastAPI row names `api/main.py` as the driver's constructor
+("constructs settings, ontology, driver"), and the roadmap's WP-32 task 1
+instructs the startup handler to construct the GraphDriver. The existing
+AC-40 grep test predates the API and would flag that construction. The
+guard test now carries the exemption for exactly the driver pattern in
+exactly `api/main.py`, with the §15.2 citation in the test — a repair to
+match the spec's own seam register, not a weakening: every other
+constructor in `src/limes/api/` still fails the test. Rejected
+alternative: hiding the construction behind an indirection to keep the
+old grep green — evasion, and it would obscure the sanctioned seam.
+
+---
+
 ## 2026-08-02 — Approval — phase-6-v1.0.0 (WP-28…WP-31 + the WP-28 conflict repair)
 
 The human approved phase-6-v1.0.0 (CLI core with the advisory lock —
