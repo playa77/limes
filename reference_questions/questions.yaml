@@ -1,0 +1,52 @@
+# LIMES — reference questions (Doc 2 §12.6, NG-08)
+#
+# Five operator questions with hand-written reference Cypher. Two roles:
+#   - Expressibility, data-independent: each query passes validation and
+#     planning against an empty graph, proving the ontology can express the
+#     question shape (AC-25). These are fixtures, not templates: they are
+#     never surfaced in the UI and never given to the NL-to-Cypher model.
+#   - Generation quality, measured not gated: `make evaluate --nl2cypher`
+#     reports validation-pass rate and structural agreement with the
+#     reference query.
+#
+# The reference Cypher uses only ontology labels and relations, contains no
+# write clause, and carries an explicit LIMIT — the properties WP-33's
+# deterministic validator requires.
+- id: q1
+  question: Which EU sanctions were imposed by the European Union and target Russian companies?
+  reference_cypher: |
+    MATCH (s:Sanction)-[:IMPOSED_BY]->(i:IGO {label: "European Union"})
+    MATCH (s)-[:TARGETS]->(t:Corporation)
+    RETURN s.label AS sanction, t.label AS target
+    ORDER BY t.label
+    LIMIT 50
+- id: q2
+  question: Which legal acts amend the AI Act (Regulation (EU) 2024/1689)?
+  reference_cypher: |
+    MATCH (a:LegalAct)-[:AMENDS]->(ai:LegalAct {celex: "32024R1689"})
+    RETURN a.label AS act, a.celex AS celex
+    ORDER BY a.label
+    LIMIT 50
+- id: q3
+  question: Which persons hold office at the European Commission and are members of the SPD?
+  reference_cypher: |
+    MATCH (p:Person)-[:HOLDS_OFFICE]->(o:Office)-[:OFFICE_AT]->(pb:PublicBody {label: "European Commission"})
+    MATCH (p)-[:MEMBER_OF]->(party:PoliticalParty {label: "SPD"})
+    RETURN p.label AS person, o.office_title AS office
+    ORDER BY p.label
+    LIMIT 50
+- id: q4
+  question: Which corporations headquartered in Germany supply BMW AG?
+  reference_cypher: |
+    MATCH (s:Corporation)-[:SUPPLIES]->(b:Corporation {label: "BMW AG"})
+    MATCH (s)-[:HEADQUARTERED_IN]->(:Location)-[:LOCATED_IN]->(r:AdministrativeRegion {nuts_code: "DE"})
+    RETURN DISTINCT s.label AS supplier
+    ORDER BY supplier
+    LIMIT 50
+- id: q5
+  question: Which sanctions were established by Regulation (EU) 2026/1234?
+  reference_cypher: |
+    MATCH (sn:Sanction)-[:ESTABLISHED_BY]->(la:LegalAct {celex: "32026R1234"})
+    RETURN sn.label AS sanction
+    ORDER BY sanction
+    LIMIT 50

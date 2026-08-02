@@ -113,12 +113,7 @@ def build_run_context(
     nlp_de = spacy.load(settings.gate_spacy_model_de)
     nlp_en = spacy.load(settings.gate_spacy_model_en)
     client = OpenRouterClient(settings, governor)
-    # The §8.7.1 protocol declares a settable `model_id`; the extractor
-    # exposes it as a read-only property (WP-22 made it immutable on
-    # purpose — the pinned model must not change mid-process). The seam
-    # site narrows with a cast; the protocol keeps the spec's literal
-    # shape (D-41).
-    extractor = cast(Extractor, OpenRouterExtractor(settings, client))
+    extractor = extractor_for(settings, client)
     logger.info(
         "run context built (with inference)",
         ontology_version=ontology.version,
@@ -165,6 +160,22 @@ def build_nlq_context(
         client=client,
         governor=governor,
     )
+
+
+def extractor_for(settings: Settings, client: OpenRouterClient) -> Extractor:
+    """The extractor construction point (WP-29/30): one place for the
+    production extractor and the per-candidate extractors the measured
+    model-selection stage evaluates, so AC-40's construction surface stays
+    in this file. The candidate model rides in a `Settings` copy — the
+    extractor reads `extraction_model` from the settings it was given.
+
+    The §8.7.1 protocol declares a settable `model_id`; the extractor
+    exposes it as a read-only property (WP-22 made it immutable on
+    purpose — the pinned model must not change mid-process). The seam
+    site narrows with a cast; the protocol keeps the spec's literal
+    shape (D-41).
+    """
+    return cast(Extractor, OpenRouterExtractor(settings, client))
 
 
 def embedder_for(

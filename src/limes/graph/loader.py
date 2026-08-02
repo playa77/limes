@@ -1,12 +1,13 @@
-# src/limes/graph/loader.py | v1.1.0 | introduced by WP-07, amended by WP-25a
+# src/limes/graph/loader.py | v1.2.0 | introduced by WP-07, amended by WP-25a, WP-28 repair
 """The sole writer of ontology-typed nodes, relationships, and lookup rows
 (Technical Specification §15.2, DD-19).
 
-`load` applies the §5.6 merge semantics in batches of at most 500 assertions
-per transaction: materialize endpoint nodes (grouped by label set from
-`Ontology.labels_for`), materialize lookup rows, then merge relationships
-bitemporally — idempotent by `assertion_id`, interval closure scoped to the
-same `source_id`, non-destructive re-merge (AC-05, AC-06, AC-08, AC-09).
+`load` applies the §5.6 merge semantics in transactions of at most 500
+assertions and at most 500 lookup rows: materialize endpoint nodes (grouped
+by label set from `Ontology.labels_for`), materialize lookup rows, then merge
+relationships bitemporally — idempotent by `assertion_id`, interval closure
+scoped to the same `source_id`, non-destructive re-merge (AC-05, AC-06,
+AC-08, AC-09).
 An assertion whose endpoint lacks an `entity_id` is rejected as
 `ENDPOINT_UNIDENTIFIED`, counted, never written (AC-10).
 
@@ -81,8 +82,13 @@ def load(
 
     Rejections are counted and logged with their reason, never silently
     dropped. Assertions are processed in transactions of at most
-    `BATCH_SIZE`; standalone entities and lookup rows ride with the first
-    batch's transaction.
+    `BATCH_SIZE`; standalone entities ride with the first batch's
+    transaction. Lookup rows are chunked at the same size: chunk *i* rides
+    with assertion batch *i*, and any overflow chunks each run in their own
+    transaction — a record's whole lookup list can exceed any transaction
+    (the GISCO postcode correspondence is ~300k rows; a single transaction
+    of them blows the §13.4 caps, which is why batching here is load-bearing
+    and not an optimization).
 
     The embedder contract (WP-25a): `embedder(labels)` returns one vector
     per input text, in order, each exactly `LIMES_EMBEDDING_DIMENSIONS`
@@ -108,6 +114,7 @@ def load(
     batches = [valid[i : i + BATCH_SIZE] for i in range(0, len(valid), BATCH_SIZE)]
     if not batches:
         batches = [[]]
+    lookup_chunks = [lookup[i : i + BATCH_SIZE] for i in range(0, len(lookup), BATCH_SIZE)]
 
     for index, batch in enumerate(batches):
         _load_batch(
@@ -115,10 +122,12 @@ def load(
             batch,
             ontology,
             standalone if index == 0 else [],
-            lookup if index == 0 else [],
+            lookup_chunks[index] if index < len(lookup_chunks) else [],
             embedder,
             result,
         )
+    for chunk in lookup_chunks[len(batches) :]:
+        _load_batch(driver, [], ontology, [], chunk, embedder, result)
     return result
 
 

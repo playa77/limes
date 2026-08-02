@@ -7,6 +7,185 @@ Nothing here is a status report; unlogged decisions are unmade decisions.
 
 ---
 
+## 2026-08-02 — Phase 6 resumes: loader lookup-row batching repair (human decision, branch a)
+
+The human chose branch (a) of the halted-phase decision, in the human's own
+words: **"(a) repair the loader's lookup-row batching. Proceed."** The phase
+resumes as a repair unit; the phase-6 invariants (G1–G11, T1–T4, logged
+above) are unaffected by the repair and hold as derived.
+
+**D-46 (R2)** — Lookup rows are chunked at `BATCH_SIZE` like assertions.
+`load` partitions `lookup_rows` into chunks of 500; chunk *i* rides with
+assertion batch *i*, and overflow chunks each run in their own transaction.
+Every transaction therefore carries at most 500 assertions and at most 500
+lookup rows: §8.3's "at most 500 assertions per transaction" keeps its
+literal shape, the WP-07 "ride with the first batch" decision holds for
+payloads that fit, and the live GISCO payload (~300k rows) spans ~600
+bounded transactions instead of one 120s-timeout transaction. Rejected
+alternatives: (a) a single `UNWIND`-based statement per chunk in
+`queries.py` — a real round-trip win (~300k `tx.run` calls become ~600) but
+a rewrite of the WP-07 query shape and failure granularity, not required
+for correctness, and beyond the chosen repair branch; (b) dedicated
+lookup-only transactions for every chunk — a larger departure from the
+first-batch-riding shape with no additional guarantee. Known characteristic,
+accepted: per-statement `tx.run` remains the established pattern, so the
+full 300k-row load is a multi-minute, bounded operation — fine for a
+one-shot reference bootstrap.
+
+**New phase-6 invariant (guarded):** **G12** — lookup rows are batched: a
+load of more than `BATCH_SIZE` lookup rows spans multiple transactions, none
+carrying more than `BATCH_SIZE` postal statements, and every row is
+materialized → guard
+`test_loader.py::test_lookup_rows_are_batched_across_transactions`
+(instrumentation through the documented `GraphDriver._driver` seam counts
+postal statements per committed transaction).
+
+Baseline deviation, not introduced by the repair (D-27 precedent — flagged,
+not fixed): `tests/integration/test_loader.py` fails `ruff format --check`
+and carries 14 pre-existing E501 lines on pristine main.
+
+The three entries below were decided and implemented before the halt but
+never logged — they exist only as code references (D-43 in `cli/ingest.py`
+and `cli/main.py`, D-44 in `cli/backfill.py`, D-45 in `cli/reextract.py`).
+Logging them here at resume closes the gap; an unlogged decision is an
+unmade decision, and these were made.
+
+## 2026-08-02 — D-43 (R1) — `build_default_registry` is the CLI's only sanctioned registry inspection
+
+A command must know a source's `kind` (structured vs unstructured) before
+it can choose `needs_inference`, and `enrichment-only` before `ingest-all`
+can skip it — but AC-40 binds the registry's constructor to the composition
+root, and `build_run_context` is not asked the kind question. The CLI
+therefore inspects through `build_default_registry()`, the one sanctioned
+population function, purely for inspection: the registry used for a run is
+always the context's own (D-36). `ingest-all` skips `wikidata`, the
+enrichment-only source named by the roadmap, whose `fetch` would otherwise
+surface as a `NotImplementedError` traceback rather than a `LimesError`; the
+skip list in `cli/ingest.py` is the named refresh point.
+
+## 2026-08-02 — D-44 (R1) — `backfill --days` becomes an explicit `since = now − days`
+
+The run spec carries an explicit window: `--days` is resolved once in the
+CLI to `since = now − days`, because the §8.6.2 explicit-since rule makes
+the window deterministic — a non-incremental source asked for a window gets
+exactly that window, and nothing re-derives the window from the clock at
+resolution time.
+
+## 2026-08-02 — D-45 (R1) — `reextract` defaults to every unstructured source
+
+Without `--source`, re-extraction runs every unstructured source in
+sequence: document-producing sources are the only ones with anything to
+re-extract (structured loads are re-run by `ingest` itself), and a
+structured source would silently re-load rather than re-extract — a
+non-operation presented as a success.
+
+---
+
+## 2026-08-02 — Phase 6 [CONFLICT] — live `limes ingest --source gisco_nuts` fails; phase halted per human decision
+
+The roadmap's WP-28 verification command `limes ingest --source gisco_nuts`
+(roadmap §WP-28 Verification) was run against a live Neo4j container with
+the production §13.4 memory configuration (heap 2G, page cache 2G,
+transaction cap 512m, transaction timeout 120s). It failed: the delivered
+WP-07 loader materializes every lookup row of a record in the *first*
+batch's single transaction — `loader.py:112-118` passes the whole
+`lookup` list to `_load_batch` for `index == 0`, and `loader.py:312-324`
+issues one `POSTAL_CODE_MERGE` statement per row in that one transaction.
+The live GISCO postcode correspondence payload (12 MB gzip, ~300k rows,
+archived during the run) then times out the single transaction
+(`TransactionTimedOutClientConfiguration` after 120s; with the 512m heap
+test container it failed earlier as `MemoryPoolOutOfMemoryError` at the
+358 MiB default cap). The fixture-based suites (436 tests, including the
+fixture-fetched CLI Trace 1) are green because the fixture postcode file
+carries 3 rows. This is not a Docs 1–2 gap: §5.6's batching rule covers
+assertions and the loader complies; the lookup-row batching was a WP-07
+implementation decision ("ride with the first batch", loader.py:84-85)
+that does not scale to the live file. The WP-28 acceptance criterion
+"Trace 1 runs via `limes ingest --source gisco_nuts`" cannot pass as
+delivered.
+
+Human decision, 2026-08-02, in the human's own words: **"Record
+[CONFLICT], halt phase."** The phase is therefore halted, not delivered:
+no phase version is presented and no approval is requested. The phase-6
+work products (CLI core, advisory lock, model selection, evaluation
+harness, gold-set and calibration artifacts, reference questions,
+migration CLI, and their tests) remain on branch
+`wp-28-31-cli-and-evaluation`, unmerged; their invariants were derived and
+logged above but are not asserted as a delivery. The phase resumes only on
+a human decision about the loader repair (the halted work is unaffected by
+any of the three presented branches: repair the loader's lookup-row
+batching, narrow the criterion to fixture-level Trace 1, or re-scope).
+
+---
+
+## 2026-08-02 — Phase 6 invariants (WP-28…WP-31), derived and tagged
+
+Guarded (automated check, named guard installed and green):
+- **G1** — Trace 1 runs through the CLI: `ingest --source gisco_nuts`
+  (CliRunner, adapter fetch stubbed with the recorded fixtures — the same
+  seam Trace 1's own test uses) builds the context, acquires and releases
+  the advisory lock, loads the run, and closes the `:IngestionRun` with
+  honest counts → guard `test_cli_ingest.py::test_cli_ingest_gisco_nuts_end_to_end`.
+- **G2** — `backfill` and `reextract` refuse without `--budget` (usage
+  error, non-zero exit, no context built) → guards
+  `test_cli_backfill.py::test_backfill_refuses_without_budget`,
+  `test_cli_reextract.py::test_reextract_refuses_without_budget`
+  (subprocess — the refusal must hold across a real process boundary).
+- **G3** — Advisory lock: a second acquire on the same source fails while
+  held; a stale lock is reclaimed with a warning; release clears; the
+  refusal is honored across a real process boundary (subprocess) →
+  guards `test_cli_lock.py` (four tests).
+- **G4** — `limes backup` stops the database, dumps offline to the archive
+  with a timestamped filename, restarts, and verifies reachability — a
+  real `docker compose` lifecycle against a disposable container →
+  guard `test_cli_backup.py::test_backup_stops_dumps_and_restarts`.
+- **G5** — AC-36: `select-models --provisional` writes a complete pin set
+  (four roles + `LIMES_MODEL_PIN_STAGE` + date) into `.env` after operator
+  confirmation, without reading the gold set → guard
+  `test_select_models.py::test_ac36_provisional_writes_pin_set_without_gold_set`.
+- **G6** — AC-37: `select-models --measured` refuses without a gold set at
+  version ≥ 1.0.0; on re-pinning it reports affected source/document
+  counts and a cost estimate and performs no re-extraction → guards
+  `test_select_models.py::test_ac37_measured_refuses_without_gold_set`,
+  `test_ac37_repin_reports_counts_without_reextracting`.
+- **G7** — AC-31: `evaluate` computes per-relation precision/recall/F1,
+  writes `baseline.json` (the sole regression-gate source of truth),
+  appends to `gold_set/CHANGELOG.md`, writes `:GoldSetItem` nodes, and
+  exits non-zero when a per-relation F1 regresses beyond 0.05 absolute →
+  guards `test_evaluate.py::test_ac31_metrics_and_regression_gate`,
+  `test_gold_set_items_written_to_graph`.
+- **G8** — AC-25: five reference questions load with hand-written Cypher;
+  each passes the structural reference check (declared labels/relations
+  exist in the ontology, no write clauses, limit present or injectable) →
+  guard `test_evaluate.py::test_ac25_reference_questions_validate`.
+- **G9** — Gold-set artifacts: `gold_set.jsonl` validates against its
+  schema with items labeled from passage text; the calibration set counts
+  exactly 40 true / 40 hard-negative / 20 cross-language and 50 de / 50 en
+  → guard `test_evaluate.py::test_gold_set_schema_and_calibration_counts`.
+- **G10** — WP-31: `migrate --ontology-version 1.0.0` is a no-op on a
+  fresh database and reports nothing to migrate; the migration pattern
+  (`TO_VERSION` + `upgrade(driver) -> None`) is importable and runnable →
+  guards `test_migrate.py` (integration).
+- **G11** — `ingest-all` skips enrichment-only sources (wikidata) without
+  ever invoking their `fetch` → guard
+  `test_cli_ingest.py::test_ingest_all_skips_enrichment_only_sources`.
+
+Triggered (review-flag paths, no automated guard):
+- **T1** — `cli/main.py` is the sole writer of `:AdvisoryLock` (§5.8,
+  §15.2): any diff adding another writer of the node type, or a graph
+  write in the CLI beyond the lock, is flagged for review before commit.
+- **T2** — `cli/evaluate.py` is the sole writer of `:GoldSetItem` (§5.8):
+  any diff adding another writer, or any graph write in `src/limes/api/`
+  beyond §7.3's three enumerated writes, is flagged.
+- **T3** — `reference_questions/questions.yaml` is an expressibility
+  fixture, not a template library (NG-08): any diff that surfaces the
+  questions in the UI, the NLQ prompt, or any suggestion list is flagged.
+- **T4** — `select-models` writes pins only into the local `.env` file:
+  any diff that commits pins, writes another config file, or performs
+  re-extraction or an index rebuild automatically is flagged.
+
+---
+
 ## 2026-08-01 — Approval — phase-5-v1.0.0 (WP-26, WP-27)
 
 The human approved phase-5-v1.0.0 (composition root: `build_run_context`/

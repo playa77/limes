@@ -1,0 +1,93 @@
+# src/limes/cli/reextract.py | v1.0.0 | introduced by WP-28
+"""The `reextract` command (Doc 2 §8.14, Doc 1 §9.4).
+
+Deliberate re-extraction always carries a version (D-39): `--prompt-version`
+is copied into `Settings`, which gates the extraction cache key — a changed
+version is a cache miss, so the run re-extracts instead of short-circuiting
+on the gate's zero-cost check. `execute_run` then retracts exactly the
+source's prior assertions for each document that the new extraction did not
+reproduce — superseded, never deleted — and loads the new set (D-39).
+
+Without `--source`, every unstructured source runs in sequence — the
+document-producing sources are the only ones with anything to re-extract
+(D-45). `--budget` is mandatory: re-extraction is paid inference and must
+not draw on the steady-state envelope (Doc 1 §6.6).
+"""
+
+from __future__ import annotations
+
+from decimal import Decimal
+
+import structlog
+import typer
+
+from limes.config import Settings, load_settings
+from limes.logging_setup import configure_logging
+from limes.pipeline.run import RunSpec
+
+logger = structlog.get_logger(__name__)
+
+
+def reextract_source(
+    prompt_version: str = typer.Option(..., "--prompt-version", help="The new prompt version"),
+    source: str | None = typer.Option(
+        None, "--source", help="Restrict re-extraction to one source (default: all unstructured)"
+    ),
+    budget: float = typer.Option(
+        ..., "--budget", min=0, help="The explicit EUR envelope; mandatory for reextract"
+    ),
+) -> None:
+    """Re-extract documents under a new prompt version, retracting
+    superseded assertions — never deleting (Doc 1 §9.4)."""
+    settings = load_settings()
+    configure_logging(settings)
+    envelope = Decimal(str(budget))
+    # The deliberate version: the cache key includes the prompt version, so
+    # reextract under the pinned version would hit every cache entry and be
+    # a no-op (D-39). The copy keeps the rest of the configuration intact.
+    settings = settings.model_copy(update={"extraction_prompt_version": prompt_version})
+    for source_id in _reextract_sources(source):
+        _reextract_one(settings, source_id, envelope)
+
+
+def _reextract_one(settings: Settings, source_id: str, envelope: Decimal) -> None:
+    from limes.cli.main import adapter_kind, run_with_lock
+    from limes.composition import build_run_context
+
+    ctx = build_run_context(
+        settings,
+        needs_inference=(adapter_kind(source_id) == "unstructured"),
+        budget_eur=envelope,
+    )
+    try:
+        record = run_with_lock(
+            ctx,
+            source_id,
+            RunSpec(source_id=source_id, mode="reextract", budget_eur=envelope),
+        )
+        typer.echo(
+            f"reextract {source_id}: {record.records_fetched} records, "
+            f"{record.assertions_written} assertions written, "
+            f"{record.assertions_skipped} skipped, {record.errors} errors, "
+            f"cost EUR {record.cost_eur}"
+        )
+    finally:
+        ctx.driver.close()
+
+
+def _reextract_sources(explicit: str | None) -> list[str]:
+    """The sources a reextract run covers: the explicit `--source`, or every
+    unstructured source — the document-producing ones (D-45). Structured
+    sources hold no documents and nothing to retract."""
+    from limes.cli.main import adapter_kind
+
+    if explicit is not None:
+        adapter_kind(explicit)  # fail fast on an unknown id (AC-38)
+        return [explicit]
+    from limes.sources.registry import build_default_registry
+
+    return [
+        source_id
+        for source_id in build_default_registry().source_ids()
+        if adapter_kind(source_id) == "unstructured"
+    ]
