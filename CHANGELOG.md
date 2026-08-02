@@ -8,8 +8,8 @@ gold set, prompts) are recorded in their own changelogs.
 
 ## 2026-08-02 — Phase 7 delivered — phase-7-v1.0.0 (WP-32…WP-35)
 
-Presented for approval on branch `wp-32-35-query-api` (pending the human's
-verdict; recorded in DECISIONS.md upon approval).
+Approved by the human (DECISIONS.md, 2026-08-02) and merged to `main`,
+pushed. Delivered on branch `wp-32-35-query-api`.
 
 - **WP-32 — Query API foundation.** `api/main.py` (FastAPI app, startup
   handler, `X-LIMES-Ontology-Version` middleware, §6 error envelope, §11

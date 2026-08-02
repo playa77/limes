@@ -7,6 +7,16 @@ Nothing here is a status report; unlogged decisions are unmade decisions.
 
 ---
 
+## 2026-08-02 — Approval — phase-7-v1.0.0 (WP-32…WP-35)
+
+The human approved phase-7-v1.0.0 (query API foundation, NL-to-Cypher
+service, coverage report and empty-result diagnosis, query routers with
+the enumerated write surface) on 2026-08-02 and instructed merge, commit,
+and push. Delivered as branch `wp-32-35-query-api` (commits `ef749e4`
+… `a115610`), merged to `main` and pushed; the topic branch is pushed as
+well. This approval names the presented version and cannot be reused for
+any other version of the phase.
+
 ## 2026-08-02 — Phase 7 invariants (WP-32…WP-35), derived at phase start
 
 Derived from the roadmap's WP-32…WP-35 entries and Doc 2 §6–§8.12, per the
