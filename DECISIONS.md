@@ -7,6 +7,20 @@ Nothing here is a status report; unlogged decisions are unmade decisions.
 
 ---
 
+## 2026-08-01 — Approval — phase-5-v1.0.0 (WP-26, WP-27)
+
+The human approved phase-5-v1.0.0 (composition root: `build_run_context`/
+`build_nlq_context`/`embedder_for` with `needs_inference` gating; pipeline
+run orchestration: `RunSpec`/`execute_run`, window resolution,
+`:Source`/`:IngestionRun` lifecycle, registry-stamped provenance, clean
+budget termination) on 2026-08-01 and instructed merge, commit, and push.
+Delivered as branch `wp-26-27-composition-and-pipeline`, merged to `main`
+as `b927986` and pushed; the topic branch is pushed as well. This approval
+names the presented version and cannot be reused for any other version of
+the phase.
+
+---
+
 ## 2026-08-01 — D-42 (R2) — First-run deterministic links to backbone-absent entities no-op by design
 
 The trace test's original expectation (SAME_AS on the first ingest of an
