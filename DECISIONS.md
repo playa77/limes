@@ -7,6 +7,16 @@ Nothing here is a status report; unlogged decisions are unmade decisions.
 
 ---
 
+## 2026-08-02 — Approval — phase-8-v1.0.0 (WP-36)
+
+The human approved phase-8-v1.0.0 (Dash UI: three synchronized panes, the
+schema-generated builder, NL input and editable Cypher console, coverage
+and provenance panels, saved queries, budget indicator) on 2026-08-02 and
+instructed merge, commit, and push. Delivered as branch `wp-36-dash-ui`
+(commits `48556d3`, `fb7cab1`), merged to `main` and pushed; the topic
+branch is pushed as well. This approval names the presented version and
+cannot be reused for any other version of the phase.
+
 ## 2026-08-02 — D-14 (R1) — Selection sync semantics for the three panes
 
 AC-29's "all three panes react to a selection change" is implemented
