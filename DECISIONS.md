@@ -7,6 +7,140 @@ Nothing here is a status report; unlogged decisions are unmade decisions.
 
 ---
 
+## 2026-08-02 — Approval — phase-8-v1.0.0 (WP-36)
+
+The human approved phase-8-v1.0.0 (Dash UI: three synchronized panes, the
+schema-generated builder, NL input and editable Cypher console, coverage
+and provenance panels, saved queries, budget indicator) on 2026-08-02 and
+instructed merge, commit, and push. Delivered as branch `wp-36-dash-ui`
+(commits `48556d3`, `fb7cab1`), merged to `main` and pushed; the topic
+branch is pushed as well. This approval names the presented version and
+cannot be reused for any other version of the phase.
+
+## 2026-08-02 — D-14 (R1) — Selection sync semantics for the three panes
+
+AC-29's "all three panes react to a selection change" is implemented
+symmetrically: a node selection highlights the node in the network, its
+marker on the map, and the rows of its incident edges in the timeline; an
+edge selection highlights the edge in the network, its row in the timeline,
+and the markers of both endpoints on the map. The map can only highlight
+coordinate-bearing nodes (the only points it renders), and the timeline can
+only highlight edges present in the result — a pane reacts exactly as far
+as the data it renders admits.
+
+## 2026-08-02 — D-13 (R1) — Builder bounds: one property filter per hop, one instant picker
+
+The generated builder offers one (property, value) filter per hop and a
+date picker for `as_of`/`as_believed` instants, and caps no hop count.
+Richer filters and instant precision are the console's job; the builder
+guarantees admissibility, not completeness. The instant is date-only: the
+API's parameter passing cannot string-match datetime properties anyway
+(`coerce_filter_value` documents this), so a date picker cannot promise a
+match the API cannot deliver.
+
+## 2026-08-02 — Observations for later phases (triggered paths)
+
+- `src/limes/api/main.py` exposes `create_app` but no module-level `app`.
+  WP-37's api.Dockerfile CMD `uvicorn limes.api.main:app` will therefore
+  fail; it needs `uvicorn limes.api.main:create_app --factory`. Flagged
+  here because it is outside WP-36's scope (the UI test uses the factory
+  form). The ui.Dockerfile CMD `python -m limes.ui.app` works as specified.
+- `src/limes/graph/lookups.py` fails `ruff format --check` on `main`
+  (pre-existing WP-08 formatting deviation, unrelated to this phase);
+  left untouched as out of scope.
+
+## 2026-08-02 — D-12 (R1) — Panes re-render from the full query response envelope
+
+The `current-result` store holds the whole `QueryResponse` (results,
+coverage, diagnosis, notes), not just the graph: the coverage panel and the
+console need the API's annotations, and AC-27's merge operates on the
+`results` slice only. `merge_neighborhood` always returns the envelope form,
+so the store has one shape regardless of whether the view started from a
+query, a search jump, or an expansion.
+
+## 2026-08-02 — Phase 8 invariants (WP-36), derived at phase start
+
+Derived from the roadmap's WP-36 entry, Doc 1 §6.5/§4.13, and Doc 2 §8.13,
+per the global contract §6. Guarded (automatically tested) and triggered
+(review-trigger) invariants, logged when derived:
+
+- **G1 (guarded)** — The UI holds no credentials and performs no database
+  access: no `neo4j`, `GraphDriver`, or `bolt://` reference anywhere in
+  `src/limes/ui/` → `test_ui.py::test_ui_holds_no_credentials_and_no_database_access`
+  (source scan).
+- **G2 (guarded)** — No UI module contains a hardcoded ontology type name
+  or relation name as a literal; the builder is generated from
+  `/builder/schema` → `test_ui.py::test_ui_source_contains_no_ontology_literals`
+  (AST literal scan against the loaded ontology).
+- **G3 (guarded)** — Node click expands one hop through
+  `/entity/{id}/neighbors` and merges into the current view without
+  re-running the original query (AC-27) →
+  `test_ui.py::test_ac27_node_click_expands_one_hop_without_rerunning_the_query`
+  (recording fake api_client asserts no query-path call).
+- **G4 (guarded)** — Edge selection displays full provenance including the
+  originating sentence when the evidence document is available through the
+  API (AC-28) → `test_ui.py::test_ac28_edge_selection_shows_provenance_and_sentence`.
+- **G5 (guarded)** — All three panes react to a selection change and to a
+  timeline brush within one interaction cycle; the brush triggers a re-query,
+  never client-side filtering (AC-29, Doc 2 §8.13) →
+  `test_ui.py::test_ac29_panes_react_to_selection_and_brush_in_one_cycle`.
+- **T1 (triggered)** — The builder's per-hop options stay admissible as the
+  ontology evolves: any change to `ontology/ontology.yaml` that adds or
+  renames a type or relation requires re-review of the builder rendering and
+  of the map's coordinate-type derivation (the schema-derived lookups in
+  `ui/components/builder.py` and `ui/components/map.py` are the affected
+  paths).
+
+## 2026-08-02 — D-11 (R2) — Timeline brush re-queries with `as_of` = brush right edge
+
+The brush stores `{as_of, range}` in `temporal-filter` and re-runs the
+query that produced the current view through the same API path: the builder
+path re-runs `POST /query/builder` with `as_of` qualifiers on temporal hops
+(the schema's `temporal` flag decides, never a UI list), and the NL and raw
+Cypher paths re-run their stored payload (`POST /query/nl` with the same
+question, `POST /query/cypher` with the same cypher). The API surface (Doc
+2 §6) has no temporal parameter for arbitrary Cypher, so those two paths
+cannot carry the instant without the UI authoring Cypher fragments (which
+§8.13 forbids); their re-run keeps the panes reproducible by the graph.
+`as_of` = brush right edge means the panes show the state at the end of the
+brushed period — the only single-instant semantics expressible through
+`BuilderHop.temporal_qualifier` and the neighbors endpoint's `as_of`.
+Rejected alternative: client-side interval filtering (explicitly forbidden
+by §8.13); appending `WHERE` clauses in the UI (a Cypher fragment, also
+forbidden).
+
+## 2026-08-02 — D-10 (R2) — Originating sentence availability is bounded by the API
+
+AC-28 requires the provenance panel to show the originating sentence for
+news-extracted assertions. The API (Doc 2 §6) exposes no document-text
+endpoint, and — as WP-32's search test documents — no production path
+stamps `title`/`body` on `:Document` nodes today, so `get_entity()` returns
+404 for an evidence document. The panel therefore displays the full `EdgeRef`
+provenance plus the evidence coordinates and fetches the sentence via
+`get_entity(evidence_document_id)` when the document node exists (the
+sanctioned read path, and the mechanism that works unchanged once the
+pipeline materializes document entities). When the document is absent the
+panel states so explicitly — nothing is fabricated. This bounds AC-28's
+mechanical testability for WP-39 to the API's current surface; recorded as a
+seam gap rather than resolved by an out-of-scope API change.
+
+## 2026-08-02 — D-09 (R1) — UI reads `LIMES_API_BASE_URL` from the environment, never `.env`
+
+The UI is the one process that must hold no credentials (Doc 1 §7.4); it
+never loads `Settings` and never parses `.env` (which carries the OpenRouter
+key and the Neo4j password). It reads the single `LIMES_API_BASE_URL`
+variable directly, defaulting to `http://127.0.0.1:8000` for a bare local
+run; the compose `ui` service receives the value from the environment
+(WP-37).
+
+## 2026-08-02 — D-08 (R1) — UI callbacks are plain functions with a thin registration layer
+
+Each `callbacks/*.py` module defines its logic as pure functions (inputs in,
+outputs out) and a small `register(app)` that wires them into Dash. This
+makes AC-27/28/29 mechanically testable without a browser (the functions
+are called directly with recorded-fake API clients), keeps the Dash layer
+to a thin shell, and keeps `api_client.py` the only module performing HTTP.
+
 ## 2026-08-02 — Approval — phase-7-v1.0.0 (WP-32…WP-35)
 
 The human approved phase-7-v1.0.0 (query API foundation, NL-to-Cypher
