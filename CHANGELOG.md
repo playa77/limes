@@ -6,6 +6,40 @@ gold set, prompts) are recorded in their own changelogs.
 
 ---
 
+## 2026-08-02 — Phase 8 delivered — phase-8-v1.0.0 (WP-36 Dash UI)
+
+- **WP-36 — Dash UI.** `ui/api_client.py` (one function per §6 endpoint,
+  `LIMES_API_BASE_URL` from the environment only — never `Settings`, never
+  `.env`, so the UI holds no credentials, D-09; `ApiError` with the §6
+  envelope on non-2xx), `ui/layout.py` (one exploration screen with the
+  three synchronized panes, the console, the generated builder container,
+  search, saved-query list, budget indicator and system-status panel; all
+  state in `dcc.Store`s per §8.13), `ui/components/*.py` (network via
+  dash-cytoscape with the AC-27 neighborhood merge; map via dash-leaflet
+  with markers for schema-derived coordinate-bearing nodes; timeline via
+  plotly with a rangeslider brush; console; schema-generated builder with
+  domain/range-admissible options; coverage panel; provenance panel with
+  the originating sentence), `ui/callbacks/*.py` (selection sync and the
+  one-cycle three-pane render; the three run paths plus boot/search/saved-
+  query actions; the brush → temporal-filter → re-query chain), and
+  `ui/app.py` (Dash application, `python -m limes.ui.app` entry point).
+  AC-27 (node click expands one hop through `/entity/{id}/neighbors`
+  without re-running the original query), AC-28 (edge selection shows full
+  §5.6 provenance plus the originating sentence when the evidence document
+  exists — bounded by the API surface, D-10), AC-29 (all three panes react
+  to a selection change and to the timeline brush within one interaction
+  cycle; the brush re-queries with `as_of` = the brush's right edge, D-11).
+  The UI holds no credentials and performs no database access (grep guard),
+  contains no type name, relation name, or Cypher fragment literal (AST
+  guard against the loaded ontology), and its builder is generated from
+  `/builder/schema` at runtime.
+- 13 integration tests in `tests/integration/test_ui.py`: the AC-27/28/29
+  interactions as direct callback invocations with recorded API fakes,
+  schema-admissibility of every builder option against `Ontology.permits`,
+  the two source guards, the run paths and boot load, and the `api_client`
+  seam against a real uvicorn process (subprocess) serving the real
+  application against the disposable container.
+
 ## 2026-08-02 — Phase 7 delivered — phase-7-v1.0.0 (WP-32…WP-35)
 
 Approved by the human (DECISIONS.md, 2026-08-02) and merged to `main`,
