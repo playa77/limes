@@ -66,20 +66,34 @@ def _settings(neo4j_instance: Neo4jInstance, tmp_path: Path, **overrides) -> Set
     return Settings(**base)
 
 
+# src/limes/api/main.py — the API startup handler is the second sanctioned
+# driver construction site: Doc 2 §15.2's FastAPI row ("constructs settings,
+# ontology, driver") and the roadmap's WP-32 task 1 both name it, and §8.15
+# exempts "the API startup handler" from the construction ban explicitly.
+# The exemption is for the driver pattern only; everything else must still
+# route through composition.py.
+API_MAIN_DRIVER_EXEMPTION = "src/limes/api/main.py"
+
+
 def test_ac40_composition_is_the_only_constructor(neo4j_instance: Neo4jInstance):
     # The roadmap's grep verification as a test: every infra constructor
     # appears in exactly one place — composition.py (or the registry's own
-    # factory). A new module constructing infrastructure fails here before
-    # it can ship (AC-40).
+    # factory, or the API startup handler's driver per §15.2). A new module
+    # constructing infrastructure fails here before it can ship (AC-40).
     offenders: list[str] = []
     for pattern, _name in CONSTRUCTOR_PATTERNS:
         for path in sorted((REPO_ROOT / "src" / "limes").rglob("*.py")):
             text = path.read_text()
             if "composition.py" in str(path):
                 continue
+            relative = path.relative_to(REPO_ROOT)
+            if pattern == r"GraphDriver\(" and str(relative) == API_MAIN_DRIVER_EXEMPTION:
+                # §15.2's FastAPI row and the roadmap WP-32 task 1 sanction
+                # the API startup handler's driver construction.
+                continue
             for line_number, line in enumerate(text.splitlines(), start=1):
                 if re.search(pattern, line):
-                    offenders.append(f"{path.relative_to(REPO_ROOT)}:{line_number}: {line.strip()}")
+                    offenders.append(f"{relative}:{line_number}: {line.strip()}")
     assert not offenders, "infrastructure constructed outside the composition root:\n" + "\n".join(
         offenders
     )

@@ -6,6 +6,61 @@ gold set, prompts) are recorded in their own changelogs.
 
 ---
 
+## 2026-08-02 — Phase 7 delivered — phase-7-v1.0.0 (WP-32…WP-35)
+
+Approved by the human (DECISIONS.md, 2026-08-02) and merged to `main`,
+pushed. Delivered on branch `wp-32-35-query-api`.
+
+- **WP-32 — Query API foundation.** `api/main.py` (FastAPI app, startup
+  handler, `X-LIMES-Ontology-Version` middleware, §6 error envelope, §11
+  HTTP mapping), `api/deps.py` (dependency injection; `NlqContext` built
+  lazily), `api/models.py` (`GraphResult`, `CoverageReport`, `Diagnosis`,
+  `EntityRef`, `EdgeRef`, `NlqOutcome`, `BuilderSpec`, plus the row→result
+  conversion), `api/builder.py` (`project_for_builder`), and the seven
+  non-query routers: health, ontology (+versions), entity (+neighbors with
+  relation and `as_of`/`believed` temporal filters via the §5.7
+  fragments), search (fulltext over `entity_names`), sources, cost/ledger,
+  ingest/status. Startup provisions (downgrade guard, AC-01) and verifies
+  Neo4j reachability; unreachable does not abort startup — `/health`
+  reports 503.
+- **WP-33 — NL-to-Cypher service.** `nlq/generate.py` (prompt load by
+  version, delimited question, feedback verbatim, code-fence strip),
+  `nlq/validate.py` (a real Cypher tokenizer — comments, strings, and
+  backticked identifiers are single tokens, so a write hidden in one is
+  data, not syntax — plus clause walker, pattern walker with direction
+  awareness, all seven §8.10 validation codes, LIMIT injection,
+  partial-verification notes), `nlq/plan.py` (plan gate: cartesian/rows
+  from EXPLAIN, variable-length bounds from the query text), `nlq/service.py`
+  (`answer()` with exactly one regeneration), and the prompt
+  `nl2cypher_v1.0.0.md` (no example questions, NG-08).
+- **WP-34 — Coverage and diagnosis.** `coverage/report.py`
+  (`report_for_relations`: graph-wide counts, contributing sources, refresh
+  stamps) and `coverage/diagnose.py` (`diagnose`: clause decomposition via
+  the shared tokenizer, first-empty-clause naming, plain-language note).
+- **WP-35 — Query routers.** `routers/query.py` (`POST /query/cypher`,
+  `/query/nl` with `:SavedQuery` persistence per FR-14, `/query/builder`
+  with precise AC-24 rejections), `routers/coverage.py`, and
+  `routers/saved_queries.py` — the sole writer of `:SavedQuery` and the
+  only module in `src/limes/api/` with write tokens (AC-18 grep verified).
+  The builder translation parameterizes every filter value and temporal
+  instant and composes the §5.7 temporal fragments.
+- **AC-18 enforcement.** Grep verification finds write tokens only in
+  `saved_queries.py`; a write-attempt corpus (including obfuscated forms
+  and comment-embedded write text that must pass) runs against the live
+  API. AC-20, AC-21, AC-22, AC-23, AC-24, AC-26, AC-28 (partial), AC-30
+  guarded by tests; Trace 3 (`POST /query/nl`) runs end-to-end against the
+  test container with the paid-inference client stubbed at the
+  composition-root seam — no live call, no ledger write (the same
+  no-live-network rule as every other test).
+- **Guard-test repair (D-47):** the AC-40 grep carries the §15.2/§8.15
+  exemption for `api/main.py`'s driver construction.
+- Verification: `ruff check src/limes/`, `mypy src/limes/`, and
+  `python tools/check_docs.py` clean; full suite **525 passed** (437
+  baseline + 88 new: 33 unit, 55 integration) against a disposable Neo4j
+  container.
+
+---
+
 ## 2026-08-02 — Phase 6 delivered — phase-6-v1.0.0 (WP-28…WP-31)
 
 Approved by the human (DECISIONS.md, 2026-08-02) and merged to `main` as
