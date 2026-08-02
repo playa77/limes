@@ -1,0 +1,100 @@
+{"is_match": true, "item_id": "calib-001", "kind": "true_match", "language": "de", "mention_a": "Volkswagen AG", "mention_b": "VW AG", "type": "Corporation"}
+{"is_match": true, "item_id": "calib-002", "kind": "true_match", "language": "de", "mention_a": "Mercedes-Benz Group AG", "mention_b": "Daimler AG", "type": "Corporation"}
+{"is_match": true, "item_id": "calib-003", "kind": "true_match", "language": "de", "mention_a": "BMW AG", "mention_b": "Bayerische Motoren Werke AG", "type": "Corporation"}
+{"is_match": true, "item_id": "calib-004", "kind": "true_match", "language": "de", "mention_a": "Siemens AG", "mention_b": "Siemens Aktiengesellschaft", "type": "Corporation"}
+{"is_match": true, "item_id": "calib-005", "kind": "true_match", "language": "de", "mention_a": "Deutsche Bank AG", "mention_b": "Deutsche Bank", "type": "Corporation"}
+{"is_match": true, "item_id": "calib-006", "kind": "true_match", "language": "de", "mention_a": "RWE AG", "mention_b": "RWE Aktiengesellschaft", "type": "Corporation"}
+{"is_match": true, "item_id": "calib-007", "kind": "true_match", "language": "de", "mention_a": "E.ON SE", "mention_b": "E.ON Aktiengesellschaft", "type": "Corporation"}
+{"is_match": true, "item_id": "calib-008", "kind": "true_match", "language": "de", "mention_a": "Deutsche Lufthansa AG", "mention_b": "Lufthansa", "type": "Corporation"}
+{"is_match": true, "item_id": "calib-009", "kind": "true_match", "language": "de", "mention_a": "SAP SE", "mention_b": "SAP Aktiengesellschaft", "type": "Corporation"}
+{"is_match": true, "item_id": "calib-010", "kind": "true_match", "language": "de", "mention_a": "Allianz SE", "mention_b": "Allianz AG", "type": "Corporation"}
+{"is_match": true, "item_id": "calib-011", "kind": "true_match", "language": "de", "mention_a": "Angela Merkel", "mention_b": "Dr. Angela Merkel", "type": "Person"}
+{"is_match": true, "item_id": "calib-012", "kind": "true_match", "language": "de", "mention_a": "Olaf Scholz", "mention_b": "Bundeskanzler Olaf Scholz", "type": "Person"}
+{"is_match": true, "item_id": "calib-013", "kind": "true_match", "language": "de", "mention_a": "Robert Habeck", "mention_b": "Dr. Robert Habeck", "type": "Person"}
+{"is_match": true, "item_id": "calib-014", "kind": "true_match", "language": "de", "mention_a": "Christian Lindner", "mention_b": "Christian Wolfgang Lindner", "type": "Person"}
+{"is_match": true, "item_id": "calib-015", "kind": "true_match", "language": "de", "mention_a": "Annalena Baerbock", "mention_b": "Außenministerin Annalena Baerbock", "type": "Person"}
+{"is_match": true, "item_id": "calib-016", "kind": "true_match", "language": "de", "mention_a": "Friedrich Merz", "mention_b": "Friedrich Merz (CDU)", "type": "Person"}
+{"is_match": true, "item_id": "calib-017", "kind": "true_match", "language": "de", "mention_a": "Karl Lauterbach", "mention_b": "Prof. Dr. Karl Lauterbach", "type": "Person"}
+{"is_match": true, "item_id": "calib-018", "kind": "true_match", "language": "de", "mention_a": "Markus Söder", "mention_b": "Dr. Markus Söder", "type": "Person"}
+{"is_match": true, "item_id": "calib-019", "kind": "true_match", "language": "de", "mention_a": "Ursula von der Leyen", "mention_b": "Von der Leyen", "type": "Person"}
+{"is_match": true, "item_id": "calib-020", "kind": "true_match", "language": "de", "mention_a": "Angela Kasner", "mention_b": "Angela Merkel", "type": "Person"}
+{"is_match": false, "item_id": "calib-021", "kind": "hard_negative", "language": "de", "mention_a": "Volkswagen AG", "mention_b": "Audi AG", "type": "Corporation"}
+{"is_match": false, "item_id": "calib-022", "kind": "hard_negative", "language": "de", "mention_a": "Volkswagen AG", "mention_b": "Porsche SE", "type": "Corporation"}
+{"is_match": false, "item_id": "calib-023", "kind": "hard_negative", "language": "de", "mention_a": "Mercedes-Benz Group AG", "mention_b": "Mercedes-Benz AG", "type": "Corporation"}
+{"is_match": false, "item_id": "calib-024", "kind": "hard_negative", "language": "de", "mention_a": "Siemens AG", "mention_b": "Siemens Energy AG", "type": "Corporation"}
+{"is_match": false, "item_id": "calib-025", "kind": "hard_negative", "language": "de", "mention_a": "Siemens AG", "mention_b": "Siemens Healthineers AG", "type": "Corporation"}
+{"is_match": false, "item_id": "calib-026", "kind": "hard_negative", "language": "de", "mention_a": "BMW AG", "mention_b": "Rolls-Royce Motor Cars", "type": "Corporation"}
+{"is_match": false, "item_id": "calib-027", "kind": "hard_negative", "language": "de", "mention_a": "Allianz SE", "mention_b": "PIMCO", "type": "Corporation"}
+{"is_match": false, "item_id": "calib-028", "kind": "hard_negative", "language": "de", "mention_a": "Deutsche Bank AG", "mention_b": "Deutsche Postbank AG", "type": "Corporation"}
+{"is_match": false, "item_id": "calib-029", "kind": "hard_negative", "language": "de", "mention_a": "E.ON SE", "mention_b": "innogy SE", "type": "Corporation"}
+{"is_match": false, "item_id": "calib-030", "kind": "hard_negative", "language": "de", "mention_a": "RWE AG", "mention_b": "RWE Generation SE", "type": "Corporation"}
+{"is_match": false, "item_id": "calib-031", "kind": "hard_negative", "language": "de", "mention_a": "BASF SE", "mention_b": "BASF Coatings GmbH", "type": "Corporation"}
+{"is_match": false, "item_id": "calib-032", "kind": "hard_negative", "language": "de", "mention_a": "Fresenius SE", "mention_b": "Fresenius Medical Care AG", "type": "Corporation"}
+{"is_match": false, "item_id": "calib-033", "kind": "hard_negative", "language": "de", "mention_a": "Bayer AG", "mention_b": "Bayer CropScience", "type": "Corporation"}
+{"is_match": false, "item_id": "calib-034", "kind": "hard_negative", "language": "de", "mention_a": "Deutsche Telekom AG", "mention_b": "T-Mobile US", "type": "Corporation"}
+{"is_match": false, "item_id": "calib-035", "kind": "hard_negative", "language": "de", "mention_a": "Commerzbank AG", "mention_b": "Comdirect Bank AG", "type": "Corporation"}
+{"is_match": false, "item_id": "calib-036", "kind": "hard_negative", "language": "de", "mention_a": "SAP SE", "mention_b": "SAP Concur", "type": "Corporation"}
+{"is_match": false, "item_id": "calib-037", "kind": "hard_negative", "language": "de", "mention_a": "Olaf Scholz", "mention_b": "Olaf Scholz (FDP)", "type": "Person"}
+{"is_match": false, "item_id": "calib-038", "kind": "hard_negative", "language": "de", "mention_a": "Markus Söder", "mention_b": "Markus Söder (SPD)", "type": "Person"}
+{"is_match": false, "item_id": "calib-039", "kind": "hard_negative", "language": "de", "mention_a": "Annalena Baerbock", "mention_b": "Annalena Baerbock (AfD)", "type": "Person"}
+{"is_match": false, "item_id": "calib-040", "kind": "hard_negative", "language": "de", "mention_a": "Friedrich Merz", "mention_b": "Friedrich Merz (FDP)", "type": "Person"}
+{"is_match": true, "item_id": "calib-041", "kind": "cross_language", "language": "de", "mention_a": "Europäische Kommission", "mention_b": "European Commission", "type": "PublicBody"}
+{"is_match": true, "item_id": "calib-042", "kind": "cross_language", "language": "de", "mention_a": "Bundesministerium des Innern", "mention_b": "Federal Ministry of the Interior", "type": "PublicBody"}
+{"is_match": true, "item_id": "calib-043", "kind": "cross_language", "language": "de", "mention_a": "Deutsche Bundesbank", "mention_b": "German Bundesbank", "type": "PublicBody"}
+{"is_match": true, "item_id": "calib-044", "kind": "cross_language", "language": "de", "mention_a": "Europäisches Parlament", "mention_b": "European Parliament", "type": "PublicBody"}
+{"is_match": true, "item_id": "calib-045", "kind": "cross_language", "language": "de", "mention_a": "Rat der Europäischen Union", "mention_b": "Council of the European Union", "type": "PublicBody"}
+{"is_match": false, "item_id": "calib-046", "kind": "cross_language", "language": "de", "mention_a": "Europäische Kommission", "mention_b": "Council of the European Union", "type": "PublicBody"}
+{"is_match": false, "item_id": "calib-047", "kind": "cross_language", "language": "de", "mention_a": "Bundestag", "mention_b": "Bundesrat", "type": "PublicBody"}
+{"is_match": false, "item_id": "calib-048", "kind": "cross_language", "language": "de", "mention_a": "Deutsche Bank", "mention_b": "German Bundesbank", "type": "PublicBody"}
+{"is_match": false, "item_id": "calib-049", "kind": "cross_language", "language": "de", "mention_a": "Kanzleramt", "mention_b": "Foreign Office", "type": "PublicBody"}
+{"is_match": false, "item_id": "calib-050", "kind": "cross_language", "language": "de", "mention_a": "Siemens", "mention_b": "Siemens Gamesa", "type": "PublicBody"}
+{"is_match": true, "item_id": "calib-051", "kind": "true_match", "language": "en", "mention_a": "Apple Inc.", "mention_b": "Apple", "type": "Corporation"}
+{"is_match": true, "item_id": "calib-052", "kind": "true_match", "language": "en", "mention_a": "Meta Platforms, Inc.", "mention_b": "Meta", "type": "Corporation"}
+{"is_match": true, "item_id": "calib-053", "kind": "true_match", "language": "en", "mention_a": "Microsoft Corporation", "mention_b": "Microsoft", "type": "Corporation"}
+{"is_match": true, "item_id": "calib-054", "kind": "true_match", "language": "en", "mention_a": "Amazon.com, Inc.", "mention_b": "Amazon", "type": "Corporation"}
+{"is_match": true, "item_id": "calib-055", "kind": "true_match", "language": "en", "mention_a": "Netflix, Inc.", "mention_b": "Netflix", "type": "Corporation"}
+{"is_match": true, "item_id": "calib-056", "kind": "true_match", "language": "en", "mention_a": "Exxon Mobil Corporation", "mention_b": "ExxonMobil", "type": "Corporation"}
+{"is_match": true, "item_id": "calib-057", "kind": "true_match", "language": "en", "mention_a": "Joe Biden", "mention_b": "Joseph Robinette Biden", "type": "Person"}
+{"is_match": true, "item_id": "calib-058", "kind": "true_match", "language": "en", "mention_a": "Donald Trump", "mention_b": "Donald J. Trump", "type": "Person"}
+{"is_match": true, "item_id": "calib-059", "kind": "true_match", "language": "en", "mention_a": "Kamala Harris", "mention_b": "Kamala D. Harris", "type": "Person"}
+{"is_match": true, "item_id": "calib-060", "kind": "true_match", "language": "en", "mention_a": "Elon Musk", "mention_b": "Elon Reeve Musk", "type": "Person"}
+{"is_match": true, "item_id": "calib-061", "kind": "true_match", "language": "en", "mention_a": "Jeff Bezos", "mention_b": "Jeffrey Preston Bezos", "type": "Person"}
+{"is_match": true, "item_id": "calib-062", "kind": "true_match", "language": "en", "mention_a": "Tim Cook", "mention_b": "Timothy Donald Cook", "type": "Person"}
+{"is_match": true, "item_id": "calib-063", "kind": "true_match", "language": "en", "mention_a": "Emmanuel Macron", "mention_b": "French President Emmanuel Macron", "type": "Person"}
+{"is_match": true, "item_id": "calib-064", "kind": "true_match", "language": "en", "mention_a": "Giorgia Meloni", "mention_b": "Italian Prime Minister Giorgia Meloni", "type": "Person"}
+{"is_match": true, "item_id": "calib-065", "kind": "true_match", "language": "en", "mention_a": "Volodymyr Zelensky", "mention_b": "President Volodymyr Zelensky", "type": "Person"}
+{"is_match": true, "item_id": "calib-066", "kind": "true_match", "language": "en", "mention_a": "Rishi Sunak", "mention_b": "British Prime Minister Rishi Sunak", "type": "Person"}
+{"is_match": true, "item_id": "calib-067", "kind": "true_match", "language": "en", "mention_a": "Justin Trudeau", "mention_b": "Canadian Prime Minister Justin Trudeau", "type": "Person"}
+{"is_match": true, "item_id": "calib-068", "kind": "true_match", "language": "en", "mention_a": "Ursula von der Leyen", "mention_b": "President of the European Commission", "type": "Corporation"}
+{"is_match": true, "item_id": "calib-069", "kind": "true_match", "language": "en", "mention_a": "Charles Michel", "mention_b": "President of the European Council", "type": "Corporation"}
+{"is_match": true, "item_id": "calib-070", "kind": "true_match", "language": "en", "mention_a": "Volkswagen Group", "mention_b": "Volkswagen AG", "type": "Corporation"}
+{"is_match": false, "item_id": "calib-071", "kind": "hard_negative", "language": "en", "mention_a": "Alphabet Inc.", "mention_b": "Google LLC", "type": "Corporation"}
+{"is_match": false, "item_id": "calib-072", "kind": "hard_negative", "language": "en", "mention_a": "Microsoft Corporation", "mention_b": "LinkedIn Corporation", "type": "Corporation"}
+{"is_match": false, "item_id": "calib-073", "kind": "hard_negative", "language": "en", "mention_a": "Amazon.com, Inc.", "mention_b": "Amazon Web Services", "type": "Corporation"}
+{"is_match": false, "item_id": "calib-074", "kind": "hard_negative", "language": "en", "mention_a": "The Walt Disney Company", "mention_b": "Walt Disney Studios", "type": "Corporation"}
+{"is_match": false, "item_id": "calib-075", "kind": "hard_negative", "language": "en", "mention_a": "General Motors Company", "mention_b": "Cruise LLC", "type": "Corporation"}
+{"is_match": false, "item_id": "calib-076", "kind": "hard_negative", "language": "en", "mention_a": "Ford Motor Company", "mention_b": "Lincoln Motor Company", "type": "Corporation"}
+{"is_match": false, "item_id": "calib-077", "kind": "hard_negative", "language": "en", "mention_a": "Tesla, Inc.", "mention_b": "SpaceX", "type": "Corporation"}
+{"is_match": false, "item_id": "calib-078", "kind": "hard_negative", "language": "en", "mention_a": "JPMorgan Chase & Co.", "mention_b": "JPMorgan Chase Bank, N.A.", "type": "Corporation"}
+{"is_match": false, "item_id": "calib-079", "kind": "hard_negative", "language": "en", "mention_a": "Bank of America", "mention_b": "Merrill Lynch", "type": "Corporation"}
+{"is_match": false, "item_id": "calib-080", "kind": "hard_negative", "language": "en", "mention_a": "Pfizer Inc.", "mention_b": "Wyeth", "type": "Corporation"}
+{"is_match": false, "item_id": "calib-081", "kind": "hard_negative", "language": "en", "mention_a": "Johnson & Johnson", "mention_b": "Kenvue Inc.", "type": "Corporation"}
+{"is_match": false, "item_id": "calib-082", "kind": "hard_negative", "language": "en", "mention_a": "Procter & Gamble", "mention_b": "Gillette", "type": "Corporation"}
+{"is_match": false, "item_id": "calib-083", "kind": "hard_negative", "language": "en", "mention_a": "Coca-Cola Company", "mention_b": "Coca-Cola Bottling Co.", "type": "Corporation"}
+{"is_match": false, "item_id": "calib-084", "kind": "hard_negative", "language": "en", "mention_a": "AT&T Inc.", "mention_b": "WarnerMedia", "type": "Corporation"}
+{"is_match": false, "item_id": "calib-085", "kind": "hard_negative", "language": "en", "mention_a": "Comcast Corporation", "mention_b": "NBCUniversal", "type": "Corporation"}
+{"is_match": false, "item_id": "calib-086", "kind": "hard_negative", "language": "en", "mention_a": "Nike, Inc.", "mention_b": "Converse", "type": "Corporation"}
+{"is_match": false, "item_id": "calib-087", "kind": "hard_negative", "language": "en", "mention_a": "Joe Biden", "mention_b": "Joe Biden (Republican)", "type": "Person"}
+{"is_match": false, "item_id": "calib-088", "kind": "hard_negative", "language": "en", "mention_a": "Kamala Harris", "mention_b": "Kamala Harris (Republican)", "type": "Person"}
+{"is_match": false, "item_id": "calib-089", "kind": "hard_negative", "language": "en", "mention_a": "Elon Musk", "mention_b": "Elon Musk (Apple CEO)", "type": "Person"}
+{"is_match": false, "item_id": "calib-090", "kind": "hard_negative", "language": "en", "mention_a": "Rishi Sunak", "mention_b": "Rishi Sunak (Labour leader)", "type": "Person"}
+{"is_match": true, "item_id": "calib-091", "kind": "cross_language", "language": "en", "mention_a": "Bundestag", "mention_b": "German Bundestag", "type": "PublicBody"}
+{"is_match": true, "item_id": "calib-092", "kind": "cross_language", "language": "en", "mention_a": "Lufthansa", "mention_b": "Deutsche Lufthansa AG", "type": "Corporation"}
+{"is_match": true, "item_id": "calib-093", "kind": "cross_language", "language": "en", "mention_a": "Bundeswehr", "mention_b": "German Armed Forces", "type": "PublicBody"}
+{"is_match": true, "item_id": "calib-094", "kind": "cross_language", "language": "en", "mention_a": "Europäische Zentralbank", "mention_b": "European Central Bank", "type": "PublicBody"}
+{"is_match": true, "item_id": "calib-095", "kind": "cross_language", "language": "en", "mention_a": "Deutsche Bahn", "mention_b": "German Railways", "type": "Corporation"}
+{"is_match": false, "item_id": "calib-096", "kind": "cross_language", "language": "en", "mention_a": "Volkswagen", "mention_b": "Porsche", "type": "Corporation"}
+{"is_match": false, "item_id": "calib-097", "kind": "cross_language", "language": "en", "mention_a": "Lufthansa", "mention_b": "Eurowings", "type": "Corporation"}
+{"is_match": false, "item_id": "calib-098", "kind": "cross_language", "language": "en", "mention_a": "Allianz", "mention_b": "Munich Re", "type": "Corporation"}
+{"is_match": false, "item_id": "calib-099", "kind": "cross_language", "language": "en", "mention_a": "Deutsche Telekom", "mention_b": "T-Mobile US", "type": "Corporation"}
+{"is_match": false, "item_id": "calib-100", "kind": "cross_language", "language": "en", "mention_a": "Bayer", "mention_b": "Monsanto", "type": "Corporation"}

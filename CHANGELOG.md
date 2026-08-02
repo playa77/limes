@@ -6,6 +6,80 @@ gold set, prompts) are recorded in their own changelogs.
 
 ---
 
+## 2026-08-02 — Phase 6 [CONFLICT] repair: loader lookup-row batching
+
+The halted phase resumes per the human's decision (DECISIONS.md, 2026-08-02,
+branch a): the WP-07 loader no longer writes a record's whole lookup list in
+one transaction. `graph/loader.py::load` (v1.2.0) chunks `lookup_rows` at
+`BATCH_SIZE`; chunk *i* rides with assertion batch *i* and overflow chunks
+each run in their own transaction, so every transaction carries at most 500
+assertions and at most 500 lookup rows (D-46).
+
+- New guard `tests/integration/test_loader.py::test_lookup_rows_are_batched_across_transactions`
+  — spies per-transaction postal statements through the documented
+  `GraphDriver._driver` seam: > `BATCH_SIZE` rows ⇒ multiple transactions,
+  none exceeding `BATCH_SIZE`, all rows materialized.
+- Full suite re-run: **437 passed** (436 + the new guard), `ruff`/`mypy`
+  clean on the touched modules.
+- **Live verification (the failed roadmap criterion, re-run):**
+  `limes ingest --source gisco_nuts` against a disposable Neo4j container
+  with the production §13.4 memory configuration (heap 2G, page cache 2G,
+  transaction cap 512m, timeout 120s) fetched the live GISCO files
+  (NUTS hierarchy + the 127 MB postcode correspondence), normalized
+  802,841 lookup rows, and loaded them in bounded transactions —
+  `:PostalCode` nodes exactly 802,841, `nodes_created=804812`,
+  `assertions_written=1932`, `errors=0`, `:IngestionRun` closed, advisory
+  lock acquired and released. The prior failure mode (one 300k-row
+  transaction timing out at 120s) did not recur; the ~6.5-minute load time
+  is the accepted bounded-transaction cost (D-46).
+- Ledger integrity: D-43, D-44, D-45 (decided before the halt, referenced
+  by the CLI code) were logged at resume; the repair's decision is D-46.
+- Baseline deviation, not introduced here (D-27 precedent, flagged not
+  fixed): `tests/integration/test_loader.py` fails `ruff format --check`
+  and carries 14 pre-existing E501 lines on pristine main.
+
+---
+
+## 2026-08-02 — Phase 6 (WP-28…WP-31) — halted at [CONFLICT], not delivered
+
+The phase's work products exist on branch `wp-28-31-cli-and-evaluation`
+(unmerged) and their suites are green, but the phase is **halted** per the
+human's decision (DECISIONS.md, 2026-08-02): the roadmap's live
+verification `limes ingest --source gisco_nuts` fails against the live
+GISCO postcode file because the delivered WP-07 loader writes all ~300k
+lookup rows in one transaction (`graph/loader.py:112-118`, `:312-324`).
+No phase version was presented and no approval was requested.
+
+What exists on the branch (all 436 tests green, `ruff`/`mypy`/`check_docs`
+clean):
+
+- WP-28 — CLI core: `cli/main.py` (Typer app, `:AdvisoryLock` lifecycle —
+  acquire/release/reclaim, cross-process refusal proven), `cli/ingest.py`
+  (ingest, ingest-all with enrichment-only skip), `cli/backfill.py`
+  (`--days` → explicit window, mandatory `--budget`), `cli/reextract.py`
+  (`--prompt-version` flows into Settings; defaults to unstructured
+  sources), `cli/backup.py` (compose stop → `neo4j-admin database dump` →
+  start → reachability, timestamped archive dump; real-lifecycle test).
+- WP-29 — `cli/select_models.py`: provisional stage (catalogue filtering
+  by §8.7.2 criteria, ranking, operator confirmation, `.env` pins, no gold
+  set read — AC-36) and measured stage (gold-set ≥ 1.0.0 refusal, per-role
+  harness scores, impact report without re-extraction or index rebuild —
+  AC-37). `composition.extractor_for` added as the per-candidate extractor
+  construction point.
+- WP-30 — `cli/evaluate.py` (extraction P/R/F1 per relation with §12.5
+  multiset semantics, baseline gate at 0.05 — AC-31, `:GoldSetItem`
+  writes, `--resolution` recall@10/accuracy, `--nl2cypher` provisional
+  validation-pass rate, AC-25 reference-question check); `gold_set/`
+  (schema, 2 placeholder items, 100-pair calibration set with exact
+  40/40/20 and 50/50 counts, empty baseline, changelog);
+  `reference_questions/questions.yaml` (5 questions with ontology-valid
+  reference Cypher).
+- WP-31 — `cli/migrate.py` (stamped-version routing: fresh/already-at/
+  downgrade/additive/breaking; numbered migrations with `TO_VERSION` +
+  `upgrade(driver)`), `ontology/migrations/0001_initial.py`.
+
+---
+
 ## 2026-08-01 — WP-26 (Composition root)
 
 - `composition.py`: the single module that constructs every component in

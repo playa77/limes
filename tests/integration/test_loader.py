@@ -247,6 +247,83 @@ def test_lookup_rows_materialize_postal_code_nodes(driver: GraphDriver, ontology
     assert rows[0]["src"] == "gisco_nuts"
 
 
+def test_lookup_rows_are_batched_across_transactions(driver: GraphDriver, ontology, monkeypatch):
+    """The WP-28 conflict repair: a lookup list larger than `BATCH_SIZE` may
+    not ride in one transaction — the live GISCO postcode payload (~300k
+    rows) timed out a single transaction (DECISIONS.md, 2026-08-02). The spy
+    counts postal statements per committed transaction through the
+    documented `GraphDriver._driver` seam; no transaction may carry more
+    than `BATCH_SIZE` of them, and more than one transaction must be used."""
+    from limes.graph.loader import BATCH_SIZE
+
+    postal_per_tx: list[int] = []
+
+    class SpyTx:
+        def __init__(self, real):
+            self._real = real
+            self._postal = 0
+
+        def run(self, cypher, **params):
+            if "PostalCode" in cypher:
+                self._postal += 1
+            return self._real.run(cypher, **params)
+
+        def commit(self):
+            postal_per_tx.append(self._postal)
+            return self._real.commit()
+
+        def rollback(self):
+            return self._real.rollback()
+
+    class SpySession:
+        def __init__(self, real):
+            self._real = real
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            return self._real.__exit__(*exc)
+
+        def begin_transaction(self):
+            return SpyTx(self._real.begin_transaction())
+
+        def __getattr__(self, name):
+            return getattr(self._real, name)
+
+    class SpyDriver:
+        def __init__(self, real):
+            self._real = real
+
+        def session(self, **kwargs):
+            return SpySession(self._real.session(**kwargs))
+
+    monkeypatch.setattr(driver, "_driver", SpyDriver(driver._driver))
+
+    rows = [
+        LookupRow(
+            kind="postal_code",
+            key={"country_code": "DE", "postal_code": str(90000 + i)},
+            value={"nuts_code": "DE300"},
+        )
+        for i in range(BATCH_SIZE * 2 + 1)
+    ]
+    result = load(driver, [], ontology, lookup_rows=rows)
+    assert result.lookup_rows_written == len(rows)
+    assert len(postal_per_tx) > 1
+    assert max(postal_per_tx) <= BATCH_SIZE
+    assert sum(postal_per_tx) == len(rows)
+
+    count = driver.read(
+        "MATCH (p:PostalCode) "
+        "WHERE p.postal_code >= '90000' AND p.postal_code < '91001' "
+        "RETURN count(p) AS c",
+        {},
+        30,
+    )
+    assert count[0]["c"] == len(rows)
+
+
 def test_non_temporal_relation_never_gets_valid_to(driver: GraphDriver, ontology):
     load(driver, [assertion("nt-1", endpoint("nt-a", "LegalAct"), "AMENDS", endpoint("nt-b", "LegalAct"))], ontology)
     rows = driver.read(
