@@ -7,6 +7,15 @@ Nothing here is a status report; unlogged decisions are unmade decisions.
 
 ---
 
+## 2026-08-03 — Approval — phase-9-v1.0.0 (WP-37, WP-38)
+
+The human approved phase-9-v1.0.0 (Docker images and Compose topology;
+Makefile and bootstrap procedure) on 2026-08-03 and instructed merge,
+commit, and push. Delivered as branch `wp-37-38-infrastructure`, merged to
+`main` and pushed; the topic branch is pushed as well. This approval names
+the presented version and cannot be reused for any other version of the
+phase.
+
 ## 2026-08-03 — Phase 9 invariants (WP-37, WP-38), derived at phase start
 
 Derived from the roadmap's WP-37/WP-38 entries, Doc 1 §8.1–§8.4/§6.6, and
