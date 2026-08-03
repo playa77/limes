@@ -17,6 +17,7 @@ from limes.api.builder import (
 )
 from limes.api.models import BuilderHop, BuilderSpec
 from limes.config import Settings
+from limes.ontology.model import EntityTypeSpec, Ontology, PropertySpec, RelationTypeSpec
 from limes.ontology.registry import load_ontology
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -235,3 +236,70 @@ def test_supertype_relations_permitted():
     )
     cypher, _ = translate_spec(s, ONTOLOGY, SETTINGS)
     assert "-[:OWNS_STAKE_IN]->" in cypher
+
+
+def chained_ontology() -> Ontology:
+    # Org is a concrete type with no declared properties; Corporation's
+    # supertype chain runs through it, so a domain walk must pass through a
+    # concrete type.
+    return Ontology(
+        version="9.9.9",
+        supertypes=["Agent"],
+        entity_types={
+            "Org": EntityTypeSpec(name="Org", supertype="Agent", identifying_keys=[]),
+            "Corporation": EntityTypeSpec(
+                name="Corporation",
+                supertype="Org",
+                identifying_keys=[],
+                properties=[PropertySpec(name="label", type="string", required=True)],
+            ),
+        },
+        relation_types={
+            "OWNS": RelationTypeSpec(name="OWNS", domain=["Agent"], range=["Corporation"]),
+        },
+    )
+
+
+def test_filters_on_a_start_type_without_properties_are_rejected():
+    # A filter can only target a declared property; a type with none makes
+    # any filter a mismatch.
+    s = spec(start_type="Org", start_filters={"x": 1})
+    with pytest.raises(BuilderSpecRejected, match="match no declared property"):
+        translate_spec(s, chained_ontology(), SETTINGS)
+
+
+def test_filters_on_a_hop_type_without_properties_are_rejected():
+    s = spec(
+        hops=[BuilderHop(relation="OWNS", direction="out", target_type="Org", filters={"x": 1})]
+    )
+    with pytest.raises(
+        BuilderSpecRejected, match="hop 1: filters for 'Org' match no declared property"
+    ):
+        translate_spec(s, chained_ontology(), SETTINGS)
+
+
+def test_as_believed_qualifier_without_instant_is_rejected():
+    s = spec(
+        hops=[
+            BuilderHop(
+                relation="OWNS",
+                direction="out",
+                target_type="Corporation",
+                temporal_qualifier="as_believed",
+            )
+        ]
+    )
+    with pytest.raises(BuilderSpecRejected, match="needs temporal_instant"):
+        translate_spec(s, chained_ontology(), SETTINGS)
+
+
+def test_object_side_rejection_walks_the_supertype_chain():
+    # The subject side is admitted via its supertype chain (Corporation ->
+    # Org -> Agent); the object side is not, and the rejection names the
+    # object — the walk through the concrete supertype is what decides.
+    s = spec(
+        start_type="Corporation",
+        hops=[BuilderHop(relation="OWNS", direction="out", target_type="Org")],
+    )
+    with pytest.raises(BuilderSpecRejected, match="does not admit 'Org' as object"):
+        translate_spec(s, chained_ontology(), SETTINGS)

@@ -78,6 +78,12 @@ def test_extract_text_from_html_plain_text_passes_through():
     assert extract_text_from_html("no markup here") == "no markup here"
 
 
+def test_extract_text_from_html_parse_error_returns_empty():
+    # A dangling comment is not a document; the lenient parser refuses it
+    # and the extractor returns the empty string, never an exception.
+    assert extract_text_from_html("<!--") == ""
+
+
 def test_extract_text_from_xml_selects_xpath():
     xml_text = "<root><a>one</a><a>two</a><b>skip</b></root>"
     assert extract_text_from_xml(xml_text, "//a") == "one two"

@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 
 from limes.errors import OntologyError
-from limes.ontology.model import Ontology
+from limes.ontology.model import EntityTypeSpec, Ontology, PropertySpec, RelationTypeSpec
 from limes.ontology.registry import load_ontology
 from limes.ontology.validator import validate_assertions
 from limes.types import Assertion, EntityEndpoint, Provenance, Validity
@@ -278,3 +278,46 @@ def test_schema_file_is_valid_json():
         (REPO_ROOT / "ontology" / "ontology.schema.json").read_text(encoding="utf-8")
     )
     assert schema["additionalProperties"] is False
+
+
+def test_missing_artifact_is_an_ontology_error(tmp_path):
+    with pytest.raises(OntologyError, match="ontology artifact not found"):
+        load_ontology(tmp_path / "nope.yaml")
+
+
+def test_invalid_yaml_is_an_ontology_error(tmp_path):
+    path = tmp_path / "ontology.yaml"
+    path.write_text("key: [1, 2", encoding="utf-8")
+    with pytest.raises(OntologyError, match="not valid YAML"):
+        load_ontology(path)
+
+
+def test_serialize_for_prompt_warns_above_the_token_budget():
+    # An ontology whose serialized form exceeds the A-04 budget warns; the
+    # serialization still returns the full text — the warning is the guard.
+    oversized = Ontology(
+        version="9.9.9",
+        supertypes=["Agent"],
+        entity_types={
+            f"Type{i}": EntityTypeSpec(
+                name=f"Type{i}",
+                supertype="Agent" if i % 2 else None,
+                identifying_keys=["k0"],
+                properties=[PropertySpec(name=f"property_{j}", type="string") for j in range(30)],
+            )
+            for i in range(80)
+        },
+        relation_types={
+            f"R{i}": RelationTypeSpec(name=f"R{i}", domain=["Type0"], range=["Type1"])
+            for i in range(60)
+        },
+    )
+    serialized = oversized.serialize_for_prompt()
+    assert len(serialized) > 4 * 3000  # the token estimate exceeds the budget
+
+
+def test_to_prompt_dict_projects_the_loaded_ontology(ontology):
+    projection = ontology.to_prompt_dict()
+    assert projection["version"] == ontology.version
+    assert {r["name"] for r in projection["relations"]} == set(ontology.relation_types)
+    assert {e["name"] for e in projection["entities"]} == set(ontology.entity_types)

@@ -173,3 +173,118 @@ def test_fixture_is_the_shape_the_adapter_parses():
     data = json.loads(_fixture())
     assert data["version"] == 0.6
     assert len(data["elements"]) == 3
+
+
+def _json_payload(elements: list) -> bytes:
+    return json.dumps({"version": 0.6, "elements": elements}).encode("utf-8")
+
+
+def test_element_without_id_is_skipped_and_counted():
+    elements = [
+        {"type": "node", "tags": {"power": "substation"}},
+        {
+            "id": 1,
+            "type": "node",
+            "lat": 52.5,
+            "lon": 13.4,
+            "tags": {"power": "substation", "operator": "Strom GmbH"},
+        },
+    ]
+    with structlog.testing.capture_logs() as captured:
+        normalized = ADAPTER.normalize(
+            RawRecord(
+                payload=_json_payload(elements),
+                content_type="application/json",
+                source_url=OVERPASS_URL,
+                fetched_at=NOW,
+            )
+        )
+    assert len(normalized.assertions) == 1
+    skipped = [e for e in captured if e.get("event") == "osm: element without id skipped"]
+    assert len(skipped) == 1
+
+
+def test_element_with_malformed_tags_is_skipped_and_counted():
+    elements = [
+        {"id": 2, "type": "node", "tags": {"power": 123}},
+        {"id": 3, "type": "node"},
+        {
+            "id": 4,
+            "type": "node",
+            "lat": 52.5,
+            "lon": 13.4,
+            "tags": {"power": "substation", "operator": "Strom GmbH"},
+        },
+    ]
+    with structlog.testing.capture_logs() as captured:
+        normalized = ADAPTER.normalize(
+            RawRecord(
+                payload=_json_payload(elements),
+                content_type="application/json",
+                source_url=OVERPASS_URL,
+                fetched_at=NOW,
+            )
+        )
+    assert len(normalized.assertions) == 1
+    skipped = [
+        e for e in captured if e.get("event") == "osm: element tags malformed; element skipped"
+    ]
+    assert len(skipped) == 2
+
+
+def test_non_object_element_is_skipped_and_counted():
+    elements = [
+        "garbage",
+        {
+            "id": 5,
+            "type": "node",
+            "lat": 52.5,
+            "lon": 13.4,
+            "tags": {"power": "substation", "operator": "Strom GmbH"},
+        },
+    ]
+    with structlog.testing.capture_logs() as captured:
+        normalized = ADAPTER.normalize(
+            RawRecord(
+                payload=_json_payload(elements),
+                content_type="application/json",
+                source_url=OVERPASS_URL,
+                fetched_at=NOW,
+            )
+        )
+    assert len(normalized.assertions) == 1
+    skipped = [e for e in captured if e.get("event") == "osm: non-object element skipped"]
+    assert len(skipped) == 1
+
+
+def test_element_without_usable_coordinates_skips_location():
+    # A boolean "lat" is not a JSON number (bool is an int subclass); a center
+    # without a longitude is unusable. Both rows classify as assets but get
+    # no Location.
+    elements = [
+        {"id": 6, "type": "node", "lat": True, "lon": 13.4, "tags": {"power": "substation"}},
+        {"id": 7, "type": "way", "center": {"lat": 52.5}, "tags": {"power": "substation"}},
+        {
+            "id": 8,
+            "type": "node",
+            "lat": 52.5,
+            "lon": 13.4,
+            "tags": {"power": "substation", "operator": "Strom GmbH"},
+        },
+    ]
+    with structlog.testing.capture_logs() as captured:
+        normalized = ADAPTER.normalize(
+            RawRecord(
+                payload=_json_payload(elements),
+                content_type="application/json",
+                source_url=OVERPASS_URL,
+                fetched_at=NOW,
+            )
+        )
+    assert len(normalized.assertions) == 1
+    skipped = [
+        e
+        for e in captured
+        if e.get("event") == "osm: element without coordinates; location skipped"
+    ]
+    assert len(skipped) == 2

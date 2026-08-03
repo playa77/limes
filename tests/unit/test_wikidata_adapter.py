@@ -150,3 +150,157 @@ def test_matches_are_serializable_and_validate():
         "label": "Mercedes-Benz Group",
         "aliases": [],
     }
+
+
+def _search_payload(results: list, **params) -> dict:
+    return dict(params, **{"results": results})
+
+
+def test_non_dict_search_result_raises_source_parse_error():
+    with respx.mock:
+        respx.get(SEARCH_URL, params=SEARCH_PARAMS).mock(
+            return_value=Response(200, json={"search": [42]})
+        )
+        with pytest.raises(SourceParseError):
+            ADAPTER.enrich("Corporation", "Mercedes-Benz Group")
+
+
+def test_search_result_without_id_raises_source_parse_error():
+    with respx.mock:
+        respx.get(SEARCH_URL, params=SEARCH_PARAMS).mock(
+            return_value=Response(
+                200,
+                json={
+                    "search": [
+                        {
+                            "id": None,
+                            "label": "Mercedes-Benz Group",
+                            "match": {"type": "label"},
+                        }
+                    ]
+                },
+            )
+        )
+        with pytest.raises(SourceParseError):
+            ADAPTER.enrich("Corporation", "Mercedes-Benz Group")
+
+
+def test_aliases_not_a_list_yield_no_aliases():
+    with respx.mock:
+        respx.get(SEARCH_URL, params=SEARCH_PARAMS).mock(
+            return_value=Response(
+                200,
+                json={
+                    "search": [
+                        {
+                            "id": "Q1",
+                            "label": "Mercedes-Benz Group",
+                            "match": {"type": "label"},
+                            "aliases": "not-a-list",
+                        }
+                    ]
+                },
+            )
+        )
+        match = ADAPTER.enrich("LegalAct", "Mercedes-Benz Group")
+    assert match == WikidataMatch(qid="Q1", label="Mercedes-Benz Group", aliases=[])
+
+
+def test_non_string_aliases_are_dropped_with_warning():
+    with respx.mock:
+        respx.get(SEARCH_URL, params=SEARCH_PARAMS).mock(
+            return_value=Response(
+                200,
+                json={
+                    "search": [
+                        {
+                            "id": "Q1",
+                            "label": "Mercedes-Benz Group",
+                            "match": {"type": "label"},
+                            "aliases": ["guter Alias", 42],
+                        }
+                    ]
+                },
+            )
+        )
+        with __import__("structlog").testing.capture_logs() as captured:
+            match = ADAPTER.enrich("LegalAct", "Mercedes-Benz Group")
+    assert match is not None
+    assert match.aliases == ["guter Alias"]
+    warnings = [
+        e for e in captured if e.get("event") == "wikidata: non-string alias dropped from match"
+    ]
+    assert len(warnings) == 1
+    assert warnings[0]["dropped"] == 1
+
+
+def test_entities_response_without_item_raises_source_parse_error():
+    with respx.mock:
+        respx.get(SEARCH_URL, params=SEARCH_PARAMS).mock(
+            return_value=Response(200, content=_fixture("search_mercedes.json"))
+        )
+        respx.get(ENTITIES_URL, params=ENTITIES_PARAMS).mock(
+            return_value=Response(200, json={"entities": {}})
+        )
+        with pytest.raises(SourceParseError):
+            ADAPTER.enrich("Corporation", "Mercedes-Benz Group")
+
+
+def test_p31_claims_not_a_list_means_class_mismatch():
+    with respx.mock:
+        respx.get(SEARCH_URL, params=SEARCH_PARAMS).mock(
+            return_value=Response(200, content=_fixture("search_mercedes.json"))
+        )
+        respx.get(ENTITIES_URL, params=ENTITIES_PARAMS).mock(
+            return_value=Response(
+                200,
+                json={"entities": {ENTITIES_PARAMS["ids"]: {"claims": {"P31": "nope"}}}},
+            )
+        )
+        match = ADAPTER.enrich("Corporation", "Mercedes-Benz Group")
+    assert match is None
+
+
+def test_malformed_p31_statements_are_counted_and_miss():
+    with respx.mock:
+        respx.get(SEARCH_URL, params=SEARCH_PARAMS).mock(
+            return_value=Response(200, content=_fixture("search_mercedes.json"))
+        )
+        respx.get(ENTITIES_URL, params=ENTITIES_PARAMS).mock(
+            return_value=Response(
+                200,
+                json={
+                    "entities": {
+                        ENTITIES_PARAMS["ids"]: {
+                            "claims": {"P31": ["garbage", {"mainsnak": "also garbage"}]}
+                        }
+                    }
+                },
+            )
+        )
+        with __import__("structlog").testing.capture_logs() as captured:
+            match = ADAPTER.enrich("Corporation", "Mercedes-Benz Group")
+    assert match is None
+    warnings = [
+        e for e in captured if e.get("event") == "wikidata: malformed P31 statements skipped"
+    ]
+    assert len(warnings) == 1
+    assert warnings[0]["count"] == 2
+
+
+def test_non_utf8_response_raises_source_parse_error():
+    with respx.mock:
+        respx.get(SEARCH_URL, params=SEARCH_PARAMS).mock(
+            return_value=Response(200, content=b"\xff\xfe\x00\x01")
+        )
+        with pytest.raises(SourceParseError):
+            ADAPTER.enrich("Corporation", "Mercedes-Benz Group")
+
+
+def test_non_object_json_response_raises_source_parse_error():
+    with respx.mock:
+        respx.get(SEARCH_URL, params=SEARCH_PARAMS).mock(
+            return_value=Response(200, content=b"[1, 2]")
+        )
+        with pytest.raises(SourceParseError):
+            ADAPTER.enrich("Corporation", "Mercedes-Benz Group")

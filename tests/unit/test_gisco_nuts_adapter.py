@@ -146,3 +146,58 @@ def test_assertion_ids_are_deterministic_across_calls():
     second = [a.assertion_id for a in ADAPTER.normalize(record).assertions]
     assert first == second
     assert len(set(first)) == len(first)
+
+
+def test_hierarchy_file_without_data_rows_raises_source_parse_error():
+    try:
+        ADAPTER.normalize(_record(b"NUTS_ID,CNTR_CODE,NAME_2024\n", NUTS_URL))
+    except SourceParseError:
+        pass
+    else:
+        raise AssertionError("expected SourceParseError")
+
+
+def test_postcode_file_without_data_rows_raises_source_parse_error():
+    try:
+        ADAPTER.normalize(
+            _record(b"POSTCODE,CNTR_ID,SOURCE,LAU_NAME,PC_CNTR,CODE,NUTS3_2024\n", POSTCODE_URL)
+        )
+    except SourceParseError:
+        pass
+    else:
+        raise AssertionError("expected SourceParseError")
+
+
+def test_postcode_row_with_too_few_fields_is_skipped_and_counted():
+    payload = (
+        b"POSTCODE,CNTR_ID,SOURCE,LAU_NAME,PC_CNTR,CODE,NUTS3_2024\n"
+        b"\"15701\",FI,3,Lahti,FI_15701,'15701','FI1C6'\n"
+        b"short,row,only,three\n"
+    )
+    with __import__("structlog").testing.capture_logs() as captured:
+        normalized = ADAPTER.normalize(_record(payload, POSTCODE_URL))
+    assert len(normalized.lookup_rows) == 1
+    summary = [e for e in captured if e.get("event") == "gisco_nuts: postcodes normalized"][0]
+    assert summary["skipped"] == 1
+
+
+def test_blank_line_in_csv_is_ignored():
+    payload = (
+        b"POSTCODE,CNTR_ID,SOURCE,LAU_NAME,PC_CNTR,CODE,NUTS3_2024\n"
+        b"\n"
+        b"\"15701\",FI,3,Lahti,FI_15701,'15701','FI1C6'\n"
+    )
+    normalized = ADAPTER.normalize(_record(payload, POSTCODE_URL))
+    assert len(normalized.lookup_rows) == 1
+
+
+def test_oversized_csv_field_raises_source_parse_error():
+    # A field beyond the csv module's field-size limit makes the reader raise
+    # csv.Error — the unparseable-line branch of the parser.
+    payload = b"NUTS_ID,CNTR_CODE,NAME_2024\n" + b"DE,DE," + b"x" * 200_000 + b"\n"
+    try:
+        ADAPTER.normalize(_record(payload, NUTS_URL))
+    except SourceParseError:
+        pass
+    else:
+        raise AssertionError("expected SourceParseError")

@@ -82,6 +82,14 @@ def test_generate_strips_code_fences():
     assert cypher == "MATCH (n:Corporation) RETURN n"
 
 
+def test_generate_fence_without_newline_yields_empty():
+    # A bare fence marker with no body: there is no content between the
+    # opening and closing markers, so nothing survives the strip.
+    client = FakeClient(reply="```")
+    cypher = generate("question", ONTOLOGY, client, "test/model", "1.0.0")
+    assert cypher == ""
+
+
 def test_generate_missing_prompt_version_fails_loudly():
     client = FakeClient()
     with pytest.raises(ExtractionError, match="prompt file missing"):

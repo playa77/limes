@@ -8,7 +8,14 @@ specified."""
 from pathlib import Path
 
 from limes.config import Settings
-from limes.nlq.validate import relation_types_in, tokenize, validate
+from limes.nlq.validate import (
+    _is_node_pattern_start,
+    _is_rel_pattern_start,
+    relation_types_in,
+    tokenize,
+    validate,
+)
+from limes.ontology.model import EntityTypeSpec, Ontology, RelationTypeSpec
 from limes.ontology.registry import load_ontology
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -192,3 +199,152 @@ def test_union_branches_are_validated_separately():
     bad = "MATCH (a:Corporation) RETURN a UNION MATCH (b:NotAType) RETURN b"
     result = validate(bad, ONTOLOGY, SETTINGS)
     assert "UNKNOWN_LABEL" in codes(result)
+
+
+def test_malformed_call_is_disallowed():
+    # `CALL` whose procedure slot carries no dotted name: the parser cannot
+    # check an allowlist against nothing, so the call is refused.
+    result = validate("CALL (n) RETURN n", ONTOLOGY, SETTINGS)
+    assert "DISALLOWED_PROCEDURE" in codes(result)
+
+
+def test_stray_close_paren_does_not_crash_the_walker():
+    result = validate("MATCH (a:Corporation)) RETURN a", ONTOLOGY, SETTINGS)
+    assert isinstance(result.errors, list)
+
+
+def test_typed_relationship_without_endpoint_is_skipped():
+    # A trailing relationship pattern has no object node; the domain/range
+    # check cannot attribute a side and must skip, not guess.
+    result = validate("MATCH (a:Corporation)-[:SUBSIDIARY_OF] RETURN a", ONTOLOGY, SETTINGS)
+    assert result.valid, result.errors
+
+
+def test_incoming_direction_swaps_subject_and_object():
+    # For a relationship whose bracket directly follows `<`, the subject is
+    # the node *after* the relationship; both endpoints are Corporations, so
+    # the swap is invisible to the check but exercises the direction branch.
+    result = validate(
+        "MATCH (a:Corporation)<[:SUBSIDIARY_OF]->(b:Corporation) RETURN a", ONTOLOGY, SETTINGS
+    )
+    assert result.valid, result.errors
+
+
+def test_undirected_relation_rejected_when_neither_orientation_admitted():
+    # Person is outside SUBSIDIARY_OF's domain and range, so neither
+    # orientation of the undirected pattern passes (Doc 2 §8.10).
+    result = validate(
+        "MATCH (a:Person)-[:SUBSIDIARY_OF]-(b:Corporation) RETURN a", ONTOLOGY, SETTINGS
+    )
+    assert "DOMAIN_VIOLATION" in codes(result)
+
+
+def test_entity_label_skips_domain_check_with_note():
+    # A bare `Entity` label cannot be expanded to concrete types; the check
+    # is skipped with a note (partial verification), never guessed.
+    result = validate(
+        "MATCH (n:Entity)-[:SUBSIDIARY_OF]->(b:Corporation) RETURN n", ONTOLOGY, SETTINGS
+    )
+    assert result.valid, result.errors
+    assert any("domain check skipped" in note for note in result.notes)
+
+
+def test_unknown_label_skips_domain_check_with_note():
+    # An out-of-ontology label is rejected (UNKNOWN_LABEL) and, having no
+    # concrete types, also skips the domain check with a note.
+    result = validate(
+        "MATCH (a:NotAType)-[:SUBSIDIARY_OF]->(b:Corporation) RETURN a", ONTOLOGY, SETTINGS
+    )
+    assert "UNKNOWN_LABEL" in codes(result)
+    assert any("domain check skipped" in note for note in result.notes)
+
+
+def chained_ontology() -> Ontology:
+    # Org is a concrete type whose supertype is the Agent supertype, so a
+    # supertype expansion must walk through a concrete type's supertype.
+    return Ontology(
+        version="9.9.9",
+        supertypes=["Agent"],
+        entity_types={
+            "Org": EntityTypeSpec(name="Org", supertype="Agent", identifying_keys=[]),
+            "Corporation": EntityTypeSpec(name="Corporation", supertype="Org", identifying_keys=[]),
+        },
+        relation_types={"OWNS": RelationTypeSpec(name="OWNS", domain=["Agent"], range=["Agent"])},
+    )
+
+
+def test_supertype_expansion_walks_through_concrete_types():
+    # The expansion of Agent to its concrete types passes through Org (a
+    # concrete type in its own right).
+    result = validate("MATCH (a:Agent)-[:OWNS]->(b:Agent) RETURN a", chained_ontology(), SETTINGS)
+    assert result.valid, result.errors
+
+
+def test_domain_admission_walks_through_concrete_supertypes():
+    # The domain check for a Corporation mention walks Corporation -> Org
+    # (a concrete type) -> Agent before finding the declared Agent.
+    result = validate(
+        "MATCH (a:Corporation)-[:OWNS]->(b:Corporation) RETURN a", chained_ontology(), SETTINGS
+    )
+    assert result.valid, result.errors
+
+
+def test_unterminated_subquery_body_validates_what_it_has():
+    # A `CALL {` whose closing brace is missing: the body is validated
+    # recursively and the walker continues past the statement's end.
+    result = validate(
+        "MATCH (n) CALL { MATCH (m:Corporation) RETURN m RETURN n", ONTOLOGY, SETTINGS
+    )
+    assert isinstance(result.errors, list)
+
+
+def test_unterminated_backtick_identifier_is_scanned_to_the_end():
+    result = validate("MATCH (n:`Corporation RETURN n", ONTOLOGY, SETTINGS)
+    assert isinstance(result.errors, list)
+
+
+def test_float_literal_scans_as_one_number_token():
+    tokens = tokenize("MATCH (n) WHERE n.x > 1.5 RETURN n")
+    number = [token for token in tokens if token.kind == "number"]
+    assert any(token.value == "1.5" for token in number)
+
+
+def test_scientific_notation_scans_as_one_number_token():
+    tokens = tokenize("MATCH (n) WHERE n.x > 1e5 RETURN n")
+    number = [token for token in tokens if token.kind == "number"]
+    assert any(token.value == "1e5" for token in number)
+
+
+def test_open_paren_at_statement_start_opens_a_node_pattern():
+    assert _is_node_pattern_start(tokenize("(n)"), 0) is True
+
+
+def test_nested_parenthesis_inside_node_pattern():
+    # A function call inside a node pattern's property map: the inner parens
+    # are balanced inside the scanner, not mistaken for the pattern's own.
+    result = validate("MATCH (a {p: f(x)}) RETURN a", ONTOLOGY, SETTINGS)
+    assert isinstance(result.errors, list)
+
+
+def test_unterminated_node_pattern_scans_to_the_end():
+    result = validate("MATCH (a:Corporation RETURN a", ONTOLOGY, SETTINGS)
+    assert isinstance(result.errors, list)
+
+
+def test_bracket_at_statement_start_is_not_a_relationship_pattern():
+    assert _is_rel_pattern_start(tokenize("[x]"), 0) is False
+
+
+def test_nested_bracket_inside_relationship_pattern():
+    result = validate("MATCH (a)-[r {x: size([1])}]->(b) RETURN a", ONTOLOGY, SETTINGS)
+    assert isinstance(result.errors, list)
+
+
+def test_relationship_variable_is_scanned():
+    result = validate("MATCH (a)-[r:SUBSIDIARY_OF]->(b) RETURN a", ONTOLOGY, SETTINGS)
+    assert result.valid, result.errors
+
+
+def test_unterminated_relationship_pattern_scans_to_the_end():
+    result = validate("MATCH (a)-[r:SUBSIDIARY_OF RETURN a", ONTOLOGY, SETTINGS)
+    assert isinstance(result.errors, list)

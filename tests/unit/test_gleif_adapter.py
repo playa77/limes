@@ -256,3 +256,123 @@ def test_zip_with_unrecognized_csv_header_raises_source_parse_error():
         pass
     else:
         raise AssertionError("expected SourceParseError")
+
+
+def test_entity_row_without_lei_skipped_and_counted():
+    csv_text = (
+        "LEI,Entity.EntityStatus,Entity.LegalName,"
+        "Entity.HeadquartersAddress.Country,Entity.HeadquartersAddress.PostalCode,"
+        "Entity.HeadquartersAddress.City\n"
+        ",ACTIVE,Ohne Lei,DE,70173,Stuttgart\n"
+        f"{LEI_DE},ACTIVE,Beispiel AG,DE,70173,Stuttgart\n"
+    )
+    payload = _zip_bytes("lei2-goldencopy.csv", csv_text)
+    with capture_logs() as captured:
+        normalized = ADAPTER.normalize(_record(payload, ENTITY_ZIP_URL))
+    assert len(normalized.assertions) == 1  # HEADQUARTERED_IN; no lookup, so no LOCATED_IN
+    assert len(normalized.entities) == 0
+    skipped = [e for e in captured if e.get("event") == "gleif: entity row without LEI skipped"]
+    assert len(skipped) == 1
+    summary = [e for e in captured if e.get("event") == "gleif: entity file normalized"][0]
+    assert summary["malformed_skipped"] == 1
+
+
+_REL_HEADER = (
+    "Relationship.RecordID,Relationship.RelationshipType,Relationship.StartNodeID,"
+    "Relationship.EndNodeID,Relationship.Periods.StartDate,"
+    "Relationship.Ownership.DirectPercentage"
+)
+
+
+def test_non_subsidiary_relationship_skipped_and_counted():
+    csv_text = (
+        f"{_REL_HEADER}\n"
+        "R2,OWNS,5493000TEST000000001,5493000TEST000000002,,100\n"
+        f"R3,IS_SUBSIDIARY_OF,{LEI_DE},{LEI_FI},2021-06-01,\n"
+    )
+    payload = _zip_bytes("lei2-relationships-goldencopy.csv", csv_text)
+    with capture_logs() as captured:
+        normalized = ADAPTER.normalize(_record(payload, RELATIONSHIP_ZIP_URL))
+    assert [a.relation for a in normalized.assertions] == ["SUBSIDIARY_OF"]
+    skipped = [
+        e for e in captured if e.get("event") == "gleif: non-subsidiary relationship skipped"
+    ]
+    assert len(skipped) == 1
+    assert skipped[0]["relationship_type"] == "OWNS"
+
+
+def test_relationship_with_unmaterializable_endpoint_skipped():
+    csv_text = (
+        f"{_REL_HEADER}\n"
+        "R4,IS_SUBSIDIARY_OF,123,5493000TEST000000002,,\n"
+        f"R5,IS_SUBSIDIARY_OF,{LEI_DE},{LEI_FI},2021-06-01,50\n"
+    )
+    payload = _zip_bytes("lei2-relationships-goldencopy.csv", csv_text)
+    with capture_logs() as captured:
+        normalized = ADAPTER.normalize(_record(payload, RELATIONSHIP_ZIP_URL))
+    assert [a.relation for a in normalized.assertions] == ["SUBSIDIARY_OF", "OWNS_STAKE_IN"]
+    skipped = [
+        e
+        for e in captured
+        if e.get("event") == "gleif: relationship endpoint LEI cannot be materialized; skipped"
+    ]
+    assert len(skipped) == 1
+
+
+def test_unparseable_period_start_falls_back_and_is_counted():
+    csv_text = f"{_REL_HEADER}\nR6,IS_SUBSIDIARY_OF,{LEI_DE},{LEI_FI},not-a-date,\n"
+    payload = _zip_bytes("lei2-relationships-goldencopy.csv", csv_text)
+    with capture_logs() as captured:
+        normalized = ADAPTER.normalize(_record(payload, RELATIONSHIP_ZIP_URL))
+    assert normalized.assertions[0].validity.valid_from == NOW
+    skipped = [
+        e
+        for e in captured
+        if e.get("event") == "gleif: unparseable period start date; falling back to fetch time"
+    ]
+    assert len(skipped) == 1
+    summary = [e for e in captured if e.get("event") == "gleif: relationship file normalized"][0]
+    assert summary["date_fallback"] == 1
+
+
+def test_unparseable_direct_percentage_skipped_and_counted():
+    csv_text = f"{_REL_HEADER}\nR7,IS_SUBSIDIARY_OF,{LEI_DE},{LEI_FI},2021-06-01,lots\n"
+    payload = _zip_bytes("lei2-relationships-goldencopy.csv", csv_text)
+    with capture_logs() as captured:
+        normalized = ADAPTER.normalize(_record(payload, RELATIONSHIP_ZIP_URL))
+    assert [a.relation for a in normalized.assertions] == ["SUBSIDIARY_OF"]
+    skipped = [
+        e
+        for e in captured
+        if e.get("event") == "gleif: unparseable direct percentage; no ownership assertion"
+    ]
+    assert len(skipped) == 1
+    summary = [e for e in captured if e.get("event") == "gleif: relationship file normalized"][0]
+    assert summary["unparseable_percentages"] == 1
+
+
+def test_zip_with_multiple_csv_members_uses_first_and_warns():
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w") as archive:
+        archive.writestr("a-entities.csv", "LEI,Entity.EntityStatus\n" + f"{LEI_DE},ACTIVE\n")
+        archive.writestr("b-entities.csv", "LEI,Entity.EntityStatus\n")
+    with capture_logs() as captured:
+        normalized = ADAPTER.normalize(_record(buffer.getvalue(), ENTITY_ZIP_URL))
+    assert len(normalized.entities) == 1
+    warnings = [
+        e
+        for e in captured
+        if e.get("event") == "gleif: zip has multiple CSV members; using the first"
+    ]
+    assert len(warnings) == 1
+    assert warnings[0]["member"] == "a-entities.csv"
+
+
+def test_csv_without_data_rows_raises_source_parse_error():
+    payload = _zip_bytes("lei2-goldencopy.csv", "LEI,Entity.EntityStatus\n")
+    try:
+        ADAPTER.normalize(_record(payload, ENTITY_ZIP_URL))
+    except SourceParseError:
+        pass
+    else:
+        raise AssertionError("expected SourceParseError")

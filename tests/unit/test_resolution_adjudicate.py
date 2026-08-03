@@ -89,3 +89,10 @@ def test_missing_prompt_file_fails_loudly():
     client = StubClient('{"same": true, "confidence": 0.9}')
     with pytest.raises(ExtractionError, match="prompt file missing"):
         adjudicate(MENTION, CANDIDATES, client, "9.9.9", MODEL)
+
+
+def test_non_object_json_is_no_match():
+    # A JSON array is parseable but not an adjudication verdict; the schema
+    # pass refuses it the same way it refuses a malformed object.
+    client = StubClient("[1, 2]")
+    assert adjudicate(MENTION, CANDIDATES, client, PROMPT_VERSION, MODEL) == (None, 0.0)

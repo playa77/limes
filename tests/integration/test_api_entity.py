@@ -130,6 +130,22 @@ def test_neighbors_as_of_temporal_filter(neo4j_instance: Neo4jInstance, tmp_path
         assert edges[0]["valid_to"] is None
 
 
+def test_neighbors_believed_temporal_filter(
+    neo4j_instance: Neo4jInstance, tmp_path: Path, ids: dict[str, str]
+):
+    # The belief instant restricts to relationships the graph knew by then;
+    # a far-future instant admits everything the entity currently has.
+    with make_api_client(neo4j_instance, tmp_path) as client:
+        response = client.get(
+            f"/entity/{ids['alpha']}/neighbors",
+            params={"believed": "2099-01-01T00:00:00Z"},
+        )
+        assert response.status_code == 200
+        body = response.json()
+        neighbors = {entry["neighbor"]["entity_id"] for entry in body["neighbors"]}
+        assert neighbors == {ids["beta"], ids["hq"], ids["boss"]}
+
+
 def test_neighbors_unknown_entity_returns_404(neo4j_instance: Neo4jInstance, tmp_path: Path):
     with make_api_client(neo4j_instance, tmp_path) as client:
         response = client.get("/entity/does-not-exist/neighbors")

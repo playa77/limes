@@ -145,3 +145,60 @@ def test_migrate_command_wires_the_typer_option():
 
     result = CliRunner().invoke(app, ["migrate"])
     assert result.exit_code != 0
+
+
+def test_no_migrations_directory_fails(tmp_path):
+    # A breaking target whose migrations directory does not exist is a
+    # defect error, not a runtime condition.
+    from limes.cli.migrate import _find_migration
+
+    ontology = tmp_path / "ontology"
+    ontology.mkdir()
+    with pytest.raises(LimesError, match="no migrations directory"):
+        _find_migration(ontology / "ontology.yaml", "2.0.0")
+
+
+def test_migration_directory_skips_the_package_init_file(tmp_path):
+    # `__init__.py` is not a migration; with only it and a script for the
+    # wrong version present, no candidate is found.
+    from limes.cli.migrate import _find_migration
+
+    migrations = tmp_path / "ontology" / "migrations"
+    migrations.mkdir(parents=True)
+    (migrations / "__init__.py").write_text("", encoding="utf-8")
+    (migrations / "0002_other.py").write_text(
+        'TO_VERSION = "3.0.0"\ndef upgrade(driver):\n    pass\n',
+        encoding="utf-8",
+    )
+    with pytest.raises(LimesError, match="no migration found"):
+        _find_migration(migrations.parent / "ontology.yaml", "2.0.0")
+
+
+def test_multiple_migrations_for_one_target_fail(tmp_path):
+    from limes.cli.migrate import _find_migration
+
+    migrations = _migrations_dir(tmp_path, "0002_breaking", "2.0.0")
+    (migrations / "0002_duplicate.py").write_text(
+        'TO_VERSION = "2.0.0"\ndef upgrade(driver):\n    pass\n',
+        encoding="utf-8",
+    )
+    with pytest.raises(LimesError, match="multiple migrations declare TO_VERSION 2.0.0"):
+        _find_migration(migrations.parent / "ontology.yaml", "2.0.0")
+
+
+def test_load_migration_module_cannot_import_fails(tmp_path):
+    # An empty location cannot be turned into a module spec — the defect
+    # error names the path.
+    from limes.cli.migrate import _load_migration_module
+
+    with pytest.raises(LimesError, match="cannot import migration"):
+        _load_migration_module(Path(""))
+
+
+def test_migration_without_upgrade_function_fails(tmp_path):
+    from limes.cli.migrate import _load_migration_module
+
+    script = tmp_path / "broken.py"
+    script.write_text('TO_VERSION = "2.0.0"\n', encoding="utf-8")
+    with pytest.raises(LimesError, match="has no upgrade"):
+        _load_migration_module(script)

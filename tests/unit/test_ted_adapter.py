@@ -19,6 +19,7 @@ import hashlib
 import json
 from datetime import UTC, datetime
 
+import pytest
 import respx
 from httpx import Response
 from structlog.testing import capture_logs
@@ -109,6 +110,51 @@ def test_fetch_without_window_sends_match_all_query():
 
     assert len(records) == 2
     assert body["query"] == "*"
+
+
+def test_fetch_empty_search_yields_no_records_and_logs():
+    with respx.mock:
+        respx.post(SEARCH_URL).mock(return_value=Response(200, json={"results": []}))
+        with capture_logs() as captured:
+            records = list(ADAPTER.fetch(None, None))
+    assert records == []
+    summary = [e for e in captured if e.get("event") == "ted: search returned no notices"]
+    assert len(summary) == 1
+
+
+def test_search_hits_without_id_or_uri_are_skipped_and_counted():
+    hits = [
+        {"id": "123456-2025", "uri": NOTICE_URI_LEI},
+        42,
+        {"uri": NOTICE_URI_NAME},
+        {"id": "999999-2025"},
+        {"id": "888888-2025", "uri": "  "},
+    ]
+    with respx.mock:
+        respx.post(SEARCH_URL).mock(return_value=Response(200, json={"results": hits}))
+        respx.get(NOTICE_URI_LEI).mock(return_value=Response(200, content=_lei_notice().payload))
+        with capture_logs() as captured:
+            records = list(ADAPTER.fetch(None, None))
+    assert [r.source_url for r in records] == [NOTICE_URI_LEI]
+    skipped = [
+        e for e in captured if e.get("event") == "ted: search hits without id or uri skipped"
+    ]
+    assert len(skipped) == 1
+    assert skipped[0]["skipped"] == 4
+
+
+def test_search_response_that_is_not_json_raises():
+    with respx.mock:
+        respx.post(SEARCH_URL).mock(return_value=Response(200, content=b"not json"))
+        with pytest.raises(SourceParseError):
+            list(ADAPTER.fetch(None, None))
+
+
+def test_search_response_without_results_list_raises():
+    with respx.mock:
+        respx.post(SEARCH_URL).mock(return_value=Response(200, json={"results": "nope"}))
+        with pytest.raises(SourceParseError):
+            list(ADAPTER.fetch(None, None))
 
 
 def test_normalize_lei_notice_produces_expected_records():
@@ -336,3 +382,166 @@ def test_notice_without_buyer_still_normalizes_contract():
     }
     summary = [e for e in captured if e.get("event") == "ted: notice normalized"][0]
     assert summary["no_buyer"] == 1
+
+
+def test_notice_without_publish_date_falls_back_to_fetched_at():
+    payload = b"""<TED_EXPORT>
+      <NO_DOC_OJS>777777-2025</NO_DOC_OJS>
+      <TITLE><VALUE>Ohne Datum</VALUE></TITLE>
+      <OBJECT_CONTRACT><CPV_MAIN><CPV_CODE CODE="71000000"/></CPV_MAIN></OBJECT_CONTRACT>
+    </TED_EXPORT>"""
+    with capture_logs() as captured:
+        normalized = ADAPTER.normalize(_notice_record(payload, "https://ted.europa.eu/notices/x"))
+
+    assert len(normalized.assertions) == 1
+    assert normalized.assertions[0].validity.valid_from == NOW
+    summary = [e for e in captured if e.get("event") == "ted: notice normalized"][0]
+    assert summary["date_fallback"] == 1
+
+
+def test_cpv_code_without_code_attribute_skipped_and_counted():
+    payload = b"""<TED_EXPORT>
+      <NO_DOC_OJS>666666-2025</NO_DOC_OJS>
+      <DT_PUBLISH>20250301</DT_PUBLISH>
+      <OBJECT_CONTRACT><CPV_MAIN><CPV_CODE/><CPV_CODE CODE="72000000"/></CPV_MAIN></OBJECT_CONTRACT>
+    </TED_EXPORT>"""
+    with capture_logs() as captured:
+        normalized = ADAPTER.normalize(_notice_record(payload, "https://ted.europa.eu/notices/x"))
+
+    assert [a.relation for a in normalized.assertions] == ["ABOUT_TOPIC"]
+    summary = [e for e in captured if e.get("event") == "ted: notice normalized"][0]
+    assert summary["skipped_cpv_code"] == 1
+
+
+def test_contractor_without_officialname_skipped_and_counted():
+    payload = b"""<TED_EXPORT>
+      <NO_DOC_OJS>555555-2025</NO_DOC_OJS>
+      <DT_PUBLISH>20250301</DT_PUBLISH>
+      <AWARD_CONTRACT><AWARD_DATE><VALUE>20250501</VALUE></AWARD_DATE>
+        <CONTRACTORS><CONTRACTOR><ADDRESS_CONTRACTOR>
+          <LEI>549300TEST0000000003</LEI>
+        </ADDRESS_CONTRACTOR></CONTRACTOR>
+        <CONTRACTOR><ADDRESS_CONTRACTOR>
+          <OFFICIALNAME>Benannte GmbH</OFFICIALNAME>
+        </ADDRESS_CONTRACTOR></CONTRACTOR></CONTRACTORS>
+      </AWARD_CONTRACT>
+    </TED_EXPORT>"""
+    with capture_logs() as captured:
+        normalized = ADAPTER.normalize(_notice_record(payload, "https://ted.europa.eu/notices/x"))
+
+    awarded = [a for a in normalized.assertions if a.relation == "AWARDED_TO"]
+    assert len(awarded) == 1
+    assert awarded[0].object.label == "Benannte GmbH"
+    summary = [e for e in captured if e.get("event") == "ted: notice normalized"][0]
+    assert summary["skipped_contractor_name"] == 1
+
+
+def test_buyer_without_officialname_skipped_and_counted():
+    payload = b"""<TED_EXPORT>
+      <NO_DOC_OJS>444444-2025</NO_DOC_OJS>
+      <DT_PUBLISH>20250301</DT_PUBLISH>
+      <CONTRACTING_BODY><ADDRESS_CONTRACTING_BODY>
+        <POSTAL_CODE>10115</POSTAL_CODE>
+      </ADDRESS_CONTRACTING_BODY></CONTRACTING_BODY>
+      <OBJECT_CONTRACT><CPV_MAIN><CPV_CODE CODE="72000000"/></CPV_MAIN></OBJECT_CONTRACT>
+    </TED_EXPORT>"""
+    with capture_logs() as captured:
+        normalized = ADAPTER.normalize(_notice_record(payload, "https://ted.europa.eu/notices/x"))
+
+    assert all(a.relation != "BUYER_OF" for a in normalized.assertions)
+    skipped = [
+        e
+        for e in captured
+        if e.get("event") == "ted: buyer without OFFICIALNAME; buyer assertions skipped"
+    ]
+    assert len(skipped) == 1
+    summary = [e for e in captured if e.get("event") == "ted: notice normalized"][0]
+    assert summary["no_buyer"] == 1
+
+
+def test_contracting_body_without_address_leaves_buyer_unassigned():
+    payload = b"""<TED_EXPORT>
+      <NO_DOC_OJS>333333-2025</NO_DOC_OJS>
+      <DT_PUBLISH>20250301</DT_PUBLISH>
+      <CONTRACTING_BODY><OFFICIALNAME>Namenlos</OFFICIALNAME></CONTRACTING_BODY>
+      <OBJECT_CONTRACT><CPV_MAIN><CPV_CODE CODE="72000000"/></CPV_MAIN></OBJECT_CONTRACT>
+    </TED_EXPORT>"""
+    with capture_logs() as captured:
+        normalized = ADAPTER.normalize(_notice_record(payload, "https://ted.europa.eu/notices/x"))
+
+    assert all(a.relation != "BUYER_OF" for a in normalized.assertions)
+    skipped = [
+        e for e in captured if e.get("event") == "ted: notice without CONTRACTING_BODY buyer"
+    ]
+    assert len(skipped) == 1
+
+
+def test_buyer_without_country_or_postal_region_unassigned():
+    payload = b"""<TED_EXPORT>
+      <NO_DOC_OJS>222222-2025</NO_DOC_OJS>
+      <DT_PUBLISH>20250301</DT_PUBLISH>
+      <CONTRACTING_BODY><ADDRESS_CONTRACTING_BODY>
+        <OFFICIALNAME>Stadt Ohne Plz</OFFICIALNAME><TOWN>Irgendwo</TOWN>
+      </ADDRESS_CONTRACTING_BODY></CONTRACTING_BODY>
+      <OBJECT_CONTRACT><CPV_MAIN><CPV_CODE CODE="72000000"/></CPV_MAIN></OBJECT_CONTRACT>
+    </TED_EXPORT>"""
+    with capture_logs() as captured:
+        normalized = ADAPTER.normalize(_notice_record(payload, "https://ted.europa.eu/notices/x"))
+
+    relations = {a.relation for a in normalized.assertions}
+    assert relations == {"ABOUT_TOPIC", "BUYER_OF"}
+    summary = [e for e in captured if e.get("event") == "ted: notice normalized"][0]
+    assert summary["no_buyer_address"] == 1
+    assert summary["missing_regions"] == 0
+
+
+def test_unparseable_award_date_falls_back_to_publication_date():
+    payload = b"""<TED_EXPORT>
+      <NO_DOC_OJS>111111-2025</NO_DOC_OJS>
+      <DT_PUBLISH>20250301</DT_PUBLISH>
+      <AWARD_CONTRACT><AWARD_DATE><VALUE>not-a-date</VALUE></AWARD_DATE>
+        <CONTRACTORS><CONTRACTOR><ADDRESS_CONTRACTOR>
+          <OFFICIALNAME>Benannte GmbH</OFFICIALNAME>
+        </ADDRESS_CONTRACTOR></CONTRACTOR></CONTRACTORS>
+      </AWARD_CONTRACT>
+    </TED_EXPORT>"""
+    with capture_logs() as captured:
+        normalized = ADAPTER.normalize(_notice_record(payload, "https://ted.europa.eu/notices/x"))
+
+    awarded = [a for a in normalized.assertions if a.relation == "AWARDED_TO"]
+    assert awarded[0].validity.valid_from == datetime(2025, 3, 1, tzinfo=UTC)
+    summary = [e for e in captured if e.get("event") == "ted: notice normalized"][0]
+    assert summary["date_fallback"] == 1
+
+
+def test_buyer_without_address_element_is_counted(monkeypatch):
+    import limes.sources.ted as ted_module
+
+    real_buyer = ted_module._buyer
+
+    def buyer_without_address(root):
+        buyer, _ = real_buyer(root)
+        return buyer, None
+
+    # `_buyer` can only return (None, None) or (None, address) or (buyer,
+    # address): the no-address-with-buyer branch of normalize is unreachable
+    # through payloads, so the helper is patched to force it.
+    monkeypatch.setattr(ted_module, "_buyer", buyer_without_address)
+    with capture_logs() as captured:
+        normalized = ADAPTER.normalize(_lei_notice())
+
+    assert any(a.relation == "BUYER_OF" for a in normalized.assertions)
+    summary = [e for e in captured if e.get("event") == "ted: notice normalized"][0]
+    assert summary["no_buyer_address"] == 1
+
+
+def test_namespaced_cpv_attribute_read_by_local_name():
+    payload = b"""<TED_EXPORT xmlns:z="urn:test">
+      <NO_DOC_OJS>999000-2025</NO_DOC_OJS>
+      <DT_PUBLISH>20250301</DT_PUBLISH>
+      <OBJECT_CONTRACT><CPV_MAIN><CPV_CODE z:CODE="72000000"/></CPV_MAIN></OBJECT_CONTRACT>
+    </TED_EXPORT>"""
+    normalized = ADAPTER.normalize(_notice_record(payload, "https://ted.europa.eu/notices/x"))
+    assert {(a.relation, a.object.entity_id) for a in normalized.assertions} == {
+        ("ABOUT_TOPIC", "topic:CPV:72000000")
+    }

@@ -11,20 +11,31 @@ instead of inventing a type.
 
 from datetime import UTC, datetime, timedelta
 
+import pytest
 import respx
+import structlog
 from httpx import Response
 
-from limes.sources.gdelt import FILE_URL_TEMPLATE, GdeltAdapter
+from limes.errors import SourceParseError
+from limes.sources.gdelt import FILE_URL_TEMPLATE, GdeltAdapter, _parse_float
 from limes.types import RawRecord
 
 FIXTURES = __import__("pathlib").Path(__file__).parents[1] / "fixtures" / "gdelt"
 FETCHED_AT = datetime(2026, 8, 1, 16, 5, 0, tzinfo=UTC)
 
 
-def _record() -> RawRecord:
-    payload = (FIXTURES / "events.csv").read_bytes()
+def _csv_row(**fields: str) -> list[str]:
+    from limes.sources.gdelt import _GDELT_FIELDS
+
+    row = [""] * len(_GDELT_FIELDS)
+    for name, value in fields.items():
+        row[_GDELT_FIELDS.index(name)] = value
+    return row
+
+
+def _record(payload: bytes | None = None) -> RawRecord:
     return RawRecord(
-        payload=payload,
+        payload=(FIXTURES / "events.csv").read_bytes() if payload is None else payload,
         content_type="text/csv",
         source_url="https://data.gdeltproject.org/gdelt2/20260801154500.events.csv",
         fetched_at=FETCHED_AT,
@@ -140,9 +151,10 @@ def test_occurred_in_city_uses_coordinate_hash_location():
 def test_document_payload_fields():
     document = GdeltAdapter().normalize(_record()).document
     assert document is not None
-    assert document.content_hash == __import__(
-        "hashlib"
-    ).sha256((FIXTURES / "events.csv").read_bytes()).hexdigest()
+    assert (
+        document.content_hash
+        == __import__("hashlib").sha256((FIXTURES / "events.csv").read_bytes()).hexdigest()
+    )
     assert document.title == "GDELT events 20260801154500.events.csv"
     assert "UNITED STATES" in document.body
     assert document.language == "en"
@@ -164,3 +176,93 @@ def test_provenance_is_deterministic_with_source_trust():
         assert assertion.provenance.source_trust == 0.50
         assert assertion.provenance.confidence == 1.0
         assert assertion.validity.valid_from is not None
+
+
+def _csv_payload(rows: list[list[str]]) -> bytes:
+    return "\n".join(",".join(row) for row in rows).encode("utf-8")
+
+
+def test_rows_without_event_id_or_valid_date_are_skipped_and_counted():
+    rows = [
+        _csv_row(Actor1Name="kein Event", SQLDATE="20260731"),
+        _csv_row(GLOBALEVENTID="2000004", Actor1Name="kurzes Datum", SQLDATE="123"),
+        _csv_row(GLOBALEVENTID="2000005", Actor1Name="unmoegliches Datum", SQLDATE="20269999"),
+        _csv_row(
+            GLOBALEVENTID="2000006",
+            SQLDATE="20260731",
+            Actor1Name="Bundeswehr",
+            Actor1Type1Code="MIL",
+            ActionGeo_Type="1",
+            ActionGeo_FullName="Germany",
+            ActionGeo_CountryCode="DE",
+        ),
+    ]
+    with structlog.testing.capture_logs() as captured:
+        normalized = GdeltAdapter().normalize(_record(_csv_payload(rows)))
+
+    assert len(normalized.assertions) == 2  # ACTOR_IN + OCCURRED_IN for the good row
+    summary = [e for e in captured if e.get("event") == "gdelt: event file normalized"][0]
+    assert summary["events"] == 1
+    assert summary["malformed_skipped"] == 3
+
+
+def test_non_utf8_payload_raises_source_parse_error():
+    with pytest.raises(SourceParseError):
+        GdeltAdapter().normalize(_record(b"\xff\xfe\x00\x01"))
+
+
+def test_oversized_csv_field_raises_source_parse_error():
+    # A field beyond the csv module's field-size limit makes the reader raise
+    # csv.Error — the malformed-CSV branch of the parser.
+    rows = [
+        _csv_row(GLOBALEVENTID="2000007", SQLDATE="20260731", SOURCEURL="x" * 200_000),
+    ]
+    with pytest.raises(SourceParseError):
+        GdeltAdapter().normalize(_record(_csv_payload(rows)))
+
+
+def test_action_geo_type_1_with_invalid_country_code_skipped():
+    rows = [
+        _csv_row(
+            GLOBALEVENTID="2000008",
+            SQLDATE="20260731",
+            Actor1Name="Bundeswehr",
+            Actor1Type1Code="MIL",
+            ActionGeo_Type="1",
+            ActionGeo_FullName="United States of America",
+            ActionGeo_CountryCode="USA",
+        ),
+    ]
+    with structlog.testing.capture_logs() as captured:
+        normalized = GdeltAdapter().normalize(_record(_csv_payload(rows)))
+
+    assert all(a.relation != "OCCURRED_IN" for a in normalized.assertions)
+    summary = [e for e in captured if e.get("event") == "gdelt: event file normalized"][0]
+    assert summary["location_skipped"] == 1
+
+
+def test_action_geo_type_2_with_unparseable_coordinates_skipped():
+    rows = [
+        _csv_row(
+            GLOBALEVENTID="2000009",
+            SQLDATE="20260731",
+            Actor1Name="Bundeswehr",
+            Actor1Type1Code="MIL",
+            ActionGeo_Type="2",
+            ActionGeo_FullName="Irgendwo",
+            ActionGeo_Lat="not-a-number",
+            ActionGeo_Long="13.4",
+        ),
+    ]
+    with structlog.testing.capture_logs() as captured:
+        normalized = GdeltAdapter().normalize(_record(_csv_payload(rows)))
+
+    assert all(a.relation != "OCCURRED_IN" for a in normalized.assertions)
+    summary = [e for e in captured if e.get("event") == "gdelt: event file normalized"][0]
+    assert summary["location_skipped"] == 1
+
+
+def test_parse_float_rejects_non_string():
+    # CSV rows always yield strings, so the non-string branch is unreachable
+    # through normalize; the helper is called directly with a number.
+    assert _parse_float(1.5) is None

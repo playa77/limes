@@ -288,3 +288,236 @@ def test_write_pins_preserves_existing_env_content(tmp_path: Path):
     assert "LIMES_OTHER_KEY=value" in content
     assert "LIMES_EXTRACTION_MODEL=ext/cheap" in content
     monkeypatch.undo()
+
+
+# --------------------------------------------------------------------------
+# Command wiring and refusal paths
+# --------------------------------------------------------------------------
+
+
+def test_select_models_requires_exactly_one_stage_flag():
+    with pytest.raises(LimesError, match="exactly one of --provisional or --measured"):
+        select_models_module.select_models(provisional=True, measured=True)
+    with pytest.raises(LimesError, match="exactly one of --provisional or --measured"):
+        select_models_module.select_models(provisional=False, measured=False)
+
+
+def test_select_models_wires_the_provisional_stage(monkeypatch: pytest.MonkeyPatch):
+    # The command body: settings, logging, context with the explicit
+    # envelope, stage dispatch, driver close. The stages themselves are
+    # covered by their own tests; this is the wiring between them.
+    settings = _settings()
+    ctx = SimpleNamespace(driver=SimpleNamespace(close=lambda: None))
+    calls: list[str] = []
+    monkeypatch.setattr("limes.config.load_settings", lambda: settings)
+    monkeypatch.setattr("limes.logging_setup.configure_logging", lambda settings: None)
+    monkeypatch.setattr(
+        "limes.composition.build_run_context",
+        lambda settings, needs_inference, budget_eur=None: ctx,
+    )
+    monkeypatch.setattr(
+        select_models_module, "_provisional", lambda ctx: calls.append("provisional")
+    )
+    monkeypatch.setattr(select_models_module, "_measured", lambda ctx: calls.append("measured"))
+    select_models_module.select_models(provisional=True, measured=False, budget=2.5)
+    assert calls == ["provisional"]
+    calls.clear()
+    select_models_module.select_models(provisional=False, measured=True, budget=None)
+    assert calls == ["measured"]
+
+
+def test_select_models_gold_set_version_rejects_mixed_versions():
+    with pytest.raises(LimesError, match="mixed versions"):
+        select_models_module._gold_set_version(
+            [{"gold_set_version": "1.0.0"}, {"gold_set_version": "1.1.0"}]
+        )
+
+
+def test_filter_candidates_skips_entries_with_unparseable_pricing():
+    catalogue = [
+        {"id": "broken-price", "pricing": {"prompt": "abc", "completion": "0.000000100"}},
+        {"id": "fine", "pricing": {"prompt": "0.000000100", "completion": "0.000000100"}},
+    ]
+    # The unparseable entry is skipped, not fatal — the catalogue is
+    # third-party input and one broken row must not kill the ranking.
+    assert [c["id"] for c in filter_candidates(catalogue, "nl2cypher")] == ["fine"]
+
+
+def test_filter_candidates_keeps_embeddings_with_unparseable_dimensions():
+    catalogue = [
+        {
+            "id": "emb/odd-dims",
+            "pricing": {"prompt": "0.000000050", "completion": "0"},
+            "architecture": {"embedding_dimensions": "a lot"},
+        }
+    ]
+    # A non-numeric dimension declaration is not a reason to exclude the
+    # candidate — only a declared numeric dimension above the ceiling is.
+    assert [c["id"] for c in filter_candidates(catalogue, "embedding")] == ["emb/odd-dims"]
+
+
+def test_provisional_refuses_an_empty_catalogue(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
+    settings = _settings(gold_set_path=tmp_path / "does-not-exist.jsonl")
+    with pytest.raises(LimesError, match="catalogue returned no models"):
+        select_models_module._provisional(_ctx(settings, catalogue=[]))
+
+
+def test_provisional_skips_roles_without_a_candidate(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, capsys
+):
+    settings = _settings(gold_set_path=tmp_path / "does-not-exist.jsonl")
+    monkeypatch.setattr(select_models_module, "ENV_FILE", tmp_path / ".env")
+    # Every catalogue entry exceeds every role ceiling: each role is
+    # reported skipped, no pin is written, and the run refuses loudly.
+    expensive = [
+        {"id": "m/too-expensive", "pricing": {"prompt": "0.001000000", "completion": "0.001000000"}}
+    ]
+    with pytest.raises(LimesError, match="no role pinned"):
+        select_models_module._provisional(_ctx(settings, catalogue=expensive))
+    out = capsys.readouterr().out
+    assert "no extraction candidate within the cost ceiling; skipped" in out
+
+
+def _gold_set_version_2(tmp_path: Path) -> Path:
+    """A valid gold set at version 2.0.0 plus its schema, beside the
+    calibration set the measured stage also requires."""
+    import shutil
+
+    shutil.copy(REPO_ROOT / "gold_set" / "gold_set.schema.json", tmp_path / "gold_set.schema.json")
+    gold = tmp_path / "gold_set.jsonl"
+    gold.write_text(
+        json.dumps(
+            {
+                "item_id": "x",
+                "language": "en",
+                "passage": "text",
+                "expected_json": [
+                    {
+                        "subject": {"surface": "a"},
+                        "relation": "SUPPLIES",
+                        "object": {"surface": "b"},
+                    }
+                ],
+                "gold_set_version": "2.0.0",
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "calibration_set.jsonl").write_text(
+        json.dumps(
+            {
+                "item_id": "1",
+                "language": "de",
+                "type": "Corporation",
+                "mention_a": "A AG",
+                "mention_b": "B AG",
+                "is_match": False,
+                "kind": "hard_negative",
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    return gold
+
+
+def test_measured_refuses_an_empty_catalogue(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
+    gold = _gold_set_version_2(tmp_path)
+    settings = _settings(gold_set_path=gold)
+    monkeypatch.setattr(select_models_module, "ENV_FILE", tmp_path / ".env")
+    with pytest.raises(LimesError, match="catalogue returned no models"):
+        select_models_module._measured(_ctx(settings, catalogue=[]))
+
+
+def test_measured_skips_roles_without_a_candidate(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, capsys
+):
+    gold = _gold_set_version_2(tmp_path)
+    settings = _settings(gold_set_path=gold)
+    monkeypatch.setattr(select_models_module, "ENV_FILE", tmp_path / ".env")
+    expensive = [
+        {"id": "m/too-expensive", "pricing": {"prompt": "0.001000000", "completion": "0.001000000"}}
+    ]
+    with pytest.raises(LimesError, match="no role pinned"):
+        select_models_module._measured(_ctx(settings, catalogue=expensive))
+    out = capsys.readouterr().out
+    assert "no extraction candidate within the cost ceiling; skipped" in out
+
+
+# --------------------------------------------------------------------------
+# The §8.7.2 selector metrics per role
+# --------------------------------------------------------------------------
+
+
+def test_score_role_routes_every_role_to_its_selector(monkeypatch: pytest.MonkeyPatch):
+    ctx = _ctx(_settings())
+    gold_items = [{"item_id": "x", "gold_set_version": "2.0.0", "expected_json": []}]
+    calibration: list[dict[str, Any]] = []
+    questions: list[dict[str, Any]] = []
+
+    # Extraction: per-candidate extractor from the composition root, then
+    # the gold-set macro-F1.
+    seen: dict[str, Any] = {}
+    monkeypatch.setattr(
+        "limes.composition.extractor_for",
+        lambda settings, client: seen.setdefault("extractor", object()),
+    )
+    monkeypatch.setattr(
+        select_models_module,
+        "measure_extraction",
+        lambda extractor, items, settings, ontology: {
+            "SUPPLIES": {"precision": 1.0, "recall": 1.0, "f1": 0.9}
+        },
+    )
+    monkeypatch.setattr(select_models_module, "macro_f1", lambda metrics, items: 0.9)
+    assert (
+        select_models_module._score_role(
+            "extraction", "m1", ctx, gold_items, calibration, questions
+        )
+        == 0.9
+    )
+
+    # The other three roles pass the model id straight to their harness.
+    monkeypatch.setattr(
+        select_models_module, "adjudication_accuracy", lambda ctx, items, model_id=None: 0.8
+    )
+    assert (
+        select_models_module._score_role(
+            "adjudication", "m1", ctx, gold_items, calibration, questions
+        )
+        == 0.8
+    )
+    monkeypatch.setattr(
+        select_models_module,
+        "resolution_evaluation",
+        lambda ctx, items, embedding_model=None: {"recall@10": 0.7},
+    )
+    assert (
+        select_models_module._score_role("embedding", "m1", ctx, gold_items, calibration, questions)
+        == 0.7
+    )
+    monkeypatch.setattr(
+        select_models_module,
+        "nl2cypher_evaluation",
+        lambda ctx, questions, model_id=None: {"validation_pass_rate": 0.6},
+    )
+    assert (
+        select_models_module._score_role("nl2cypher", "m1", ctx, gold_items, calibration, questions)
+        == 0.6
+    )
+
+    with pytest.raises(LimesError, match="unknown role"):
+        select_models_module._score_role("typo", "m1", ctx, gold_items, calibration, questions)
+
+
+def test_blended_price_falls_back_on_unparseable_pricing():
+    catalogue = [{"id": "m", "pricing": {"prompt": "abc", "completion": "0.000000100"}}]
+    assert select_models_module._blended_price(catalogue, "m") == 0.50
+
+
+def test_confirm_accepts_only_yes_answers(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr("builtins.input", lambda prompt: "y")
+    assert select_models_module._confirm("Pin? ") is True
+    monkeypatch.setattr("builtins.input", lambda prompt: "no")
+    assert select_models_module._confirm("Pin? ") is False
