@@ -10,7 +10,7 @@
 | Status | Draft |
 | Ontology version | 1.0.0 |
 | Supersedes | v1.0.0 (2026-07-23), withdrawn |
-| Companion documents | Technical Specification v2.1.0; Implementation Roadmap v2.1.0 |
+| Companion documents | Technical Specification v2.1.0 |
 
 ## Revision History
 
