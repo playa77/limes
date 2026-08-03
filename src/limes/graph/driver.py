@@ -109,7 +109,14 @@ def _parse_plan(plan: dict[str, Any] | None) -> PlanSummary:
         operators.append(name)
         if name.upper().startswith("CARTESIAN"):
             has_cartesian = True
-        rows = int(node.get("estimatedRows", 0) or 0)
+        # The 2026.x server nests the estimate as `args.EstimatedRows`;
+        # older drivers exposed a top-level `estimatedRows` key. Reading
+        # both keeps the two row-ceiling rejections (§8.10) alive across
+        # server generations — without it, OPERATOR_ROWS_EXCEEDED and
+        # TOTAL_ROWS_EXCEEDED silently never fire (verified against a
+        # live 2026.06 container in WP-39).
+        raw = (node.get("args") or {}).get("EstimatedRows", node.get("estimatedRows", 0))
+        rows = int(raw or 0)
         max_rows = max(max_rows, rows)
         total_rows += rows
         identifiers = node.get("identifiers", [])
