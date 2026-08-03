@@ -5,6 +5,13 @@ reversibility: **R1** reversible in under an hour, **R2** bounded recoverable
 cost, **R3** one-way door. Written when each decision is made, latest first.
 Nothing here is a status report; unlogged decisions are unmade decisions.
 
+## 2026-08-03 — Approval — phase-10-v1.0.0 (WP-39)
+
+The human approved phase-10-v1.0.0 (acceptance test suite) on 2026-08-03
+and instructed merge, commit, and push. Delivered as branch
+`wp-39-acceptance-tests`, merged to `main` and pushed; the topic branch is
+pushed as well. This approval names the presented version and cannot be
+reused for any other version of the phase.
 ---
 
 ## 2026-08-03 — Phase 10 invariants (WP-39), derived at phase start
