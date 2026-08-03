@@ -1,4 +1,4 @@
-# src/limes/ui/callbacks/query.py | v1.0.0 | introduced by WP-36
+# src/limes/ui/callbacks/query.py | v1.0.1 | introduced by WP-36, repaired by WP-40
 """Query execution callbacks (Doc 1 §6.5): the three run paths (NL, Cypher,
 builder), the boot load, search, and the saved-query actions.
 
@@ -231,7 +231,11 @@ def builder_hop_change(
     if not schema or not spec or not spec.get("start_type"):
         raise PreventUpdate
     control = _triggered_hop_control()
-    index = triggered_index("builder")
+    # The index decodes from the same prop_id as the control type: the hop
+    # controls carry ids like `{"type": "builder-rel", "index": 0}`, so the
+    # exact decoded type — never the fixed "builder" prefix — is what
+    # `triggered_index` must match (WP-40, found by the coverage exercise).
+    index = triggered_index(control) if control is not None else None
     if control is None or index is None:
         raise PreventUpdate
     hops = [dict(h) for h in spec.get("hops", [])]

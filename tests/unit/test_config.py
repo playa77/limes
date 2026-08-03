@@ -1,9 +1,10 @@
-# tests/unit/test_config.py | v1.0.0 | introduced by WP-02
+# tests/unit/test_config.py | v1.0.1 | introduced by WP-02, env-file isolation by WP-40
 from decimal import Decimal
 from pathlib import Path
 
 import pytest
 
+from limes import config as config_module
 from limes.config import load_settings
 from limes.errors import ConfigurationError
 
@@ -17,6 +18,20 @@ REQUIRED = {
     "LIMES_BASELINE_PATH": "/tmp/baseline.json",
     "LIMES_ARCHIVE_PATH": "/tmp/archive",
 }
+
+
+@pytest.fixture(autouse=True)
+def no_env_file(monkeypatch):
+    """The tests assert on the environment alone: a `.env` next to the CWD
+    would leak values (e.g. LIMES_NEO4J_PASSWORD) into the settings and
+    silently invalidate the missing-key cases. `_env_file=None` disables the
+    file source entirely, so the suite passes regardless of the host."""
+    real_settings = config_module.Settings
+    monkeypatch.setattr(
+        config_module,
+        "Settings",
+        lambda **kwargs: real_settings(_env_file=None, **kwargs),
+    )
 
 
 @pytest.fixture

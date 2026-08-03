@@ -5,6 +5,64 @@ reversibility: **R1** reversible in under an hour, **R2** bounded recoverable
 cost, **R3** one-way door. Written when each decision is made, latest first.
 Nothing here is a status report; unlogged decisions are unmade decisions.
 
+## 2026-08-03 — Approval — phase-11-v1.0.0 (WP-40)
+
+The human approved phase-11-v1.0.0 (100% line coverage suite) on
+2026-08-03 and instructed merge, commit, and push. Delivered as branch
+`wp-40-line-coverage`, merged to `main` and pushed; the topic branch is
+pushed as well. This approval names the presented version and cannot be
+reused for any other version of the phase.
+
+## 2026-08-03 — D-63 (R2) — Operator-instructed 100% line coverage (WP-40)
+
+The operator instructed "add tests until we have 100% test coverage".
+Doc 2 §12.4 declares line coverage not a target ("the required condition
+is that every error path in §11 and every rejection code in §8.10 is
+triggered by at least one test"), but a later explicit operator
+instruction overrides an earlier document sentence. Logged as the
+delegation's basis so a future reader does not treat 100% as the spec's
+own requirement. Measurement: statement coverage of `src/limes` over all
+three suites combined (`unit` + `integration` + `acceptance`; separate
+runs appended via `coverage run --append` because the acceptance
+conftest's `pytest_plugins` is rejected by pytest 9.1.1 in whole-tree
+collection — pre-existing quirk, not touched here). Subprocess-based
+tests are invisible to the coverage tracer, which is why the CLI command
+bodies that the integration suite runs as subprocesses needed in-process
+unit tests.
+
+## 2026-08-03 — D-62b (R2) — Dead builder-hold callback repaired in `ui/callbacks/query.py`
+
+Found by the WP-40 coverage exercise: `builder_hop_change` decoded the
+hop index with `triggered_index("builder")`, but every hop control's
+pattern id is `{"type": "builder-rel"|"builder-dir"|…, "index": n}` — the
+exact-type match can never succeed, so every hop-control interaction
+raised `PreventUpdate` and the entire callback (lines 231–311) was dead
+in production. The fix decodes the index from the same decoded control
+type (`triggered_index(control)`), restoring the documented behavior
+("applies whichever hop control changed"). Rejected alternative: testing
+around the defect by driving the branches with a hand-built context — the
+branches were unreachable through the callback's own contract, and
+covering dead code would enshrine it. R2: bounded, restores the WP-36
+design intent; the UI suite (`test_ui_callbacks.py`) now exercises every
+branch.
+
+## 2026-08-03 — D-64 (R1) — Test isolation from the repository `.env` (WP-40)
+
+The pre-existing WP-02 failure documented in the phase-10 changelog
+(`test_config.py::test_load_settings_missing_required_key_names_it` fails
+when the repo's own `.env` exists at the CWD) was fixed in the test:
+an autouse fixture forces `Settings(_env_file=None)` so the unit suite
+asserts on the environment alone. R1 — test-only, no production change;
+the phase-10 changelog's "not fixed here" note is now resolved.
+
+## 2026-08-03 — D-65 (R2, user-approved) — `coverage` added to the dev dependency group
+
+The task requires measuring coverage; the project venv had no coverage
+tool (the system site-packages copy is ABI-compatible but outside the
+project contract). The operator approved adding `coverage>=7.15` to
+`[dependency-groups].dev` in pyproject.toml; installed into `./venv/`.
+Host tooling lives in the venv per the global contract §3.
+
 ## 2026-08-03 — Approval — phase-10-v1.0.0 (WP-39)
 
 The human approved phase-10-v1.0.0 (acceptance test suite) on 2026-08-03

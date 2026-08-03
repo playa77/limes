@@ -232,3 +232,48 @@ def test_malformed_xml_raises_source_parse_error():
             pass
         else:
             raise AssertionError(f"expected SourceParseError for {payload!r}")
+
+
+def test_sanctions_without_id_or_regime_are_skipped_and_counted():
+    payload = (
+        b"<root><Sanctions>"
+        b"<Sanction><Regime>EU</Regime><SubjectType>P</SubjectType>"
+        b"<NameAlias><WholeName>Ohne Id</WholeName></NameAlias></Sanction>"
+        b"<Sanction><Id/><Regime>EU</Regime><SubjectType>P</SubjectType>"
+        b"<NameAlias><WholeName>Leere Id</WholeName></NameAlias></Sanction>"
+        b"<Sanction><Id>777</Id><SubjectType>P</SubjectType>"
+        b"<NameAlias><WholeName>Ohne Regime</WholeName></NameAlias></Sanction>"
+        b"</Sanctions></root>"
+    )
+    normalized = ADAPTER.normalize(_record(payload))
+    assert normalized.assertions == []
+
+
+def test_name_alias_without_whole_name_falls_through_to_next_alias():
+    payload = (
+        "<root><Sanctions><Sanction>"
+        "<Id>777</Id><Regime>EU</Regime><SubjectType>P</SubjectType>"
+        "<NameAlias><Language>en</Language></NameAlias>"
+        "<NameAlias><WholeName>Primärname</WholeName></NameAlias>"
+        "<LegalBasis><LegalAct>2014/145/EU</LegalAct></LegalBasis>"
+        "</Sanction></Sanctions></root>"
+    ).encode()
+    normalized = ADAPTER.normalize(_record(payload))
+    targets = [a for a in normalized.assertions if a.relation == "TARGETS"]
+    assert len(targets) == 1
+    assert targets[0].object.label == "Primärname"
+
+
+def test_legal_basis_without_legal_act_falls_through_to_next_basis():
+    payload = (
+        b"<root><Sanctions><Sanction>"
+        b"<Id>777</Id><Regime>EU</Regime><SubjectType>P</SubjectType>"
+        b"<NameAlias><WholeName>Beispiel Person</WholeName></NameAlias>"
+        b"<LegalBasis><Regulation>269/2014/EU</Regulation></LegalBasis>"
+        b"<LegalBasis><LegalAct>2014/145/EU</LegalAct></LegalBasis>"
+        b"</Sanction></Sanctions></root>"
+    )
+    normalized = ADAPTER.normalize(_record(payload))
+    established = [a for a in normalized.assertions if a.relation == "ESTABLISHED_BY"]
+    assert len(established) == 1
+    assert established[0].object.label == "2014/145/EU"

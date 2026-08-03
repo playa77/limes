@@ -11,6 +11,8 @@ fallback. All transport is respx-mocked — no live network.
 import logging
 from decimal import Decimal
 
+import httpx
+import pytest
 import respx
 from httpx import Response
 
@@ -280,3 +282,120 @@ def test_catalogue_returns_model_list():
         client, _ = _client()
         models = client.catalogue()
     assert models == CATALOGUE["data"]
+
+
+def test_complete_retries_on_connection_error_then_fails():
+    with respx.mock:
+        respx.get(CATALOGUE_URL).mock(return_value=Response(200, json=CATALOGUE))
+        route = respx.post(COMPLETIONS_URL).mock(side_effect=httpx.ConnectError("refused"))
+        client, governor = _client()
+        try:
+            client.complete([{"role": "user", "content": "x"}], MODEL, "extraction")
+        except ExtractionError as exc:
+            assert "call failed after" in str(exc)
+        else:
+            raise AssertionError("expected ExtractionError after connection errors")
+    assert route.call_count == 4
+    assert governor.commits == []
+
+
+def test_embed_response_without_data_list_raises():
+    with respx.mock:
+        respx.get(CATALOGUE_URL).mock(return_value=Response(200, json=CATALOGUE))
+        respx.post(EMBEDDINGS_URL).mock(return_value=Response(200, json={"usage": {}}))
+        client, _ = _client()
+        with pytest.raises(ExtractionError, match="no data list"):
+            client.embed(["text"], MODEL)
+
+
+def test_embed_item_without_embedding_list_raises():
+    with respx.mock:
+        respx.get(CATALOGUE_URL).mock(return_value=Response(200, json=CATALOGUE))
+        respx.post(EMBEDDINGS_URL).mock(
+            return_value=Response(200, json={"data": [{"embedding": "nope"}], "usage": {}})
+        )
+        client, _ = _client()
+        with pytest.raises(ExtractionError, match="no embedding list"):
+            client.embed(["text"], MODEL)
+
+
+def test_catalogue_retries_on_429_then_fails():
+    with respx.mock:
+        route = respx.get(CATALOGUE_URL).mock(return_value=Response(429, json={}))
+        client, _ = _client()
+        with pytest.raises(ExtractionError, match="catalogue failed after"):
+            client.catalogue()
+    assert route.call_count == 4
+
+
+def test_catalogue_retries_on_connection_error_then_fails():
+    with respx.mock:
+        route = respx.get(CATALOGUE_URL).mock(side_effect=httpx.ConnectError("refused"))
+        client, _ = _client()
+        with pytest.raises(ExtractionError, match="catalogue failed after"):
+            client.catalogue()
+    assert route.call_count == 4
+
+
+def test_catalogue_non_retryable_4xx_fails_immediately():
+    with respx.mock:
+        route = respx.get(CATALOGUE_URL).mock(return_value=Response(400, json={"error": "bad"}))
+        client, _ = _client()
+        with pytest.raises(ExtractionError, match="catalogue failed: .* HTTP 400"):
+            client.catalogue()
+    assert route.call_count == 1
+
+
+def test_catalogue_without_data_list_raises():
+    with respx.mock:
+        respx.get(CATALOGUE_URL).mock(return_value=Response(200, json={"data": "nope"}))
+        client, _ = _client()
+        with pytest.raises(ExtractionError, match="no data list"):
+            client.catalogue()
+
+
+def test_price_falls_back_when_catalogue_pricing_is_unfloatable():
+    broken = {"data": [{"id": MODEL, "pricing": {"prompt": "abc", "completion": "0.000000750"}}]}
+    with respx.mock:
+        respx.get(CATALOGUE_URL).mock(return_value=Response(200, json=broken))
+        respx.post(COMPLETIONS_URL).mock(return_value=Response(200, json=COMPLETION))
+        client, governor = _client()
+        client.complete([{"role": "user", "content": "x"}], MODEL, "extraction")
+    entry = governor.commits[0]
+    expected_usd = Decimal(str(4000 * (FALLBACK_USD_PER_MILLION_INPUT / 1e6))) + Decimal(
+        str(1000 * (FALLBACK_USD_PER_MILLION_OUTPUT / 1e6))
+    )
+    assert entry.cost_usd == expected_usd
+
+
+def test_price_falls_back_when_catalogue_call_fails():
+    with respx.mock:
+        respx.get(CATALOGUE_URL).mock(return_value=Response(503, json={}))
+        respx.post(COMPLETIONS_URL).mock(return_value=Response(200, json=COMPLETION))
+        client, governor = _client()
+        client.complete([{"role": "user", "content": "x"}], MODEL, "extraction")
+    entry = governor.commits[0]
+    expected_usd = Decimal(str(4000 * (FALLBACK_USD_PER_MILLION_INPUT / 1e6))) + Decimal(
+        str(1000 * (FALLBACK_USD_PER_MILLION_OUTPUT / 1e6))
+    )
+    assert entry.cost_usd == expected_usd
+
+
+def test_completion_without_choices_raises():
+    with respx.mock:
+        respx.get(CATALOGUE_URL).mock(return_value=Response(200, json=CATALOGUE))
+        respx.post(COMPLETIONS_URL).mock(return_value=Response(200, json={"usage": {}}))
+        client, _ = _client()
+        with pytest.raises(ExtractionError, match="has no content"):
+            client.complete([{"role": "user", "content": "x"}], MODEL, "extraction")
+
+
+def test_completion_with_non_string_content_raises():
+    with respx.mock:
+        respx.get(CATALOGUE_URL).mock(return_value=Response(200, json=CATALOGUE))
+        respx.post(COMPLETIONS_URL).mock(
+            return_value=Response(200, json={"choices": [{"message": {"content": 123}}]})
+        )
+        client, _ = _client()
+        with pytest.raises(ExtractionError, match="content is not a string"):
+            client.complete([{"role": "user", "content": "x"}], MODEL, "extraction")

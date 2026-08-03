@@ -199,3 +199,130 @@ def test_unknown_author_skips_only_adopted_and_is_counted():
     summary = [log for log in logs if log["event"] == "eurlex: normalized"][0]
     assert summary["skipped"] == {"unknown_author": 1}
     assert "European Commission" not in AUTHOR_QIDS
+
+
+def test_non_object_payload_raises_source_parse_error():
+    try:
+        ADAPTER.normalize(_record(b"[1, 2, 3]"))
+    except SourceParseError:
+        pass
+    else:
+        raise AssertionError("expected SourceParseError")
+
+
+def test_malformed_binding_is_skipped_and_counted():
+    from structlog.testing import capture_logs
+
+    payload = json.dumps(
+        {
+            "results": {
+                "bindings": [
+                    "not a binding",
+                    {"celex": {"type": "literal", "value": "32025R0009"}},
+                ]
+            }
+        }
+    ).encode()
+
+    with capture_logs() as logs:
+        normalized = ADAPTER.normalize(_record(payload))
+
+    assert len(normalized.assertions) == 0  # the malformed binding produced nothing
+    summary = [log for log in logs if log["event"] == "eurlex: normalized"][0]
+    assert summary["skipped"] == {"malformed_binding": 1, "missing_author": 1}
+
+
+def test_incomplete_topic_or_applies_to_is_skipped_and_counted():
+    from structlog.testing import capture_logs
+
+    payload = json.dumps(
+        {
+            "results": {
+                "bindings": [
+                    {
+                        "celex": {"type": "literal", "value": "32025R0010"},
+                        "topic_code": {"type": "literal", "value": "2421"},
+                        "applies_to_voc": {"type": "literal", "value": "EuroVoc"},
+                    }
+                ]
+            }
+        }
+    ).encode()
+
+    with capture_logs() as logs:
+        normalized = ADAPTER.normalize(_record(payload))
+
+    assert normalized.assertions == []
+    summary = [log for log in logs if log["event"] == "eurlex: normalized"][0]
+    assert summary["skipped"] == {
+        "missing_author": 1,
+        "incomplete_topic": 1,
+        "incomplete_applies_to": 1,
+    }
+
+
+def test_list_binding_produces_one_assertion_per_target():
+    payload = json.dumps(
+        {
+            "results": {
+                "bindings": [
+                    {
+                        "celex": {"type": "literal", "value": "32025R0011"},
+                        "amends_celex": [
+                            {"type": "literal", "value": "32019L0001"},
+                            {"type": "literal", "value": "32019L0002"},
+                        ],
+                    }
+                ]
+            }
+        }
+    ).encode()
+
+    normalized = ADAPTER.normalize(_record(payload))
+    amends = [a for a in normalized.assertions if a.relation == "AMENDS"]
+    assert {a.object.entity_id for a in amends} == {"celex:32019L0001", "celex:32019L0002"}
+
+
+def test_row_without_date_falls_back_to_fetched_at():
+    payload = json.dumps(
+        {
+            "results": {
+                "bindings": [
+                    {
+                        "celex": {"type": "literal", "value": "32025R0012"},
+                        "author": {"type": "literal", "value": "European Parliament"},
+                    }
+                ]
+            }
+        }
+    ).encode()
+
+    normalized = ADAPTER.normalize(_record(payload))
+    assert len(normalized.assertions) == 1
+    assert normalized.assertions[0].validity.valid_from == NOW
+
+
+def test_unparseable_date_falls_back_and_is_counted():
+    from structlog.testing import capture_logs
+
+    payload = json.dumps(
+        {
+            "results": {
+                "bindings": [
+                    {
+                        "celex": {"type": "literal", "value": "32025R0013"},
+                        "date": {"type": "literal", "value": "not-a-date"},
+                        "author": {"type": "literal", "value": "European Parliament"},
+                    }
+                ]
+            }
+        }
+    ).encode()
+
+    with capture_logs() as logs:
+        normalized = ADAPTER.normalize(_record(payload))
+
+    adopted = next(a for a in normalized.assertions if a.relation == "ADOPTED")
+    assert adopted.validity.valid_from == NOW
+    summary = [log for log in logs if log["event"] == "eurlex: normalized"][0]
+    assert summary["skipped"] == {"unparseable_date": 1}

@@ -244,3 +244,215 @@ def test_law_without_fundstelle_is_skipped_and_counted():
     summary = [log for log in logs if log["event"] == "gesetze_im_internet: law normalized"][0]
     assert summary["skipped"] == {"no_fundstelle": 1}
     assert summary["assertions"] == 0
+
+
+def test_fundstelle_without_periodikum_or_zitstelle_is_skipped():
+    xml = (
+        "<gesetz><metadaten><jurabk>FPG</jurabk>"
+        "<fundstelle><periodikum>BGBl. I</periodikum></fundstelle>"
+        "<langue>Gesetz ohne Zitstelle</langue></metadaten></gesetz>"
+    )
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w") as archive:
+        archive.writestr("BJNR999990001.xml", xml)
+
+    with capture_logs() as logs:
+        normalized = ADAPTER.normalize(_law_record(buffer.getvalue(), LAW_WITH_TOPICS_LINK))
+
+    assert normalized.assertions == []
+    summary = [log for log in logs if log["event"] == "gesetze_im_internet: law normalized"][0]
+    assert summary["skipped"] == {"no_fundstelle": 1}
+
+
+def test_law_without_ausfertigung_date_falls_back_to_fetched_at():
+    xml = (
+        "<gesetz><metadaten><jurabk>ADG</jurabk>"
+        "<fundstelle><periodikum>BGBl. I</periodikum><zitstelle>2024, 5</zitstelle></fundstelle>"
+        "<langue>Ohne Datum</langue></metadaten>"
+        "<sachgebiet><label>Verwaltung</label></sachgebiet></gesetz>"
+    )
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w") as archive:
+        archive.writestr("BJNR999990002.xml", xml)
+
+    normalized = ADAPTER.normalize(_law_record(buffer.getvalue(), LAW_WITH_TOPICS_LINK))
+    assert normalized.assertions[0].validity.valid_from == NOW
+
+
+def test_unparseable_ausfertigung_date_falls_back_and_is_counted():
+    xml = (
+        "<gesetz><metadaten><jurabk>UDG</jurabk>"
+        "<fundstelle><periodikum>BGBl. I</periodikum><zitstelle>2024, 6</zitstelle></fundstelle>"
+        "<ausfertigung-datum>not-a-date</ausfertigung-datum>"
+        "<langue>Kaputtes Datum</langue></metadaten>"
+        "<sachgebiet><label>Verwaltung</label></sachgebiet></gesetz>"
+    )
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w") as archive:
+        archive.writestr("BJNR999990003.xml", xml)
+
+    with capture_logs() as logs:
+        normalized = ADAPTER.normalize(_law_record(buffer.getvalue(), LAW_WITH_TOPICS_LINK))
+
+    assert normalized.assertions[0].validity.valid_from == NOW
+    summary = [log for log in logs if log["event"] == "gesetze_im_internet: law normalized"][0]
+    assert summary["skipped"] == {"unparseable_ausfertigung": 1}
+
+
+def test_topic_block_without_code_or_label_uses_fallback_text():
+    xml = (
+        "<gesetz><metadaten><jurabk>FBG</jurabk>"
+        "<fundstelle><periodikum>BGBl. I</periodikum><zitstelle>2024, 7</zitstelle></fundstelle>"
+        "<ausfertigung-datum>2024-03-01</ausfertigung-datum>"
+        "<langue>Fallback-Gesetz</langue></metadaten>"
+        "<sachgebiet><bezeichnung>Verwaltung</bezeichnung></sachgebiet></gesetz>"
+    )
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w") as archive:
+        archive.writestr("BJNR999990004.xml", xml)
+
+    normalized = ADAPTER.normalize(_law_record(buffer.getvalue(), LAW_WITH_TOPICS_LINK))
+    about = next(a for a in normalized.assertions if a.relation == "ABOUT_TOPIC")
+    assert about.object.entity_id == "topic:Sachgebiet:Verwaltung"
+    assert about.object.label == "Verwaltung"
+    assert about.object.deterministic_key == ("code", "Verwaltung")
+
+
+def test_topic_blocks_without_any_code_are_skipped_and_counted():
+    xml = (
+        "<gesetz><metadaten><jurabk>KBG</jurabk>"
+        "<fundstelle><periodikum>BGBl. I</periodikum><zitstelle>2024, 8</zitstelle></fundstelle>"
+        "<ausfertigung-datum>2024-03-01</ausfertigung-datum>"
+        "<langue>Ohne Kennung</langue></metadaten>"
+        "<sachgebiet><leer/></sachgebiet>"
+        "<anwendungsbereich><leer/></anwendungsbereich></gesetz>"
+    )
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w") as archive:
+        archive.writestr("BJNR999990005.xml", xml)
+
+    with capture_logs() as logs:
+        normalized = ADAPTER.normalize(_law_record(buffer.getvalue(), LAW_WITH_TOPICS_LINK))
+
+    assert normalized.assertions == []
+    assert len(normalized.entities) == 1
+    summary = [log for log in logs if log["event"] == "gesetze_im_internet: law normalized"][0]
+    assert summary["skipped"] == {
+        "missing_sachgebiet_code": 1,
+        "missing_anwendungsbereich_code": 1,
+    }
+
+
+def test_law_without_jurabk_and_empty_langue_still_normalizes():
+    xml = (
+        "<gesetz><metadaten>"
+        "<fundstelle><periodikum>BGBl. I</periodikum><zitstelle>2024, 9</zitstelle></fundstelle>"
+        "<ausfertigung-datum>2024-03-01</ausfertigung-datum><langue/>"
+        "</metadaten>"
+        "<sachgebiet><label>Verwaltung</label></sachgebiet></gesetz>"
+    )
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w") as archive:
+        archive.writestr("BJNR999990006.xml", xml)
+
+    normalized = ADAPTER.normalize(_law_record(buffer.getvalue(), LAW_WITH_TOPICS_LINK))
+    assert len(normalized.assertions) == 1
+    assert normalized.assertions[0].subject.label == "BGBl I 2024, 9"  # citation label
+
+
+def test_zip_with_sole_non_bjnr_xml_member_normalizes():
+    xml = (
+        "<gesetz><metadaten><jurabk>NBG</jurabk>"
+        "<fundstelle><periodikum>BGBl. I</periodikum><zitstelle>2024, 10</zitstelle></fundstelle>"
+        "<ausfertigung-datum>2024-03-01</ausfertigung-datum>"
+        "<langue>Nur Ein Element</langue></metadaten></gesetz>"
+    )
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w") as archive:
+        archive.writestr("gesetz.xml", xml)
+
+    normalized = ADAPTER.normalize(_law_record(buffer.getvalue(), LAW_WITH_TOPICS_LINK))
+    assert len(normalized.entities) == 1
+    assert normalized.entities[0].deterministic_key == ("bgb_citation", "BGBl I 2024, 10")
+
+
+def test_zip_with_multiple_xml_members_raises_source_parse_error():
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w") as archive:
+        archive.writestr("gesetz1.xml", "<gesetz/>")
+        archive.writestr("gesetz2.xml", "<gesetz/>")
+    try:
+        ADAPTER.normalize(_law_record(buffer.getvalue(), LAW_WITH_TOPICS_LINK))
+    except SourceParseError:
+        pass
+    else:
+        raise AssertionError("expected SourceParseError for an ambiguous law zip")
+
+
+def test_law_xml_that_is_not_parseable_raises_source_parse_error():
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w") as archive:
+        archive.writestr("BJNR999990007.xml", b"this is not xml")
+    try:
+        ADAPTER.normalize(_law_record(buffer.getvalue(), LAW_WITH_TOPICS_LINK))
+    except SourceParseError:
+        pass
+    else:
+        raise AssertionError("expected SourceParseError")
+
+
+def test_zip_with_corrupted_member_raises_source_parse_error():
+    xml = (
+        "<gesetz><metadaten><jurabk>KBG</jurabk>"
+        "<fundstelle><periodikum>BGBl. I</periodikum><zitstelle>2024, 11</zitstelle></fundstelle>"
+        "</metadaten></gesetz>"
+    )
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr("BJNR999990008.xml", xml)
+    raw = bytearray(buffer.getvalue())
+    member_header_end = 30 + len("BJNR999990008.xml")
+    raw[member_header_end + 40] ^= 0xFF  # corrupt the compressed member data
+    try:
+        ADAPTER.normalize(_law_record(bytes(raw), LAW_WITH_TOPICS_LINK))
+    except SourceParseError:
+        pass
+    else:
+        raise AssertionError("expected SourceParseError for a corrupted member")
+
+
+def test_index_item_without_link_is_skipped():
+    toc = (
+        b"<rss><channel>"
+        b"<item><title>Ohne Link</title></item>"
+        b"<item><title>Mit Link</title><link>http://www.gesetze-im-internet.de/xyz/xml.zip</link></item>"
+        b"</channel></rss>"
+    )
+    with respx.mock:
+        respx.get(TOC_URL).mock(return_value=Response(200, content=toc))
+        respx.get("http://www.gesetze-im-internet.de/xyz/xml.zip").mock(
+            return_value=Response(200, content=_law_zip_bytes(MEMBER_WITH_TOPICS))
+        )
+        with capture_logs() as logs:
+            records = list(ADAPTER.fetch(None, None))
+    assert [r.source_url for r in records] == [
+        TOC_URL,
+        "http://www.gesetze-im-internet.de/xyz/xml.zip",
+    ]
+    warnings = [
+        log
+        for log in logs
+        if log["event"] == "gesetze_im_internet: index item without link; skipped"
+    ]
+    assert len(warnings) == 1
+
+
+def test_index_that_is_not_parseable_raises_source_parse_error():
+    with respx.mock:
+        respx.get(TOC_URL).mock(return_value=Response(200, content=b"garbage"))
+        try:
+            list(ADAPTER.fetch(None, None))
+        except SourceParseError:
+            pass
+        else:
+            raise AssertionError("expected SourceParseError")

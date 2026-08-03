@@ -171,3 +171,84 @@ def test_wrong_root_raises_source_parse_error():
         pass
     else:
         raise AssertionError("expected SourceParseError")
+
+
+_SKIPPED_EXPORT = """<?xml version="1.0" encoding="UTF-8"?>
+<Templates>
+  <Person/>
+  <Person id="p-bad"/>
+  <Person id="p-noname">
+    <PersonName><FirstName>Nur</FirstName></PersonName>
+  </Person>
+  <Person id="p-good">
+    <PersonName><FirstName>Erna</FirstName><FamilyName>Mustermann</FamilyName></PersonName>
+  </Person>
+  <Organisation id="org-good">
+    <OrganisationName><TransliteratedName>Gute GmbH</TransliteratedName></OrganisationName>
+    <EntryDate>2021-06-11</EntryDate>
+    <Head><PersonRef id="p-good"/></Head>
+    <Interests>
+      <Interest><Code>10</Code><Label>Trade</Label></Interest>
+      <Interest><Code>20</Code></Interest>
+      <Interest><Label>Ohne Code</Label></Interest>
+    </Interests>
+    <Meetings>
+      <Meeting><Target>Anna Kowalski</Target><Date>13/06/2023</Date></Meeting>
+      <Meeting><Date>13/06/2023</Date></Meeting>
+      <Meeting><Target>Bernd Beispiel</Target><Date>not-a-date</Date></Meeting>
+    </Meetings>
+  </Organisation>
+  <Organisation id="org-no-name">
+    <OrganisationName></OrganisationName>
+  </Organisation>
+  <Organisation id="org-unmatched-head">
+    <OrganisationName><TransliteratedName>Ohne Kopf</TransliteratedName></OrganisationName>
+    <Head><PersonRef id="p-missing"/></Head>
+  </Organisation>
+</Templates>
+"""
+
+
+def test_skipped_facets_are_counted_by_reason():
+    record = RawRecord(
+        payload=_SKIPPED_EXPORT.encode("utf-8"),
+        content_type="application/xml",
+        source_url=EXPORT_URL,
+        fetched_at=NOW,
+    )
+    with capture_logs() as captured:
+        normalized = ADAPTER.normalize(record)
+
+    assert len(normalized.assertions) == 5  # 1 MEMBER_OF + 2 LOBBIES_FOR + 2 MET_WITH
+    summary = [e for e in captured if e.get("event") == "transparency_register: export normalized"][
+        0
+    ]
+    assert summary["organisations"] == 3
+    assert summary["organisations_skipped_no_id"] == 0
+    assert summary["organisations_skipped_no_name"] == 1
+    assert summary["persons_indexed"] == 1
+    assert summary["persons_skipped_no_id"] == 1
+    assert summary["persons_skipped_no_name"] == 2
+    assert summary["head_persons"] == 2
+    assert summary["head_refs_unmatched"] == 1
+    assert summary["member_of_assertions"] == 1
+    assert summary["interests"] == 3
+    assert summary["interests_skipped_no_code"] == 1
+    assert summary["interest_labels_fallback"] == 1
+    assert summary["lobbies_for_assertions"] == 2
+    assert summary["meetings"] == 3
+    assert summary["meetings_skipped_no_target"] == 1
+    assert summary["met_with_assertions"] == 2
+    assert summary["date_fallbacks"] == 2  # the unmatched-head org and Bernd's meeting
+
+    label_fallbacks = [
+        e
+        for e in captured
+        if e.get("event") == "transparency_register: interest without label; code used as label"
+    ]
+    assert len(label_fallbacks) == 1
+
+    met = [a for a in normalized.assertions if a.relation == "MET_WITH"]
+    by_label = {a.object.label: a.validity.valid_from for a in met}
+    assert by_label["Anna Kowalski"] == datetime(2023, 6, 13, tzinfo=UTC)
+    assert by_label["Bernd Beispiel"] == NOW

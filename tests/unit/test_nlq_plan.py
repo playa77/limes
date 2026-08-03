@@ -136,3 +136,18 @@ def test_rejection_carries_plan_summary():
     with pytest.raises(QueryPlanRejected) as exc:
         explain_gate(driver, "MATCH (a) MATCH (b) RETURN a, b", {}, SETTINGS)
     assert getattr(exc.value, "plan_summary", None) is summary
+
+
+def test_star_at_statement_end_is_not_an_unbounded_expansion():
+    # A trailing `*` with no following token cannot be a variable-length
+    # form; the gate must not reject what it cannot parse.
+    driver = FakeDriver(plan())
+    summary = explain_gate(driver, "MATCH (a)-[*", {}, SETTINGS)
+    assert summary.max_estimated_rows == 100
+
+
+def test_bounded_expansion_with_open_lower_bound_passes():
+    # `[*..5]` has an upper bound and is therefore not unbounded.
+    driver = FakeDriver(plan())
+    summary = explain_gate(driver, "MATCH (a)-[*..5]->(b) RETURN a", {}, SETTINGS)
+    assert summary.max_estimated_rows == 100

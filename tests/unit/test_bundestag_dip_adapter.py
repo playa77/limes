@@ -258,3 +258,52 @@ def test_unknown_wahlperiode_skips_office_assertions_never_invented():
     ]
     assert len(skips) == 1
     assert skips[0]["period"] == 25
+
+
+def test_non_object_json_payload_raises_source_parse_error():
+    record = RawRecord(
+        payload=b"[1, 2, 3]",
+        content_type="application/json",
+        source_url=PERSON_URL,
+        fetched_at=NOW,
+    )
+    with pytest.raises(SourceParseError):
+        ADAPTER.normalize(record)
+
+
+def test_malformed_and_unnamed_rows_are_skipped_and_counted():
+    payload = json.dumps(
+        {
+            "numFound": 4,
+            "start": 0,
+            "rows": [
+                "not an object",
+                {"id": 7},
+                {"vorname": "Ohne", "nachname": "Id"},
+                {
+                    "id": 9,
+                    "vorname": "Erika",
+                    "nachname": "Mustermann",
+                    "fraktion": "Grüne",
+                    "wahlperioden": [21],
+                },
+            ],
+            "facets": {},
+        }
+    ).encode("utf-8")
+    record = RawRecord(
+        payload=payload,
+        content_type="application/json",
+        source_url=PERSON_URL,
+        fetched_at=NOW,
+    )
+    with capture_logs() as captured:
+        normalized = ADAPTER.normalize(record)
+
+    assert len(normalized.assertions) == 3  # MEMBER_OF + HOLDS_OFFICE + OFFICE_AT
+    assert normalized.entities == []
+    summary = [e for e in captured if e.get("event") == "bundestag_dip: person file normalized"][0]
+    assert summary["rows"] == 4
+    assert summary["persons"] == 1
+    assert summary["malformed_skipped"] == 1
+    assert summary["no_name_skipped"] == 2

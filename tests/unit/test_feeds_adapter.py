@@ -12,10 +12,11 @@ import json
 from datetime import UTC, datetime
 
 import respx
+import structlog
 from httpx import Response
 
-from limes.errors import ConfigurationError
-from limes.sources.feeds import DEFAULT_TRUST_RANK, FeedsAdapter
+from limes.errors import ConfigurationError, SourceParseError
+from limes.sources.feeds import DEFAULT_TRUST_RANK, FeedsAdapter, _entry_published
 from limes.types import RawRecord
 
 FIXTURES = __import__("pathlib").Path(__file__).parents[1] / "fixtures" / "feeds"
@@ -159,3 +160,142 @@ def test_language_detected_when_not_declared(tmp_path):
     document = adapter.normalize(english).document
     assert document is not None
     assert document.language == "en"
+
+
+def test_unparseable_feed_yields_no_entries_and_warns(tmp_path):
+    adapter = _adapter(tmp_path)
+    with respx.mock:
+        respx.get(FEED_URL).mock(return_value=Response(200, content=b"this is not a feed"))
+        with structlog.testing.capture_logs() as captured:
+            records = list(adapter.fetch(None, None))
+    assert records == []
+    warnings = [
+        e for e in captured if e.get("event") == "feeds: feed unparseable or empty; no entries"
+    ]
+    assert len(warnings) == 1
+    assert warnings[0]["url"] == FEED_URL
+
+
+_ATOM_WITH_CONTENT = """<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>Inline Atom Feed</title>
+  <id>urn:inline:feed</id>
+  <updated>2026-08-01T10:00:00Z</updated>
+  <entry>
+    <title>Eintrag mit content</title>
+    <id>inline-1</id>
+    <link href="https://example.com/inline/1"/>
+    <published>2026-08-01T09:00:00Z</published>
+    <content type="html"><![CDATA[<p>Erster <b>Absatz</b>.</p>]]></content>
+    <summary>wird vom content verdrängt</summary>
+  </entry>
+</feed>
+"""
+
+
+def test_entry_content_wins_over_summary_in_envelope(tmp_path):
+    adapter = _adapter(tmp_path)
+    with respx.mock:
+        respx.get(FEED_URL).mock(return_value=Response(200, content=_ATOM_WITH_CONTENT.encode()))
+        records = list(adapter.fetch(None, None))
+    assert len(records) == 1
+    envelope = json.loads(records[0].payload.decode("utf-8"))
+    assert envelope["content"] == "<p>Erster <b>Absatz</b>.</p>"
+
+
+def test_normalize_rejects_malformed_envelope(tmp_path):
+    adapter = _adapter(tmp_path)
+    record = RawRecord(
+        payload=b"not an envelope",
+        content_type="application/json",
+        source_url=FEED_URL,
+        fetched_at=FETCHED_AT,
+    )
+    try:
+        adapter.normalize(record)
+    except SourceParseError:
+        pass
+    else:
+        raise AssertionError("expected SourceParseError")
+
+
+def test_config_with_unparsable_yaml_is_configuration_error(tmp_path):
+    path = tmp_path / "feeds.yaml"
+    path.write_text("feeds: [unclosed\n  - url: x\n", encoding="utf-8")
+    try:
+        FeedsAdapter(path)
+    except ConfigurationError:
+        pass
+    else:
+        raise AssertionError("expected ConfigurationError for unparsable YAML")
+
+
+def test_config_without_feeds_list_is_configuration_error(tmp_path):
+    path = tmp_path / "feeds.yaml"
+    path.write_text("version: '1.0.0'\n", encoding="utf-8")
+    try:
+        FeedsAdapter(path)
+    except ConfigurationError:
+        pass
+    else:
+        raise AssertionError("expected ConfigurationError for a config without a feeds list")
+
+
+def test_config_with_non_numeric_trust_rank_is_configuration_error(tmp_path):
+    path = tmp_path / "feeds.yaml"
+    path.write_text(
+        f"version: '1.0.0'\nfeeds:\n  - url: {FEED_URL}\n    trust_rank: high\n",
+        encoding="utf-8",
+    )
+    try:
+        FeedsAdapter(path)
+    except ConfigurationError:
+        pass
+    else:
+        raise AssertionError("expected ConfigurationError for a non-numeric trust_rank")
+
+
+def test_config_with_empty_feeds_list_is_configuration_error(tmp_path):
+    path = tmp_path / "feeds.yaml"
+    path.write_text("version: '1.0.0'\nfeeds: []\n", encoding="utf-8")
+    try:
+        FeedsAdapter(path)
+    except ConfigurationError:
+        pass
+    else:
+        raise AssertionError("expected ConfigurationError for an empty feeds list")
+
+
+def test_entry_published_tolerates_malformed_time_struct():
+    # A dict without the struct_time attributes cannot be built by feedparser
+    # (which only produces real struct_times), so the helper is called
+    # directly with the malformed value.
+    assert _entry_published({"published_parsed": {"tm_year": 2026}}) is None
+
+
+def test_normalize_unparseable_published_timestamp_falls_back(tmp_path):
+    adapter = _adapter(tmp_path)
+    envelope = json.dumps(
+        {
+            "feed": {"url": FEED_URL, "name": "x", "language": None},
+            "entry_id": "x",
+            "title": "Titel",
+            "link": None,
+            "summary": "",
+            "content": "Body",
+            "published": "not-a-timestamp",
+        },
+        sort_keys=True,
+    ).encode()
+    record = RawRecord(
+        payload=envelope,
+        content_type="application/json",
+        source_url=FEED_URL,
+        fetched_at=FETCHED_AT,
+    )
+    with structlog.testing.capture_logs() as captured:
+        document = adapter.normalize(record).document
+    assert document is not None
+    assert document.published_at == FETCHED_AT
+    warnings = [e for e in captured if e.get("event") == "feeds: unparseable published timestamp"]
+    assert len(warnings) == 1

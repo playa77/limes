@@ -170,3 +170,118 @@ def test_malformed_metadata_raises_source_parse_error():
         pass
     else:
         raise AssertionError("expected SourceParseError")
+
+
+def test_unknown_content_type_raises_source_parse_error():
+    adapter = OffeneRegisterAdapter()
+    record = RawRecord(
+        payload=b"anything",
+        content_type="text/plain",
+        source_url=METADATA_URL,
+        fetched_at=FETCHED_AT,
+    )
+    try:
+        adapter.normalize(record)
+    except SourceParseError:
+        pass
+    else:
+        raise AssertionError("expected SourceParseError")
+
+
+def test_non_json_metadata_raises_source_parse_error():
+    adapter = OffeneRegisterAdapter()
+    record = RawRecord(
+        payload=b"{not json",
+        content_type="application/json",
+        source_url=METADATA_URL,
+        fetched_at=FETCHED_AT,
+    )
+    try:
+        adapter.normalize(record)
+    except SourceParseError:
+        pass
+    else:
+        raise AssertionError("expected SourceParseError")
+
+
+def test_unparseable_published_at_raises_source_parse_error():
+    adapter = OffeneRegisterAdapter()
+    record = RawRecord(
+        payload=b'{"published_at": "not-a-date"}',
+        content_type="application/json",
+        source_url=METADATA_URL,
+        fetched_at=FETCHED_AT,
+    )
+    try:
+        adapter.normalize(record)
+    except SourceParseError:
+        pass
+    else:
+        raise AssertionError("expected SourceParseError")
+
+
+def _gzip_jsonl(lines: list[str]) -> bytes:
+    return gzip.compress(("\n".join(lines) + "\n").encode("utf-8"))
+
+
+def test_skipped_records_are_counted_by_reason():
+    adapter = OffeneRegisterAdapter()
+    adapter.normalize(_metadata_record())
+    lines = [
+        "",
+        "not json",
+        json_dumps_company(
+            "HRB 1",
+            "Eins GmbH",
+            [
+                {
+                    "name": "Mustermann, Max",
+                    "position": "Geschäftsführer",
+                    "start_date": "2019-03-01",
+                }
+            ],
+        ),
+        json_dumps_company("", "", []),
+        json_dumps_company("HRB 2", "Zwei GmbH", ["kein Objekt"]),
+        json_dumps_company(
+            "HRB 3", "Drei GmbH", [{"name": "Meyer, Gisela", "position": "Sekretärin"}]
+        ),
+        json_dumps_company("HRB 4", "Vier GmbH", [{"position": "Geschäftsführer"}]),
+        json_dumps_company(
+            "HRB 5",
+            "Fünf GmbH",
+            [{"name": "Schulz, Fritz", "position": "Geschäftsführer", "end_date": "2024-02-30"}],
+        ),
+    ]
+    record = RawRecord(
+        payload=_gzip_jsonl(lines),
+        content_type="application/gzip",
+        source_url=DATA_URL,
+        fetched_at=FETCHED_AT,
+    )
+    with __import__("structlog").testing.capture_logs() as captured:
+        normalized = adapter.normalize(record)
+
+    assert len(normalized.assertions) == 2  # Max + Fritz (Fritz's end date is dropped)
+    assert all(a.validity.valid_to is None for a in normalized.assertions)
+    summary = [e for e in captured if e.get("event") == "offeneregister: dataset normalized"][0]
+    assert summary["companies"] == 6
+    assert summary["director_assertions"] == 2
+    assert summary["malformed_lines"] == 2  # the bad line and the non-dict officer
+    assert summary["companies_without_number_or_name"] == 1
+    warnings = [
+        e for e in captured if e.get("event") == "offeneregister: non-director position skipped"
+    ]
+    assert len(warnings) == 1
+    assert warnings[0]["position"] == "Sekretärin"
+    date_warnings = [
+        e for e in captured if e.get("event") == "offeneregister: unparseable officer date"
+    ]
+    assert len(date_warnings) == 1
+    assert date_warnings[0]["raw"] == "2024-02-30"
+
+
+def json_dumps_company(number: str, name: str, officers: list) -> str:
+    import json
+
+    return json.dumps({"company": {"company_number": number, "name": name, "officers": officers}})

@@ -6,6 +6,56 @@ gold set, prompts) are recorded in their own changelogs.
 
 ---
 
+## 2026-08-03 — Phase 11 — WP-40 100% line coverage (operator-instructed)
+
+- **WP-40 — Full line coverage of `src/limes` (6882/6882 statements,
+  100%), driven by 321 new/extended unit tests plus integration
+  additions.** Operator instruction ("add tests until we have 100% test
+  coverage") overrides Doc 2 §12.4's line-coverage non-target; the
+  override is logged as D-63. Measurement combines all three suites
+  (unit + integration + acceptance, `coverage run --append`), statement
+  coverage, `coverage>=7.15` added to the dev group (D-65, approved).
+  Coverage by area: all 13 sources adapters and `sources/base.py` (new
+  `test_sources_base.py`, extended adapter tests — error branches,
+  retry/skip paths, csv field-size failures); `nlq/*`, `resolution/*`,
+  `pipeline/*`, `extraction/*`, `graph/*`, `coverage/diagnose`,
+  `composition`, `ontology/*`, `api/builder`, `api/models` (extended/new
+  unit tests, including loader error paths via the driver raw-session
+  seam); CLI command bodies that the subprocess integration tests cannot
+  measure (`test_cli_commands.py`: `backup` lifecycle with the compose
+  seam stubbed, `reextract`, `ingest-all`, `main()` entry point via
+  runpy, `parse_iso_datetime` error branches; extended `test_migrate.py`
+  migration-discovery error paths, `test_select_models.py` stage wiring
+  and selector routing, `test_evaluate.py` artifact-loader error paths,
+  NL-to-Cypher measurement, and the `--resolution`/`--nl2cypher` command
+  flags); API exception handlers against the real registered handlers
+  (`test_api_handlers.py`: §11 mapping incl. the catch-all and the
+  ServerErrorMiddleware re-raise behavior, the startup-fatal
+  provisioning path, the builder-translation validation failure; the
+  `believed` neighbors path in `test_api_entity.py`); the Dash layer
+  (`test_ui_callbacks.py`, `test_ui_components.py`: every pure callback
+  branch via the `dash._callback_context.context_value` seam, the
+  `register()` wiring and wrapper bodies through a recording fake app,
+  all component render branches, `create_app()`, and the UI's remaining
+  `api_client` endpoints respx-mocked).
+- **Repair in `src/limes/ui/callbacks/query.py` (WP-36 defect found by
+  the coverage exercise).** `builder_hop_change` decoded the hop index
+  with `triggered_index("builder")`, but every hop control's pattern id
+  is `{"type": "builder-rel"|"builder-dir"|…, "index": n}` — the
+  exact-type match never succeeds, so every hop-control interaction
+  raised `PreventUpdate` and the whole callback was dead in production.
+  The index now decodes from the same decoded control type (D-62b).
+- **Fix of the phase-10 documented pre-existing failure.** The WP-02
+  `test_config.py` missing-key test now forces `Settings(_env_file=None)`
+  via an autouse fixture, so the suite passes regardless of a `.env` at
+  the CWD (D-64) — resolving the phase-10 changelog's "not fixed here"
+  note.
+- **Pre-existing, not touched here:** 16 E501 line-length violations in
+  `test_loader.py`, `test_lookups_cross_process.py`, `test_archive.py`
+  and 10 unformatted files (incl. `src/limes/graph/lookups.py`) predate
+  WP-40 (38 E501s and 10 unformatted at HEAD); only files touched by this
+  package were formatted, ruff-checked, and mypy-clean.
+
 ## 2026-08-03 — Phase 10 — WP-39 acceptance test suite (phase-10-v1.0.0, in work)
 
 - **WP-39 — Acceptance test suite.** `tests/acceptance/` — 86 tests across
