@@ -6,6 +6,44 @@ gold set, prompts) are recorded in their own changelogs.
 
 ---
 
+## 2026-08-03 — Phase 9 delivered — phase-9-v1.0.0 (WP-37, WP-38)
+
+- **WP-37 — Docker images and Compose topology.** `docker/api.Dockerfile`,
+  `docker/ui.Dockerfile`, `docker/worker.Dockerfile` over a shared
+  dependency layer (Python 3.12 slim, `uv export --frozen` + `uv pip
+  install --system` — no virtual environment inside an image, D-59; the
+  api and ui exports prune the two spaCy model wheels, only the worker
+  installs them, G3). `docker-compose.yml` (base: four services, one
+  network, named volumes `neo4j_data`/`neo4j_logs`/`archive`, no published
+  ports — AC-34; Neo4j runtime per §13.4; the `limes` user created by a
+  boot wrapper over the stock entrypoint, the [CONFLICT] resolution; the
+  worker mounts gold_set rw, the archive, the docker socket and the
+  compose files for `limes backup`, and `.env` rw for the model pins,
+  D-57; configuration delivered by the `.env` mount and the app's dotenv
+  read — compose `env_file` provably dead-letters the pins) and
+  `docker-compose.override.yml` (loopback `127.0.0.1:8050` for the UI only,
+  source mounts, api reload, debug logging). `.dockerignore` added.
+- **WP-38 — Makefile and bootstrap.** Full target set replacing the WP-01
+  stub: `up`, `down`, `bootstrap-db` (no-op per C-01), `ingest`,
+  `ingest-all`, `backfill`/`reextract` (BUDGET-guarded), `select-models
+  ARGS=…` (the `make --` form is broken GNU make syntax, D-60),
+  `evaluate`, `migrate`, `backup`, plus `stamp-embeddings` (the §13.3
+  one-shot embedding backfill wired by this WP per the WP-25a contract,
+  D-56). The `limes` console script registered in `pyproject.toml` per the
+  assignment in `cli/main.py`. README bootstrap rewritten to the full
+  §13.3 sequence with the ordering constraints. `tools/smoke_test.py` runs
+  the paid-free bootstrap core on a clean host and asserts the phase's
+  guarded invariants G1–G4.
+- Decision ledger: the `[CONFLICT]` (no documented production mechanism
+  creates the `limes` Neo4j user) resolved by the operator in favor of the
+  entrypoint wrapper; D-55…D-61 recorded (healthcheck, `.dockerignore`,
+  `migrate` variable, `stamp-embeddings`, worker docker CLI/socket and the
+  `.env`-by-mount config delivery with the pydantic shadowing evidence,
+  factory-form api CMD, `uv export` dependency layer, and the three
+  compose wiring facts found in live verification: CMD dropped on
+  entrypoint override, trixie's missing compose plugin, and the
+  `stop_grace_period` requirement).
+
 ## 2026-08-02 — Phase 8 delivered — phase-8-v1.0.0 (WP-36 Dash UI)
 
 - **WP-36 — Dash UI.** `ui/api_client.py` (one function per §6 endpoint,

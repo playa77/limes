@@ -1,0 +1,29 @@
+# LIMES — .dockerignore | v1.0.0 | introduced by WP-37
+# Keeps the Docker build context to what the images actually need (D-55).
+# The compose files themselves and the gold set stay out of the context:
+# the worker mounts them at runtime rather than baking them in. Prompt
+# files under src/ are .md but must ship with the package, so no global
+# *.md rule exists. `reference_questions` is baked into the worker image
+# (select_models and evaluate resolve it relative to the ontology path).
+
+.git
+venv
+.venv
+uv.lock-cache
+
+.env
+.env.*
+!.env.example
+
+__pycache__
+*.pyc
+*.pyo
+.pytest_cache
+.mypy_cache
+.ruff_cache
+htmlcov
+
+tests
+docs
+gold_set
+tools

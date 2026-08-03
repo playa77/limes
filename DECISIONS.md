@@ -7,6 +7,180 @@ Nothing here is a status report; unlogged decisions are unmade decisions.
 
 ---
 
+## 2026-08-03 — Approval — phase-9-v1.0.0 (WP-37, WP-38)
+
+The human approved phase-9-v1.0.0 (Docker images and Compose topology;
+Makefile and bootstrap procedure) on 2026-08-03 and instructed merge,
+commit, and push. Delivered as branch `wp-37-38-infrastructure`, merged to
+`main` and pushed; the topic branch is pushed as well. This approval names
+the presented version and cannot be reused for any other version of the
+phase.
+
+## 2026-08-03 — Phase 9 invariants (WP-37, WP-38), derived at phase start
+
+Derived from the roadmap's WP-37/WP-38 entries, Doc 1 §8.1–§8.4/§6.6, and
+Doc 2 §13.1–§13.4/§8.14, per the global contract §6. Guarded (automatically
+tested) and triggered (review-trigger) invariants, logged when derived:
+
+- **G1 (guarded)** — AC-34: the base Compose file publishes no ports, and
+  the Neo4j port appears in neither file except as the `LIMES_NEO4J_URI`
+  value → asserted by `tools/smoke_test.py` (compose config + source
+  scan) before any stack action.
+- **G2 (guarded)** — The `ui` service holds no credentials: no `env_file`
+  and no Neo4j/OpenRouter key in its environment; its only variable is
+  `LIMES_API_BASE_URL` (D-09) → asserted by `tools/smoke_test.py` against
+  the rendered compose config.
+- **G3 (guarded)** — Only the worker image installs the spaCy models: the
+  api and ui Dockerfiles prune `de-core-news-md` and `en-core-web-md` from
+  the lockfile export → asserted by `tools/smoke_test.py` (static scan of
+  the three Dockerfiles plus a `python -c "import de_core_news_md"` check
+  against the built images).
+- **G4 (guarded)** — Every `make` target from Doc 2 §8.14 exists, and
+  `backfill`/`reextract` refuse to run without `BUDGET` → asserted by
+  `tools/smoke_test.py` (`make help` lists all eleven targets; a missing
+  `BUDGET` invocation exits non-zero).
+- **T1 (triggered)** — The neo4j boot wrapper's user-creation step: any
+  change to the wrapper, to `LIMES_NEO4J_USER`/`LIMES_NEO4J_PASSWORD`
+  handling, or to the neo4j image tag requires re-review of the auth flow
+  (the wrapper is the only path that creates the production user).
+- **T2 (triggered)** — The worker's docker-socket mount is host-level
+  privilege: any topology change touching the socket mount, the worker's
+  docker CLI, or the compose files mounted into the worker requires
+  review of what a compromised worker could reach.
+
+## 2026-08-03 — [CONFLICT] resolved by the human — the production `limes` Neo4j user is created by a boot wrapper (R2)
+
+The documentation set defines no mechanism that creates the production
+`limes` Neo4j user. Verified in the `neo4j:2026.06-community` image itself:
+the entrypoint's only user mechanism is `NEO4J_AUTH`, which provisions the
+first-boot `neo4j` admin only. `bootstrap-db` is a no-op, `up` is bare
+`docker compose up -d`, and the topology is exactly four services — yet
+`.env.example`, the API, the worker, and the WP-38 verification's own
+`cypher-shell -u limes` all require `limes` to exist. Recorded as
+`[CONFLICT]` per roadmap §1.3 and presented to the human with four
+branches (entrypoint wrapper; `make up` gains a user-creation step; manual
+operator step; connect as `neo4j`). The human chose the **entrypoint
+wrapper**: the base compose overrides the neo4j service's entrypoint with a
+bash wrapper that starts the stock `/startup/docker-entrypoint.sh neo4j` in
+the background, polls `cypher-shell -u neo4j` until the database accepts
+connections, runs `CREATE USER ${LIMES_NEO4J_USER:-limes} IF NOT EXISTS SET
+PASSWORD '<escaped>' CHANGE NOT REQUIRED`, then `wait`s on the server. Any
+other invocation is `exec "$@"`, so the WP-28 backup path
+(`docker compose run --rm --no-deps neo4j neo4j-admin …`) bypasses the boot
+logic. Idempotent per volume, consistent with "provisioning happens on
+every context build". Rejected alternatives and their consequences were
+presented; the operator's choice is recorded here and cannot be reused for
+another phase.
+
+## 2026-08-03 — D-59 (R2) — Dependency layer via `uv export` + `uv pip install --system`, not `uv sync`
+
+`uv sync` unconditionally creates a virtual environment — verified locally
+that `UV_PROJECT_ENVIRONMENT` merely redirects where the venv is created —
+and Doc 2 §13.1 forbids a virtual environment inside an image. The shared
+dependency layer therefore runs `uv export --frozen --no-dev
+--no-emit-project` and `uv pip install --system -r` (system-prefix install,
+no venv), then `uv pip install --system --no-deps .` for the project. The
+api and ui exports additionally `--prune de-core-news-md --prune
+en-core-web-md`; the worker's export keeps them, which is how "only the
+worker installs spaCy models" is satisfied — from the locked 3.8.0 wheels
+in the committed lockfile, not `python -m spacy download`. Same frozen
+resolution either way.
+
+## 2026-08-03 — D-58 (R2) — api image CMD uses the factory form
+
+`src/limes/api/main.py` exposes `create_app` and no module-level `app`
+(phase-8 observation, 2026-08-02); the roadmap's literal
+`uvicorn limes.api.main:app` would fail at boot. The api.Dockerfile CMD is
+`uvicorn limes.api.main:create_app --factory --host 0.0.0.0 --port 8000`.
+
+## 2026-08-03 — D-57 (R2) — Worker carries the docker CLI and the compose context; project named `limes`; `.env` delivered by mount, never `env_file`
+
+The WP-28 `backup` command orchestrates `docker compose stop/run/start`
+from its process working directory, and `select_models` writes pins into
+`Path(".env")` in its CWD — both execute inside the worker container via
+the Makefile. The worker image therefore carries `docker.io` and
+`docker-compose-v2`, and the base compose mounts into the worker: the
+docker socket, `docker-compose.yml` and `docker-compose.override.yml`
+(read-only, so compose resolves the project from `/app`), and `./.env`
+(read-write, so the pins persist to the host). `name: limes` makes the
+worker's compose invocations resolve the same project as the host's
+regardless of directory.
+
+Configuration is delivered to `api` and `worker` by the `./.env` mount and
+the app's own dotenv read (`config.py`'s `env_file=".env"`) — **not** by
+compose `env_file`. Verified empirically with the pinned pydantic-settings:
+an environment variable set to the empty string shadows a dotenv value
+(present-but-empty env wins over the file). Compose `env_file` passes the
+empty pin keys from `.env.example`, so the container environment would
+permanently dead-letter the pins `select_models` writes — the bootstrap's
+step-3-to-step-7 sequence (pin, then backfill) would fail with "no
+extraction model pinned" even though `.env` holds the pin. The mount keeps
+every exec'd process reading the current `.env` from its working directory
+(`/app`), pins included, without any restart. The api mount is read-only;
+the worker's is read-write (it writes pins). These are host paths in the
+base file; Doc 1 §8.4's "no host paths" governs storage, and these carry
+the configuration and compose context the delivered CLI requires. Rejected:
+`env_file` (proven to dead-letter the pins), baking the compose files into
+the image (drift), or running backup from the host (the roadmap fixes the
+target to `docker compose exec worker limes backup`).
+
+## 2026-08-03 — D-56 (R2) — `stamp-embeddings` Makefile target
+
+The WP-25a contract names WP-38 as the wiring point for
+`stamp_missing_embeddings`, which no CLI command exposes, and Doc 1 §6.6's
+target list names no such target. The Makefile gains `stamp-embeddings`,
+which runs a `python -c` invocation inside the worker with the inference
+context (`build_run_context(needs_inference=True)`); the bootstrap
+documents it between steps 6 and 7 per §13.3. Rejected: extending the CLI
+(outside WP-38's file scope) and folding the stamp into an existing target
+(wrong semantics; the stamp is a one-shot, not an ingestion).
+
+## 2026-08-03 — D-55 (R1) — `migrate` target variable, `.dockerignore`, neo4j healthcheck
+
+Three small calls: (1) the roadmap's `migrate` usage line says
+`ONTOLOGY_VERSION=<v>` while its recipe line says `$(VERSION)`; the target
+uses `$(ONTOLOGY_VERSION)` so the documented invocation works. (2) A
+`.dockerignore` exists (build-context hygiene; without it the repo, the
+host venv, and `.git` are copied into every build context — Doc 2 §2 does
+not list it, it sits beside `.gitignore`). (3) The neo4j service declares a
+cypher-shell healthcheck (as the `limes` user) and api/worker use
+`depends_on: condition: service_healthy`, so `make up` returns with the
+stack actually ready instead of merely started.
+
+## 2026-08-03 — D-60 (R1) — `select-models` arguments pass through `ARGS=`, not `make --`
+
+GNU make treats everything after `--` as goals: `make select-models --
+--provisional` (the form written in §13.3's bootstrap and the delivered
+README) fails with "No rule to make target '--provisional'" — verified
+locally. The Makefile's `select-models $(ARGS)` mechanism per the WP-38
+task list therefore requires `make select-models ARGS="--provisional"`;
+the bootstrap documentation written by this phase uses that form. The
+spec's literal invocation is a defect in the operator syntax, not in the
+target; nothing in the Makefile changed to work around it.
+
+## 2026-08-03 — D-61 (R1) — Compose wiring facts discovered during live verification
+
+Three verified behaviors shaped the delivered files; recorded so the next
+topology change does not rediscover them:
+
+1. **Compose drops the image CMD when `entrypoint` is overridden as a
+   list** (reproduced minimally: `Cmd=null` in the created container). The
+   neo4j service therefore restates `command: ["neo4j"]`, and the boot
+   wrapper dispatches on `$0` — `bash -c script neo4j` puts the CMD in
+   `$0`, not `$1` — re-executing arbitrary commands as `"$0" "$@"` so the
+   WP-28 backup's `docker compose run --no-deps neo4j sh -c …` works.
+2. **Debian trixie has no compose v2 plugin package** (`docker-compose-v2`
+   does not exist there; only `docker-cli` and the python `docker-compose`
+   v1). The worker image installs `docker-cli` and the pinned upstream
+   compose v2.40.3 plugin binary, SHA-256-verified against the release
+   checksums at build time.
+3. **`docker stop`'s default 10 s grace kills Neo4j uncleanly**: the first
+   backup attempt failed with "Active logical log detected" and the dump
+   refused. The neo4j service sets `stop_grace_period: 180s`; a verified
+   clean stop of a small graph took ~120 s (Doc 1 §8.3 budgets 5-20 GB).
+   Also: `docker compose ps --format json` emits JSONL, one object per
+   line — `tools/smoke_test.py` parses it line by line.
+
 ## 2026-08-02 — Approval — phase-8-v1.0.0 (WP-36)
 
 The human approved phase-8-v1.0.0 (Dash UI: three synchronized panes, the
