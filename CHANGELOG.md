@@ -6,6 +6,52 @@ gold set, prompts) are recorded in their own changelogs.
 
 ---
 
+## 2026-08-03 — Phase 10 — WP-39 acceptance test suite (phase-10-v1.0.0, in work)
+
+- **WP-39 — Acceptance test suite.** `tests/acceptance/` — 86 tests across
+  27 files, one mechanical test per acceptance criterion AC-01…AC-44, plus
+  the meta-test `test_ac00_meta_coverage.py` that fails when any criterion
+  loses its test. `conftest.py` inherits the disposable Neo4j container
+  from the integration suite (`pytest_plugins`) and provides the
+  module-scoped `populated_graph` fixture, which builds graph state
+  through the production ingestion path — `execute_run` over the recorded
+  GISCO, GLEIF, and feed fixtures with only the network boundary stubbed
+  (fixture fetches, respx-mocked paid endpoints, injected fake spaCy
+  models; Doc 2 §12.2 rule 1). Coverage by area: config/ontology/schema
+  (AC-01…AC-03), all 13 adapters from recorded fixtures with attribution
+  (AC-04), loader bitemporal semantics (AC-05…AC-10), gate and ingest
+  status (AC-11), extraction cache and evidence spans (AC-12, AC-13),
+  governor ceiling and envelope metering (AC-14, AC-15), resolution bands
+  and unlink (AC-16, AC-17, AC-19), the API write surface with an
+  obfuscated-write corpus (AC-18), every validation code and plan-gate
+  rejection produced by crafted queries against the real EXPLAIN plan
+  (AC-20, AC-21), diagnosis and coverage (AC-22, AC-23), builder
+  rejections (AC-24), reference questions against an empty graph (AC-25),
+  NL/Cypher persistence and the UI interaction contract (AC-26…AC-30),
+  evaluate's regression gate (AC-31), the §13.4 memory caps (AC-32, the
+  testable proxy for the backfill memory ceiling), zero-paid-call rebuild
+  (AC-33), compose port topology (AC-34), the personal-artifact disclaimer
+  (AC-35), select-models stages (AC-36, AC-37), registry and composition
+  root greps (AC-38, AC-40, AC-41), cross-process lookups via subprocess
+  (AC-39), window resolution (AC-42), the four-band resolver conversion
+  (AC-43), and `tools/check_docs.py` (AC-44).
+- **Repair in `src/limes/graph/driver.py` (WP-33 defect found by AC-21).**
+  `_parse_plan` read the row estimate from a top-level `estimatedRows`
+  key that the 2026.x server never emits (the estimate is nested under
+  `args.EstimatedRows`), so `OPERATOR_ROWS_EXCEEDED` and
+  `TOTAL_ROWS_EXCEEDED` silently never fired — two of §8.10's five
+  rejections were dead code. Verified against a live 2026.06 container
+  (max=0/total=0 for every plan); the parser now reads `args.EstimatedRows`
+  with the legacy key as fallback. The AC-21 crafted queries (eight chained
+  UNWINDS for the operator ceiling; a sixteen-branch capped UNION for the
+  total ceiling) now produce both rejections. Decision D-62 in
+  DECISIONS.md.
+- Pre-existing finding, not fixed here (outside WP-39 scope): the WP-02
+  unit test `test_config.py::test_load_settings_missing_required_key_names_it`
+  fails when the repository's own `.env` exists — the dotenv fills the
+  key the test removes. The AC-01 acceptance test is robust to this by
+  running in a subprocess with a clean working directory.
+
 ## 2026-08-03 — Phase 9 delivered — phase-9-v1.0.0 (WP-37, WP-38)
 
 - **WP-37 — Docker images and Compose topology.** `docker/api.Dockerfile`,

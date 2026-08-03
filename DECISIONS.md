@@ -5,7 +5,64 @@ reversibility: **R1** reversible in under an hour, **R2** bounded recoverable
 cost, **R3** one-way door. Written when each decision is made, latest first.
 Nothing here is a status report; unlogged decisions are unmade decisions.
 
+## 2026-08-03 — Approval — phase-10-v1.0.0 (WP-39)
+
+The human approved phase-10-v1.0.0 (acceptance test suite) on 2026-08-03
+and instructed merge, commit, and push. Delivered as branch
+`wp-39-acceptance-tests`, merged to `main` and pushed; the topic branch is
+pushed as well. This approval names the presented version and cannot be
+reused for any other version of the phase.
 ---
+
+## 2026-08-03 — Phase 10 invariants (WP-39), derived at phase start
+
+Derived from the roadmap's WP-39 entry and Doc 2 §12.4/§14, per the global
+contract §6. Guarded (automatically tested) and triggered (review-trigger)
+invariants, logged when derived:
+
+- **G1 (guarded)** — Every AC-01…AC-44 has a mechanical test in
+  `tests/acceptance/` and the suite passes → asserted by the meta-test
+  `test_ac00_meta_coverage.py` (scans for `test_acNN_*` functions and
+  fails on any gap) plus the suite itself.
+- **G2 (guarded)** — No acceptance test touches a live external service;
+  the paid boundary is respx-mocked or fixture-stubbed → enforced by the
+  suite's construction: every test that crosses the paid boundary uses
+  `respx.mock` or an injected fake; a test that performs live network
+  access fails loudly (respx with no routes).
+- **G3 (guarded)** — Cross-process acceptance tests cross a real process
+  boundary via `subprocess` (AC-39's lookup read, AC-01's startup check,
+  AC-44's check_docs run) per Doc 2 §12.2 rule 2.
+- **G4 (guarded)** — No acceptance test hand-builds the graph state the
+  production path produces: all graph state is established through
+  `execute_run`, `load`, or the API (Doc 2 §12.2 rule 1) → enforced by
+  the suite's construction and reviewable per test.
+- **T1 (triggered)** — The `populated_graph` fixture's stub seam (class
+  method replacements on the adapters and `composition.spacy.load`): any
+  change to what is stubbed or how requires re-review that the production
+  path still runs for real underneath.
+- **T2 (triggered)** — AC-32's testable proxy: the test asserts the
+  §13.4 declared caps sum below 11 GB, not a measured backfill resident
+  set. A change to the caps or the ceiling requires re-review of the
+  proxy's adequacy.
+
+## 2026-08-03 — D-62 (R2) — Plan-gate row estimates repaired in `graph/driver.py`
+
+Found by the AC-21 acceptance test: `_parse_plan` read the EXPLAIN row
+estimate from a top-level `estimatedRows` key that the Neo4j 2026.06
+server never emits — the estimate is nested under `args.EstimatedRows`.
+Measured against a live container: every plan reported max=0/total=0, so
+the §8.10 rejections `OPERATOR_ROWS_EXCEEDED` and `TOTAL_ROWS_EXCEEDED`
+silently never fired; two of the five plan-gate rejections were dead code.
+The fix reads `args.EstimatedRows` with the legacy top-level key as
+fallback (one function, no signature change). Rejected alternative:
+leaving the dead parsing and writing the AC-21 test against mocked plan
+dicts — that would enshrine the defect and fail the criterion's letter
+(a crafted query must produce the rejection against the real database).
+The fix is R2 (bounded, spec-mandated — §8.10 requires the rejections);
+the pre-existing `test_nlq_plan` unit suite never exercised the estimate
+fields, which is why the defect shipped. The affected integration suites
+(test_graph_driver, test_loader, test_resolution, test_ui,
+test_api_query_*, test_pipeline_run_*) re-ran green after the fix.
 
 ## 2026-08-03 — Approval — phase-9-v1.0.0 (WP-37, WP-38)
 
