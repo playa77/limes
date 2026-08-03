@@ -1,0 +1,163 @@
+# LIMES — Compose base file | v1.0.0 | introduced by WP-37
+# Topology per Doc 1 §8.1 and Doc 2 §13.2: four services, one internal
+# network, named volumes, NO published ports (AC-34). The local override
+# file carries loopback publication, source mounts, and debug logging;
+# promotion to a server is removal of the override (§13.5), not a rewrite.
+#
+# Project name is explicit so the worker's own `docker compose` invocations
+# (`limes backup`, D-57) resolve the same project from /app.
+name: limes
+
+services:
+  neo4j:
+    image: neo4j:2026.06-community
+    # compose drops the image's CMD when entrypoint is overridden as a list
+    # (verified), and the wrapper dispatches on $0 — so the default command
+    # is restated here.
+    command: ["neo4j"]
+    # The production `limes` user has no first-class creation path in the
+    # stock image (its entrypoint provisions only the first-boot `neo4j`
+    # admin, D-03); the [CONFLICT] resolution recorded in DECISIONS.md
+    # chose this boot wrapper. It starts the stock entrypoint in the
+    # background, waits for the database, and ensures the configured
+    # application user exists (IF NOT EXISTS, so it is idempotent per
+    # volume — provisioning on every boot, like the schema). Any other
+    # invocation (e.g. `docker compose run --no-deps neo4j neo4j-admin …`
+    # for the WP-28 backup) is exec'd directly, bypassing the boot logic.
+    entrypoint:
+      - /bin/bash
+      - -c
+      # $$ escapes compose interpolation; the script runs in the container
+      # at boot, where the neo4j service's environment provides the values.
+      # bash -c puts the container CMD in $0, so the boot path is dispatched
+      # on "$0" = "neo4j" and other commands re-exec as "$0" "$@" (the
+      # WP-28 backup runs `docker compose run --no-deps neo4j sh -c …`).
+      - |
+        set -euo pipefail
+        if [ "$$0" = "neo4j" ] && [ "$$#" -eq 0 ]; then
+          db_user="$${LIMES_NEO4J_USER:-limes}"
+          db_password="$${LIMES_NEO4J_PASSWORD:?LIMES_NEO4J_PASSWORD must be set}"
+          /startup/docker-entrypoint.sh "$$0" &
+          server_pid=$$!
+          ready=0
+          attempts=0
+          while [ "$${attempts}" -lt 180 ]; do
+            if cypher-shell -u neo4j -p "$${db_password}" --non-interactive "RETURN 1" >/dev/null 2>&1; then
+              ready=1
+              break
+            fi
+            attempts=$$((attempts + 1))
+            sleep 2
+          done
+          if [ "$${ready}" -ne 1 ]; then
+            echo "neo4j boot: database did not accept connections within 360s" >&2
+            exit 1
+          fi
+          escaped="$${db_password//\'/\\\'}"
+          cypher-shell -u neo4j -p "$${db_password}" --non-interactive \
+            "CREATE USER $${db_user} IF NOT EXISTS SET PASSWORD '$${escaped}' CHANGE NOT REQUIRED"
+          echo "neo4j boot: ensured user $${db_user}"
+          wait "$${server_pid}"
+          exit $$?
+        fi
+        exec "$$0" "$$@"
+    environment:
+      # The wrapper's credentials come from the host .env via interpolation;
+      # NEO4J_AUTH provisions the first-boot admin (C-01: both users have
+      # identical privileges; the separation is hygiene, not enforcement).
+      - LIMES_NEO4J_USER=${LIMES_NEO4J_USER:-limes}
+      - LIMES_NEO4J_PASSWORD=${LIMES_NEO4J_PASSWORD:-change-me}
+      - NEO4J_AUTH=neo4j/${LIMES_NEO4J_PASSWORD:-change-me}
+      # Neo4j runtime per Doc 2 §13.4: heap 2 GB initial and max, page
+      # cache 2 GB, transaction memory cap 512 MB, transaction timeout 120 s
+      # → ~4.5 GB resident (Doc 1 §8.2).
+      - NEO4J_server_memory_heap_initial__size=${NEO4J_server_memory_heap_initial__size:-2G}
+      - NEO4J_server_memory_heap_max__size=${NEO4J_server_memory_heap_max__size:-2G}
+      - NEO4J_server_memory_pagecache_size=${NEO4J_server_memory_pagecache_size:-2G}
+      - NEO4J_db_memory_transaction_total_max=${NEO4J_db_memory_transaction_total_max:-512m}
+      - NEO4J_db_transaction_timeout=${NEO4J_db_transaction_timeout:-120s}
+    healthcheck:
+      # Readiness as the application user — the same credential the API and
+      # worker use, so "healthy" means the boot wrapper has finished (D-55).
+      test: ["CMD-SHELL", "cypher-shell -u $${LIMES_NEO4J_USER} -p $${LIMES_NEO4J_PASSWORD} --non-interactive \"RETURN 1\" >/dev/null 2>&1 || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 90s
+    # `docker stop` must give the database a clean shutdown: an abrupt kill
+    # leaves an active logical log and `neo4j-admin database dump` refuses
+    # (verified during WP-38). The default 10s grace is far too short; the
+    # verified clean stop took ~120s on a small graph (Doc 1 §8.3 budgets
+    # 5-20 GB), so 180s leaves margin.
+    stop_grace_period: 180s
+    volumes:
+      - neo4j_data:/data
+      - neo4j_logs:/logs
+      # The archive volume carries the system of record: the worker's
+      # content-addressed archive and the offline backup dumps (Doc 2
+      # §13.6) land in the same place.
+      - archive:/data/archive
+    networks:
+      - limes
+
+  api:
+    build:
+      context: .
+      dockerfile: docker/api.Dockerfile
+    # Configuration flows through the mounted .env and the app's own dotenv
+    # read, not compose env_file: an env var set to an empty string shadows
+    # the dotenv value, which would dead-letter the model pins select_models
+    # writes into .env (D-57). Read-only mount: only the worker writes.
+    volumes:
+      - ./.env:/app/.env:ro
+    depends_on:
+      neo4j:
+        condition: service_healthy
+    networks:
+      - limes
+
+  worker:
+    build:
+      context: .
+      dockerfile: docker/worker.Dockerfile
+    volumes:
+      - ./.env:/app/.env
+      # The gold set is mounted read-write: `make evaluate` writes the
+      # baseline into it and the measured model-selection stage reads it
+      # (Doc 2 §12.5, §13.3).
+      - ./gold_set:/app/gold_set
+      # The archive volume: the worker is the sole writer of the
+      # content-addressed archive (system of record, Doc 1 §8.3).
+      - archive:/data/archive
+      # `limes backup` orchestrates the host daemon through the socket and
+      # resolves the compose project from /app (D-57). The socket is
+      # host-level privilege — reviewed in DECISIONS.md, T2.
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./docker-compose.yml:/app/docker-compose.yml:ro
+      - ./docker-compose.override.yml:/app/docker-compose.override.yml:ro
+    depends_on:
+      neo4j:
+        condition: service_healthy
+    networks:
+      - limes
+
+  ui:
+    build:
+      context: .
+      dockerfile: docker/ui.Dockerfile
+    # The UI holds no credentials (Doc 1 §7.4, D-09): no .env mount, no
+    # env_file; its only variable is the API base URL, defaulting to the
+    # internal service name.
+    environment:
+      - LIMES_API_BASE_URL=${LIMES_API_BASE_URL:-http://api:8000}
+    networks:
+      - limes
+
+volumes:
+  neo4j_data:
+  neo4j_logs:
+  archive:
+
+networks:
+  limes:
+    name: limes

@@ -1,4 +1,4 @@
-<!-- LIMES — README | v2.0.0 | 2026-07-28 -->
+<!-- LIMES — README | v2.1.0 | 2026-08-03 -->
 
 # LIMES
 
@@ -85,39 +85,46 @@ Docker and Docker Compose · 12 GB RAM available to the Docker host · 100 GB fr
 Order is a hard dependency chain. See Technical Specification §13.3.
 
 ```bash
-cp .env.example .env                            # populate secrets
-make up
-make select-models -- --provisional             # catalogue criteria only
-make ingest SOURCE=gisco_nuts                   # geography + postal correspondence
-make ingest SOURCE=gleif                        # legal-entity backbone
-make ingest-all                                 # remaining structured sources
-make backfill SOURCE=feeds DAYS=90 BUDGET=3.00
-make backfill SOURCE=gdelt DAYS=90 BUDGET=2.00
-# build the gold set and calibration set from the archive, then:
-make select-models -- --measured
-make evaluate                                   # records the regression baseline
+cp .env.example .env                            # 1. populate secrets
+make up                                         # 2. starts the four services; builds the images on first run
+make select-models ARGS="--provisional"         # 3. catalogue criteria only, operator confirmation
+make ingest SOURCE=gisco_nuts                   # 4. geography + postal correspondence
+make ingest SOURCE=gleif                        # 5. legal-entity backbone
+make ingest-all                                 # 6. remaining structured sources
+make stamp-embeddings                           # one-shot embedding backfill (§13.3)
+make backfill SOURCE=feeds DAYS=90 BUDGET=3.00  # 7. unstructured backfill, explicit envelope
+make backfill SOURCE=gdelt DAYS=90 BUDGET=2.00  # 8.
+# 9. build the gold set and calibration set from the archive, then:
+make select-models ARGS="--measured"            # 10. measure the candidates
+make evaluate                                   # 11. records the regression baseline
 ```
 
-**The structured sources must load before any backfill.** Extraction against an empty entity backbone produces mentions with nothing to resolve against; every one becomes a new canonical entity and the work is paid for twice. This is the single most expensive avoidable mistake in the bootstrap.
+**Ordering constraints.** Steps 4–6 must precede 7–8: extraction against an empty entity backbone produces mentions with nothing to resolve against; every one becomes a fresh canonical entity and the work is paid for twice — the single most expensive avoidable mistake in the bootstrap. The one-shot embedding backfill runs after step 6 and before step 7, so the vector index is fully populated before the first unstructured backfill; a partially populated index silently under-recalls. Step 9 precedes 10 precedes 11 — a measurement taken before the corpus exists is not a measurement. There is no separate `bootstrap-db` step: Community Edition offers no roles to create (C-01), and schema provisioning runs on every context build. The `limes` database user is created by the Neo4j service's own boot wrapper on every fresh data volume (see DECISIONS.md).
 
-UI at `http://127.0.0.1:8050`.
+UI at `http://127.0.0.1:8050`, published to loopback only by the local override file. The base Compose file publishes no ports at all (AC-34); promotion to a server is removal of the override, not a rewrite (§13.5).
 
 ---
 
 ## Operation
 
-All ingestion is manual. No scheduler, which also means nothing spends money without you initiating it.
+All ingestion is manual. No scheduler, which also means nothing spends money without you initiating it. Every command runs inside the worker container; configuration flows from `.env`.
 
 | Command | Purpose |
 |---|---|
+| `make up` / `make down` | Start / stop the four services |
+| `make bootstrap-db` | No-op: C-01 offers no roles; provisioning runs on every context build |
 | `make ingest SOURCE=<id>` | Ingest one source |
 | `make ingest-all` | Every registered source |
 | `make backfill SOURCE=<id> DAYS=<n> BUDGET=<eur>` | Historical load; budget mandatory |
-| `make reextract PROMPT_VERSION=<v> BUDGET=<eur>` | Re-extract archived content |
-| `make evaluate` | Measure extraction quality against the gold set |
+| `make reextract PROMPT_VERSION=<v> BUDGET=<eur>` | Re-extract archived content; budget mandatory |
+| `make select-models ARGS="--provisional"` | Rank and pin by criteria; operator confirmation |
+| `make select-models ARGS="--measured"` | Measure the candidates against the gold set |
+| `make evaluate ARGS="--resolution"` | Measure extraction quality against the gold set |
 | `make migrate ONTOLOGY_VERSION=<v>` | Apply ontology migrations |
-| `make backup` | Offline database dump |
+| `make backup` | Offline database dump into the archive volume |
+| `make stamp-embeddings` | One-shot `label_embedding` backfill (§13.3) |
 | `python3 tools/check_docs.py docs/` | Validate specification consistency |
+| `python3 tools/smoke_test.py` | Clean-host smoke test of the bootstrap core (up, ingest, count, down) |
 
 ### Budget
 

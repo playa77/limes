@@ -1,0 +1,41 @@
+# LIMES — Compose override (local development) | v1.0.0 | introduced by WP-37
+# Local-only concerns per Doc 1 §8.1 and Doc 2 §13.2: loopback publication
+# of the UI port (the only published port in the whole topology),
+# source mounts so code edits do not require an image rebuild, and debug
+# logging. Promotion to a server is removal of this file (§13.5) — nothing
+# here changes the topology, only its local ergonomics.
+
+services:
+  ui:
+    ports:
+      - "127.0.0.1:8050:8050"
+
+  api:
+    command:
+      - uvicorn
+      - limes.api.main:create_app
+      - --factory
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8000"
+      - --reload
+    volumes:
+      - ./src:/app/src
+      - ./ontology:/app/ontology
+    environment:
+      - LIMES_LOG_LEVEL=DEBUG
+      - LIMES_LOG_FORMAT=console
+
+  worker:
+    volumes:
+      - ./src:/app/src
+      - ./ontology:/app/ontology
+      - ./reference_questions:/app/reference_questions
+    environment:
+      - LIMES_LOG_LEVEL=DEBUG
+      - LIMES_LOG_FORMAT=console
+
+  neo4j:
+    environment:
+      - NEO4J_DEBUG=true

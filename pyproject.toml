@@ -43,6 +43,11 @@ dev = [
 [tool.uv]
 package = true
 
+# The `limes` console script (Doc 2 §8.14): registered by WP-38 per the
+# assignment in cli/main.py, so the worker container's PATH carries it.
+[project.scripts]
+limes = "limes.cli.main:main"
+
 [tool.ruff]
 line-length = 100
 target-version = "py312"
