@@ -5,6 +5,65 @@ reversibility: **R1** reversible in under an hour, **R2** bounded recoverable
 cost, **R3** one-way door. Written when each decision is made, latest first.
 Nothing here is a status report; unlogged decisions are unmade decisions.
 
+## 2026-08-23 — Refactor task: stop condition, scope decision, and invariants (derived at task start)
+
+Operator instruction: "Refactor until you are happy with the architecture."
+"Until happy" is rejected as a stop condition per global contract §7 even when
+the human writes it. The substituted stop condition below was measured on a
+clean tree at `bf3066f` before the first edit. Budget: **10 commits or 4 hours
+wall-clock, whichever comes first**; exhausted with targets unmet means stop
+and report the trajectory.
+
+**D-66 (R2) — Scope: consolidation inside existing §2 modules only.**
+Doc 2 §2 says "Paths are authoritative" and enumerates module lists per
+directory (`ui/components/*.py` and `ui/callbacks/*.py` are the only
+wildcards). Following the D-49 precedent that enumerated lists are closed:
+all consolidation lands inside existing modules (shared helpers move into
+`sources/base.py`, `extraction/openrouter_client.py`, etc.), plus one new
+module allowed under the wildcarded `ui/callbacks/`. Rejected alternative:
+same-directory splits of `cli/evaluate.py` (703), `pipeline/run.py` (659),
+`nlq/validate.py` (679) — rejected because §2 enumerates those files closed;
+the consequence of the rejection is that these three stay above 500 lines,
+accepted as spec-shaped, not fixed here. Reversing this requires a human
+spec amendment, not an agent choice.
+
+Stop-condition metrics (measurement commands stated; values measured now):
+
+- **M1 — Lint/format debt = 0.**
+  `./venv/bin/ruff check src tests && ./venv/bin/ruff format --check src tests`.
+  Now: 16 E501 errors + 6 files would be reformatted (pre-existing on main;
+  lookups.py and test_loader.py already ledger-documented). Target: both
+  exit clean.
+- **M2 — Adapter duplication index = 0**, three identity/load-bearing
+  families: (a) `Assertion(` construction sites in `src/limes/sources/*.py`
+  outside `base.py`: **13 now → target 0** (one canonical constructor);
+  (b) sha256 identity-digest definitions outside `base.py` for address /
+  coordinate / topic identity: **5 sites now (gleif, ted×2, gdelt, osm) →
+  target 0**; (c) retry/backoff loop implementations across `sources/` +
+  `extraction/`: **3 files / 4 loops now → target exactly one shared
+  implementation, all consumers delegating** (`graph/driver.py` excluded —
+  deliberately distinct Neo4j-transient policy).
+- **M3 — `src/limes/ui/callbacks/query.py` ≤ 500 lines** via the wildcarded
+  `ui/callbacks/` split. Now: 557. (The other over-500 modules are covered by
+  D-66's accepted deviation.)
+
+Task invariants, derived per contract §6:
+
+- **G1 (guarded)** — Full test suite green after every step (unit suite per
+  commit; integration + acceptance against live Neo4j at milestones).
+- **G2 (guarded)** — Every existing architecture guard test stays untouched
+  and green: API write surface (AC-18), UI purity (§8.13), AC-40 composition
+  root, loader sole-writership.
+- **T1 (triggered)** — Any diff touching `graph/loader.py`, an `api/` write
+  path, or a prompt `.md` file is flagged before commit (prompt *code* paths
+  are in scope; prompt files themselves are not).
+- **T2 (triggered)** — Behavior preservation: no observable behavior change;
+  evidence is the unchanged, green suite plus review of each diff for
+  semantic drift (e.g., identical digest inputs → identical entity_ids).
+
+Branch: `refactor-consolidation` (repo convention is `wp-NN-slug` for work
+packages; this is not a WP, so the refactor prefix states what it is).
+
 ## 2026-08-03 — Approval — phase-11-v1.0.0 (WP-40)
 
 The human approved phase-11-v1.0.0 (100% line coverage suite) on
