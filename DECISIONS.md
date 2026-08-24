@@ -5,6 +5,58 @@ reversibility: **R1** reversible in under an hour, **R2** bounded recoverable
 cost, **R3** one-way door. Written when each decision is made, latest first.
 Nothing here is a status report; unlogged decisions are unmade decisions.
 
+## 2026-08-24 — Refactor complete — trajectory and final measurements (all metrics met)
+
+All five metric targets met within budget (8 commits of 10; ~3.5 h of 4 h).
+Final measurements, each command run against the delivered tree at `7230d7e`
+(+ ledger/changelog commit):
+
+- **M1** — `ruff check src tests` + `ruff format --check src tests`: clean
+  (was 16 E501 + 6 deviating files). Met in S1.
+- **M2a** — `grep -rn "Assertion(" src/limes/sources/*.py | grep -v base.py`:
+  0 (was 13). One canonical `make_assertion()`; 11 adapters migrated; 12
+  local helper copies deleted. Met in S2.
+- **M2b** — identity-digest definitions outside `base.py`: 0 for all three
+  families (`topic_endpoint`, `address_location`, `coordinate_location`);
+  digest inputs byte-identical, so entity_ids and loader merges are
+  unchanged. The TED buyer digest stays local by design (single-site
+  convention). Met in S3.
+- **M2c** — retry/backoff implementations across sources+extraction: exactly
+  one (`request_with_retry()`); four hand-rolled copies delegate;
+  `graph/driver.py` excluded as deliberately distinct. Met in S4.
+- **M3** — `ui/callbacks/query.py`: 318 lines ≤ 500 (was 557) via
+  `ui/callbacks/builder.py`. Met in S6.
+- S5 (fence stripping, prompt-path resolution) was scope hygiene inside the
+  same budget, not a numbered metric.
+
+Evidence: unit 697 passed, integration 163 passed (live Neo4j), acceptance
+86 passed — full three-suite run green after the final code change (S6);
+ruff/mypy clean at every commit; each step reviewed before commit. Live-stack
+verification: guards G1–G4 static checks pass; fresh `make up` healthy;
+`make ingest SOURCE=gisco_nuts` completes end-to-end in the container
+(804,812 nodes created, 1,932 assertions written, 0 errors) through the
+refactored adapter path.
+
+## 2026-08-24 — [CONFLICT] pre-existing: concurrent provision() races on a fresh volume
+
+Discovered by the final smoke-test run, NOT introduced by this refactor (the
+branch touches no `graph/`, compose, or Dockerfile code — verified by diff).
+On a fresh volume, the api container's startup handler and the worker's first
+command both run `provision()` (composition.py:88, api/main.py:81). Two
+concurrent `CREATE INDEX … IF NOT EXISTS` statements for the same name can
+collide server-side; observed: worker ingest failed with
+`Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists` on
+`office_at_valid_from` ~27 s after `make up`, while the api's own provisioning
+was still executing. Timestamp correlation stated per contract §10: api/worker
+started together at 08:00:57 CEST; ingest began 06:01:24 UTC. Post-failure
+inspection shows every index present exactly once — the second creator lost,
+the schema is correct. Re-running `make ingest` alone completes cleanly.
+The phase-9 smoke pass predated this observation; nothing in the interim
+diff touched the path. Recommended follow-up (human decision, outside this
+task's D-66 consolidation scope): make `provision()` tolerate the
+equivalent-rule error on `IF NOT EXISTS` statements, or serialize startup
+provisioning against the worker.
+
 ## 2026-08-23 — Refactor task: stop condition, scope decision, and invariants (derived at task start)
 
 Operator instruction: "Refactor until you are happy with the architecture."

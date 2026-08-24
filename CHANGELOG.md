@@ -69,6 +69,13 @@ gold set, prompts) are recorded in their own changelogs.
   ruff/mypy clean.
 
 
+- **Outcome — all stop-condition metrics met (D-66).** M1 lint debt 0,
+  M2a assertion sites 13→0, M2b digest families 5→0, M2c retry loops 4→1,
+  M3 query.py 557→318. Net −37 lines across 35 files with zero behavior
+  change (three-suite evidence above per step). A pre-existing provision()
+  concurrency race surfaced during live verification — logged as
+  [CONFLICT], recommended follow-up, not caused by this branch.
+
 - **S1 — Lint/format debt zeroed (metric M1).** `ruff check` 16→0 errors,
   `ruff format --check` 6 deviating files→0, on `refactor-consolidation`.
   Formatting-only diff plus four long Cypher literals re-wrapped as adjacent
