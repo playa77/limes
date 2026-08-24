@@ -34,7 +34,7 @@ from limes.cli.evaluate import (
 )
 from limes.config import Settings
 from limes.errors import ConfigurationError, ExtractionError
-from limes.extraction.base import ExtractionResult
+from limes.extraction.base import ExtractionResult, strip_model_fence
 from limes.ontology.registry import load_ontology
 from limes.types import ExtractedAssertion, Mention
 
@@ -543,12 +543,14 @@ def test_token_agreement_is_jaccard_over_tokens():
 
 
 def test_strip_code_fence_unwraps_markdown():
+    # evaluate strips the NL2Cypher answer with the shared extraction helper
+    # (tag="cypher"); the property is asserted against that implementation.
     assert (
-        evaluate_module._strip_code_fence("```cypher\nMATCH (a) RETURN a LIMIT 1\n```")
+        strip_model_fence("```cypher\nMATCH (a) RETURN a LIMIT 1\n```", tag="cypher")
         == "MATCH (a) RETURN a LIMIT 1"
     )
     assert (
-        evaluate_module._strip_code_fence("MATCH (a) RETURN a LIMIT 1")
+        strip_model_fence("MATCH (a) RETURN a LIMIT 1", tag="cypher")
         == "MATCH (a) RETURN a LIMIT 1"
     )
 

@@ -23,6 +23,8 @@ block, never concatenated into the instruction.
 
 from __future__ import annotations
 
+import re
+from pathlib import Path
 from typing import Protocol, runtime_checkable
 
 from pydantic import BaseModel
@@ -46,6 +48,31 @@ CHARS_PER_TOKEN = 4
 # passage-level extraction call. The ledger entry always uses the provider's
 # reported usage, never this estimate.
 ESTIMATED_OUTPUT_TOKENS = 350
+
+
+def prompt_path(filename: str) -> Path:
+    """Absolute path of a prompt file in `extraction/prompts/`.
+
+    One resolver for every consumer of the prompt directory — the extractor,
+    the adjudicator, and NL-to-Cypher all read templates from here, so a
+    relocated prompt directory is a one-module change. Callers keep their own
+    missing-file errors (the message names the prompt's role).
+    """
+    return Path(__file__).parent / "prompts" / filename
+
+
+def strip_model_fence(raw: str, *, tag: str = "json") -> str:
+    """Strip a whole-text markdown fence a model may wrap its answer in.
+
+    The strict policy shared by the extraction-schema pass, the adjudication
+    parser, and the NL2Cypher evaluation harness: the *entire* stripped
+    response must be one fenced block (an optional language tag is tolerated)
+    and only its body is judged; anything outside a fence stays verbatim.
+    The lenient line-based variant used by `nlq.generate` is deliberately
+    different and lives there.
+    """
+    match = re.match(r"^```(?:" + tag + r")?\s*(.*?)\s*```$", raw.strip(), re.S)
+    return match.group(1) if match else raw.strip()
 
 
 @runtime_checkable

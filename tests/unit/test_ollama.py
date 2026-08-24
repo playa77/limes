@@ -16,7 +16,6 @@ from httpx import ConnectError, Response
 
 from limes.config import Settings
 from limes.errors import ExtractionError
-from limes.extraction import ollama
 from limes.extraction.ollama import (
     DEFAULT_OLLAMA_BASE_URL,
     DEFAULT_OLLAMA_MODEL,

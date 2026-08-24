@@ -8,6 +8,17 @@ gold set, prompts) are recorded in their own changelogs.
 
 ## 2026-08-23 — Refactor — architecture consolidation (operator-instructed)
 
+- **S5 — Model-output parsing and prompt resolution stated once.**
+  `strip_model_fence()` and `prompt_path()` added to
+  `extraction/base.py`. The byte-identical JSON-fence pair
+  (`extraction/schema`, `resolution/adjudicate`) and the Cypher variant in
+  `cli/evaluate` (tag parameter) now share the strict whole-text policy;
+  `nlq/generate`'s lenient line-based stripper is deliberately different and
+  stays local, documented as such. Three `PROMPTS_DIR` definitions collapse
+  into one resolver; missing-prompt error messages unchanged (paths are
+  identical values, pinned by tests). One test re-pointed to the shared
+  helper with identical assertions. Verified: unit 696 + integration 163 vs
+  live Neo4j; ruff/mypy clean.
 - **S4 — The §11 retry policy stated once (metric M2c).**
   `request_with_retry()` in `sources/base.py` is the single transport
   (tenacity: 2 s exponential, factor 2, jitter, 4 attempts, on connection
