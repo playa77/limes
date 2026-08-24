@@ -16,19 +16,10 @@ keeps the paid path default and this one explicit.
 
 from __future__ import annotations
 
-import logging
 from pathlib import Path
 from typing import Any
 
-import httpx
 import structlog
-from tenacity import (
-    before_sleep_log,
-    retry,
-    retry_if_exception,
-    stop_after_attempt,
-    wait_exponential_jitter,
-)
 
 from limes.config import Settings
 from limes.errors import ExtractionError
@@ -39,6 +30,7 @@ from limes.extraction.base import (
 )
 from limes.extraction.schema import EXTRACTION_SCHEMA, SCHEMA_VERSION, parse_extraction_response
 from limes.ontology.model import Ontology
+from limes.sources.base import PermanentStatus, RetryExhausted, request_with_retry
 from limes.types import ExtractedAssertion, Passage
 
 logger = structlog.get_logger(__name__)
@@ -48,19 +40,6 @@ logger = structlog.get_logger(__name__)
 # overrides for a non-default local server.
 DEFAULT_OLLAMA_BASE_URL = "http://localhost:11434"
 DEFAULT_OLLAMA_MODEL = "llama3.1:8b"
-
-HTTP_MAX_ATTEMPTS = 4
-RETRYABLE_STATUSES = frozenset({429, 500, 502, 503, 504})
-
-
-class _Retryable(Exception):
-    """Internal: a transient failure the §11 policy may retry."""
-
-
-def _is_retryable(exc: BaseException) -> bool:
-    if isinstance(exc, _Retryable):
-        return True
-    return isinstance(exc, (httpx.ConnectError, httpx.ConnectTimeout, httpx.ReadTimeout))
 
 
 class OllamaExtractor:
@@ -141,31 +120,23 @@ class OllamaExtractor:
         }
         url = f"{self._base_url}/api/chat"
 
-        @retry(
-            stop=stop_after_attempt(HTTP_MAX_ATTEMPTS),
-            wait=wait_exponential_jitter(initial=2.0, max=60.0, jitter=2.0),
-            retry=retry_if_exception(_is_retryable),
-            before_sleep=before_sleep_log(logger, logging.WARNING),
-            reraise=True,
-        )
-        def _call() -> dict[str, Any]:
-            with httpx.Client(timeout=httpx.Timeout(self._settings.http_timeout_seconds)) as client:
-                try:
-                    response = client.post(url, json=payload)
-                except (httpx.ConnectError, httpx.ConnectTimeout, httpx.ReadTimeout) as exc:
-                    raise _Retryable(str(exc)) from exc
-                if response.status_code in RETRYABLE_STATUSES:
-                    raise _Retryable(f"HTTP {response.status_code} from {url}")
-                if response.status_code >= 400:
-                    raise ExtractionError(f"ollama call failed: HTTP {response.status_code}")
-                body: dict[str, Any] = response.json()
-                return body
-
         try:
-            response: dict[str, Any] = _call()
-        except _Retryable as exc:
-            raise ExtractionError(f"ollama call failed after retries: {url} ({exc})") from exc
-        return response
+            response = request_with_retry(
+                "POST",
+                url,
+                json_body=payload,
+                timeout_s=self._settings.http_timeout_seconds,
+                follow_redirects=False,
+                log=logger,
+            )
+        except PermanentStatus as exc:
+            raise ExtractionError(f"ollama call failed: HTTP {exc.status_code}") from exc
+        except RetryExhausted as exc:
+            raise ExtractionError(
+                f"ollama call failed after retries: {exc.url} ({exc.reason})"
+            ) from exc
+        body: dict[str, Any] = response.json()
+        return body
 
 
 def _content_of(response: dict[str, Any]) -> str:

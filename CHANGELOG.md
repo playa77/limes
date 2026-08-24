@@ -8,6 +8,20 @@ gold set, prompts) are recorded in their own changelogs.
 
 ## 2026-08-23 — Refactor — architecture consolidation (operator-instructed)
 
+- **S4 — The §11 retry policy stated once (metric M2c).**
+  `request_with_retry()` in `sources/base.py` is the single transport
+  (tenacity: 2 s exponential, factor 2, jitter, 4 attempts, on connection
+  errors/timeouts/429/5xx); `sources/base._fetch`,
+  `openrouter_client.post_json_with_retry`, the catalogue GET, and the
+  Ollama chat call now delegate. Observable behavior preserved exactly:
+  per-layer error types and message prefixes (pinned by tests), per-module
+  backoff-log attribution, the source layer's UA header, and Ollama's
+  headerless non-following requests (`follow_redirects=False` passed
+  explicitly). `graph/driver.py` keeps its deliberately distinct
+  Neo4j-transient policy. Two tests re-pointed at the shared constants/
+  predicate with identical assertions (test_ollama's `_is_retryable`
+  import, HTTP_MAX_ATTEMPTS reference). Verified: unit 696 + integration
+  163 vs live Neo4j; ruff/mypy clean.
 - **S3 — Shared identity constructors for the source layer
   (metric M2b).** `topic_endpoint()`, `address_location()`,
   `coordinate_location()` added to `sources/base.py`; the byte-identical

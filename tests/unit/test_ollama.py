@@ -21,9 +21,10 @@ from limes.extraction.ollama import (
     DEFAULT_OLLAMA_BASE_URL,
     DEFAULT_OLLAMA_MODEL,
     OllamaExtractor,
-    _is_retryable,
 )
 from limes.ontology.registry import load_ontology
+from limes.sources.base import HTTP_MAX_ATTEMPTS
+from limes.sources.base import is_transient as _is_retryable
 from limes.types import Passage
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -73,7 +74,7 @@ def test_connection_error_retries_then_fails_loudly():
         extractor = OllamaExtractor(_settings())
         with pytest.raises(ExtractionError, match="ollama call failed after retries"):
             extractor.extract(PASSAGES, ONTOLOGY, "1.0.0", "1.0.0")
-    assert route.call_count == ollama.HTTP_MAX_ATTEMPTS
+    assert route.call_count == HTTP_MAX_ATTEMPTS
 
 
 def test_non_retryable_4xx_fails_immediately():

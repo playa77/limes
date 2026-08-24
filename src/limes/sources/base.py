@@ -30,7 +30,7 @@ import hashlib
 import logging
 from collections.abc import Iterator
 from datetime import UTC, datetime
-from typing import Literal, Protocol, runtime_checkable
+from typing import Any, Literal, Protocol, runtime_checkable
 
 import httpx
 import structlog
@@ -271,15 +271,93 @@ def make_assertion(
     )
 
 
-class _RetryableFetch(Exception):
-    """Internal: a transient fetch failure the retry policy may retry."""
+class TransientFailure(Exception):
+    """Internal marker: a transient failure the §11 policy may retry."""
 
 
-def _is_retryable(exc: BaseException) -> bool:
-    if isinstance(exc, _RetryableFetch):
+def is_transient(exc: BaseException) -> bool:
+    """Whether the §11 policy may retry this exception: the marker raised by
+    `request_with_retry` itself, plus connection errors and timeouts."""
+    if isinstance(exc, TransientFailure):
         return True
     # Connection errors and timeouts are always transient (§11).
     return isinstance(exc, (httpx.ConnectError, httpx.ConnectTimeout, httpx.ReadTimeout))
+
+
+class RetryExhausted(Exception):
+    """The §11 policy ran out of attempts. Attributes carry what the layer
+    wrappers need to phrase their own error: `attempts`, `url`, `reason`."""
+
+    def __init__(self, attempts: int, url: str, reason: str) -> None:
+        super().__init__(reason)
+        self.attempts = attempts
+        self.url = url
+        self.reason = reason
+
+
+class PermanentStatus(Exception):
+    """A non-retryable HTTP status (a 4xx other than 429). The wrapper maps
+    it onto the layer's own error type; the status is never retried."""
+
+    def __init__(self, url: str, status_code: int) -> None:
+        super().__init__(f"HTTP {status_code} from {url}")
+        self.url = url
+        self.status_code = status_code
+
+
+def request_with_retry(
+    method: str,
+    url: str,
+    *,
+    json_body: dict[str, Any] | None = None,
+    headers: dict[str, str] | None = None,
+    timeout_s: float = HTTP_TIMEOUT_SECONDS,
+    follow_redirects: bool = True,
+    log: Any = logger,
+) -> httpx.Response:
+    """The one §11 retry transport: exponential backoff from 2 s, factor 2,
+    jittered, at most `HTTP_MAX_ATTEMPTS` attempts, on connection errors,
+    timeouts, 429, and 5xx — never on other 4xx.
+
+    Returns the successful `httpx.Response`; the caller decides how to read
+    it (bytes, JSON) and which layer error its failures map to, via the two
+    public markers `RetryExhausted` and `PermanentStatus`. `log` keeps the
+    backoff warnings attributed to the calling module. This function exists
+    because the identical scaffolding was hand-rolled four times across the
+    source and extraction layers and drifted; the §11 policy is stated here
+    once.
+    """
+    attempts = 0
+
+    @retry(
+        stop=stop_after_attempt(HTTP_MAX_ATTEMPTS),
+        wait=wait_exponential_jitter(initial=2.0, max=60.0, jitter=2.0),
+        retry=retry_if_exception(is_transient),
+        before_sleep=before_sleep_log(log, logging.WARNING),
+        reraise=True,
+    )
+    def _call() -> httpx.Response:
+        nonlocal attempts
+        attempts += 1
+        with httpx.Client(
+            timeout=httpx.Timeout(timeout_s),
+            follow_redirects=follow_redirects,
+            headers=headers,
+        ) as client:
+            try:
+                response = client.post(url, json=json_body) if method == "POST" else client.get(url)
+            except (httpx.ConnectError, httpx.ConnectTimeout, httpx.ReadTimeout) as exc:
+                raise TransientFailure(str(exc)) from exc
+            if response.status_code in RETRYABLE_STATUSES:
+                raise TransientFailure(f"HTTP {response.status_code} from {url}")
+            if response.status_code >= 400:
+                raise PermanentStatus(url=url, status_code=response.status_code)
+            return response
+
+    try:
+        return _call()
+    except TransientFailure as exc:
+        raise RetryExhausted(attempts, url, str(exc)) from exc
 
 
 def fetch_bytes(url: str, *, timeout_s: int = HTTP_TIMEOUT_SECONDS) -> bytes:
@@ -313,39 +391,22 @@ def _fetch(
     json_body: dict[str, object] | None = None,
     timeout_s: int = HTTP_TIMEOUT_SECONDS,
 ) -> bytes:
-    attempts = 0
-
-    @retry(
-        stop=stop_after_attempt(HTTP_MAX_ATTEMPTS),
-        wait=wait_exponential_jitter(initial=2.0, max=60.0, jitter=2.0),
-        retry=retry_if_exception(_is_retryable),
-        before_sleep=before_sleep_log(logger, logging.WARNING),
-        reraise=True,
-    )
-    def _call() -> bytes:
-        nonlocal attempts
-        attempts += 1
-        with httpx.Client(
-            timeout=httpx.Timeout(timeout_s),
-            follow_redirects=True,
-            headers={"User-Agent": USER_AGENT, "Accept": "*/*"},
-        ) as client:
-            try:
-                response = client.post(url, json=json_body) if method == "POST" else client.get(url)
-            except (httpx.ConnectError, httpx.ConnectTimeout, httpx.ReadTimeout) as exc:
-                raise _RetryableFetch(str(exc)) from exc
-            if response.status_code in RETRYABLE_STATUSES:
-                raise _RetryableFetch(f"HTTP {response.status_code} from {url}")
-            if response.status_code >= 400:
-                raise SourceFetchError(f"fetch failed: {url} returned HTTP {response.status_code}")
-            return response.content
-
     try:
-        return _call()
-    except SourceFetchError:
-        raise
-    except _RetryableFetch as exc:
-        raise SourceFetchError(f"fetch failed after {attempts} attempts: {url} ({exc})") from exc
+        response = request_with_retry(
+            method,
+            url,
+            json_body=json_body,
+            headers={"User-Agent": USER_AGENT, "Accept": "*/*"},
+            timeout_s=timeout_s,
+            log=logger,
+        )
+    except PermanentStatus as exc:
+        raise SourceFetchError(f"fetch failed: {exc.url} returned HTTP {exc.status_code}") from exc
+    except RetryExhausted as exc:
+        raise SourceFetchError(
+            f"fetch failed after {exc.attempts} attempts: {exc.url} ({exc.reason})"
+        ) from exc
+    return response.content
 
 
 def now_utc() -> datetime:

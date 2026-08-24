@@ -26,34 +26,21 @@ usage (§8.7.6), so a call that died on its last retry never costs anything.
 
 from __future__ import annotations
 
-import logging
 import uuid
 from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Any, Literal, cast
 
-import httpx
 import structlog
-from tenacity import (
-    before_sleep_log,
-    retry,
-    retry_if_exception,
-    stop_after_attempt,
-    wait_exponential_jitter,
-)
 
 from limes.config import Settings
 from limes.cost.governor import Governor
 from limes.errors import ExtractionError
 from limes.extraction.base import ESTIMATED_OUTPUT_TOKENS
+from limes.sources.base import PermanentStatus, RetryExhausted, request_with_retry
 from limes.types import CostLedgerEntry
 
 logger = structlog.get_logger(__name__)
-
-# §11 retry policy constants, mirroring the source-layer policy (adapters and
-# the client are peers; the policy is one §11, stated once per package).
-HTTP_MAX_ATTEMPTS = 4
-RETRYABLE_STATUSES = frozenset({429, 500, 502, 503, 504})
 
 # Fallback per-token USD prices (per million tokens) for models absent from
 # the catalogue. Conservative on purpose: an overestimate refuses a call
@@ -65,60 +52,28 @@ FALLBACK_USD_PER_MILLION_OUTPUT = 0.50
 PURPOSES = ("extraction", "adjudication", "embedding", "nl2cypher")
 
 
-class _Retryable(Exception):
-    """Internal: a transient failure the §11 policy may retry."""
-
-
-def _is_retryable(exc: BaseException) -> bool:
-    if isinstance(exc, _Retryable):
-        return True
-    return isinstance(exc, (httpx.ConnectError, httpx.ConnectTimeout, httpx.ReadTimeout))
-
-
 def post_json_with_retry(
     url: str,
     payload: dict[str, Any],
     headers: dict[str, str],
     timeout_s: float,
 ) -> dict[str, Any]:
-    """POST a JSON payload with the §11 retry policy, returning the parsed
-    JSON response. After the last attempt raises `ExtractionError` naming the
-    URL; a non-retryable 4xx raises it immediately."""
-    attempts = 0
-
-    @retry(
-        stop=stop_after_attempt(HTTP_MAX_ATTEMPTS),
-        wait=wait_exponential_jitter(initial=2.0, max=60.0, jitter=2.0),
-        retry=retry_if_exception(_is_retryable),
-        before_sleep=before_sleep_log(logger, logging.WARNING),
-        reraise=True,
-    )
-    def _call() -> dict[str, Any]:
-        nonlocal attempts
-        attempts += 1
-        with httpx.Client(
-            timeout=httpx.Timeout(timeout_s),
-            follow_redirects=True,
-            headers=headers,
-        ) as client:
-            try:
-                response = client.post(url, json=payload)
-            except (httpx.ConnectError, httpx.ConnectTimeout, httpx.ReadTimeout) as exc:
-                raise _Retryable(str(exc)) from exc
-            if response.status_code in RETRYABLE_STATUSES:
-                raise _Retryable(f"HTTP {response.status_code} from {url}")
-            if response.status_code >= 400:
-                raise ExtractionError(f"call failed: {url} returned HTTP {response.status_code}")
-            body: dict[str, Any] = response.json()
-            return body
-
+    """POST a JSON payload with the §11 retry policy (`request_with_retry`),
+    returning the parsed JSON response. After the last attempt raises
+    `ExtractionError` naming the URL; a non-retryable 4xx raises it
+    immediately."""
     try:
-        response: dict[str, Any] = _call()
-    except ExtractionError:
-        raise
-    except _Retryable as exc:
-        raise ExtractionError(f"call failed after {attempts} attempts: {url} ({exc})") from exc
-    return response
+        response = request_with_retry(
+            "POST", url, json_body=payload, headers=headers, timeout_s=timeout_s, log=logger
+        )
+    except PermanentStatus as exc:
+        raise ExtractionError(f"call failed: {exc.url} returned HTTP {exc.status_code}") from exc
+    except RetryExhausted as exc:
+        raise ExtractionError(
+            f"call failed after {exc.attempts} attempts: {exc.url} ({exc.reason})"
+        ) from exc
+    body: dict[str, Any] = response.json()
+    return body
 
 
 class OpenRouterClient:
@@ -223,42 +178,23 @@ class OpenRouterClient:
         model selection (WP-29) wants the current state; `complete`/`embed`
         use the per-client price cache."""
         url = f"{self._settings.openrouter_base_url}/models"
-        attempts = 0
-
-        @retry(
-            stop=stop_after_attempt(HTTP_MAX_ATTEMPTS),
-            wait=wait_exponential_jitter(initial=2.0, max=60.0, jitter=2.0),
-            retry=retry_if_exception(_is_retryable),
-            before_sleep=before_sleep_log(logger, logging.WARNING),
-            reraise=True,
-        )
-        def _get() -> dict[str, Any]:
-            nonlocal attempts
-            attempts += 1
-            with httpx.Client(
-                timeout=httpx.Timeout(self._settings.http_timeout_seconds),
-                follow_redirects=True,
-                headers=self._headers(),
-            ) as client:
-                try:
-                    response = client.get(url)
-                except (httpx.ConnectError, httpx.ConnectTimeout, httpx.ReadTimeout) as exc:
-                    raise _Retryable(str(exc)) from exc
-                if response.status_code in RETRYABLE_STATUSES:
-                    raise _Retryable(f"HTTP {response.status_code} from {url}")
-                if response.status_code >= 400:
-                    raise ExtractionError(
-                        f"catalogue failed: {url} returned HTTP {response.status_code}"
-                    )
-                body: dict[str, Any] = response.json()
-                return body
-
         try:
-            payload: dict[str, Any] = _get()
-        except _Retryable as exc:
+            response = request_with_retry(
+                "GET",
+                url,
+                headers=self._headers(),
+                timeout_s=self._settings.http_timeout_seconds,
+                log=logger,
+            )
+        except PermanentStatus as exc:
             raise ExtractionError(
-                f"catalogue failed after {attempts} attempts: {url} ({exc})"
+                f"catalogue failed: {exc.url} returned HTTP {exc.status_code}"
             ) from exc
+        except RetryExhausted as exc:
+            raise ExtractionError(
+                f"catalogue failed after {exc.attempts} attempts: {exc.url} ({exc.reason})"
+            ) from exc
+        payload: dict[str, Any] = response.json()
         data = payload.get("data")
         if not isinstance(data, list):
             raise ExtractionError("catalogue response carries no data list")
