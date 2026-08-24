@@ -8,6 +8,19 @@ gold set, prompts) are recorded in their own changelogs.
 
 ## 2026-08-23 — Refactor — architecture consolidation (operator-instructed)
 
+- **S2 — One canonical assertion constructor for the source layer
+  (metric M2a).** `make_assertion()` added to `sources/base.py`; all 11
+  source adapters migrated; the 12 local `_assertion`/`_actor_assertion`/
+  `_provenance` copies deleted (~205 lines net). Parameter order drift
+  between the old copies is why the shared signature is keyword-only for
+  `valid_from`/`valid_to`/`recorded_at`. Semantic identity preserved:
+  same digest inputs, same `recorded_at` defaults, offeneregister's
+  dataset-publication vintage passed explicitly. A positional slip in the
+  gdelt migration was caught by its adapter tests before commit.
+  Verified: unit 696 passed, integration 163 passed against live Neo4j,
+  ruff/mypy clean.
+
+
 - **S1 — Lint/format debt zeroed (metric M1).** `ruff check` 16→0 errors,
   `ruff format --check` 6 deviating files→0, on `refactor-consolidation`.
   Formatting-only diff plus four long Cypher literals re-wrapped as adjacent

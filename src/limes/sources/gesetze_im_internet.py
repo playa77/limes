@@ -55,10 +55,9 @@ from lxml import etree  # type: ignore[import-untyped]
 
 from limes.errors import SourceParseError
 from limes.sources.base import (
-    ONTOLOGY_VERSION,
-    deterministic_assertion_id,
     fetch_bytes,
     key_entity_id,
+    make_assertion,
     now_utc,
     payload_hash,
 )
@@ -66,9 +65,7 @@ from limes.types import (
     Assertion,
     EntityEndpoint,
     NormalizedRecord,
-    Provenance,
     RawRecord,
-    Validity,
 )
 
 logger = structlog.get_logger(__name__)
@@ -230,8 +227,13 @@ class GesetzeImInternetAdapter:
                 )
             else:
                 assertions.append(
-                    _assertion(
-                        self, "ABOUT_TOPIC", legal_act, _topic(code, label), valid_from, record
+                    make_assertion(
+                        self,
+                        record,
+                        legal_act,
+                        "ABOUT_TOPIC",
+                        _topic(code, label),
+                        valid_from=valid_from,
                     )
                 )
 
@@ -246,8 +248,13 @@ class GesetzeImInternetAdapter:
                 )
             else:
                 assertions.append(
-                    _assertion(
-                        self, "APPLIES_TO", legal_act, _topic(code, label), valid_from, record
+                    make_assertion(
+                        self,
+                        record,
+                        legal_act,
+                        "APPLIES_TO",
+                        _topic(code, label),
+                        valid_from=valid_from,
                     )
                 )
 
@@ -388,34 +395,3 @@ def _text(element: etree._Element, tag: str) -> str | None:
         return None
     stripped = str(raw).strip()
     return stripped or None
-
-
-def _assertion(
-    adapter: GesetzeImInternetAdapter,
-    relation: str,
-    subject: EntityEndpoint,
-    object_: EntityEndpoint,
-    valid_from: datetime,
-    record: RawRecord,
-) -> Assertion:
-    """One assertion with a deterministic id and uniform provenance. No end
-    date exists in the source, so `valid_to` is never set."""
-    return Assertion(
-        assertion_id=deterministic_assertion_id(
-            adapter.source_id,
-            relation,
-            subject.entity_id,
-            object_.entity_id,
-            valid_from,
-        ),
-        subject=subject,
-        relation=relation,
-        object=object_,
-        validity=Validity(valid_from=valid_from, recorded_at=record.fetched_at),
-        provenance=Provenance(
-            source_id=adapter.source_id,
-            source_trust=adapter.trust_rank,
-            confidence=1.0,
-            ontology_version=ONTOLOGY_VERSION,
-        ),
-    )

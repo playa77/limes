@@ -59,11 +59,10 @@ import structlog
 from limes.errors import SourceParseError
 from limes.pipeline.normalize import detect_language
 from limes.sources.base import (
-    ONTOLOGY_VERSION,
-    deterministic_assertion_id,
     fetch_bytes,
     hash_entity_id,
     key_entity_id,
+    make_assertion,
     now_utc,
     payload_hash,
 )
@@ -72,9 +71,7 @@ from limes.types import (
     DocumentPayload,
     EntityEndpoint,
     NormalizedRecord,
-    Provenance,
     RawRecord,
-    Validity,
 )
 
 logger = structlog.get_logger(__name__)
@@ -249,14 +246,28 @@ class GdeltAdapter:
             actor2 = _actor(row, "2")
             if actor1 is not None:
                 assertions.append(
-                    _actor_assertion(self, record, actor1, event, "ACTOR_IN", occurred_at)
+                    make_assertion(
+                        self,
+                        record,
+                        actor1,
+                        "ACTOR_IN",
+                        event,
+                        valid_from=occurred_at,
+                    )
                 )
                 counts["actor_in"] += 1
             else:
                 counts["untyped_actor_skipped"] += 1
             if actor2 is not None:
                 assertions.append(
-                    _actor_assertion(self, record, actor2, event, "TARGET_OF", occurred_at)
+                    make_assertion(
+                        self,
+                        record,
+                        actor2,
+                        "TARGET_OF",
+                        event,
+                        valid_from=occurred_at,
+                    )
                 )
                 counts["target_of"] += 1
             else:
@@ -265,7 +276,14 @@ class GdeltAdapter:
             location = _action_location(row)
             if location is not None:
                 assertions.append(
-                    _actor_assertion(self, record, event, location, "OCCURRED_IN", occurred_at)
+                    make_assertion(
+                        self,
+                        record,
+                        event,
+                        "OCCURRED_IN",
+                        location,
+                        valid_from=occurred_at,
+                    )
                 )
                 counts["occurred_in"] += 1
             else:
@@ -431,33 +449,4 @@ def _coordinate_location(lat: float, lon: float, label: str) -> EntityEndpoint:
         type="Location",
         label=label,
         deterministic_key=("coordinate_hash", digest),
-    )
-
-
-def _actor_assertion(
-    adapter: GdeltAdapter,
-    record: RawRecord,
-    subject: EntityEndpoint,
-    object_: EntityEndpoint,
-    relation: str,
-    occurred_at: datetime,
-) -> Assertion:
-    return Assertion(
-        assertion_id=deterministic_assertion_id(
-            adapter.source_id,
-            relation,
-            subject.entity_id,
-            object_.entity_id,
-            occurred_at,
-        ),
-        subject=subject,
-        relation=relation,
-        object=object_,
-        validity=Validity(valid_from=occurred_at, recorded_at=record.fetched_at),
-        provenance=Provenance(
-            source_id=adapter.source_id,
-            source_trust=adapter.trust_rank,
-            confidence=1.0,
-            ontology_version=ONTOLOGY_VERSION,
-        ),
     )

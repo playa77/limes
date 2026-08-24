@@ -55,11 +55,10 @@ import structlog
 
 from limes.errors import SourceParseError
 from limes.sources.base import (
-    ONTOLOGY_VERSION,
-    deterministic_assertion_id,
     fetch_bytes_post,
     hash_entity_id,
     key_entity_id,
+    make_assertion,
     now_utc,
     payload_hash,
 )
@@ -67,9 +66,7 @@ from limes.types import (
     Assertion,
     EntityEndpoint,
     NormalizedRecord,
-    Provenance,
     RawRecord,
-    Validity,
 )
 
 logger = structlog.get_logger(__name__)
@@ -212,7 +209,9 @@ class OsmAdapter:
                     seen.add(location.entity_id)
             operator = tags.get("operator")
             if operator:
-                assertions.append(self._assertion(record, _operator(operator), "OPERATES", asset))
+                assertions.append(
+                    make_assertion(self, record, _operator(operator), "OPERATES", asset)
+                )
             country = tags.get("addr:country")
             postcode = tags.get("addr:postcode")
             if country and postcode:
@@ -226,7 +225,7 @@ class OsmAdapter:
                         label=nuts,
                         deterministic_key=("nuts_code", nuts),
                     )
-                    assertions.append(self._assertion(record, asset, "LOCATED_IN", region))
+                    assertions.append(make_assertion(self, record, asset, "LOCATED_IN", region))
         if missing_regions:
             logger.info(
                 "gisco correspondence missing for N addresses; region unassigned",
@@ -250,33 +249,6 @@ class OsmAdapter:
             kind="structured",
             assertions=assertions,
             entities=standalone,
-        )
-
-    def _assertion(
-        self,
-        record: RawRecord,
-        subject: EntityEndpoint,
-        relation: str,
-        object_: EntityEndpoint,
-    ) -> Assertion:
-        return Assertion(
-            assertion_id=deterministic_assertion_id(
-                self.source_id,
-                relation,
-                subject.entity_id,
-                object_.entity_id,
-                record.fetched_at,
-            ),
-            subject=subject,
-            relation=relation,
-            object=object_,
-            validity=Validity(valid_from=record.fetched_at, recorded_at=record.fetched_at),
-            provenance=Provenance(
-                source_id=self.source_id,
-                source_trust=self.trust_rank,
-                confidence=1.0,
-                ontology_version=ONTOLOGY_VERSION,
-            ),
         )
 
 

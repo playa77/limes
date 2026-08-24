@@ -43,7 +43,14 @@ from tenacity import (
 )
 
 from limes.errors import SourceFetchError
-from limes.types import NormalizedRecord, RawRecord
+from limes.types import (
+    Assertion,
+    EntityEndpoint,
+    NormalizedRecord,
+    Provenance,
+    RawRecord,
+    Validity,
+)
 
 logger = structlog.get_logger(__name__)
 
@@ -152,6 +159,63 @@ def payload_hash(payload: bytes) -> str:
     so `NormalizedRecord.content_hash` filled here matches the archive hash
     `execute_run` re-stamps from `ArchiveStore.put` (§15.2)."""
     return hashlib.sha256(payload).hexdigest()
+
+
+def make_assertion(
+    adapter: SourceAdapter,
+    record: RawRecord,
+    subject: EntityEndpoint,
+    relation: str,
+    object_: EntityEndpoint,
+    *,
+    valid_from: datetime | None = None,
+    valid_to: datetime | None = None,
+    recorded_at: datetime | None = None,
+) -> Assertion:
+    """The one assertion constructor for the source layer.
+
+    Every adapter previously carried its own `_assertion`/`_provenance` pair
+    that assembled the same five-part shape; twelve near-copies drifted in
+    parameter order and none in semantics. This function is the single place
+    that decides what an adapter-emitted assertion looks like: deterministic
+    id over the assertion's meaning, `recorded_at` from the record's fetch
+    instant, provenance stamped with the adapter's identity and trust rank and
+    the shared `ONTOLOGY_VERSION`.
+
+    Defaults follow the two patterns adapters actually use: an assertion
+    without a source-stated start date is valid from its fetch instant
+    (`valid_from=None`), and `recorded_at` is the fetch instant — except for
+    sources that publish their own vintage, which pass their dataset
+    publication date explicitly (`offeneregister`; the recorded_at-honesty
+    rule). `valid_to` stays `None` unless the source states an end date; a
+    `valid_to` on a non-temporal relation is rejected downstream by the
+    ontology validator.
+    """
+    effective_valid_from = valid_from if valid_from is not None else record.fetched_at
+    return Assertion(
+        assertion_id=deterministic_assertion_id(
+            adapter.source_id,
+            relation,
+            subject.entity_id,
+            object_.entity_id,
+            effective_valid_from,
+            valid_to,
+        ),
+        subject=subject,
+        relation=relation,
+        object=object_,
+        validity=Validity(
+            valid_from=effective_valid_from,
+            valid_to=valid_to,
+            recorded_at=recorded_at if recorded_at is not None else record.fetched_at,
+        ),
+        provenance=Provenance(
+            source_id=adapter.source_id,
+            source_trust=adapter.trust_rank,
+            confidence=1.0,
+            ontology_version=ONTOLOGY_VERSION,
+        ),
+    )
 
 
 class _RetryableFetch(Exception):

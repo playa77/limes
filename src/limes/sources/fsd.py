@@ -59,11 +59,10 @@ from lxml import etree  # type: ignore[import-untyped]
 
 from limes.errors import SourceParseError
 from limes.sources.base import (
-    ONTOLOGY_VERSION,
-    deterministic_assertion_id,
     fetch_bytes,
     hash_entity_id,
     key_entity_id,
+    make_assertion,
     now_utc,
     payload_hash,
 )
@@ -71,9 +70,7 @@ from limes.types import (
     Assertion,
     EntityEndpoint,
     NormalizedRecord,
-    Provenance,
     RawRecord,
-    Validity,
 )
 
 logger = structlog.get_logger(__name__)
@@ -222,27 +219,7 @@ def _normalize_sanction(
         label=subject_name,
     )
 
-    # No per-sanction date exists in the consolidated list; validity starts
-    # at the fetch instant (see module docstring).
-    validity = Validity(valid_from=record.fetched_at, recorded_at=record.fetched_at)
-    provenance = _provenance(adapter)
-
-    assertions = [
-        Assertion(
-            assertion_id=deterministic_assertion_id(
-                adapter.source_id,
-                "TARGETS",
-                sanction.entity_id,
-                target.entity_id,
-                record.fetched_at,
-            ),
-            subject=sanction,
-            relation="TARGETS",
-            object=target,
-            validity=validity,
-            provenance=provenance,
-        )
-    ]
+    assertions = [make_assertion(adapter, record, sanction, "TARGETS", target)]
 
     if regime in _IMPOSING_IGO_BY_REGIME:
         qid, label = _IMPOSING_IGO_BY_REGIME[regime]
@@ -253,22 +230,7 @@ def _normalize_sanction(
             label=label,
             deterministic_key=igo_key,
         )
-        assertions.append(
-            Assertion(
-                assertion_id=deterministic_assertion_id(
-                    adapter.source_id,
-                    "IMPOSED_BY",
-                    sanction.entity_id,
-                    authority.entity_id,
-                    record.fetched_at,
-                ),
-                subject=sanction,
-                relation="IMPOSED_BY",
-                object=authority,
-                validity=validity,
-                provenance=provenance,
-            )
-        )
+        assertions.append(make_assertion(adapter, record, sanction, "IMPOSED_BY", authority))
     else:
         counts["skipped_regime"] += 1
         logger.warning(
@@ -294,24 +256,7 @@ def _normalize_sanction(
             label=citation,
             deterministic_key=act_key,
         )
-        assertions.append(
-            Assertion(
-                assertion_id=deterministic_assertion_id(
-                    adapter.source_id,
-                    "ESTABLISHED_BY",
-                    sanction.entity_id,
-                    legal_act.entity_id,
-                    record.fetched_at,
-                ),
-                subject=sanction,
-                relation="ESTABLISHED_BY",
-                object=legal_act,
-                # Non-temporal relation: valid_to stays None, or the
-                # ontology validator rejects the assertion.
-                validity=validity,
-                provenance=provenance,
-            )
-        )
+        assertions.append(make_assertion(adapter, record, sanction, "ESTABLISHED_BY", legal_act))
 
     return assertions
 
@@ -355,12 +300,3 @@ def _first_legal_act(sanction: etree._Element) -> str | None:
         if stripped:
             return stripped
     return None
-
-
-def _provenance(adapter: FsdAdapter) -> Provenance:
-    return Provenance(
-        source_id=adapter.source_id,
-        source_trust=adapter.trust_rank,
-        confidence=1.0,
-        ontology_version=ONTOLOGY_VERSION,
-    )

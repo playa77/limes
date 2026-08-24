@@ -59,10 +59,9 @@ import structlog
 
 from limes.errors import SourceParseError
 from limes.sources.base import (
-    ONTOLOGY_VERSION,
-    deterministic_assertion_id,
     fetch_bytes,
     key_entity_id,
+    make_assertion,
     now_utc,
     payload_hash,
 )
@@ -70,9 +69,7 @@ from limes.types import (
     Assertion,
     EntityEndpoint,
     NormalizedRecord,
-    Provenance,
     RawRecord,
-    Validity,
 )
 
 logger = structlog.get_logger(__name__)
@@ -180,8 +177,13 @@ class GleifAdapter:
                 continue
             location = _address_location(country, postal, city)
             assertions.append(
-                _assertion(
-                    self, record, corporation, "HEADQUARTERED_IN", location, record.fetched_at
+                make_assertion(
+                    self,
+                    record,
+                    corporation,
+                    "HEADQUARTERED_IN",
+                    location,
+                    valid_from=record.fetched_at,
                 )
             )
             if postal_lookup is None:
@@ -198,7 +200,9 @@ class GleifAdapter:
                 deterministic_key=("nuts_code", nuts),
             )
             assertions.append(
-                _assertion(self, record, location, "LOCATED_IN", region, record.fetched_at)
+                make_assertion(
+                    self, record, location, "LOCATED_IN", region, valid_from=record.fetched_at
+                )
             )
         if missing_regions:
             logger.info(
@@ -267,7 +271,14 @@ class GleifAdapter:
             subsidiary_corp = _corporation(start_lei, start_lei)
             parent_corp = _corporation(end_lei, end_lei)
             assertions.append(
-                _assertion(self, record, subsidiary_corp, "SUBSIDIARY_OF", parent_corp, valid_from)
+                make_assertion(
+                    self,
+                    record,
+                    subsidiary_corp,
+                    "SUBSIDIARY_OF",
+                    parent_corp,
+                    valid_from=valid_from,
+                )
             )
             subsidiary += 1
             raw_pct = (row.get("Relationship.Ownership.DirectPercentage") or "").strip()
@@ -284,13 +295,13 @@ class GleifAdapter:
                 else:
                     if pct > 0:
                         assertions.append(
-                            _assertion(
+                            make_assertion(
                                 self,
                                 record,
                                 parent_corp,
                                 "OWNS_STAKE_IN",
                                 subsidiary_corp,
-                                valid_from,
+                                valid_from=valid_from,
                             )
                         )
                         ownership += 1
@@ -372,37 +383,4 @@ def _address_location(country: str, postal: str, city: str) -> EntityEndpoint:
         type="Location",
         label=city or f"Address in {country}",
         deterministic_key=("coordinate_hash", addr_hash),
-    )
-
-
-def _assertion(
-    adapter: GleifAdapter,
-    record: RawRecord,
-    subject: EntityEndpoint,
-    relation: str,
-    object_: EntityEndpoint,
-    valid_from: datetime,
-) -> Assertion:
-    return Assertion(
-        assertion_id=deterministic_assertion_id(
-            adapter.source_id,
-            relation,
-            subject.entity_id,
-            object_.entity_id,
-            valid_from,
-        ),
-        subject=subject,
-        relation=relation,
-        object=object_,
-        validity=Validity(valid_from=valid_from, recorded_at=record.fetched_at),
-        provenance=_provenance(adapter, record),
-    )
-
-
-def _provenance(adapter: GleifAdapter, record: RawRecord) -> Provenance:
-    return Provenance(
-        source_id=adapter.source_id,
-        source_trust=adapter.trust_rank,
-        confidence=1.0,
-        ontology_version=ONTOLOGY_VERSION,
     )
