@@ -60,6 +60,7 @@ from limes.sources.base import (
     make_assertion,
     now_utc,
     payload_hash,
+    topic_endpoint,
 )
 from limes.types import (
     Assertion,
@@ -232,7 +233,7 @@ class GesetzeImInternetAdapter:
                         record,
                         legal_act,
                         "ABOUT_TOPIC",
-                        _topic(code, label),
+                        topic_endpoint("Sachgebiet", code, label=label),
                         valid_from=valid_from,
                     )
                 )
@@ -253,7 +254,7 @@ class GesetzeImInternetAdapter:
                         record,
                         legal_act,
                         "APPLIES_TO",
-                        _topic(code, label),
+                        topic_endpoint("Sachgebiet", code, label=label),
                         valid_from=valid_from,
                     )
                 )
@@ -368,19 +369,6 @@ def _code_and_label(container: etree._Element) -> tuple[str | None, str | None]:
     if label is None:
         label = code
     return code, label
-
-
-def _topic(code: str, label: str | None) -> EntityEndpoint:
-    """A Topic endpoint under the shared multi-key identity convention: the
-    vocabulary rides in the entity_id while the deterministic key is the
-    code alone (the loader stamps one key property). The vocabulary is the
-    source's own Sachgebiet system, not EuroVoc — see the module docstring."""
-    return EntityEndpoint(
-        entity_id=f"topic:Sachgebiet:{code}",
-        type="Topic",
-        label=label or code,
-        deterministic_key=("code", code),
-    )
 
 
 def _text(element: etree._Element, tag: str) -> str | None:

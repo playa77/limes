@@ -8,6 +8,17 @@ gold set, prompts) are recorded in their own changelogs.
 
 ## 2026-08-23 — Refactor — architecture consolidation (operator-instructed)
 
+- **S3 — Shared identity constructors for the source layer
+  (metric M2b).** `topic_endpoint()`, `address_location()`,
+  `coordinate_location()` added to `sources/base.py`; the byte-identical
+  address-hash pair (GLEIF/TED), coordinate-digest pair (GDELT/OSM), and
+  five topic-endpoint builders (TED/EUR-Lex/Gesetze/OSM/
+  transparency-register) now call them. Digest inputs unchanged to the
+  byte, so entity_ids — and therefore loader merges — are unchanged;
+  the adapter suites pin exact ids and act as the guard. The TED buyer
+  digest stays local deliberately: a single-site convention, not a shared
+  family. Verified: unit 696 + integration 163 vs live Neo4j,
+  ruff/mypy clean.
 - **S2 — One canonical assertion constructor for the source layer
   (metric M2a).** `make_assertion()` added to `sources/base.py`; all 11
   source adapters migrated; the 12 local `_assertion`/`_actor_assertion`/

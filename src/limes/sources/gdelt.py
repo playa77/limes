@@ -48,7 +48,6 @@ declared, never assumed).
 from __future__ import annotations
 
 import csv
-import hashlib
 import io
 from collections.abc import Iterator
 from datetime import UTC, datetime, timedelta
@@ -59,6 +58,7 @@ import structlog
 from limes.errors import SourceParseError
 from limes.pipeline.normalize import detect_language
 from limes.sources.base import (
+    coordinate_location,
     fetch_bytes,
     hash_entity_id,
     key_entity_id,
@@ -418,7 +418,7 @@ def _action_location(row: dict[str, str]) -> EntityEndpoint | None:
         lat = _parse_float(row.get("ActionGeo_Lat"))
         lon = _parse_float(row.get("ActionGeo_Long"))
         if lat is not None and lon is not None and full_name:
-            return _coordinate_location(lat, lon, full_name)
+            return coordinate_location(lat, lon, label=full_name)
         return None
     return None
 
@@ -437,16 +437,3 @@ def _parse_float(raw: object) -> float | None:
         return float(raw)
     except ValueError:
         return None
-
-
-def _coordinate_location(lat: float, lon: float, label: str) -> EntityEndpoint:
-    """A Location whose identity is the rounded-coordinate digest (D-13), the
-    same convention as the OSM adapter: the hash is identity, never geometry."""
-    coordinate_key = f"{lat:.5f},{lon:.5f}"
-    digest = hashlib.sha256(coordinate_key.encode("utf-8")).hexdigest()
-    return EntityEndpoint(
-        entity_id=key_entity_id(("coordinate_hash", digest)),
-        type="Location",
-        label=label,
-        deterministic_key=("coordinate_hash", digest),
-    )

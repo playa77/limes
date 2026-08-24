@@ -57,6 +57,7 @@ from limes.sources.base import (
     make_assertion,
     now_utc,
     payload_hash,
+    topic_endpoint,
 )
 from limes.types import (
     Assertion,
@@ -274,12 +275,7 @@ def _normalize_organisation(
                 organisation_id=organisation_id,
                 code=code,
             )
-        topic = EntityEndpoint(
-            entity_id=f"topic:{INTEREST_VOCABULARY}:{code}",
-            type="Topic",
-            label=label,
-            deterministic_key=("code", code),
-        )
+        topic = topic_endpoint(INTEREST_VOCABULARY, code, label=label)
         assertions.append(
             make_assertion(
                 adapter,

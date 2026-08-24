@@ -43,6 +43,7 @@ from lxml import etree  # type: ignore[import-untyped]
 
 from limes.errors import SourceParseError
 from limes.sources.base import (
+    address_location,
     fetch_bytes,
     fetch_bytes_post,
     hash_entity_id,
@@ -50,6 +51,7 @@ from limes.sources.base import (
     make_assertion,
     now_utc,
     payload_hash,
+    topic_endpoint,
 )
 from limes.types import (
     Assertion,
@@ -193,7 +195,7 @@ class TedAdapter:
                     record,
                     contract,
                     "ABOUT_TOPIC",
-                    _topic(code),
+                    topic_endpoint("CPV", code),
                     valid_from=pub_date,
                 )
             )
@@ -267,7 +269,7 @@ class TedAdapter:
                         notice_id=notice_id,
                     )
                 else:
-                    location = _address_location(country, postal, town)
+                    location = address_location(country, postal, town)
                     assertions.append(
                         make_assertion(
                             self,
@@ -470,27 +472,3 @@ def _parse_yyyymmdd(raw: str | None) -> datetime | None:
         return datetime.strptime(raw.strip(), "%Y%m%d").replace(tzinfo=UTC)
     except ValueError:
         return None
-
-
-def _topic(code: str) -> EntityEndpoint:
-    """A CPV Topic under the shared multi-key identity convention: the
-    vocabulary rides in the `entity_id`, the code is the deterministic key
-    and the label (the notice carries no topic name)."""
-    return EntityEndpoint(
-        entity_id=f"topic:CPV:{code}",
-        type="Topic",
-        label=code,
-        deterministic_key=("code", code),
-    )
-
-
-def _address_location(country: str, postal: str, town: str) -> EntityEndpoint:
-    """A Location whose identity is the address hash, not coordinates:
-    the hash is identity (stable across runs), never geometry."""
-    addr_hash = hashlib.sha256("|".join([country, postal, town]).encode("utf-8")).hexdigest()
-    return EntityEndpoint(
-        entity_id=key_entity_id(("coordinate_hash", addr_hash)),
-        type="Location",
-        label=town or f"Address in {country}",
-        deterministic_key=("coordinate_hash", addr_hash),
-    )

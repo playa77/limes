@@ -44,7 +44,6 @@ Non-obvious choices, each load-bearing:
 
 from __future__ import annotations
 
-import hashlib
 import json
 import re
 from collections.abc import Callable, Iterator
@@ -55,12 +54,14 @@ import structlog
 
 from limes.errors import SourceParseError
 from limes.sources.base import (
+    coordinate_location,
     fetch_bytes_post,
     hash_entity_id,
     key_entity_id,
     make_assertion,
     now_utc,
     payload_hash,
+    topic_endpoint,
 )
 from limes.types import (
     Assertion,
@@ -192,7 +193,7 @@ class OsmAdapter:
                 label=tags.get("name") or f"OSM {element.get('type', '')} {element_id}",
                 deterministic_key=("osm_id", element_id),
             )
-            topic = _topic(sector)
+            topic = topic_endpoint("KRITIS", sector.lower(), label=sector)
             if topic.entity_id not in seen:
                 standalone.append(topic)
                 seen.add(topic.entity_id)
@@ -203,7 +204,8 @@ class OsmAdapter:
                     "osm: element without coordinates; location skipped", element_id=element_id
                 )
             else:
-                location = _location(coords)
+                lat, lon = coords
+                location = coordinate_location(lat, lon)
                 if location.entity_id not in seen:
                     standalone.append(location)
                     seen.add(location.entity_id)
@@ -313,27 +315,6 @@ def _coordinates(element: dict[str, object]) -> tuple[float, float] | None:
     return None
 
 
-def _numeric(value: object) -> float | None:
-    """A JSON number, never a boolean (a subclass of int in Python)."""
-    if isinstance(value, bool):
-        return None
-    if isinstance(value, (int, float)):
-        return float(value)
-    return None
-
-
-def _topic(sector: str) -> EntityEndpoint:
-    """The KRITIS sector as a Topic under the shared multi-key identity
-    convention: the vocabulary rides in the `entity_id`, the code is the
-    deterministic key, the sector name is the label."""
-    return EntityEndpoint(
-        entity_id=f"topic:KRITIS:{sector.lower()}",
-        type="Topic",
-        label=sector,
-        deterministic_key=("code", sector.lower()),
-    )
-
-
 def _operator(name: str) -> EntityEndpoint:
     """A Corporation whose identity is the operator name digest: OSM assigns
     no operator identifier, and the name is the only stable fact the tag
@@ -345,15 +326,10 @@ def _operator(name: str) -> EntityEndpoint:
     )
 
 
-def _location(coords: tuple[float, float]) -> EntityEndpoint:
-    """A Location whose identity is the rounded-coordinate digest: the hash
-    is identity, stable across runs, never geometry."""
-    lat, lon = coords
-    coordinate_key = f"{lat:.5f},{lon:.5f}"
-    digest = hashlib.sha256(coordinate_key.encode("utf-8")).hexdigest()
-    return EntityEndpoint(
-        entity_id=key_entity_id(("coordinate_hash", digest)),
-        type="Location",
-        label=f"{lat:.5f}, {lon:.5f}",
-        deterministic_key=("coordinate_hash", digest),
-    )
+def _numeric(value: object) -> float | None:
+    """A JSON number, never a boolean (a subclass of int in Python)."""
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, (int, float)):
+        return float(value)
+    return None

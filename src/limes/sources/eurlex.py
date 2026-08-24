@@ -51,6 +51,7 @@ from limes.sources.base import (
     make_assertion,
     now_utc,
     payload_hash,
+    topic_endpoint,
 )
 from limes.types import (
     Assertion,
@@ -258,7 +259,7 @@ class EurlexAdapter:
                     record,
                     legal_act,
                     "ABOUT_TOPIC",
-                    _topic(topic_voc, topic_code),
+                    topic_endpoint(topic_voc, topic_code),
                     valid_from=valid_from,
                 )
             )
@@ -278,7 +279,7 @@ class EurlexAdapter:
                     record,
                     legal_act,
                     "APPLIES_TO",
-                    _topic(applies_voc, applies_code),
+                    topic_endpoint(applies_voc, applies_code),
                     valid_from=valid_from,
                 )
             )
@@ -322,22 +323,6 @@ def _binding_values(binding: Any) -> list[str]:
         return [v for v in (_binding_value(b) for b in binding) if v is not None]
     value = _binding_value(binding)
     return [value] if value is not None else []
-
-
-def _topic(vocabulary: str, code: str) -> EntityEndpoint:
-    """A Topic endpoint under the shared multi-key identity convention.
-
-    The ontology declares `[vocabulary, code]` as identifying keys, but the
-    loader stamps one key property; the vocabulary therefore rides in the
-    `entity_id` while the deterministic key is the code alone. The SPARQL row
-    carries no topic label, so the code stands in as label.
-    """
-    return EntityEndpoint(
-        entity_id=f"topic:{vocabulary}:{code}",
-        type="Topic",
-        label=code,
-        deterministic_key=("code", code),
-    )
 
 
 def _valid_from(date_value: str | None, record: RawRecord, skipped: Counter[str]) -> datetime:

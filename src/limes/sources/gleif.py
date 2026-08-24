@@ -47,7 +47,6 @@ Non-obvious choices, each load-bearing:
 from __future__ import annotations
 
 import csv
-import hashlib
 import io
 import re
 import zipfile
@@ -59,6 +58,7 @@ import structlog
 
 from limes.errors import SourceParseError
 from limes.sources.base import (
+    address_location,
     fetch_bytes,
     key_entity_id,
     make_assertion,
@@ -175,7 +175,7 @@ class GleifAdapter:
                 no_hq += 1
                 entities.append(corporation)
                 continue
-            location = _address_location(country, postal, city)
+            location = address_location(country, postal, city)
             assertions.append(
                 make_assertion(
                     self,
@@ -371,16 +371,4 @@ def _corporation(lei: str, label: str) -> EntityEndpoint:
         type="Corporation",
         label=label,
         deterministic_key=("lei", lei),
-    )
-
-
-def _address_location(country: str, postal: str, city: str) -> EntityEndpoint:
-    """A Location whose identity is the address hash, not coordinates (see
-    module docstring): the hash is identity, never location."""
-    addr_hash = hashlib.sha256("|".join([country, postal, city]).encode("utf-8")).hexdigest()
-    return EntityEndpoint(
-        entity_id=key_entity_id(("coordinate_hash", addr_hash)),
-        type="Location",
-        label=city or f"Address in {country}",
-        deterministic_key=("coordinate_hash", addr_hash),
     )

@@ -124,6 +124,59 @@ def hash_entity_id(namespace: str, *parts: str) -> str:
     return f"{namespace}:{digest}"
 
 
+def topic_endpoint(vocabulary: str, code: str, *, label: str | None = None) -> EntityEndpoint:
+    """A Topic under the shared multi-key identity convention.
+
+    The ontology declares `[vocabulary, code]` as a Topic's identifying keys,
+    but the loader stamps one key property; the vocabulary therefore rides in
+    the `entity_id` while the deterministic key is the code alone. Every
+    adapter that emits topics (TED/CPV, EUR-Lex/EuroVoc, Gesetze im Internet/
+    Sachgebiet, OSM/KRITIS) must use this constructor — two vocabularies or
+    two code spellings for the same topic would fork the node.
+    """
+    return EntityEndpoint(
+        entity_id=f"topic:{vocabulary}:{code}",
+        type="Topic",
+        label=label if label is not None else code,
+        deterministic_key=("code", code),
+    )
+
+
+def address_location(country: str, postal: str, city: str) -> EntityEndpoint:
+    """A Location whose identity is the address hash, not coordinates.
+
+    Shared by GLEIF and TED: the digest over `country|postal|city` is the
+    node's identity — stable across runs and across the two sources — never
+    geometry (neither source geocodes here). The key name stays
+    `coordinate_hash` for identity compatibility with the nodes already
+    written under it.
+    """
+    addr_hash = hashlib.sha256("|".join([country, postal, city]).encode("utf-8")).hexdigest()
+    return EntityEndpoint(
+        entity_id=key_entity_id(("coordinate_hash", addr_hash)),
+        type="Location",
+        label=city or f"Address in {country}",
+        deterministic_key=("coordinate_hash", addr_hash),
+    )
+
+
+def coordinate_location(lat: float, lon: float, *, label: str | None = None) -> EntityEndpoint:
+    """A Location whose identity is the rounded-coordinate digest (D-13).
+
+    Shared by GDELT and OSM: five decimal places (~1 m) rounded before
+    hashing, so re-readings of the same place converge on one node. The hash
+    is identity, never geometry.
+    """
+    coordinate_key = f"{lat:.5f},{lon:.5f}"
+    digest = hashlib.sha256(coordinate_key.encode("utf-8")).hexdigest()
+    return EntityEndpoint(
+        entity_id=key_entity_id(("coordinate_hash", digest)),
+        type="Location",
+        label=label if label is not None else f"{lat:.5f}, {lon:.5f}",
+        deterministic_key=("coordinate_hash", digest),
+    )
+
+
 def deterministic_assertion_id(
     source_id: str,
     relation: str,
