@@ -43,22 +43,21 @@ from lxml import etree  # type: ignore[import-untyped]
 
 from limes.errors import SourceParseError
 from limes.sources.base import (
-    ONTOLOGY_VERSION,
-    deterministic_assertion_id,
+    address_location,
     fetch_bytes,
     fetch_bytes_post,
     hash_entity_id,
     key_entity_id,
+    make_assertion,
     now_utc,
     payload_hash,
+    topic_endpoint,
 )
 from limes.types import (
     Assertion,
     EntityEndpoint,
     NormalizedRecord,
-    Provenance,
     RawRecord,
-    Validity,
 )
 
 logger = structlog.get_logger(__name__)
@@ -191,7 +190,14 @@ class TedAdapter:
                 continue
             counts["cpv_codes"] += 1
             assertions.append(
-                _assertion(self, "ABOUT_TOPIC", contract, _topic(code), pub_date, record)
+                make_assertion(
+                    self,
+                    record,
+                    contract,
+                    "ABOUT_TOPIC",
+                    topic_endpoint("CPV", code),
+                    valid_from=pub_date,
+                )
             )
 
         award_date = _award_date(root, pub_date, counts, notice_id)
@@ -223,7 +229,14 @@ class TedAdapter:
                         label=name,
                     )
                 assertions.append(
-                    _assertion(self, "AWARDED_TO", contract, corporation, award_date, record)
+                    make_assertion(
+                        self,
+                        record,
+                        contract,
+                        "AWARDED_TO",
+                        corporation,
+                        valid_from=award_date,
+                    )
                 )
 
         buyer, buyer_address = _buyer(root)
@@ -240,7 +253,9 @@ class TedAdapter:
                     notice_id=notice_id,
                 )
         else:
-            assertions.append(_assertion(self, "BUYER_OF", buyer, contract, pub_date, record))
+            assertions.append(
+                make_assertion(self, record, buyer, "BUYER_OF", contract, valid_from=pub_date)
+            )
             if buyer_address is None:
                 counts["no_buyer_address"] += 1
             else:
@@ -254,9 +269,16 @@ class TedAdapter:
                         notice_id=notice_id,
                     )
                 else:
-                    location = _address_location(country, postal, town)
+                    location = address_location(country, postal, town)
                     assertions.append(
-                        _assertion(self, "HEADQUARTERED_IN", buyer, location, pub_date, record)
+                        make_assertion(
+                            self,
+                            record,
+                            buyer,
+                            "HEADQUARTERED_IN",
+                            location,
+                            valid_from=pub_date,
+                        )
                     )
                     nuts = _first_value_code(buyer_address, "BUYER_NUTS")
                     if nuts is None and postal_lookup is not None:
@@ -271,7 +293,14 @@ class TedAdapter:
                             deterministic_key=("nuts_code", nuts),
                         )
                         assertions.append(
-                            _assertion(self, "LOCATED_IN", location, region, pub_date, record)
+                            make_assertion(
+                                self,
+                                record,
+                                location,
+                                "LOCATED_IN",
+                                region,
+                                valid_from=pub_date,
+                            )
                         )
 
         if counts["missing_regions"]:
@@ -443,59 +472,3 @@ def _parse_yyyymmdd(raw: str | None) -> datetime | None:
         return datetime.strptime(raw.strip(), "%Y%m%d").replace(tzinfo=UTC)
     except ValueError:
         return None
-
-
-def _topic(code: str) -> EntityEndpoint:
-    """A CPV Topic under the shared multi-key identity convention: the
-    vocabulary rides in the `entity_id`, the code is the deterministic key
-    and the label (the notice carries no topic name)."""
-    return EntityEndpoint(
-        entity_id=f"topic:CPV:{code}",
-        type="Topic",
-        label=code,
-        deterministic_key=("code", code),
-    )
-
-
-def _address_location(country: str, postal: str, town: str) -> EntityEndpoint:
-    """A Location whose identity is the address hash, not coordinates:
-    the hash is identity (stable across runs), never geometry."""
-    addr_hash = hashlib.sha256("|".join([country, postal, town]).encode("utf-8")).hexdigest()
-    return EntityEndpoint(
-        entity_id=key_entity_id(("coordinate_hash", addr_hash)),
-        type="Location",
-        label=town or f"Address in {country}",
-        deterministic_key=("coordinate_hash", addr_hash),
-    )
-
-
-def _assertion(
-    adapter: TedAdapter,
-    relation: str,
-    subject: EntityEndpoint,
-    object_: EntityEndpoint,
-    valid_from: datetime,
-    record: RawRecord,
-) -> Assertion:
-    """One assertion with deterministic id and uniform provenance. The
-    ontology's temporal relations never carry `valid_to` here because no
-    end date exists in the source."""
-    return Assertion(
-        assertion_id=deterministic_assertion_id(
-            adapter.source_id,
-            relation,
-            subject.entity_id,
-            object_.entity_id,
-            valid_from,
-        ),
-        subject=subject,
-        relation=relation,
-        object=object_,
-        validity=Validity(valid_from=valid_from, recorded_at=record.fetched_at),
-        provenance=Provenance(
-            source_id=adapter.source_id,
-            source_trust=adapter.trust_rank,
-            confidence=1.0,
-            ontology_version=ONTOLOGY_VERSION,
-        ),
-    )

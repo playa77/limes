@@ -45,7 +45,7 @@ from jsonschema import Draft202012Validator  # type: ignore[import-untyped]
 
 from limes.config import Settings
 from limes.errors import ConfigurationError, ExtractionError
-from limes.extraction.base import Extractor
+from limes.extraction.base import Extractor, strip_model_fence
 from limes.graph.driver import GraphDriver
 from limes.logging_setup import configure_logging
 from limes.ontology.model import Ontology
@@ -64,6 +64,7 @@ REGRESSION_THRESHOLD = 0.05
 # Token basis for the re-extraction cost estimate (Doc 1 §9.3 measurement:
 # one passage-level call runs ~1200 input and ~350 output tokens).
 TOKENS_PER_DOCUMENT = 1200 + 350
+
 
 _GOLD_SET_ITEM_MERGE = """
 MERGE (g:GoldSetItem {item_id: $item_id})
@@ -489,7 +490,7 @@ def nl2cypher_evaluation(
                 error=str(exc),
             )
             continue
-        cypher = _strip_code_fence(raw)
+        cypher = strip_model_fence(raw, tag="cypher")
         problems = structural_problems(cypher, ctx.ontology)
         if not problems:
             passed += 1
@@ -540,12 +541,6 @@ def _token_agreement(a: str, b: str) -> float:
     if not union:
         return 1.0
     return len(tokens_a & tokens_b) / len(union)
-
-
-def _strip_code_fence(raw: str) -> str:
-    """Strip a markdown code fence if the model wrapped the Cypher in one."""
-    match = re.match(r"^```(?:cypher)?\s*(.*?)\s*```$", raw.strip(), re.S)
-    return match.group(1) if match else raw.strip()
 
 
 # --------------------------------------------------------------------------

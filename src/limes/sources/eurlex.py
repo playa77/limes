@@ -46,20 +46,18 @@ import structlog
 
 from limes.errors import SourceParseError
 from limes.sources.base import (
-    ONTOLOGY_VERSION,
-    deterministic_assertion_id,
     fetch_bytes,
     key_entity_id,
+    make_assertion,
     now_utc,
     payload_hash,
+    topic_endpoint,
 )
 from limes.types import (
     Assertion,
     EntityEndpoint,
     NormalizedRecord,
-    Provenance,
     RawRecord,
-    Validity,
 )
 
 logger = structlog.get_logger(__name__)
@@ -228,7 +226,9 @@ class EurlexAdapter:
                 label=author,
                 deterministic_key=("wikidata_qid", AUTHOR_QIDS[author]),
             )
-            assertions.append(_assertion(self, "ADOPTED", body, legal_act, valid_from, record))
+            assertions.append(
+                make_assertion(self, record, body, "ADOPTED", legal_act, valid_from=valid_from)
+            )
 
         # One row may carry several citation targets when the result groups
         # them; `_binding_values` tolerates both a single and a list binding.
@@ -245,20 +245,22 @@ class EurlexAdapter:
                     deterministic_key=("celex", target),
                 )
                 assertions.append(
-                    _assertion(self, relation, legal_act, target_act, valid_from, record)
+                    make_assertion(
+                        self, record, legal_act, relation, target_act, valid_from=valid_from
+                    )
                 )
 
         topic_code = _binding_value(row.get("topic_code"))
         topic_voc = _binding_value(row.get("topic_voc"))
         if topic_code is not None and topic_voc is not None:
             assertions.append(
-                _assertion(
+                make_assertion(
                     self,
-                    "ABOUT_TOPIC",
-                    legal_act,
-                    _topic(topic_voc, topic_code),
-                    valid_from,
                     record,
+                    legal_act,
+                    "ABOUT_TOPIC",
+                    topic_endpoint(topic_voc, topic_code),
+                    valid_from=valid_from,
                 )
             )
         elif topic_code is not None or topic_voc is not None:
@@ -272,13 +274,13 @@ class EurlexAdapter:
         applies_code = _binding_value(row.get("applies_to_code"))
         if applies_voc is not None and applies_code is not None:
             assertions.append(
-                _assertion(
+                make_assertion(
                     self,
-                    "APPLIES_TO",
-                    legal_act,
-                    _topic(applies_voc, applies_code),
-                    valid_from,
                     record,
+                    legal_act,
+                    "APPLIES_TO",
+                    topic_endpoint(applies_voc, applies_code),
+                    valid_from=valid_from,
                 )
             )
         elif applies_voc is not None or applies_code is not None:
@@ -323,22 +325,6 @@ def _binding_values(binding: Any) -> list[str]:
     return [value] if value is not None else []
 
 
-def _topic(vocabulary: str, code: str) -> EntityEndpoint:
-    """A Topic endpoint under the shared multi-key identity convention.
-
-    The ontology declares `[vocabulary, code]` as identifying keys, but the
-    loader stamps one key property; the vocabulary therefore rides in the
-    `entity_id` while the deterministic key is the code alone. The SPARQL row
-    carries no topic label, so the code stands in as label.
-    """
-    return EntityEndpoint(
-        entity_id=f"topic:{vocabulary}:{code}",
-        type="Topic",
-        label=code,
-        deterministic_key=("code", code),
-    )
-
-
 def _valid_from(date_value: str | None, record: RawRecord, skipped: Counter[str]) -> datetime:
     """The row's adoption date as an aware UTC instant, or the fetch instant
     when no date is available — never `datetime.now()` (the recorded_at
@@ -362,39 +348,3 @@ def _valid_from(date_value: str | None, record: RawRecord, skipped: Counter[str]
     if parsed.tzinfo is None:
         parsed = parsed.replace(tzinfo=UTC)
     return parsed.astimezone(UTC)
-
-
-def _assertion(
-    adapter: EurlexAdapter,
-    relation: str,
-    subject: EntityEndpoint,
-    object_: EntityEndpoint,
-    valid_from: datetime,
-    record: RawRecord,
-) -> Assertion:
-    """One assertion with deterministic id and uniform provenance.
-
-    `valid_to` is always None here: the non-temporal relations (AMENDS,
-    REPEALS, CITES) must not carry one, and for the temporal relations no end
-    date exists in the source. The validator rejects a `valid_to` on
-    non-temporal relations, so none is ever constructed.
-    """
-    return Assertion(
-        assertion_id=deterministic_assertion_id(
-            adapter.source_id,
-            relation,
-            subject.entity_id,
-            object_.entity_id,
-            valid_from,
-        ),
-        subject=subject,
-        relation=relation,
-        object=object_,
-        validity=Validity(valid_from=valid_from, recorded_at=record.fetched_at),
-        provenance=Provenance(
-            source_id=adapter.source_id,
-            source_trust=adapter.trust_rank,
-            confidence=1.0,
-            ontology_version=ONTOLOGY_VERSION,
-        ),
-    )

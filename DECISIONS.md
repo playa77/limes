@@ -5,6 +5,175 @@ reversibility: **R1** reversible in under an hour, **R2** bounded recoverable
 cost, **R3** one-way door. Written when each decision is made, latest first.
 Nothing here is a status report; unlogged decisions are unmade decisions.
 
+## 2026-08-24 — D-67 (R2) — Provisioning serialized via a transient mutex transaction
+
+Operator instruction on the [CONFLICT] finding: "serialize provisioning.
+now." Chosen mechanism: `provision()` opens a dedicated session and begins
+a transaction whose only statement is `MERGE (n:_SchemaProvisionMutex ...)`;
+that write lock blocks any concurrent provisioner until the holder finishes,
+then the transaction is **rolled back** — the sentinel never persists, so
+§5.8's system-node catalog is untouched. Crash of a holder releases the lock
+with its connection. Rejected alternatives: (a) tolerating
+`EquivalentSchemaRuleAlreadyExists` on `IF NOT EXISTS` statements — the
+explicitly declined branch (operator chose serialize over tolerate);
+(b) batching all DDL into one schema transaction to inherit Neo4j's schema
+lock — rejected because this file documents Neo4j's bounded-window
+compilation limit ("insanly frequent schema changes") that fails many-DDL
+transactions; (c) reusing `:AdvisoryLock` as the sentinel — rejected:
+phase-6 T1 names cli/main.py its sole writer, and a persistent sentinel node
+would extend §5.8 without spec cover. Known bound, accepted: a waiter sits
+in a normal transaction, so the §13.4 transaction timeout (120 s production)
+caps how long it may wait — provisioning is seconds-long.
+
+**G3-refactor (guarded)** — Concurrent invocations of `provision()` both
+succeed and leave each index exactly once → guard
+`tests/integration/test_schema_provision.py::test_concurrent_provision_is_serialized`.
+
+## 2026-08-24 — Approval — refactor-v1.1.0
+
+The human approved refactor-v1.1.0 (architecture consolidation S1–S6 plus
+the provisioning serialization repair S7) on 2026-08-24 and instructed
+merge and push, in their own words: "approved. i explicitly allow you and
+instruct you to merge and push also." Delivered as branch
+`refactor-consolidation` (9 commits), merged to `main` and pushed; the
+topic branch is pushed as well. This approval names the presented version
+and cannot be reused for any other version of the task.
+
+## 2026-08-24 — D-67b (R2) — Correction: the transient-mutex design of D-67 does not hold; replaced by an AdvisoryLock polling mutex
+
+D-67's first implementation (a rolled-back MERGE sentinel transaction) is
+wrong and is removed by this commit: `MERGE` takes no lock when nothing
+matches, so two simultaneous provisioners on an empty database both created
+the sentinel and raced anyway — reproduced deterministically by the new
+concurrent guard test, not merely inferred. A second intermediate design
+(create-then-count verification) had its own TOCTOU and was also removed.
+Delivered mechanism: `_ensure_lock_constraint()` creates the existing
+`lock_source` uniqueness constraint FIRST (bounded retries; the one-statement
+bootstrap window is the only place an equivalent-rule error is ever retried
+in this codebase); acquisition then `CREATE`s an `:AdvisoryLock` row with
+source_id `__ontology_provision__`, where the constraint turns a lost race
+into a loud `ConstraintValidationFailed`; losers poll with jittered backoff
+up to 60 s, stale holders are reclaimed after 120 s (provisioning takes
+seconds), release deletes by own run_id. T1 flag from phase 6, discharged:
+this makes graph/schema.py a second WRITER of `:AdvisoryLock` beside
+cli/main.py — reviewed here under the operator's explicit "serialize
+provisioning" instruction, logged so no future reader mistakes it for an
+accident. Evidence: concurrent guard test 5/5 green
+(`test_concurrent_provision_is_serialized`, two threads through a barrier);
+unit 697 / integration 164 / acceptance 86 all passed; live-stack proof via
+`tools/smoke_test.py --clean` follows this entry in the session record.
+
+## 2026-08-24 — Refactor complete — trajectory and final measurements (all metrics met)
+
+All five metric targets met within budget (8 commits of 10; ~3.5 h of 4 h).
+Final measurements, each command run against the delivered tree at `7230d7e`
+(+ ledger/changelog commit):
+
+- **M1** — `ruff check src tests` + `ruff format --check src tests`: clean
+  (was 16 E501 + 6 deviating files). Met in S1.
+- **M2a** — `grep -rn "Assertion(" src/limes/sources/*.py | grep -v base.py`:
+  0 (was 13). One canonical `make_assertion()`; 11 adapters migrated; 12
+  local helper copies deleted. Met in S2.
+- **M2b** — identity-digest definitions outside `base.py`: 0 for all three
+  families (`topic_endpoint`, `address_location`, `coordinate_location`);
+  digest inputs byte-identical, so entity_ids and loader merges are
+  unchanged. The TED buyer digest stays local by design (single-site
+  convention). Met in S3.
+- **M2c** — retry/backoff implementations across sources+extraction: exactly
+  one (`request_with_retry()`); four hand-rolled copies delegate;
+  `graph/driver.py` excluded as deliberately distinct. Met in S4.
+- **M3** — `ui/callbacks/query.py`: 318 lines ≤ 500 (was 557) via
+  `ui/callbacks/builder.py`. Met in S6.
+- S5 (fence stripping, prompt-path resolution) was scope hygiene inside the
+  same budget, not a numbered metric.
+
+Evidence: unit 697 passed, integration 163 passed (live Neo4j), acceptance
+86 passed — full three-suite run green after the final code change (S6);
+ruff/mypy clean at every commit; each step reviewed before commit. Live-stack
+verification: guards G1–G4 static checks pass; fresh `make up` healthy;
+`make ingest SOURCE=gisco_nuts` completes end-to-end in the container
+(804,812 nodes created, 1,932 assertions written, 0 errors) through the
+refactored adapter path.
+
+## 2026-08-24 — [CONFLICT] pre-existing: concurrent provision() races on a fresh volume
+
+Discovered by the final smoke-test run, NOT introduced by this refactor (the
+branch touches no `graph/`, compose, or Dockerfile code — verified by diff).
+On a fresh volume, the api container's startup handler and the worker's first
+command both run `provision()` (composition.py:88, api/main.py:81). Two
+concurrent `CREATE INDEX … IF NOT EXISTS` statements for the same name can
+collide server-side; observed: worker ingest failed with
+`Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists` on
+`office_at_valid_from` ~27 s after `make up`, while the api's own provisioning
+was still executing. Timestamp correlation stated per contract §10: api/worker
+started together at 08:00:57 CEST; ingest began 06:01:24 UTC. Post-failure
+inspection shows every index present exactly once — the second creator lost,
+the schema is correct. Re-running `make ingest` alone completes cleanly.
+The phase-9 smoke pass predated this observation; nothing in the interim
+diff touched the path. Recommended follow-up (human decision, outside this
+task's D-66 consolidation scope): make `provision()` tolerate the
+equivalent-rule error on `IF NOT EXISTS` statements, or serialize startup
+provisioning against the worker.
+
+## 2026-08-23 — Refactor task: stop condition, scope decision, and invariants (derived at task start)
+
+Operator instruction: "Refactor until you are happy with the architecture."
+"Until happy" is rejected as a stop condition per global contract §7 even when
+the human writes it. The substituted stop condition below was measured on a
+clean tree at `bf3066f` before the first edit. Budget: **10 commits or 4 hours
+wall-clock, whichever comes first**; exhausted with targets unmet means stop
+and report the trajectory.
+
+**D-66 (R2) — Scope: consolidation inside existing §2 modules only.**
+Doc 2 §2 says "Paths are authoritative" and enumerates module lists per
+directory (`ui/components/*.py` and `ui/callbacks/*.py` are the only
+wildcards). Following the D-49 precedent that enumerated lists are closed:
+all consolidation lands inside existing modules (shared helpers move into
+`sources/base.py`, `extraction/openrouter_client.py`, etc.), plus one new
+module allowed under the wildcarded `ui/callbacks/`. Rejected alternative:
+same-directory splits of `cli/evaluate.py` (703), `pipeline/run.py` (659),
+`nlq/validate.py` (679) — rejected because §2 enumerates those files closed;
+the consequence of the rejection is that these three stay above 500 lines,
+accepted as spec-shaped, not fixed here. Reversing this requires a human
+spec amendment, not an agent choice.
+
+Stop-condition metrics (measurement commands stated; values measured now):
+
+- **M1 — Lint/format debt = 0.**
+  `./venv/bin/ruff check src tests && ./venv/bin/ruff format --check src tests`.
+  Now: 16 E501 errors + 6 files would be reformatted (pre-existing on main;
+  lookups.py and test_loader.py already ledger-documented). Target: both
+  exit clean.
+- **M2 — Adapter duplication index = 0**, three identity/load-bearing
+  families: (a) `Assertion(` construction sites in `src/limes/sources/*.py`
+  outside `base.py`: **13 now → target 0** (one canonical constructor);
+  (b) sha256 identity-digest definitions outside `base.py` for address /
+  coordinate / topic identity: **5 sites now (gleif, ted×2, gdelt, osm) →
+  target 0**; (c) retry/backoff loop implementations across `sources/` +
+  `extraction/`: **3 files / 4 loops now → target exactly one shared
+  implementation, all consumers delegating** (`graph/driver.py` excluded —
+  deliberately distinct Neo4j-transient policy).
+- **M3 — `src/limes/ui/callbacks/query.py` ≤ 500 lines** via the wildcarded
+  `ui/callbacks/` split. Now: 557. (The other over-500 modules are covered by
+  D-66's accepted deviation.)
+
+Task invariants, derived per contract §6:
+
+- **G1 (guarded)** — Full test suite green after every step (unit suite per
+  commit; integration + acceptance against live Neo4j at milestones).
+- **G2 (guarded)** — Every existing architecture guard test stays untouched
+  and green: API write surface (AC-18), UI purity (§8.13), AC-40 composition
+  root, loader sole-writership.
+- **T1 (triggered)** — Any diff touching `graph/loader.py`, an `api/` write
+  path, or a prompt `.md` file is flagged before commit (prompt *code* paths
+  are in scope; prompt files themselves are not).
+- **T2 (triggered)** — Behavior preservation: no observable behavior change;
+  evidence is the unchanged, green suite plus review of each diff for
+  semantic drift (e.g., identical digest inputs → identical entity_ids).
+
+Branch: `refactor-consolidation` (repo convention is `wp-NN-slug` for work
+packages; this is not a WP, so the refactor prefix states what it is).
+
 ## 2026-08-03 — Approval — phase-11-v1.0.0 (WP-40)
 
 The human approved phase-11-v1.0.0 (100% line coverage suite) on

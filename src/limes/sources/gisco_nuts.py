@@ -33,10 +33,9 @@ import structlog
 
 from limes.errors import SourceParseError
 from limes.sources.base import (
-    ONTOLOGY_VERSION,
-    deterministic_assertion_id,
     fetch_bytes,
     key_entity_id,
+    make_assertion,
     now_utc,
     payload_hash,
 )
@@ -45,9 +44,7 @@ from limes.types import (
     EntityEndpoint,
     LookupRow,
     NormalizedRecord,
-    Provenance,
     RawRecord,
-    Validity,
 )
 
 logger = structlog.get_logger(__name__)
@@ -142,23 +139,7 @@ class GiscoNutsAdapter:
                     ("iso2", parent_id) if parent_is_country else ("nuts_code", parent_id)
                 ),
             )
-            validity = Validity(valid_from=record.fetched_at, recorded_at=record.fetched_at)
-            assertions.append(
-                Assertion(
-                    assertion_id=deterministic_assertion_id(
-                        self.source_id,
-                        "PART_OF_REGION",
-                        region.entity_id,
-                        parent.entity_id,
-                        record.fetched_at,
-                    ),
-                    subject=region,
-                    relation="PART_OF_REGION",
-                    object=parent,
-                    validity=validity,
-                    provenance=_provenance(self, record),
-                )
-            )
+            assertions.append(make_assertion(self, record, region, "PART_OF_REGION", parent))
         logger.info(
             "gisco_nuts: hierarchy normalized",
             records=len(rows),
@@ -225,12 +206,3 @@ def _parse_rows(text: str) -> list[list[str]]:
         except csv.Error as exc:
             raise SourceParseError(f"gisco_nuts: unparseable CSV line: {exc}") from exc
     return rows
-
-
-def _provenance(adapter: GiscoNutsAdapter, record: RawRecord) -> Provenance:
-    return Provenance(
-        source_id=adapter.source_id,
-        source_trust=adapter.trust_rank,
-        confidence=1.0,
-        ontology_version=ONTOLOGY_VERSION,
-    )

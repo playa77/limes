@@ -63,11 +63,10 @@ from dateutil import parser as dateutil_parser  # type: ignore[import-untyped]
 
 from limes.errors import SourceParseError
 from limes.sources.base import (
-    ONTOLOGY_VERSION,
-    deterministic_assertion_id,
     fetch_bytes,
     hash_entity_id,
     key_entity_id,
+    make_assertion,
     now_utc,
     payload_hash,
 )
@@ -75,9 +74,7 @@ from limes.types import (
     Assertion,
     EntityEndpoint,
     NormalizedRecord,
-    Provenance,
     RawRecord,
-    Validity,
 )
 
 logger = structlog.get_logger(__name__)
@@ -267,29 +264,15 @@ class OffeneRegisterAdapter:
                 valid_from = _parse_officer_date(officer.get("start_date")) or published_at
                 valid_to = _parse_officer_date(officer.get("end_date"))
                 assertions.append(
-                    Assertion(
-                        assertion_id=deterministic_assertion_id(
-                            self.source_id,
-                            "DIRECTOR_OF",
-                            person.entity_id,
-                            corporation.entity_id,
-                            valid_from,
-                            valid_to,
-                        ),
-                        subject=person,
-                        relation="DIRECTOR_OF",
-                        object=corporation,
-                        validity=Validity(
-                            valid_from=valid_from,
-                            valid_to=valid_to,
-                            recorded_at=published_at,
-                        ),
-                        provenance=Provenance(
-                            source_id=self.source_id,
-                            source_trust=self.trust_rank,
-                            confidence=1.0,
-                            ontology_version=ONTOLOGY_VERSION,
-                        ),
+                    make_assertion(
+                        self,
+                        record,
+                        person,
+                        "DIRECTOR_OF",
+                        corporation,
+                        valid_from=valid_from,
+                        valid_to=valid_to,
+                        recorded_at=published_at,
                     )
                 )
                 officer_count += 1

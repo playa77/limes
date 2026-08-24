@@ -48,7 +48,6 @@ declared, never assumed).
 from __future__ import annotations
 
 import csv
-import hashlib
 import io
 from collections.abc import Iterator
 from datetime import UTC, datetime, timedelta
@@ -59,11 +58,11 @@ import structlog
 from limes.errors import SourceParseError
 from limes.pipeline.normalize import detect_language
 from limes.sources.base import (
-    ONTOLOGY_VERSION,
-    deterministic_assertion_id,
+    coordinate_location,
     fetch_bytes,
     hash_entity_id,
     key_entity_id,
+    make_assertion,
     now_utc,
     payload_hash,
 )
@@ -72,9 +71,7 @@ from limes.types import (
     DocumentPayload,
     EntityEndpoint,
     NormalizedRecord,
-    Provenance,
     RawRecord,
-    Validity,
 )
 
 logger = structlog.get_logger(__name__)
@@ -249,14 +246,28 @@ class GdeltAdapter:
             actor2 = _actor(row, "2")
             if actor1 is not None:
                 assertions.append(
-                    _actor_assertion(self, record, actor1, event, "ACTOR_IN", occurred_at)
+                    make_assertion(
+                        self,
+                        record,
+                        actor1,
+                        "ACTOR_IN",
+                        event,
+                        valid_from=occurred_at,
+                    )
                 )
                 counts["actor_in"] += 1
             else:
                 counts["untyped_actor_skipped"] += 1
             if actor2 is not None:
                 assertions.append(
-                    _actor_assertion(self, record, actor2, event, "TARGET_OF", occurred_at)
+                    make_assertion(
+                        self,
+                        record,
+                        actor2,
+                        "TARGET_OF",
+                        event,
+                        valid_from=occurred_at,
+                    )
                 )
                 counts["target_of"] += 1
             else:
@@ -265,7 +276,14 @@ class GdeltAdapter:
             location = _action_location(row)
             if location is not None:
                 assertions.append(
-                    _actor_assertion(self, record, event, location, "OCCURRED_IN", occurred_at)
+                    make_assertion(
+                        self,
+                        record,
+                        event,
+                        "OCCURRED_IN",
+                        location,
+                        valid_from=occurred_at,
+                    )
                 )
                 counts["occurred_in"] += 1
             else:
@@ -400,7 +418,7 @@ def _action_location(row: dict[str, str]) -> EntityEndpoint | None:
         lat = _parse_float(row.get("ActionGeo_Lat"))
         lon = _parse_float(row.get("ActionGeo_Long"))
         if lat is not None and lon is not None and full_name:
-            return _coordinate_location(lat, lon, full_name)
+            return coordinate_location(lat, lon, label=full_name)
         return None
     return None
 
@@ -419,45 +437,3 @@ def _parse_float(raw: object) -> float | None:
         return float(raw)
     except ValueError:
         return None
-
-
-def _coordinate_location(lat: float, lon: float, label: str) -> EntityEndpoint:
-    """A Location whose identity is the rounded-coordinate digest (D-13), the
-    same convention as the OSM adapter: the hash is identity, never geometry."""
-    coordinate_key = f"{lat:.5f},{lon:.5f}"
-    digest = hashlib.sha256(coordinate_key.encode("utf-8")).hexdigest()
-    return EntityEndpoint(
-        entity_id=key_entity_id(("coordinate_hash", digest)),
-        type="Location",
-        label=label,
-        deterministic_key=("coordinate_hash", digest),
-    )
-
-
-def _actor_assertion(
-    adapter: GdeltAdapter,
-    record: RawRecord,
-    subject: EntityEndpoint,
-    object_: EntityEndpoint,
-    relation: str,
-    occurred_at: datetime,
-) -> Assertion:
-    return Assertion(
-        assertion_id=deterministic_assertion_id(
-            adapter.source_id,
-            relation,
-            subject.entity_id,
-            object_.entity_id,
-            occurred_at,
-        ),
-        subject=subject,
-        relation=relation,
-        object=object_,
-        validity=Validity(valid_from=occurred_at, recorded_at=record.fetched_at),
-        provenance=Provenance(
-            source_id=adapter.source_id,
-            source_trust=adapter.trust_rank,
-            confidence=1.0,
-            ontology_version=ONTOLOGY_VERSION,
-        ),
-    )

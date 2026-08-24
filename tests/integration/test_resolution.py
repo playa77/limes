@@ -372,11 +372,12 @@ def test_ac17_routes_across_all_four_bands(driver: GraphDriver, ontology, tmp_pa
             *spans["Volkswagen"],
         ),
     ]
+
     # The embed text is surface + type + the assertion's evidence sentence
     # (shared by both endpoints of an assertion) — exactly what the resolver
     # builds, so the mocked vectors key on the same strings.
     def text_for(surface: str, item: ExtractedAssertion) -> str:
-        return f"{surface} (Corporation) — {body[item.evidence_start:item.evidence_end]}"
+        return f"{surface} (Corporation) — {body[item.evidence_start : item.evidence_end]}"
 
     vectors = {
         text_for("Volkswagen", extracted[0]): vector_with_cosines([(e_vw, 0.95)]),
@@ -605,7 +606,7 @@ def test_ac43_conversion_mentions_and_stats(driver: GraphDriver, ontology, tmp_p
     ]
 
     def text_for(surface: str, item: ExtractedAssertion) -> str:
-        return f"{surface} (Corporation) — {body[item.evidence_start:item.evidence_end]}"
+        return f"{surface} (Corporation) — {body[item.evidence_start : item.evidence_end]}"
 
     vectors = {
         text_for("Volkswagen", extracted[1]): vector_with_cosines([(e_vw, 0.95)]),
@@ -646,9 +647,7 @@ def test_ac43_conversion_mentions_and_stats(driver: GraphDriver, ontology, tmp_p
     )
     assert len(mentions) == 6  # one per extracted endpoint
 
-    endpoint_ids = {
-        e.entity_id for a in assertions for e in (a.subject, a.object)
-    }
+    endpoint_ids = {e.entity_id for a in assertions for e in (a.subject, a.object)}
     assert "wikidata_qid:Q2041974" in endpoint_ids  # enrichment -> deterministic
     assert "lei:529900T8BM49AURSDO55" in endpoint_ids
     assert "ac43-vw" in endpoint_ids

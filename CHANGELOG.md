@@ -6,6 +6,97 @@ gold set, prompts) are recorded in their own changelogs.
 
 ---
 
+## 2026-08-23 — Refactor — architecture consolidation (operator-instructed)
+
+- **S6 — Builder callbacks split out of the query module
+  (metric M3).** `ui/callbacks/builder.py` (new; `ui/callbacks/*.py` is a
+  wildcarded path in Doc 2 §2) carries `builder_start_type`,
+  `builder_hop_change`, `_triggered_hop_control`, `builder_add_hop`, and
+  their three Dash registrations, following the module's D-08 pure-
+  functions-plus-thin-register pattern; `ui/callbacks/query.py`
+  557→318 lines. Bodies moved verbatim — no behavior change; `app.py`
+  registers the new module; the UI-knows-nothing property is untouched
+  (no ontology literals, no HTTP, guarded by test_ui.py's source scans).
+  The registration test splits into query(10)+builder(3) with identical
+  per-wrapper assertions and updated counts. Verified: unit 697 +
+  integration 163 + acceptance 86 vs live Neo4j; ruff/mypy clean.
+- **S5 — Model-output parsing and prompt resolution stated once.**
+  `strip_model_fence()` and `prompt_path()` added to
+  `extraction/base.py`. The byte-identical JSON-fence pair
+  (`extraction/schema`, `resolution/adjudicate`) and the Cypher variant in
+  `cli/evaluate` (tag parameter) now share the strict whole-text policy;
+  `nlq/generate`'s lenient line-based stripper is deliberately different and
+  stays local, documented as such. Three `PROMPTS_DIR` definitions collapse
+  into one resolver; missing-prompt error messages unchanged (paths are
+  identical values, pinned by tests). One test re-pointed to the shared
+  helper with identical assertions. Verified: unit 696 + integration 163 vs
+  live Neo4j; ruff/mypy clean.
+- **S4 — The §11 retry policy stated once (metric M2c).**
+  `request_with_retry()` in `sources/base.py` is the single transport
+  (tenacity: 2 s exponential, factor 2, jitter, 4 attempts, on connection
+  errors/timeouts/429/5xx); `sources/base._fetch`,
+  `openrouter_client.post_json_with_retry`, the catalogue GET, and the
+  Ollama chat call now delegate. Observable behavior preserved exactly:
+  per-layer error types and message prefixes (pinned by tests), per-module
+  backoff-log attribution, the source layer's UA header, and Ollama's
+  headerless non-following requests (`follow_redirects=False` passed
+  explicitly). `graph/driver.py` keeps its deliberately distinct
+  Neo4j-transient policy. Two tests re-pointed at the shared constants/
+  predicate with identical assertions (test_ollama's `_is_retryable`
+  import, HTTP_MAX_ATTEMPTS reference). Verified: unit 696 + integration
+  163 vs live Neo4j; ruff/mypy clean.
+- **S3 — Shared identity constructors for the source layer
+  (metric M2b).** `topic_endpoint()`, `address_location()`,
+  `coordinate_location()` added to `sources/base.py`; the byte-identical
+  address-hash pair (GLEIF/TED), coordinate-digest pair (GDELT/OSM), and
+  five topic-endpoint builders (TED/EUR-Lex/Gesetze/OSM/
+  transparency-register) now call them. Digest inputs unchanged to the
+  byte, so entity_ids — and therefore loader merges — are unchanged;
+  the adapter suites pin exact ids and act as the guard. The TED buyer
+  digest stays local deliberately: a single-site convention, not a shared
+  family. Verified: unit 696 + integration 163 vs live Neo4j,
+  ruff/mypy clean.
+- **S2 — One canonical assertion constructor for the source layer
+  (metric M2a).** `make_assertion()` added to `sources/base.py`; all 11
+  source adapters migrated; the 12 local `_assertion`/`_actor_assertion`/
+  `_provenance` copies deleted (~205 lines net). Parameter order drift
+  between the old copies is why the shared signature is keyword-only for
+  `valid_from`/`valid_to`/`recorded_at`. Semantic identity preserved:
+  same digest inputs, same `recorded_at` defaults, offeneregister's
+  dataset-publication vintage passed explicitly. A positional slip in the
+  gdelt migration was caught by its adapter tests before commit.
+  Verified: unit 696 passed, integration 163 passed against live Neo4j,
+  ruff/mypy clean.
+
+
+- **Repair — provisioning serialized across processes (operator-instructed;
+  metrics M1–M3 unaffected).** Two concurrent `provision()` invocations (api
+  startup handler vs worker's first command on a fresh volume) could fail
+  with `EquivalentSchemaRuleAlreadyExists`. Provisioners now queue on an
+  `:AdvisoryLock` row (source_id `__ontology_provision__`) whose existing
+  uniqueness constraint makes lost acquisition races loud; bootstrap of that
+  constraint is bounded-retried because it precedes the lock. Guard:
+  `test_concurrent_provision_is_serialized` (5/5). Suites: 697/164/86.
+  Phase-6 T1 flagged and discharged: graph/schema.py becomes a second
+  writer of `:AdvisoryLock` by explicit instruction (D-67b).
+
+- **Outcome — all stop-condition metrics met (D-66).** M1 lint debt 0,
+  M2a assertion sites 13→0, M2b digest families 5→0, M2c retry loops 4→1,
+  M3 query.py 557→318. Net −37 lines across 35 files with zero behavior
+  change (three-suite evidence above per step). A pre-existing provision()
+  concurrency race surfaced during live verification — logged as
+  [CONFLICT], recommended follow-up, not caused by this branch.
+
+- **S1 — Lint/format debt zeroed (metric M1).** `ruff check` 16→0 errors,
+  `ruff format --check` 6 deviating files→0, on `refactor-consolidation`.
+  Formatting-only diff plus four long Cypher literals re-wrapped as adjacent
+  string literals (semantically identical). Includes the lockfile refresh the
+  D-65 `coverage` addition should have carried (`uv.lock` last committed at
+  WP-01; pyproject's dev group and the lock disagreed until now). Stop
+  condition, scope decision D-66, and task invariants logged in DECISIONS.md.
+
+---
+
 ## 2026-08-03 — Phase 11 — WP-40 100% line coverage (operator-instructed)
 
 - **WP-40 — Full line coverage of `src/limes` (6882/6882 statements,

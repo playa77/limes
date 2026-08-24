@@ -23,20 +23,17 @@ the same settings object and supplies it.
 from __future__ import annotations
 
 import json
-import re
-from pathlib import Path
 from typing import Any
 
 import structlog
 from jsonschema import Draft202012Validator  # type: ignore[import-untyped]
 
 from limes.errors import ExtractionError
+from limes.extraction.base import prompt_path, strip_model_fence
 from limes.extraction.openrouter_client import OpenRouterClient
 from limes.types import Mention
 
 logger = structlog.get_logger(__name__)
-
-PROMPTS_DIR = Path(__file__).resolve().parent.parent / "extraction" / "prompts"
 
 # The §8.8.3 cap on adjudicator confidence.
 MAX_ADJUDICATION_CONFIDENCE = 0.90
@@ -50,10 +47,6 @@ ADJUDICATION_SCHEMA: dict[str, Any] = {
         "confidence": {"type": "number", "minimum": 0, "maximum": 1},
     },
 }
-
-# A JSON response wrapped in markdown fences is tolerated; anything else
-# inside the fences is rejected by the schema pass.
-_FENCE = re.compile(r"^```(?:json)?\s*(.*?)\s*```$", re.S)
 
 
 def adjudicate(
@@ -113,10 +106,7 @@ def _parse_verdict(
     """`(same, confidence)` from the adjudicator's JSON, or None when the
     response does not satisfy the schema — a malformed response is a
     no-match, never a guess."""
-    text = raw.strip()
-    fence = _FENCE.match(text)
-    if fence is not None:
-        text = fence.group(1).strip()
+    text = strip_model_fence(raw)
     try:
         parsed = json.loads(text)
     except json.JSONDecodeError:
@@ -133,7 +123,7 @@ def _load_prompt(prompt_version: str) -> str:
     when the file is absent — a version bump must ship the file, and a
     missing file must fail loudly rather than adjudicate on a stale
     template."""
-    path = PROMPTS_DIR / f"adjudication_v{prompt_version}.md"
+    path = prompt_path(f"adjudication_v{prompt_version}.md")
     if not path.exists():
         raise ExtractionError(f"adjudication prompt file missing: {path}")
     return path.read_text(encoding="utf-8")

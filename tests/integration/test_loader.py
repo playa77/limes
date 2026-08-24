@@ -49,8 +49,12 @@ def _provisioned(driver: GraphDriver, ontology) -> None:
     provision(driver, ontology, embedding_dimensions=1024)
 
 
-def endpoint(entity_id: str, type_: str = "Corporation", label: str = None,
-             key: tuple[str, str] | None = None) -> EntityEndpoint:
+def endpoint(
+    entity_id: str,
+    type_: str = "Corporation",
+    label: str = None,
+    key: tuple[str, str] | None = None,
+) -> EntityEndpoint:
     return EntityEndpoint(
         entity_id=entity_id,
         type=type_,
@@ -60,10 +64,18 @@ def endpoint(entity_id: str, type_: str = "Corporation", label: str = None,
     )
 
 
-def assertion(assertion_id: str, subject: EntityEndpoint, relation: str,
-              object_: EntityEndpoint, *, source_id: str = "s1",
-              valid_from: datetime = V_2020, valid_to: datetime | None = None,
-              trust: float = 1.0, ontology_version: str = "1.0.0") -> Assertion:
+def assertion(
+    assertion_id: str,
+    subject: EntityEndpoint,
+    relation: str,
+    object_: EntityEndpoint,
+    *,
+    source_id: str = "s1",
+    valid_from: datetime = V_2020,
+    valid_to: datetime | None = None,
+    trust: float = 1.0,
+    ontology_version: str = "1.0.0",
+) -> Assertion:
     return Assertion(
         assertion_id=assertion_id,
         subject=subject,
@@ -88,8 +100,14 @@ def assertion(assertion_id: str, subject: EntityEndpoint, relation: str,
 def test_load_materializes_nodes_with_labels_and_keys(driver: GraphDriver, ontology):
     result = load(
         driver,
-        [assertion("ac08-1", endpoint("ac08-parent", key=("lei", "LEI-AC08")),
-                   "SUBSIDIARY_OF", endpoint("ac08-child"))],
+        [
+            assertion(
+                "ac08-1",
+                endpoint("ac08-parent", key=("lei", "LEI-AC08")),
+                "SUBSIDIARY_OF",
+                endpoint("ac08-child"),
+            )
+        ],
         ontology,
     )
     assert result.written == 1
@@ -115,7 +133,8 @@ def test_load_materializes_standalone_entities(driver: GraphDriver, ontology):
     )
     assert result.nodes_created == 1
     rows = driver.read(
-        "MATCH (n:Entity {entity_id: 'ac08-standalone'}) RETURN labels(n) AS labels, n.iso2 AS iso2",
+        "MATCH (n:Entity {entity_id: 'ac08-standalone'}) "
+        "RETURN labels(n) AS labels, n.iso2 AS iso2",
         {},
         10,
     )
@@ -124,19 +143,33 @@ def test_load_materializes_standalone_entities(driver: GraphDriver, ontology):
 
 
 def test_relationship_carries_complete_metadata(driver: GraphDriver, ontology):
-    load(driver, [assertion("ac07-1", endpoint("ac07-a"), "SUBSIDIARY_OF", endpoint("ac07-b"))], ontology)
+    load(
+        driver,
+        [assertion("ac07-1", endpoint("ac07-a"), "SUBSIDIARY_OF", endpoint("ac07-b"))],
+        ontology,
+    )
     rows = driver.read(
-        "MATCH (:Entity {entity_id: 'ac07-a'})-[r:SUBSIDIARY_OF]->(:Entity {entity_id: 'ac07-b'}) RETURN r",
+        "MATCH (:Entity {entity_id: 'ac07-a'})-[r:SUBSIDIARY_OF]->(:Entity {entity_id: 'ac07-b'}) "
+        "RETURN r",
         {},
         10,
     )
     assert len(rows) == 1
     r = rows[0]["r"]
     for prop in (
-        "assertion_id", "valid_from", "recorded_at", "source_id",
-        "source_trust", "confidence", "extractor_model", "prompt_version",
-        "schema_version", "ontology_version", "evidence_document_id",
-        "evidence_start", "evidence_end",
+        "assertion_id",
+        "valid_from",
+        "recorded_at",
+        "source_id",
+        "source_trust",
+        "confidence",
+        "extractor_model",
+        "prompt_version",
+        "schema_version",
+        "ontology_version",
+        "evidence_document_id",
+        "evidence_start",
+        "evidence_end",
     ):
         assert r[prop] is not None, prop
     # An open interval carries no valid_to until closure; retracted_at is
@@ -148,16 +181,25 @@ def test_relationship_carries_complete_metadata(driver: GraphDriver, ontology):
 
 def test_identical_reload_writes_nothing_and_reports_skips(driver: GraphDriver, ontology):
     assertion_id = "ac05-1"
-    load(driver, [assertion(assertion_id, endpoint("ac05-a"), "SUBSIDIARY_OF", endpoint("ac05-b"))], ontology)
+    load(
+        driver,
+        [assertion(assertion_id, endpoint("ac05-a"), "SUBSIDIARY_OF", endpoint("ac05-b"))],
+        ontology,
+    )
 
-    second = load(driver, [assertion(assertion_id, endpoint("ac05-a"), "SUBSIDIARY_OF", endpoint("ac05-b"))], ontology)
+    second = load(
+        driver,
+        [assertion(assertion_id, endpoint("ac05-a"), "SUBSIDIARY_OF", endpoint("ac05-b"))],
+        ontology,
+    )
     assert second.nodes_created == 0
     assert second.written == 0
     assert second.skipped == 1
     assert second.nodes_matched == 2
 
     rows = driver.read(
-        "MATCH (:Entity {entity_id: 'ac05-a'})-[r:SUBSIDIARY_OF]->(:Entity {entity_id: 'ac05-b'}) RETURN count(r) AS c",
+        "MATCH (:Entity {entity_id: 'ac05-a'})-[r:SUBSIDIARY_OF]->(:Entity {entity_id: 'ac05-b'}) "
+        "RETURN count(r) AS c",
         {},
         10,
     )
@@ -165,14 +207,31 @@ def test_identical_reload_writes_nothing_and_reports_skips(driver: GraphDriver, 
 
 
 def test_lower_trust_rematch_never_overwrites(driver: GraphDriver, ontology):
-    load(driver, [assertion("ac09-1", endpoint("ac09-x", label="Original Label"),
-                            "SUBSIDIARY_OF", endpoint("ac09-y"))], ontology)
+    load(
+        driver,
+        [
+            assertion(
+                "ac09-1",
+                endpoint("ac09-x", label="Original Label"),
+                "SUBSIDIARY_OF",
+                endpoint("ac09-y"),
+            )
+        ],
+        ontology,
+    )
 
     second = load(
         driver,
-        [assertion("ac09-2", endpoint("ac09-x", label="Degraded Label"),
-                   "SUBSIDIARY_OF", endpoint("ac09-y"), trust=0.3,
-                   ontology_version="0.9.0")],
+        [
+            assertion(
+                "ac09-2",
+                endpoint("ac09-x", label="Degraded Label"),
+                "SUBSIDIARY_OF",
+                endpoint("ac09-y"),
+                trust=0.3,
+                ontology_version="0.9.0",
+            )
+        ],
         ontology,
     )
     assert second.nodes_created == 0
@@ -187,8 +246,24 @@ def test_lower_trust_rematch_never_overwrites(driver: GraphDriver, ontology):
 
 
 def test_interval_closure_within_source(driver: GraphDriver, ontology):
-    load(driver, [assertion("ac06-1", endpoint("ac06-a"), "SUBSIDIARY_OF", endpoint("ac06-b"), valid_from=V_2020)], ontology)
-    second = load(driver, [assertion("ac06-2", endpoint("ac06-a"), "SUBSIDIARY_OF", endpoint("ac06-b"), valid_from=V_2022)], ontology)
+    load(
+        driver,
+        [
+            assertion(
+                "ac06-1", endpoint("ac06-a"), "SUBSIDIARY_OF", endpoint("ac06-b"), valid_from=V_2020
+            )
+        ],
+        ontology,
+    )
+    second = load(
+        driver,
+        [
+            assertion(
+                "ac06-2", endpoint("ac06-a"), "SUBSIDIARY_OF", endpoint("ac06-b"), valid_from=V_2022
+            )
+        ],
+        ontology,
+    )
     assert second.closed_intervals == 1
 
     rows = driver.read(
@@ -204,8 +279,34 @@ def test_interval_closure_within_source(driver: GraphDriver, ontology):
 
 
 def test_interval_never_closed_across_sources(driver: GraphDriver, ontology):
-    load(driver, [assertion("ac06-3", endpoint("ac06-c"), "SUBSIDIARY_OF", endpoint("ac06-d"), valid_from=V_2020, source_id="s1")], ontology)
-    load(driver, [assertion("ac06-4", endpoint("ac06-c"), "SUBSIDIARY_OF", endpoint("ac06-d"), valid_from=V_2022, source_id="s2")], ontology)
+    load(
+        driver,
+        [
+            assertion(
+                "ac06-3",
+                endpoint("ac06-c"),
+                "SUBSIDIARY_OF",
+                endpoint("ac06-d"),
+                valid_from=V_2020,
+                source_id="s1",
+            )
+        ],
+        ontology,
+    )
+    load(
+        driver,
+        [
+            assertion(
+                "ac06-4",
+                endpoint("ac06-c"),
+                "SUBSIDIARY_OF",
+                endpoint("ac06-d"),
+                valid_from=V_2022,
+                source_id="s2",
+            )
+        ],
+        ontology,
+    )
 
     rows = driver.read(
         "MATCH (:Entity {entity_id: 'ac06-c'})-[r:SUBSIDIARY_OF]->(:Entity {entity_id: 'ac06-d'}) "
@@ -217,7 +318,9 @@ def test_interval_never_closed_across_sources(driver: GraphDriver, ontology):
 
 
 def test_endpoint_unidentified_is_rejected_and_never_written(driver: GraphDriver, ontology):
-    result = load(driver, [assertion("ac10-1", endpoint(""), "SUBSIDIARY_OF", endpoint("ac10-b"))], ontology)
+    result = load(
+        driver, [assertion("ac10-1", endpoint(""), "SUBSIDIARY_OF", endpoint("ac10-b"))], ontology
+    )
     assert result.rejected == 1
     assert result.written == 0
     assert result.nodes_created == 0
@@ -232,8 +335,11 @@ def test_lookup_rows_materialize_postal_code_nodes(driver: GraphDriver, ontology
         [],
         ontology,
         lookup_rows=[
-            LookupRow(kind="postal_code", key={"country_code": "DE", "postal_code": "10115"},
-                      value={"nuts_code": "DE300"})
+            LookupRow(
+                kind="postal_code",
+                key={"country_code": "DE", "postal_code": "10115"},
+                value={"nuts_code": "DE300"},
+            )
         ],
     )
     assert result.lookup_rows_written == 1
@@ -325,7 +431,11 @@ def test_lookup_rows_are_batched_across_transactions(driver: GraphDriver, ontolo
 
 
 def test_non_temporal_relation_never_gets_valid_to(driver: GraphDriver, ontology):
-    load(driver, [assertion("nt-1", endpoint("nt-a", "LegalAct"), "AMENDS", endpoint("nt-b", "LegalAct"))], ontology)
+    load(
+        driver,
+        [assertion("nt-1", endpoint("nt-a", "LegalAct"), "AMENDS", endpoint("nt-b", "LegalAct"))],
+        ontology,
+    )
     rows = driver.read(
         "MATCH (:Entity {entity_id: 'nt-a'})-[r:AMENDS]->(:Entity {entity_id: 'nt-b'}) "
         "RETURN r.valid_to AS vt, r.recorded_at AS rec",
@@ -337,12 +447,17 @@ def test_non_temporal_relation_never_gets_valid_to(driver: GraphDriver, ontology
 
 
 def test_retract_sets_retracted_at(driver: GraphDriver, ontology):
-    load(driver, [assertion("ret-1", endpoint("ret-a"), "SUBSIDIARY_OF", endpoint("ret-b"))], ontology)
+    load(
+        driver,
+        [assertion("ret-1", endpoint("ret-a"), "SUBSIDIARY_OF", endpoint("ret-b"))],
+        ontology,
+    )
     count = retract(driver, ["ret-1"], datetime(2026, 8, 2, tzinfo=UTC))
     assert count == 1
 
     rows = driver.read(
-        "MATCH (:Entity {entity_id: 'ret-a'})-[r:SUBSIDIARY_OF]->(:Entity {entity_id: 'ret-b'}) RETURN r.retracted_at AS rt",
+        "MATCH (:Entity {entity_id: 'ret-a'})-[r:SUBSIDIARY_OF]->(:Entity {entity_id: 'ret-b'}) "
+        "RETURN r.retracted_at AS rt",
         {},
         10,
     )

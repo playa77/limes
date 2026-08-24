@@ -50,11 +50,10 @@ import structlog
 
 from limes.errors import SourceParseError
 from limes.sources.base import (
-    ONTOLOGY_VERSION,
-    deterministic_assertion_id,
     fetch_bytes,
     hash_entity_id,
     key_entity_id,
+    make_assertion,
     now_utc,
     payload_hash,
 )
@@ -62,9 +61,7 @@ from limes.types import (
     Assertion,
     EntityEndpoint,
     NormalizedRecord,
-    Provenance,
     RawRecord,
-    Validity,
 )
 
 logger = structlog.get_logger(__name__)
@@ -171,7 +168,14 @@ class BundestagDipAdapter:
             if fraktion:
                 party = _party(fraktion)
                 assertions.append(
-                    _assertion(self, record, person, "MEMBER_OF", party, record.fetched_at)
+                    make_assertion(
+                        self,
+                        record,
+                        person,
+                        "MEMBER_OF",
+                        party,
+                        valid_from=record.fetched_at,
+                    )
                 )
                 counts["memberships"] += 1
                 person_assertions += 1
@@ -200,13 +204,27 @@ class BundestagDipAdapter:
                     continue
                 office = _office(period, period_start)
                 assertions.append(
-                    _assertion(self, record, person, "HOLDS_OFFICE", office, period_start)
+                    make_assertion(
+                        self,
+                        record,
+                        person,
+                        "HOLDS_OFFICE",
+                        office,
+                        valid_from=period_start,
+                    )
                 )
                 counts["holds_office"] += 1
                 person_assertions += 1
                 if party is not None:
                     assertions.append(
-                        _assertion(self, record, office, "OFFICE_AT", party, period_start)
+                        make_assertion(
+                            self,
+                            record,
+                            office,
+                            "OFFICE_AT",
+                            party,
+                            valid_from=period_start,
+                        )
                     )
                     counts["office_at"] += 1
                     person_assertions += 1
@@ -296,36 +314,3 @@ def _aktualisiert_value(since: datetime | None, until: datetime | None) -> str:
     start = since.strftime("%Y-%m-%d") if since is not None else ""
     end = until.strftime("%Y-%m-%d") if until is not None else ""
     return f"{start}..{end}"
-
-
-def _assertion(
-    adapter: BundestagDipAdapter,
-    record: RawRecord,
-    subject: EntityEndpoint,
-    relation: str,
-    object_: EntityEndpoint,
-    valid_from: datetime,
-) -> Assertion:
-    return Assertion(
-        assertion_id=deterministic_assertion_id(
-            adapter.source_id,
-            relation,
-            subject.entity_id,
-            object_.entity_id,
-            valid_from,
-        ),
-        subject=subject,
-        relation=relation,
-        object=object_,
-        validity=Validity(valid_from=valid_from, recorded_at=record.fetched_at),
-        provenance=_provenance(adapter, record),
-    )
-
-
-def _provenance(adapter: BundestagDipAdapter, record: RawRecord) -> Provenance:
-    return Provenance(
-        source_id=adapter.source_id,
-        source_trust=adapter.trust_rank,
-        confidence=1.0,
-        ontology_version=ONTOLOGY_VERSION,
-    )

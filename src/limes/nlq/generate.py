@@ -16,13 +16,10 @@ cannot reach the instruction portion either.
 
 from __future__ import annotations
 
-from pathlib import Path
-
 from limes.errors import ExtractionError
+from limes.extraction.base import prompt_path
 from limes.extraction.openrouter_client import OpenRouterClient
 from limes.ontology.model import Ontology
-
-PROMPTS_DIR = Path(__file__).resolve().parents[1] / "extraction" / "prompts"
 
 
 def generate(
@@ -38,7 +35,7 @@ def generate(
     judge what remains."""
     if not model_id:
         raise ExtractionError("no NL-to-Cypher model pinned (LIMES_NL2CYPHER_MODEL)")
-    path = PROMPTS_DIR / f"nl2cypher_v{prompt_version}.md"
+    path = prompt_path(f"nl2cypher_v{prompt_version}.md")
     if not path.exists():
         raise ExtractionError(f"nl2cypher prompt file missing: {path}")
     prompt = path.read_text(encoding="utf-8")

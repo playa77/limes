@@ -25,9 +25,7 @@ _CACHE_SIZE = 4096
 _cache: OrderedDict[tuple[str, str], str | None] = OrderedDict()
 
 
-def postal_code_to_nuts(
-    driver: GraphDriver, country_code: str, postal_code: str
-) -> str | None:
+def postal_code_to_nuts(driver: GraphDriver, country_code: str, postal_code: str) -> str | None:
     """The NUTS code for a postal code, or `None` when the correspondence is
     not in the graph. Misses are cached too: a code known to be absent is not
     re-queried. The cache key is the code pair, not the driver — one driver

@@ -296,9 +296,9 @@ def test_ui_source_contains_no_ontology_literals():
         for node in ast.walk(tree):
             if isinstance(node, ast.Constant) and isinstance(node.value, str):
                 assert node.value not in names, f"{py_file.name}: literal {node.value!r}"
-                assert not any(
-                    keyword in node.value for keyword in cypher_keywords
-                ), f"{py_file.name}: literal {node.value!r} contains a Cypher keyword"
+                assert not any(keyword in node.value for keyword in cypher_keywords), (
+                    f"{py_file.name}: literal {node.value!r} contains a Cypher keyword"
+                )
 
 
 # ---------------------------------------------------------------------------

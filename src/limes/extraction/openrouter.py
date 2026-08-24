@@ -18,8 +18,6 @@ version.
 
 from __future__ import annotations
 
-from pathlib import Path
-
 import structlog
 
 from limes.config import Settings
@@ -28,6 +26,7 @@ from limes.extraction.base import (
     ExtractionResult,
     batch_passages,
     build_extraction_messages,
+    prompt_path,
 )
 from limes.extraction.openrouter_client import OpenRouterClient
 from limes.extraction.schema import EXTRACTION_SCHEMA, SCHEMA_VERSION, parse_extraction_response
@@ -35,8 +34,6 @@ from limes.ontology.model import Ontology
 from limes.types import ExtractedAssertion, Passage
 
 logger = structlog.get_logger(__name__)
-
-PROMPTS_DIR = Path(__file__).parent / "prompts"
 
 
 class OpenRouterExtractor:
@@ -118,7 +115,7 @@ def _load_prompt(prompt_version: str) -> str:
     """The extraction prompt template for a version, or `ExtractionError` when
     the file is absent — version bumps must ship the file (see the module
     docstring)."""
-    path = PROMPTS_DIR / f"extraction_v{prompt_version}.md"
+    path = prompt_path(f"extraction_v{prompt_version}.md")
     if not path.exists():
         raise ExtractionError(f"extraction prompt file missing: {path}")
     return path.read_text(encoding="utf-8")

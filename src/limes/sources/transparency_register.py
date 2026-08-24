@@ -51,21 +51,19 @@ from lxml import etree  # type: ignore[import-untyped]
 
 from limes.errors import SourceParseError
 from limes.sources.base import (
-    ONTOLOGY_VERSION,
-    deterministic_assertion_id,
     fetch_bytes,
     hash_entity_id,
     key_entity_id,
+    make_assertion,
     now_utc,
     payload_hash,
+    topic_endpoint,
 )
 from limes.types import (
     Assertion,
     EntityEndpoint,
     NormalizedRecord,
-    Provenance,
     RawRecord,
-    Validity,
 )
 
 logger = structlog.get_logger(__name__)
@@ -244,7 +242,14 @@ def _normalize_organisation(
             first, family = match
             head_person = _person(first, family)
             assertions.append(
-                _assertion(adapter, record, head_person, "MEMBER_OF", group, member_since)
+                make_assertion(
+                    adapter,
+                    record,
+                    head_person,
+                    "MEMBER_OF",
+                    group,
+                    valid_from=member_since,
+                )
             )
             counts["member_of_assertions"] += 1
 
@@ -270,14 +275,16 @@ def _normalize_organisation(
                 organisation_id=organisation_id,
                 code=code,
             )
-        topic = EntityEndpoint(
-            entity_id=f"topic:{INTEREST_VOCABULARY}:{code}",
-            type="Topic",
-            label=label,
-            deterministic_key=("code", code),
-        )
+        topic = topic_endpoint(INTEREST_VOCABULARY, code, label=label)
         assertions.append(
-            _assertion(adapter, record, group, "LOBBIES_FOR", topic, record.fetched_at)
+            make_assertion(
+                adapter,
+                record,
+                group,
+                "LOBBIES_FOR",
+                topic,
+                valid_from=record.fetched_at,
+            )
         )
         counts["lobbies_for_assertions"] += 1
 
@@ -300,7 +307,9 @@ def _normalize_organisation(
             type="Person",
             label=target,
         )
-        assertions.append(_assertion(adapter, record, group, "MET_WITH", official, met_on))
+        assertions.append(
+            make_assertion(adapter, record, group, "MET_WITH", official, valid_from=met_on)
+        )
         counts["met_with_assertions"] += 1
 
     return assertions
@@ -344,36 +353,3 @@ def _parse_date(raw: str | None, fallback: datetime) -> tuple[datetime, bool]:
         raw=raw,
     )
     return fallback, True
-
-
-def _assertion(
-    adapter: TransparencyRegisterAdapter,
-    record: RawRecord,
-    subject: EntityEndpoint,
-    relation: str,
-    object_: EntityEndpoint,
-    valid_from: datetime,
-) -> Assertion:
-    return Assertion(
-        assertion_id=deterministic_assertion_id(
-            adapter.source_id,
-            relation,
-            subject.entity_id,
-            object_.entity_id,
-            valid_from,
-        ),
-        subject=subject,
-        relation=relation,
-        object=object_,
-        validity=Validity(valid_from=valid_from, recorded_at=record.fetched_at),
-        provenance=_provenance(adapter, record),
-    )
-
-
-def _provenance(adapter: TransparencyRegisterAdapter, record: RawRecord) -> Provenance:
-    return Provenance(
-        source_id=adapter.source_id,
-        source_trust=adapter.trust_rank,
-        confidence=1.0,
-        ontology_version=ONTOLOGY_VERSION,
-    )

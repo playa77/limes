@@ -24,12 +24,12 @@ Nothing is dropped without an entry in `parse_errors`.
 from __future__ import annotations
 
 import json
-import re
 from datetime import UTC, datetime
 from typing import Any
 
 from jsonschema import Draft202012Validator  # type: ignore[import-untyped]
 
+from limes.extraction.base import strip_model_fence
 from limes.ontology.model import Ontology
 from limes.types import ExtractedAssertion, Mention, Passage
 
@@ -81,10 +81,6 @@ EXTRACTION_SCHEMA: dict[str, Any] = {
         "evidence_end": {"type": "integer", "minimum": 0},
     },
 }
-
-# A JSON response wrapped in markdown fences is tolerated; anything else
-# inside the fences is rejected by the schema pass.
-_FENCE = re.compile(r"^```(?:json)?\s*(.*?)\s*```$", re.S)
 
 
 def parse_extraction_response(
@@ -221,10 +217,7 @@ def _parse_json(raw: str) -> Any:
     that is not JSON at all surfaces as a `RESPONSE_NOT_ARRAY`-style error at
     the call site (the raw text stays in `ExtractionResult.raw_response` for
     diagnosis)."""
-    text = raw.strip()
-    fence = _FENCE.match(text)
-    if fence is not None:
-        text = fence.group(1).strip()
+    text = strip_model_fence(raw)
     if not text:
         return None
     try:
