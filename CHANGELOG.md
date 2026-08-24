@@ -69,6 +69,17 @@ gold set, prompts) are recorded in their own changelogs.
   ruff/mypy clean.
 
 
+- **Repair — provisioning serialized across processes (operator-instructed;
+  metrics M1–M3 unaffected).** Two concurrent `provision()` invocations (api
+  startup handler vs worker's first command on a fresh volume) could fail
+  with `EquivalentSchemaRuleAlreadyExists`. Provisioners now queue on an
+  `:AdvisoryLock` row (source_id `__ontology_provision__`) whose existing
+  uniqueness constraint makes lost acquisition races loud; bootstrap of that
+  constraint is bounded-retried because it precedes the lock. Guard:
+  `test_concurrent_provision_is_serialized` (5/5). Suites: 697/164/86.
+  Phase-6 T1 flagged and discharged: graph/schema.py becomes a second
+  writer of `:AdvisoryLock` by explicit instruction (D-67b).
+
 - **Outcome — all stop-condition metrics met (D-66).** M1 lint debt 0,
   M2a assertion sites 13→0, M2b digest families 5→0, M2c retry loops 4→1,
   M3 query.py 557→318. Net −37 lines across 35 files with zero behavior

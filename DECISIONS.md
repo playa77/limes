@@ -5,6 +5,54 @@ reversibility: **R1** reversible in under an hour, **R2** bounded recoverable
 cost, **R3** one-way door. Written when each decision is made, latest first.
 Nothing here is a status report; unlogged decisions are unmade decisions.
 
+## 2026-08-24 — D-67 (R2) — Provisioning serialized via a transient mutex transaction
+
+Operator instruction on the [CONFLICT] finding: "serialize provisioning.
+now." Chosen mechanism: `provision()` opens a dedicated session and begins
+a transaction whose only statement is `MERGE (n:_SchemaProvisionMutex ...)`;
+that write lock blocks any concurrent provisioner until the holder finishes,
+then the transaction is **rolled back** — the sentinel never persists, so
+§5.8's system-node catalog is untouched. Crash of a holder releases the lock
+with its connection. Rejected alternatives: (a) tolerating
+`EquivalentSchemaRuleAlreadyExists` on `IF NOT EXISTS` statements — the
+explicitly declined branch (operator chose serialize over tolerate);
+(b) batching all DDL into one schema transaction to inherit Neo4j's schema
+lock — rejected because this file documents Neo4j's bounded-window
+compilation limit ("insanly frequent schema changes") that fails many-DDL
+transactions; (c) reusing `:AdvisoryLock` as the sentinel — rejected:
+phase-6 T1 names cli/main.py its sole writer, and a persistent sentinel node
+would extend §5.8 without spec cover. Known bound, accepted: a waiter sits
+in a normal transaction, so the §13.4 transaction timeout (120 s production)
+caps how long it may wait — provisioning is seconds-long.
+
+**G3-refactor (guarded)** — Concurrent invocations of `provision()` both
+succeed and leave each index exactly once → guard
+`tests/integration/test_schema_provision.py::test_concurrent_provision_is_serialized`.
+
+## 2026-08-24 — D-67b (R2) — Correction: the transient-mutex design of D-67 does not hold; replaced by an AdvisoryLock polling mutex
+
+D-67's first implementation (a rolled-back MERGE sentinel transaction) is
+wrong and is removed by this commit: `MERGE` takes no lock when nothing
+matches, so two simultaneous provisioners on an empty database both created
+the sentinel and raced anyway — reproduced deterministically by the new
+concurrent guard test, not merely inferred. A second intermediate design
+(create-then-count verification) had its own TOCTOU and was also removed.
+Delivered mechanism: `_ensure_lock_constraint()` creates the existing
+`lock_source` uniqueness constraint FIRST (bounded retries; the one-statement
+bootstrap window is the only place an equivalent-rule error is ever retried
+in this codebase); acquisition then `CREATE`s an `:AdvisoryLock` row with
+source_id `__ontology_provision__`, where the constraint turns a lost race
+into a loud `ConstraintValidationFailed`; losers poll with jittered backoff
+up to 60 s, stale holders are reclaimed after 120 s (provisioning takes
+seconds), release deletes by own run_id. T1 flag from phase 6, discharged:
+this makes graph/schema.py a second WRITER of `:AdvisoryLock` beside
+cli/main.py — reviewed here under the operator's explicit "serialize
+provisioning" instruction, logged so no future reader mistakes it for an
+accident. Evidence: concurrent guard test 5/5 green
+(`test_concurrent_provision_is_serialized`, two threads through a barrier);
+unit 697 / integration 164 / acceptance 86 all passed; live-stack proof via
+`tools/smoke_test.py --clean` follows this entry in the session record.
+
 ## 2026-08-24 — Refactor complete — trajectory and final measurements (all metrics met)
 
 All five metric targets met within budget (8 commits of 10; ~3.5 h of 4 h).

@@ -91,3 +91,48 @@ def test_downgrade_guard_passes_on_fresh_database(driver: GraphDriver, ontology)
         ]
     )
     provision(driver, ontology, embedding_dimensions=1024)  # must not raise
+
+
+def test_concurrent_provision_is_serialized(
+    neo4j_instance: Neo4jInstance, ontology, driver: GraphDriver
+):
+    """D-67: the api startup handler and the worker's first command both call
+    provision() against a fresh database. Two concurrent provisioners must
+    both succeed and leave every index exactly once — before serialization
+    this race failed live with EquivalentSchemaRuleAlreadyExists on
+    office_at_valid_from (2026-08-24)."""
+    import threading
+
+    from limes.graph.schema import _SCHEMA_STATEMENTS  # noqa: PLC0415
+
+    errors: list[Exception] = []
+    start = threading.Barrier(2)
+
+    def run() -> None:
+        d = GraphDriver(
+            neo4j_instance.uri,
+            neo4j_instance.user,
+            neo4j_instance.password,
+            neo4j_instance.database,
+        )
+        try:
+            start.wait()
+            provision(d, ontology, embedding_dimensions=1024)
+        except Exception as exc:  # noqa: BLE001 - forwarded to the assert below
+            errors.append(exc)
+        finally:
+            d.close()
+
+    threads = [threading.Thread(target=run) for _ in range(2)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+
+    assert errors == []
+
+    rows = driver.read("SHOW INDEXES YIELD name RETURN name", {}, 100)
+    names = [r["name"] for r in rows]
+    expected = [s.split()[2] for s in _SCHEMA_STATEMENTS if s.startswith("CREATE INDEX")]
+    duplicates = [n for n in expected if names.count(n) != 1]
+    assert duplicates == []
