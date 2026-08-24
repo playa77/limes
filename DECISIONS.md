@@ -29,6 +29,16 @@ caps how long it may wait — provisioning is seconds-long.
 succeed and leave each index exactly once → guard
 `tests/integration/test_schema_provision.py::test_concurrent_provision_is_serialized`.
 
+## 2026-08-24 — Approval — refactor-v1.1.0
+
+The human approved refactor-v1.1.0 (architecture consolidation S1–S6 plus
+the provisioning serialization repair S7) on 2026-08-24 and instructed
+merge and push, in their own words: "approved. i explicitly allow you and
+instruct you to merge and push also." Delivered as branch
+`refactor-consolidation` (9 commits), merged to `main` and pushed; the
+topic branch is pushed as well. This approval names the presented version
+and cannot be reused for any other version of the task.
+
 ## 2026-08-24 — D-67b (R2) — Correction: the transient-mutex design of D-67 does not hold; replaced by an AdvisoryLock polling mutex
 
 D-67's first implementation (a rolled-back MERGE sentinel transaction) is
