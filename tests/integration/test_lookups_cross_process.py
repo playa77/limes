@@ -69,7 +69,9 @@ def test_miss_returns_none_without_raising(driver: GraphDriver):
     assert postal_code_to_nuts(driver, "XX", "00000") is None
 
 
-def test_lookup_is_readable_from_a_separate_process(driver: GraphDriver, neo4j_instance: Neo4jInstance):
+def test_lookup_is_readable_from_a_separate_process(
+    driver: GraphDriver, neo4j_instance: Neo4jInstance
+):
     """AC-39: a value written by one OS process is readable by another. The
     subprocess connects to the same container with its own GraphDriver and
     fresh module state — no cache, no shared memory."""

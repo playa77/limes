@@ -6,6 +6,18 @@ gold set, prompts) are recorded in their own changelogs.
 
 ---
 
+## 2026-08-23 — Refactor — architecture consolidation (operator-instructed)
+
+- **S1 — Lint/format debt zeroed (metric M1).** `ruff check` 16→0 errors,
+  `ruff format --check` 6 deviating files→0, on `refactor-consolidation`.
+  Formatting-only diff plus four long Cypher literals re-wrapped as adjacent
+  string literals (semantically identical). Includes the lockfile refresh the
+  D-65 `coverage` addition should have carried (`uv.lock` last committed at
+  WP-01; pyproject's dev group and the lock disagreed until now). Stop
+  condition, scope decision D-66, and task invariants logged in DECISIONS.md.
+
+---
+
 ## 2026-08-03 — Phase 11 — WP-40 100% line coverage (operator-instructed)
 
 - **WP-40 — Full line coverage of `src/limes` (6882/6882 statements,

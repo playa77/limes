@@ -68,7 +68,10 @@ def test_exists_before_and_after_put(tmp_path: Path):
 def test_two_level_hex_prefix_directory_structure(tmp_path: Path):
     store = _store(tmp_path)
     content_hash = store.put("src", PAYLOAD, "text/plain")
-    assert store.path_for(content_hash) == tmp_path / "archive" / content_hash[:2] / content_hash[2:4] / content_hash
+    assert (
+        store.path_for(content_hash)
+        == tmp_path / "archive" / content_hash[:2] / content_hash[2:4] / content_hash
+    )
     assert store.path_for(content_hash).is_file()
 
 
