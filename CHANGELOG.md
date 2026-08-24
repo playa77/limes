@@ -8,6 +8,18 @@ gold set, prompts) are recorded in their own changelogs.
 
 ## 2026-08-23 — Refactor — architecture consolidation (operator-instructed)
 
+- **S6 — Builder callbacks split out of the query module
+  (metric M3).** `ui/callbacks/builder.py` (new; `ui/callbacks/*.py` is a
+  wildcarded path in Doc 2 §2) carries `builder_start_type`,
+  `builder_hop_change`, `_triggered_hop_control`, `builder_add_hop`, and
+  their three Dash registrations, following the module's D-08 pure-
+  functions-plus-thin-register pattern; `ui/callbacks/query.py`
+  557→318 lines. Bodies moved verbatim — no behavior change; `app.py`
+  registers the new module; the UI-knows-nothing property is untouched
+  (no ontology literals, no HTTP, guarded by test_ui.py's source scans).
+  The registration test splits into query(10)+builder(3) with identical
+  per-wrapper assertions and updated counts. Verified: unit 697 +
+  integration 163 + acceptance 86 vs live Neo4j; ruff/mypy clean.
 - **S5 — Model-output parsing and prompt resolution stated once.**
   `strip_model_fence()` and `prompt_path()` added to
   `extraction/base.py`. The byte-identical JSON-fence pair

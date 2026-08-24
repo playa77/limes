@@ -26,6 +26,7 @@ from limes.api.builder import project_for_builder
 from limes.ontology.registry import load_ontology
 from limes.ui import api_client as api_module
 from limes.ui.api_client import ApiError
+from limes.ui.callbacks import builder as builder_callbacks
 from limes.ui.callbacks import query as query_callbacks
 from limes.ui.callbacks import selection as selection_callbacks
 from limes.ui.callbacks import temporal as temporal_callbacks
@@ -252,13 +253,13 @@ def test_saved_delete_guard_and_success(monkeypatch: pytest.MonkeyPatch):
 
 def test_builder_start_type_branches():
     with pytest.raises(PreventUpdate):
-        query_callbacks.builder_start_type(None, "Corporation", None)
-    spec, rendered = query_callbacks.builder_start_type(SCHEMA, None, SPEC_ONE_HOP)
+        builder_callbacks.builder_start_type(None, "Corporation", None)
+    spec, rendered = builder_callbacks.builder_start_type(SCHEMA, None, SPEC_ONE_HOP)
     assert spec is SPEC_ONE_HOP
     assert rendered is not None
-    spec, rendered = query_callbacks.builder_start_type(SCHEMA, None, None)
+    spec, rendered = builder_callbacks.builder_start_type(SCHEMA, None, None)
     assert spec["start_type"] is None
-    new_spec, rendered = query_callbacks.builder_start_type(SCHEMA, "Corporation", None)
+    new_spec, rendered = builder_callbacks.builder_start_type(SCHEMA, "Corporation", None)
     assert new_spec["start_type"] == "Corporation"
     assert new_spec["hops"] == []
 
@@ -267,7 +268,7 @@ def _hop_call(control: str, value: Any, hop: dict[str, Any] | None = None):
     """Invoke builder_hop_change for one control with the given value."""
     _set_trigger(control, 0)
     spec = {"start_type": "Corporation", "start_filters": {}, "hops": [hop or dict(HOP_EMPTY)]}
-    return query_callbacks.builder_hop_change(
+    return builder_callbacks.builder_hop_change(
         relation=value if control == "builder-rel" else None,
         direction=value if control == "builder-dir" else None,
         target=value if control == "builder-target" else None,
@@ -283,28 +284,28 @@ def _hop_call(control: str, value: Any, hop: dict[str, Any] | None = None):
 
 def test_builder_hop_change_guards():
     with pytest.raises(PreventUpdate):
-        query_callbacks.builder_hop_change(
+        builder_callbacks.builder_hop_change(
             None, None, None, None, None, None, None, None, None, None
         )
     with pytest.raises(PreventUpdate):
-        query_callbacks.builder_hop_change(
+        builder_callbacks.builder_hop_change(
             None, None, None, None, None, None, None, None, SPEC_ONE_HOP, None
         )
     with pytest.raises(PreventUpdate):
-        query_callbacks.builder_hop_change(
+        builder_callbacks.builder_hop_change(
             None, None, None, None, None, None, None, None, SPEC_ONE_HOP, SCHEMA
         )  # no trigger context -> control None
     _callback_context.context_value.set(
         SimpleNamespace(triggered_inputs=[{"prop_id": '{"broken.value'}])
     )
     with pytest.raises(PreventUpdate):
-        query_callbacks.builder_hop_change(
+        builder_callbacks.builder_hop_change(
             None, None, None, None, None, None, None, None, SPEC_ONE_HOP, SCHEMA
         )  # undecodable prop_id -> control None
     _set_trigger("builder-rel", 1)
     spec = {"start_type": "Corporation", "start_filters": {}, "hops": [dict(HOP_EMPTY)]}
     with pytest.raises(PreventUpdate):
-        query_callbacks.builder_hop_change(
+        builder_callbacks.builder_hop_change(
             "SUBSIDIARY_OF", None, None, None, None, None, None, None, spec, SCHEMA
         )  # index beyond hops
     _set_trigger("builder-rel", 1)
@@ -314,11 +315,11 @@ def test_builder_hop_change_guards():
         "hops": [dict(HOP_EMPTY), {**HOP_EMPTY, "target_type": None}],
     }
     with pytest.raises(PreventUpdate):
-        query_callbacks.builder_hop_change(
+        builder_callbacks.builder_hop_change(
             "SUBSIDIARY_OF", None, None, None, None, None, None, None, two_hops, SCHEMA
         )  # current_type None
     with pytest.raises(PreventUpdate):
-        query_callbacks.builder_hop_change(
+        builder_callbacks.builder_hop_change(
             None, None, None, None, None, None, None, None, {"start_type": None, "hops": []}, SCHEMA
         )  # current_type None via missing start_type guard
 
@@ -396,10 +397,10 @@ def test_builder_hop_change_remove_control():
 
 def test_triggered_hop_control_decodes_the_context():
     with pytest.raises(PreventUpdate):
-        query_callbacks.builder_add_hop(1, SPEC_ONE_HOP, None)
+        builder_callbacks.builder_add_hop(1, SPEC_ONE_HOP, None)
     with pytest.raises(PreventUpdate):
-        query_callbacks.builder_add_hop(None, SPEC_ONE_HOP, SCHEMA)
-    new_spec, rendered = query_callbacks.builder_add_hop(
+        builder_callbacks.builder_add_hop(None, SPEC_ONE_HOP, SCHEMA)
+    new_spec, rendered = builder_callbacks.builder_add_hop(
         1, {"start_type": "Corporation", "start_filters": {}, "hops": []}, SCHEMA
     )
     assert len(new_spec["hops"]) == 1
@@ -413,7 +414,7 @@ def test_triggered_hop_control_decodes_the_context():
         "hops": [{"relation": "SUBSIDIARY_OF", "target_type": None}],
     }
     with pytest.raises(PreventUpdate):
-        query_callbacks.builder_add_hop(1, targetless, SCHEMA)
+        builder_callbacks.builder_add_hop(1, targetless, SCHEMA)
 
 
 def test_render_system_status_and_saved_list():
@@ -626,7 +627,7 @@ def test_requery_paths(monkeypatch: pytest.MonkeyPatch):
 def test_register_wires_all_query_callbacks():
     app = _FakeApp()
     query_callbacks.register(app)
-    assert len(app.callbacks) == 13
+    assert len(app.callbacks) == 10
     with pytest.raises(PreventUpdate):
         app.callbacks[0](None, None, None)  # _run_nl_wrapper
     with pytest.raises(PreventUpdate):
@@ -646,14 +647,20 @@ def test_register_wires_all_query_callbacks():
         app.callbacks[8](None, None)  # _saved_load_wrapper
     with pytest.raises(PreventUpdate):
         app.callbacks[9](None, None)  # _saved_delete_wrapper
-    spec, rendered = app.callbacks[10](SCHEMA, None, None)  # _builder_start_wrapper
+
+
+def test_register_wires_all_builder_callbacks():
+    app = _FakeApp()
+    builder_callbacks.register(app)
+    assert len(app.callbacks) == 3
+    spec, rendered = app.callbacks[0](SCHEMA, None, None)  # _builder_start_wrapper
     assert spec["start_type"] is None
     with pytest.raises(PreventUpdate):
-        app.callbacks[11](
+        app.callbacks[1](
             None, None, None, None, None, None, None, None, None, None
         )  # _builder_hop_wrapper
     with pytest.raises(PreventUpdate):
-        app.callbacks[12](None, None, None)  # _builder_add_wrapper
+        app.callbacks[2](None, None, None)  # _builder_add_wrapper
 
 
 def test_register_wires_all_selection_callbacks():

@@ -14,6 +14,7 @@ from __future__ import annotations
 
 from dash import Dash
 
+from limes.ui.callbacks import builder as builder_callbacks
 from limes.ui.callbacks import query as query_callbacks
 from limes.ui.callbacks import selection as selection_callbacks
 from limes.ui.callbacks import temporal as temporal_callbacks
@@ -31,6 +32,7 @@ def create_app() -> Dash:
     app.layout = layout()
     selection_callbacks.register(app)
     query_callbacks.register(app)
+    builder_callbacks.register(app)
     temporal_callbacks.register(app)
     return app
 
