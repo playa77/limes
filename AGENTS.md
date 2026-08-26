@@ -12,7 +12,11 @@ On re-entry, resume from the last five entries of `DECISIONS.md`.
 ./venv/bin/ruff check src tests                    # NOT `ruff check .`
 ./venv/bin/mypy                                    # strict, scoped to src/limes
 ./venv/bin/python -m pytest tests/unit -q          # no Docker needed
-./venv/bin/python -m pytest tests/integration tests/acceptance -q   # needs Docker daemon
+# Integration and acceptance are separate invocations: whole-tree collection
+# trips over the acceptance conftest's pytest_plugins under pytest 9.x (D-63).
+# Both need the Docker daemon and share one session-scoped container.
+./venv/bin/python -m pytest tests/integration -q
+./venv/bin/python -m pytest tests/acceptance -q
 ```
 
 - Plain `ruff check .` fails on the standalone scripts in `tools/`; they are

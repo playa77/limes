@@ -1,4 +1,6 @@
-# src/limes/extraction/base.py | v1.0.0 | introduced by WP-22
+# src/limes/extraction/base.py | v1.0.1 | introduced by WP-22; fence-stripper
+# and prompt resolver added by the consolidation refactor, tag boundary made
+# explicit by the review follow-up (D-69)
 """Extractor protocol and shared extraction plumbing per Technical
 Specification §8.7.1 and §8.7.4.
 
@@ -25,7 +27,7 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
-from typing import Protocol, runtime_checkable
+from typing import Literal, Protocol, runtime_checkable
 
 from pydantic import BaseModel
 
@@ -61,7 +63,7 @@ def prompt_path(filename: str) -> Path:
     return Path(__file__).parent / "prompts" / filename
 
 
-def strip_model_fence(raw: str, *, tag: str = "json") -> str:
+def strip_model_fence(raw: str, *, tag: Literal["json", "cypher"] = "json") -> str:
     """Strip a whole-text markdown fence a model may wrap its answer in.
 
     The strict policy shared by the extraction-schema pass, the adjudication
@@ -69,9 +71,11 @@ def strip_model_fence(raw: str, *, tag: str = "json") -> str:
     response must be one fenced block (an optional language tag is tolerated)
     and only its body is judged; anything outside a fence stays verbatim.
     The lenient line-based variant used by `nlq.generate` is deliberately
-    different and lives there.
+    different and lives there. `tag` is a closed set of literals and is
+    regex-escaped before interpolation (D-69), so the fence pattern stays
+    exactly the literal tag even if a future caller grows.
     """
-    match = re.match(r"^```(?:" + tag + r")?\s*(.*?)\s*```$", raw.strip(), re.S)
+    match = re.match(r"^```(?:" + re.escape(tag) + r")?\s*(.*?)\s*```$", raw.strip(), re.S)
     return match.group(1) if match else raw.strip()
 
 

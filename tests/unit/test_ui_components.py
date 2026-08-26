@@ -162,12 +162,12 @@ def test_builder_property_helpers():
 
 
 def test_builder_current_type_and_filters():
-    from limes.ui.components.builder import _current_type, _hop_filter, _start_filter
+    from limes.ui.components.builder import _hop_filter, _start_filter, current_type
 
     spec = {"start_type": "Corporation", "start_filters": {"lei": "X"}, "hops": []}
-    assert _current_type(SCHEMA, spec, 0) == "Corporation"
-    assert _current_type(SCHEMA, None, 0) is None
-    assert _current_type(SCHEMA, {"start_type": None, "hops": []}, 0) is None
+    assert current_type(SCHEMA, spec, 0) == "Corporation"
+    assert current_type(SCHEMA, None, 0) is None
+    assert current_type(SCHEMA, {"start_type": None, "hops": []}, 0) is None
     properties = builder_component.properties_for(SCHEMA, "Corporation")
     assert _start_filter(properties, spec) == ("lei", "X")
     hop = {"filters": {"label": "BMW"}}

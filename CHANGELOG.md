@@ -6,6 +6,39 @@ gold set, prompts) are recorded in their own changelogs.
 
 ---
 
+## 2026-08-26 — Review follow-up — review-followup-v1.0.0 (operator-approved)
+
+Four findings from the refactor-v1.1.0 code review, implemented and verified:
+
+- **D-68 — the §4.3 downgrade guard now evaluates under the provisioning
+  lock.** `_check_ontology_version` moves inside the held-lock region of
+  `provision()` (`graph/schema.py` v1.0.3): it reads ontology versions
+  stamped on `:Entity` nodes, so checking before acquisition left a window
+  where two provisioners with different artifacts could both pass. Release
+  stays in `finally`, so a guard rejection cannot leak the lock.
+- **D-69 — `strip_model_fence`'s tag made an explicit boundary**
+  (`extraction/base.py` v1.0.1): parameter typed
+  `Literal["json", "cypher"]` and `re.escape`d before regex interpolation.
+- **D-70 — provisioning idempotency asserted exactly-once per index name**
+  (`test_schema_provision.py` v1.0.1): replaces the weak Entity-label
+  `>= 1` count with the concurrent test's name-based check; one shared
+  `_expected_index_names()` helper, `_index_count` removed.
+- **D-71 — `components.builder._current_type` promoted to public
+  `current_type`** (components v1.0.1, callbacks/builder v1.0.1); loop-local
+  renamed to `hop_type` to avoid function-wide shadowing; consumers updated.
+- AGENTS.md's verification loop corrected: integration and acceptance are
+  separate pytest invocations (whole-tree collection trips over the
+  acceptance conftest's `pytest_plugins`, D-63) — the previously documented
+  single combined command fails deterministically.
+
+Verified on this tree: `ruff check` + `ruff format --check` clean; mypy
+strict clean (109 files); unit 697 passed, integration 164 passed,
+acceptance 86 passed against live Neo4j — including
+`test_downgrade_guard_rejects_older_ontology` (guard raises under the lock,
+release on raise) and `test_concurrent_provision_is_serialized`.
+
+---
+
 ## 2026-08-23 — Refactor — architecture consolidation (operator-instructed)
 
 - **S6 — Builder callbacks split out of the query module

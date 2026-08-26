@@ -1,5 +1,6 @@
-# src/limes/ui/callbacks/builder.py | v1.0.0 | extracted from query.py by the
+# src/limes/ui/callbacks/builder.py | v1.0.1 | extracted from query.py by the
 # architecture-consolidation refactor; the builder callbacks originated in WP-36.
+# current_type import made public by the review follow-up (D-71).
 """Builder construction callbacks (Doc 1 §6.5, Doc 2 §8.13): the start-type
 render, the pattern-matched hop interaction, and hop appending.
 
@@ -22,7 +23,7 @@ from dash.exceptions import PreventUpdate
 
 from limes.ui.callbacks.selection import triggered_index, triggered_prop_id
 from limes.ui.components import builder as builder_component
-from limes.ui.components.builder import _current_type
+from limes.ui.components.builder import current_type
 
 
 def builder_start_type(
@@ -74,8 +75,8 @@ def builder_hop_change(
     if index >= len(hops):
         raise PreventUpdate
     hop = hops[index]
-    current_type = _current_type(schema, spec, index)
-    if current_type is None:
+    hop_type = current_type(schema, spec, index)
+    if hop_type is None:
         raise PreventUpdate
     relation_name = hop.get("relation")
     direction_name = hop.get("direction")
@@ -94,7 +95,7 @@ def builder_hop_change(
                 }
             )
         else:
-            directions = builder_component.directions_for(schema, current_type, relation)
+            directions = builder_component.directions_for(schema, hop_type, relation)
             hop.update(
                 {
                     "relation": relation,
@@ -109,14 +110,14 @@ def builder_hop_change(
         if (
             relation_name
             and direction
-            and direction in builder_component.directions_for(schema, current_type, relation_name)
+            and direction in builder_component.directions_for(schema, hop_type, relation_name)
         ):
             hop["direction"] = direction
             hop["target_type"] = None
     elif control == "builder-target":
         if not relation_name or not direction_name:
             raise PreventUpdate
-        targets = builder_component.targets_for(schema, current_type, relation_name, direction_name)
+        targets = builder_component.targets_for(schema, hop_type, relation_name, direction_name)
         if target and target in targets:
             hop["target_type"] = target
     elif control == "builder-qualifier":

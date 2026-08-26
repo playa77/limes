@@ -5,6 +5,62 @@ reversibility: **R1** reversible in under an hour, **R2** bounded recoverable
 cost, **R3** one-way door. Written when each decision is made, latest first.
 Nothing here is a status report; unlogged decisions are unmade decisions.
 
+## 2026-08-26 — Approval — review-followup-v1.0.0
+
+The human approved review-followup-v1.0.0 (D-68 downgrade guard under the
+provisioning lock, D-69 fence-tag boundary, D-70 exactly-once idempotency
+assertion, D-71 public current_type, AGENTS.md verification-loop fix) and
+instructed commit and push to main, in their own words: "Approved. Commit and
+push this to main." This approval names the presented version and cannot be
+reused for any other version of the task. Verification at presentation:
+ruff/mypy clean; unit 697 / integration 164 / acceptance 86 passed against
+live Neo4j.
+
+## 2026-08-26 — D-68 (R2) — The §4.3 downgrade guard is evaluated under the provisioning lock
+
+Review finding on refactor-v1.1.0, operator-approved. `_check_ontology_version`
+read stamped versions from the graph *before* `_acquire_provision_lock`, so two
+concurrent provisioners carrying different ontology artifacts could both pass
+the guard before either wrote DDL; the serialization guarantee did not cover
+the read it protects. The check now runs inside the held-lock region, after
+acquisition and before the first DDL statement; release stays in `finally`, so
+a guard rejection cannot leak the lock. Rejected alternative: leaving the guard
+outside and documenting the window as benign (one artifact per process today) —
+declined because the fix is a two-line move and the benign reading depends on a
+deployment invariant nothing enforces. Guard tests unchanged:
+`test_downgrade_guard_rejects_older_ontology` still passes (release-on-raise
+verified), `test_concurrent_provision_is_serialized` still green.
+
+## 2026-08-26 — D-69 (R1) — `strip_model_fence`'s tag parameter made an explicit boundary
+
+Review finding on refactor-v1.1.0. `tag` was interpolated into the fence regex
+unescaped from an untyped `str` parameter — safe with the current literal
+callers ("json", "cypher"), fragile if ever externally sourced. The parameter
+is now `Literal["json", "cypher"]` (mypy rejects a new tag until it is added
+deliberately) and `re.escape(tag)` precedes interpolation. Behavior identical:
+both tags are escape-inert. R1: single-module change, callers pinned by unit
+tests.
+
+## 2026-08-26 — D-70 (R1) — Provisioning idempotency asserted exactly-once per index name
+
+Review nit on `test_provision_is_idempotent`: it counted all Entity-labeled
+indexes (`>= 1`) under a comment claiming "exactly once" — duplicates would
+have passed. It now reuses the concurrent test's stronger check: every §5.3
+index name appears exactly once in `SHOW INDEXES`. The parsing snippet moved
+into one shared helper (`_expected_index_names`) used by both tests instead of
+a near-duplicate; the label-counting `_index_count` helper had no remaining
+caller and was removed with this decision as its record. Test-only, R1.
+
+## 2026-08-26 — D-71 (R1) — `components.builder._current_type` promoted to public `current_type`
+
+Review nit: `ui/callbacks/builder.py` imported the underscore-private
+`_current_type` across modules (moved verbatim by the S6 split). Promoted to
+public `current_type`; the render loop's same-named local renamed to
+`hop_type` in both the component and the callback, because a local assigned
+the function's own name would shadow it function-wide (UnboundLocalError, not
+style). Consumers updated: components/builder.py, callbacks/builder.py,
+test_ui_components.py. No behavior change; UI purity scan untouched. R1.
+
 ## 2026-08-24 — D-67 (R2) — Provisioning serialized via a transient mutex transaction
 
 Operator instruction on the [CONFLICT] finding: "serialize provisioning.

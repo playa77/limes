@@ -1,5 +1,6 @@
-# src/limes/graph/schema.py | v1.0.2 | introduced by WP-04, serialized by the
-# architecture-consolidation repair (D-67, D-67b)
+# src/limes/graph/schema.py | v1.0.3 | introduced by WP-04, serialized by the
+# architecture-consolidation repair (D-67, D-67b); guard moved under the lock
+# by the review follow-up (D-68)
 """Idempotent Neo4j schema provisioning per Technical Specification §5.3.
 
 `provision` executes every constraint and index from §5.3 with `IF NOT
@@ -135,15 +136,19 @@ def provision(driver: GraphDriver, ontology: Ontology, embedding_dimensions: int
     `test_concurrent_provision_is_serialized`. A waiter that exceeds
     `_PROVISION_LOCK_WAIT_S` fails loudly rather than hanging; a holder that
     died mid-provision is reclaimed after `_PROVISION_LOCK_STALE_AFTER_S`.
-    """
-    _check_ontology_version(driver._driver, ontology)
 
+    The §4.3 downgrade guard is evaluated under that same lock (D-68): it
+    reads ontology versions stamped on `:Entity` nodes, so checking it
+    before acquisition would leave a window in which two provisioners
+    carrying different artifacts both pass before either writes DDL.
+    """
     statements = list(_SCHEMA_STATEMENTS)
     statements.append(_VECTOR_INDEX_TEMPLATE.format(dims=embedding_dimensions))
     statements.extend(_relationship_property_indexes(ontology))
 
     run_id = _acquire_provision_lock(driver)
     try:
+        _check_ontology_version(driver._driver, ontology)
         for statement in statements:
             driver.write_batch([(statement, {})])
     finally:

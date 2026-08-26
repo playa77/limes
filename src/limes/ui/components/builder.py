@@ -1,4 +1,6 @@
-# src/limes/ui/components/builder.py | v1.0.0 | introduced by WP-36
+# src/limes/ui/components/builder.py | v1.0.1 | introduced by WP-36;
+# current_type promoted to public for the callbacks split's cross-module use
+# (review follow-up, D-71)
 """The generated query builder (Doc 1 §6.5, Doc 2 §8.13, FR-09).
 
 The builder is rendered from `/builder/schema` at runtime and contains no
@@ -164,9 +166,7 @@ def _property_options(properties: list[dict[str, Any]]) -> list[dict[str, str]]:
     return [{"label": str(p["name"]), "value": str(p["name"])} for p in properties]
 
 
-def _current_type(
-    schema: dict[str, Any], spec: dict[str, Any] | None, hop_index: int
-) -> str | None:
+def current_type(schema: dict[str, Any], spec: dict[str, Any] | None, hop_index: int) -> str | None:
     """The entity type a hop starts from: the start type for hop 0, the
     previous hop's target beyond."""
     if not spec:
@@ -244,16 +244,14 @@ def render(schema: dict[str, Any] | None, spec: dict[str, Any] | None) -> html.D
     ]
 
     for index, hop in enumerate(current_spec.get("hops", [])):
-        current_type = _current_type(schema, spec, index)
+        hop_type = current_type(schema, spec, index)
         relation = hop.get("relation")
         direction = hop.get("direction")
         target_type = hop.get("target_type")
-        directions = (
-            directions_for(schema, current_type, relation) if current_type and relation else []
-        )
+        directions = directions_for(schema, hop_type, relation) if hop_type and relation else []
         targets = (
-            targets_for(schema, current_type, relation, direction)
-            if current_type and relation and direction
+            targets_for(schema, hop_type, relation, direction)
+            if hop_type and relation and direction
             else []
         )
         target_properties = properties_for(schema, target_type) if target_type else []
@@ -263,7 +261,7 @@ def render(schema: dict[str, Any] | None, spec: dict[str, Any] | None) -> html.D
             if hop_filter_prop
             else "text"
         )
-        temporal = bool(current_type and relation and is_temporal(schema, relation))
+        temporal = bool(hop_type and relation and is_temporal(schema, relation))
         qualifier = hop.get("temporal_qualifier")
         instant = hop.get("temporal_instant")
         instant = instant.split("T")[0] if isinstance(instant, str) and "T" in instant else instant
@@ -282,9 +280,7 @@ def render(schema: dict[str, Any] | None, spec: dict[str, Any] | None) -> html.D
                                 "label": f"{entry['relation']} ({'/'.join(entry['directions'])})",
                                 "value": entry["relation"],
                             }
-                            for entry in (
-                                relations_for(schema, current_type) if current_type else []
-                            )
+                            for entry in (relations_for(schema, hop_type) if hop_type else [])
                         ],
                         value=relation,
                         placeholder="relation",

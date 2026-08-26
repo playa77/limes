@@ -1,4 +1,6 @@
-# tests/integration/test_schema_provision.py | v1.0.0 | introduced by WP-04
+# tests/integration/test_schema_provision.py | v1.0.1 | introduced by WP-04;
+# concurrency guard added by the consolidation repair (D-67b), exactly-once
+# idempotency assertion and shared index-name helper by the review follow-up (D-70)
 """Schema provisioning integration tests (AC-03, AC-01 downgrade guard).
 
 Provisioning runs twice and must produce no error and no duplicate index
@@ -12,7 +14,7 @@ import pytest
 
 from limes.errors import OntologyError
 from limes.graph.driver import GraphDriver
-from limes.graph.schema import provision
+from limes.graph.schema import _SCHEMA_STATEMENTS, provision
 from limes.ontology.registry import load_ontology
 from tests.integration.conftest import Neo4jInstance
 
@@ -37,23 +39,24 @@ def ontology():
     return load_ontology(ONTOLOGY_PATH)
 
 
-def _index_count(driver: GraphDriver, label: str) -> int:
-    rows = driver.read(
-        "SHOW INDEXES YIELD labelsOrTypes, name "
-        "WHERE any(l IN labelsOrTypes WHERE l = $label) "
-        "RETURN count(*) AS c",
-        {"label": label},
-        10,
-    )
-    return rows[0]["c"]
+def _index_names(driver: GraphDriver) -> list[str]:
+    rows = driver.read("SHOW INDEXES YIELD name RETURN name", {}, 100)
+    return [r["name"] for r in rows]
+
+
+def _expected_index_names() -> list[str]:
+    return [s.split()[2] for s in _SCHEMA_STATEMENTS if s.startswith("CREATE INDEX")]
 
 
 def test_provision_is_idempotent(driver: GraphDriver, ontology):
     provision(driver, ontology, embedding_dimensions=1024)
     provision(driver, ontology, embedding_dimensions=1024)
 
-    # No duplicate indexes: entity_label must exist exactly once.
-    assert _index_count(driver, "Entity") >= 1
+    # No duplicate indexes: every §5.3 index exists exactly once by name,
+    # not merely at least once (D-70).
+    names = _index_names(driver)
+    duplicates = [n for n in _expected_index_names() if names.count(n) != 1]
+    assert duplicates == []
 
 
 def test_provision_creates_relationship_property_indexes(driver: GraphDriver, ontology):
@@ -103,8 +106,6 @@ def test_concurrent_provision_is_serialized(
     office_at_valid_from (2026-08-24)."""
     import threading
 
-    from limes.graph.schema import _SCHEMA_STATEMENTS  # noqa: PLC0415
-
     errors: list[Exception] = []
     start = threading.Barrier(2)
 
@@ -131,8 +132,6 @@ def test_concurrent_provision_is_serialized(
 
     assert errors == []
 
-    rows = driver.read("SHOW INDEXES YIELD name RETURN name", {}, 100)
-    names = [r["name"] for r in rows]
-    expected = [s.split()[2] for s in _SCHEMA_STATEMENTS if s.startswith("CREATE INDEX")]
-    duplicates = [n for n in expected if names.count(n) != 1]
+    names = _index_names(driver)
+    duplicates = [n for n in _expected_index_names() if names.count(n) != 1]
     assert duplicates == []
