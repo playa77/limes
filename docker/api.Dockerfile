@@ -27,6 +27,7 @@ FROM deps AS api
 # The ontology artifact at its configured container path: the startup
 # handler loads `/app/ontology/ontology.yaml` (Doc 2 §4.2) and the
 # downgrade guard compares against the version stamped in the graph.
+COPY README.md ./README.md
 COPY src ./src
 COPY ontology ./ontology
 RUN uv pip install --system --no-deps .

@@ -39,6 +39,7 @@ RUN apt-get update \
     && chmod +x /usr/local/lib/docker/cli-plugins/docker-compose \
     && docker compose version
 
+COPY README.md ./README.md
 COPY src ./src
 COPY ontology ./ontology
 COPY reference_questions ./reference_questions

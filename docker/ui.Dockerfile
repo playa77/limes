@@ -23,6 +23,7 @@ RUN uv export --frozen --no-dev --no-emit-project \
 
 FROM deps AS ui
 
+COPY README.md ./README.md
 COPY src ./src
 RUN uv pip install --system --no-deps .
 

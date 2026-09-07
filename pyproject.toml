@@ -41,8 +41,19 @@ dev = [
     "coverage>=7.15",
 ]
 
-[tool.uv]
-package = true
+# Hatchling build backend: the prompt templates under
+# src/limes/extraction/prompts/*.md are runtime package data
+# (extraction/base.py prompt_path); uv_build packages only Python sources,
+# which broke extraction/adjudication/nl2cypher inside the Docker images.
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/limes"]
 
 # The `limes` console script (Doc 2 §8.14): registered by WP-38 per the
 # assignment in cli/main.py, so the worker container's PATH carries it.
