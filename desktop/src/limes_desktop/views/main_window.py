@@ -20,6 +20,8 @@ from limes_desktop.api.errors import ApiError, ApiUnreachable
 from limes_desktop.config import ConnectionProfile, ProfileStore
 from limes_desktop.state import QueryOutcomeBundle, SessionState
 from limes_desktop.views.entity import EntityView
+from limes_desktop.views.query_cypher import CypherConsole
+from limes_desktop.views.query_nl import NlqView
 from limes_desktop.views.search import SearchBar
 
 BannerState = str  # "ok" | "degraded" | "unreachable"
@@ -136,10 +138,13 @@ class MainWindow(QMainWindow):
         self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, dock)
 
         self.stack = QStackedWidget(self)
-        # the entity view (Task 6); Tasks 7-11 replace the remaining placeholders
+        # the entity view (Task 6); Tasks 8-11 replace the remaining placeholders
         self.entity_view = EntityView(state)
         self.stack.addWidget(self.entity_view)
-        self.stack.addWidget(QWidget())
+        self.nlq_view = NlqView(state, client_factory=client_factory)
+        self.stack.addWidget(self.nlq_view)
+        self.cypher_console = CypherConsole(state, client_factory=client_factory)
+        self.stack.addWidget(self.cypher_console)
         self.stack.addWidget(QWidget())
         self.setCentralWidget(self.stack)
 
