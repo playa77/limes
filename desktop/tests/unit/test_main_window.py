@@ -87,7 +87,11 @@ def test_views_stacked_widget(qtbot: Any) -> None:
     assert win.stack.widget(5) is win.network_view
     assert win.stack.widget(6) is win.map_view
     assert win.stack.widget(7) is win.timeline_view
-    for i in range(8, win.stack.count()):
+    # Task 10: read-only ops views (FR-DC-050/051/052) on pages 8-10
+    assert win.stack.widget(8) is win.ingest_view
+    assert win.stack.widget(9) is win.ledger_view
+    assert win.stack.widget(10) is win.references_view
+    for i in range(11, win.stack.count()):
         assert win.stack.widget(i).metaObject().className() == "QWidget"
 
 

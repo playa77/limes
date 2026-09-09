@@ -171,7 +171,18 @@ class MainWindow(QMainWindow):
         self.stack.addWidget(self.network_view)
         self.stack.addWidget(self.map_view)
         self.stack.addWidget(self.timeline_view)
-        self.stack.addWidget(QWidget())  # trailing placeholder for Tasks 10-11
+        # Task 10: read-only ops views (FR-DC-050/051/052) on pages 8-10
+        from limes_desktop.views.ops.ingest import IngestView
+        from limes_desktop.views.ops.ledger import LedgerView
+        from limes_desktop.views.ops.references import ReferencesView
+
+        self.ingest_view = IngestView(client_factory=client_factory)
+        self.ledger_view = LedgerView(client_factory=client_factory)
+        self.references_view = ReferencesView(client_factory=client_factory)
+        self.stack.addWidget(self.ingest_view)
+        self.stack.addWidget(self.ledger_view)
+        self.stack.addWidget(self.references_view)
+        self.stack.addWidget(QWidget())  # trailing placeholder for Task 11
         self.setCentralWidget(self.stack)
 
         # result bundles flow into the viz views; expansion goes through the
