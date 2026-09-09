@@ -20,6 +20,7 @@ from limes_desktop.api.errors import ApiError, ApiUnreachable
 from limes_desktop.config import ConnectionProfile, ProfileStore
 from limes_desktop.state import QueryOutcomeBundle, SessionState
 from limes_desktop.views.entity import EntityView
+from limes_desktop.views.query_builder import BuilderView
 from limes_desktop.views.query_cypher import CypherConsole
 from limes_desktop.views.query_history import SavedQueriesPanel
 from limes_desktop.views.query_nl import NlqView
@@ -152,6 +153,10 @@ class MainWindow(QMainWindow):
             current_query=self._current_query,
         )
         self.stack.addWidget(self.saved_queries_panel)
+        # Task 8: ontology-driven query builder (FR-DC-031); fetches its
+        # schema lazily on first show, never at construction
+        self.builder_view = BuilderView(state, client_factory=client_factory)
+        self.stack.addWidget(self.builder_view)
         self.stack.addWidget(QWidget())
         self.setCentralWidget(self.stack)
 
