@@ -1,4 +1,4 @@
-# desktop/src/limes_desktop/state.py | v0.1.0 | SessionState signal hub (FR-DC-043/042)
+# desktop/src/limes_desktop/state.py | v0.1.1 | SessionState signal hub (FR-DC-043/042)
 from collections import deque
 from dataclasses import dataclass
 
@@ -6,6 +6,7 @@ from PySide6.QtCore import QObject, Signal
 
 from limes_desktop.api.models import (
     CoverageReport,
+    Diagnosis,
     EntityDetail,
     GraphResult,
     NlqOutcome,
@@ -34,6 +35,7 @@ class QueryOutcomeBundle:
     source: str
     cypher: str | None = None
     nlq: NlqOutcome | None = None
+    diagnosis: Diagnosis | None = None
 
 
 class SessionState(QObject):

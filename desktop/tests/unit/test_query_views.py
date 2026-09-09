@@ -21,6 +21,13 @@ def _nl_payload() -> dict[str, Any]:
         "validation_errors": [],
         "plan_rejection": None,
         "notes": ["resolved 'Jane' via label match"],
+        "coverage": {"relation_counts": {"DIRECTOR_OF": 2}, "contributing_sources": []},
+        "diagnosis": {
+            "note": "hop 1 emptied the set",
+            "relation_counts": {"DIRECTOR_OF": 2},
+            "failing_clause": "DIRECTOR_OF",
+            "clause_index": 1,
+        },
     }
 
 
@@ -29,7 +36,12 @@ def _cypher_payload() -> dict[str, Any]:
         "cypher": "MATCH (n) RETURN n LIMIT 5",
         "results": {"nodes": [], "edges": [], "counts": {}},
         "coverage": {"relation_counts": {"DIRECTOR_OF": 2}, "contributing_sources": []},
-        "diagnosis": None,
+        "diagnosis": {
+            "note": "",
+            "relation_counts": {"DIRECTOR_OF": 2, "MEMBER_OF": 0},
+            "failing_clause": "DIRECTOR_OF",
+            "clause_index": 1,
+        },
         "notes": [],
     }
 
@@ -61,6 +73,9 @@ class FakeQueryClient:
     def save_query(self, name: str, surface: str, payload: dict[str, Any]) -> str:
         self.save_calls.append((name, surface, payload))
         return "sq-1"
+
+    def saved_queries(self) -> list[Any]:
+        return []
 
     def delete_saved_query(self, saved_query_id: str) -> None:
         self.delete_calls.append(saved_query_id)
@@ -118,6 +133,77 @@ def test_nlq_publishes_bundle_with_nlq_metadata(qtbot: Any) -> None:
     assert b.cypher == _nl_payload()["cypher"]
     assert b.nlq is not None and b.nlq.question == "q"
     assert isinstance(b.result, GraphResult)
+
+
+def test_nlq_publish_carries_coverage_and_diagnosis(qtbot: Any) -> None:
+    """FR-DC-034: every result carries coverage; diagnosis rides the bundle."""
+    client = FakeQueryClient()
+    view, state = _make_view(qtbot, client)
+    bundles: list[QueryOutcomeBundle] = []
+    state.result_arrived.connect(bundles.append)
+
+    view.question_edit.setText("q")
+    view._submit()
+
+    b = bundles[0]
+    assert b.coverage is not None
+    assert b.coverage.relation_counts == {"DIRECTOR_OF": 2}
+    assert b.diagnosis is not None
+    assert b.diagnosis.failing_clause == "DIRECTOR_OF"
+
+
+def test_console_publish_carries_coverage_and_diagnosis(qtbot: Any) -> None:
+    client = FakeQueryClient()
+    console, state = _make_console(qtbot, client)
+    bundles: list[QueryOutcomeBundle] = []
+    state.result_arrived.connect(bundles.append)
+
+    console.editor.setPlainText("MATCH (n) RETURN n")
+    console._run()
+
+    b = bundles[0]
+    assert b.coverage is not None
+    assert b.diagnosis is not None
+    assert b.diagnosis.clause_index == 1
+
+
+def test_coverage_panel_renders_diagnosis_from_published_bundle(qtbot: Any) -> None:
+    """AC-DC-3 via the real signal path: no set_diagnosis() call needed."""
+    from limes_desktop.views.coverage_panel import CoveragePanel
+
+    client = FakeQueryClient()
+    state = SessionState()
+    panel = CoveragePanel(state)
+    qtbot.addWidget(panel)
+    view = NlqView(state, client_factory=lambda: client)
+    qtbot.addWidget(view)
+    view.question_edit.setText("q")
+    view._submit()  # publishes bundle with diagnosis; empty result
+
+    assert panel.is_showing_empty_state
+    assert panel._empty_label.isVisible() or panel._empty_label.text().startswith(
+        "query emptied the result set"
+    )
+    assert panel.diagnosis_table.rowCount() == 1
+
+
+def test_console_refresh_history_dedupes_persisted_entries(
+    qtbot: Any, tmp_path: Any
+) -> None:
+    store = HistoryStore(config_dir=tmp_path)
+    store.enabled = True
+    store.append("MATCH (n) RETURN n")
+    client = FakeQueryClient()
+    console, state = _make_console(qtbot, client, store=store)
+    console.persist_checkbox.setChecked(True)
+
+    # running the same query puts it into session history too
+    console.editor.setPlainText("MATCH (n) RETURN n")
+    console._run()
+    console.refresh_history()
+
+    items = [console.history.itemText(i) for i in range(console.history.count())]
+    assert items == ["MATCH (n) RETURN n"]
 
 
 def test_write_clause_rejection_surfaces_detail_verbatim(qtbot: Any) -> None:
@@ -217,27 +303,65 @@ def test_console_history_off_by_default(qtbot: Any, tmp_path: Any) -> None:
 # -- FR-DC-033: saved queries ---------------------------------------------------
 
 
-def test_saved_query_save_captures_name_surface_and_text(qtbot: Any) -> None:
+def test_saved_query_save_captures_surface_and_text(qtbot: Any) -> None:
     client = FakeQueryClient()
     state = SessionState()
-    current = {"text": "MATCH (n) RETURN n"}
+    current = {"surface": "cypher", "text": "MATCH (n) RETURN n"}
     panel = SavedQueriesPanel(
-        state, client_factory=lambda: client, query_text=lambda: current["text"]
+        state,
+        client_factory=lambda: client,
+        current_query=lambda: (current["surface"], current["text"]),
     )
     qtbot.addWidget(panel)
 
     panel.name_edit.setText("all nodes")
     panel._save()
 
+    # surface is the dimension ("cypher"/"nlq"), not the query text
     assert client.save_calls == [
-        ("all nodes", "MATCH (n) RETURN n", {"result_count": 0, "pinned": False})
+        ("all nodes", "cypher", {"cypher": "MATCH (n) RETURN n", "result_count": 0})
     ]
+
+
+def test_saved_query_save_derives_result_count_from_last_outcome(qtbot: Any) -> None:
+    client = FakeQueryClient()
+    state = SessionState()
+    panel = SavedQueriesPanel(
+        state,
+        client_factory=lambda: client,
+        current_query=lambda: ("cypher", "MATCH (n) RETURN n"),
+    )
+    qtbot.addWidget(panel)
+    # publish an outcome with 3 nodes, then save — result_count derives from it
+    def _node(i: int) -> dict[str, Any]:
+        return {
+            "entity_id": f"e{i}",
+            "type": "Organization",
+            "label": f"n{i}",
+            "properties": {},
+        }
+
+    state.publish(
+        QueryOutcomeBundle(
+            result=GraphResult.from_api({"nodes": [_node(i) for i in range(3)]}),
+            coverage=None,
+            source="cypher",
+            cypher="MATCH (n) RETURN n",
+        )
+    )
+
+    panel.name_edit.setText("n")
+    panel._save()
+
+    assert client.save_calls[0][2]["result_count"] == 3
 
 
 def test_saved_query_delete_calls_client(qtbot: Any) -> None:
     client = FakeQueryClient()
     state = SessionState()
-    panel = SavedQueriesPanel(state, client_factory=lambda: client, query_text=lambda: "")
+    panel = SavedQueriesPanel(
+        state, client_factory=lambda: client, current_query=lambda: ("", "")
+    )
     qtbot.addWidget(panel)
     panel.set_queries([("sq-1", "all nodes", "MATCH (n) RETURN n")])
     panel.list_widget.setCurrentRow(0)
@@ -261,6 +385,19 @@ def test_main_window_registers_query_views(qtbot: Any) -> None:
     assert win.stack.widget(0) is win.entity_view
     assert any(win.stack.widget(i) is win.nlq_view for i in range(win.stack.count()))
     assert any(win.stack.widget(i) is win.cypher_console for i in range(win.stack.count()))
+
+
+def test_main_window_registers_saved_queries_panel(qtbot: Any) -> None:
+    from limes_desktop.views.main_window import MainWindow
+    from test_main_window_support import FakeClient
+
+    state = SessionState()
+    win = MainWindow(state, ProfileStore(), lambda: FakeClient())
+    qtbot.addWidget(win)
+
+    assert any(
+        win.stack.widget(i) is win.saved_queries_panel for i in range(win.stack.count())
+    )
 
 
 # -- no ontology literals in the new modules ------------------------------------

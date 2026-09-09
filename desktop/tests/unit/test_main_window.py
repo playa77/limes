@@ -75,12 +75,14 @@ def test_views_stacked_widget(qtbot: Any) -> None:
     qtbot.addWidget(win)
 
     # since Task 6 the first stack page is the EntityView, not a placeholder;
-    # Task 7 adds the NLQ view (page 1) and Cypher console (page 2)
+    # Task 7 adds the NLQ view (page 1) and Cypher console (page 2); the fix
+    # round wires the SavedQueriesPanel (page 3); Tasks 8-11 take the rest
     assert win.stack.count() > 0
     assert win.stack.widget(0) is win.entity_view
     assert win.stack.widget(1) is win.nlq_view
     assert win.stack.widget(2) is win.cypher_console
-    for i in range(3, win.stack.count()):
+    assert win.stack.widget(3) is win.saved_queries_panel
+    for i in range(4, win.stack.count()):
         assert win.stack.widget(i).metaObject().className() == "QWidget"
 
 

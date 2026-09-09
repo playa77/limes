@@ -21,6 +21,7 @@ from limes_desktop.config import ConnectionProfile, ProfileStore
 from limes_desktop.state import QueryOutcomeBundle, SessionState
 from limes_desktop.views.entity import EntityView
 from limes_desktop.views.query_cypher import CypherConsole
+from limes_desktop.views.query_history import SavedQueriesPanel
 from limes_desktop.views.query_nl import NlqView
 from limes_desktop.views.search import SearchBar
 
@@ -145,10 +146,25 @@ class MainWindow(QMainWindow):
         self.stack.addWidget(self.nlq_view)
         self.cypher_console = CypherConsole(state, client_factory=client_factory)
         self.stack.addWidget(self.cypher_console)
+        self.saved_queries_panel = SavedQueriesPanel(
+            state,
+            client_factory=client_factory,
+            current_query=self._current_query,
+        )
+        self.stack.addWidget(self.saved_queries_panel)
         self.stack.addWidget(QWidget())
         self.setCentralWidget(self.stack)
 
         state.connection_changed.connect(self._on_connection_changed)
+
+    def _current_query(self) -> tuple[str, str]:
+        """The (surface, query text) of the active query surface, for saving."""
+        current = self.stack.currentWidget()
+        if current is self.cypher_console:
+            return "cypher", self.cypher_console.editor.toPlainText()
+        if current is self.nlq_view:
+            return "nlq", self.nlq_view.cypher_edit.toPlainText()
+        return "", ""
 
     def refresh_banner(self) -> None:
         self.banner.refresh()

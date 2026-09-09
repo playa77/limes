@@ -103,8 +103,11 @@ class CoveragePanel(QWidget):
         if isinstance(result, list):
             return  # search hits are not this panel's concern
         empty = not getattr(result, "nodes", None) and not getattr(result, "entity", None)
-        if empty and self._diagnosis is not None:
-            self._show_diagnosis(self._diagnosis)
+        # diagnosis preference: what the bundle carried (real /query/* payloads
+        # attach diagnosis on empty results) over any externally injected one
+        diagnosis = bundle.diagnosis if bundle.diagnosis is not None else self._diagnosis
+        if empty and diagnosis is not None:
+            self._show_diagnosis(diagnosis)
             self.summary_widget.setVisible(False)
         else:
             self.show_coverage(bundle.coverage)

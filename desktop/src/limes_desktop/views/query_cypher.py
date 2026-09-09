@@ -82,7 +82,7 @@ class CypherConsole(QWidget):
         self._history_store = history_store
 
         self.editor = QPlainTextEdit(self)
-        self.editor.setPlaceholderText("MATCH (n) RETURN n …")
+        self.editor.setPlaceholderText("cypher, e.g. a read-only graph pattern…")
         self.run_button = QPushButton("Run", self)
         self.history = QComboBox(self)
         self.history.setEnabled(False)
@@ -113,11 +113,15 @@ class CypherConsole(QWidget):
         return self.error_pane.text()
 
     def refresh_history(self) -> None:
-        entries = [
+        session_entries = [
             b.cypher for b in self._state.history() if b.source in HISTORY_SOURCES and b.cypher
         ]
+        entries = session_entries
         if self._history_store is not None and self._history_store.enabled:
-            entries = self._history_store.load() + entries
+            # persisted entries first, minus anything already in session history
+            persisted = self._history_store.load()
+            session_set = set(session_entries)
+            entries = [e for e in persisted if e not in session_set] + session_entries
         entries = entries[-_HISTORY_MAX:]
         self.history.blockSignals(True)
         self.history.clear()
@@ -147,6 +151,7 @@ class CypherConsole(QWidget):
                 coverage=outcome.coverage,
                 source="cypher",
                 cypher=cypher,
+                diagnosis=outcome.diagnosis,
             )
         )
         self.refresh_history()

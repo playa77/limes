@@ -94,7 +94,7 @@ class NlqView(QWidget):
         self._state.publish(
             QueryOutcomeBundle(
                 result=outcome.results if outcome.results is not None else _empty_result(),
-                coverage=None,
+                coverage=outcome.coverage,
                 source="nlq",
                 cypher=outcome.cypher,
                 nlq=NlqOutcome(
@@ -103,6 +103,7 @@ class NlqView(QWidget):
                     results=outcome.results,
                     notes=outcome.notes,
                 ),
+                diagnosis=outcome.diagnosis,
             )
         )
 
@@ -124,6 +125,7 @@ class NlqView(QWidget):
                 source="nlq-run",
                 cypher=outcome.cypher,
                 nlq=self._nlq_outcome,
+                diagnosis=outcome.diagnosis,
             )
         )
 
