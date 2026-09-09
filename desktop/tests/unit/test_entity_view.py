@@ -276,6 +276,32 @@ def test_neighbor_click_recenters_selection(qtbot: Any) -> None:
     assert selections == ["org1"]
 
 
+def test_neighbor_table_clicked_signal_recenters_selection(qtbot: Any) -> None:
+    view, state = _make_view(qtbot)
+    selections: list[str | None] = []
+    state.selection_changed.connect(selections.append)
+    neighbor_selected: list[str] = []
+    view.neighbor_selected.connect(neighbor_selected.append)
+
+    view.show_neighbors(GraphNeighbors.from_api(_neighbor_payload()))
+    view.neighbors_table.clicked.emit(view.neighbors_model.index(0, 0))
+
+    assert selections == ["org1"]
+    assert neighbor_selected == ["org1"]
+
+
+def test_assertion_list_clicked_signal_reveals_provenance(qtbot: Any) -> None:
+    view, _ = _make_view(qtbot)
+    rows = [NeighborRow.from_api(r) for r in _neighbor_payload()["neighbors"]]
+    view.show_assertions(rows)
+
+    view.assertion_list.clicked.emit(view.assertion_model.index(0, 0))
+
+    text = view.provenance_text()
+    assert "bundestag" in text, "source id missing from provenance"
+    assert "doc9" in text, "evidence document missing from provenance"
+
+
 # -- wiring: entity bundle through SessionState drives the view ---------------
 
 
@@ -294,7 +320,6 @@ def test_entity_view_holds_no_ontology_literals() -> None:
     import ast
     from pathlib import Path
 
-    src = Path(EntityView.__module__ is not None and __file__ or "").parent  # noqa: F841
     module = Path(__import__("limes_desktop.views.entity", fromlist=["x"]).__file__)
     tree = ast.parse(module.read_text())
     forbidden = {"Person", "PublicBody", "Corporation", "MEMBER_OF", "DIRECTOR_OF"}

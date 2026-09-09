@@ -34,7 +34,7 @@ def test_empty_result_renders_one_row_per_diagnosis_hop_with_count(
         }
     )
     panel.set_diagnosis(diagnosis)
-    panel.render(None)
+    panel.show_coverage(None)
     panel._show_diagnosis(diagnosis)
 
     table = panel.diagnosis_table
@@ -65,7 +65,7 @@ def test_empty_state_never_shows_bare_no_results(qtbot: Any) -> None:
             }
         )
     )
-    panel.render(None)
+    panel.show_coverage(None)
     panel._show_diagnosis(
         Diagnosis.from_api(
             {
@@ -116,7 +116,7 @@ def test_non_empty_coverage_renders_summary_counts_and_sources(qtbot: Any) -> No
     panel = CoveragePanel(state)
     qtbot.addWidget(panel)
 
-    panel.render(_coverage())
+    panel.show_coverage(_coverage())
 
     assert not panel.is_showing_empty_state
     text = panel.summary_text()
@@ -130,8 +130,27 @@ def test_render_none_clears_panel(qtbot: Any) -> None:
     panel = CoveragePanel(state)
     qtbot.addWidget(panel)
 
-    panel.render(_coverage())
-    panel.render(None)
+    panel.show_coverage(_coverage())
+    panel.show_coverage(None)
 
     assert panel.summary_text() == ""
     assert not panel.is_showing_empty_state
+
+
+def test_bundle_before_set_diagnosis_falls_back_to_coverage_render(
+    qtbot: Any,
+) -> None:
+    """A result arriving before set_diagnosis() must not raise (no AttributeError)."""
+    state = SessionState()
+    panel = CoveragePanel(state)
+    qtbot.addWidget(panel)
+
+    empty = GraphResult.from_api({"nodes": [], "edges": [], "counts": {}})
+    state.publish(  # no set_diagnosis() call — must not raise
+        QueryOutcomeBundle(
+            result=empty, coverage=CoverageReport.from_api({}), source="query"
+        )
+    )
+
+    assert not panel.is_showing_empty_state
+    assert panel.summary_text() == ""

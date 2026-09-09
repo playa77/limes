@@ -31,6 +31,7 @@ class CoveragePanel(QWidget):
     def __init__(self, state: SessionState, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._state = state
+        self._diagnosis: Diagnosis | None = None
 
         self.diagnosis_table = QTableWidget(0, 3, self)
         self.diagnosis_table.setHorizontalHeaderLabels(["hop", "relation", "graph-wide count"])
@@ -68,7 +69,7 @@ class CoveragePanel(QWidget):
         """Inject the query's Diagnosis (empty results carry one)."""
         self._diagnosis = diagnosis
 
-    def render(self, coverage: CoverageReport | None) -> None:  # type: ignore[override]  # shadows QWidget.render(QPainter) deliberately: this widget is data-driven, never painted
+    def show_coverage(self, coverage: CoverageReport | None) -> None:
         """Render a coverage report; `None` clears the panel."""
         self._summary_rows = []
         self._summary_label.setText("")
@@ -106,7 +107,7 @@ class CoveragePanel(QWidget):
             self._show_diagnosis(self._diagnosis)
             self.summary_widget.setVisible(False)
         else:
-            self.render(bundle.coverage)
+            self.show_coverage(bundle.coverage)
 
     # -- diagnosis empty state (FR-DC-034 / AC-DC-3) -----------------------------
 
