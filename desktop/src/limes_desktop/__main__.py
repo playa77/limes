@@ -30,24 +30,44 @@ def main(argv: list[str] | None = None) -> None:
         raise SystemExit(0)
 
     from limes_desktop.api.client import ApiClient
-    from limes_desktop.config import ProfileStore
+    from limes_desktop.config import ConnectionProfile, ProfileStore
     from limes_desktop.state import SessionState
     from limes_desktop.views.main_window import MainWindow
 
     store = ProfileStore()
     active = store.active()
-    client: ApiClient | None = None
-
-    def client_factory() -> ApiClient:
-        nonlocal client
-        if client is None:
-            base = active.base_url if active is not None else "http://127.0.0.1:8000"
-            client = ApiClient(base)
-        return client
 
     state = SessionState()
+
+    # client_factory must rebind to the current profile's base_url (FR-DC-002):
+    # connection_changed first rebinds the client, then MainWindow's handler
+    # (connected later, so it runs second) probes the new endpoint.
+    base_holder: list[str] = [
+        active.base_url if active is not None else "http://127.0.0.1:8000"
+    ]
+    client_holder: list[ApiClient | None] = [None]
+
+    def _rebind_client(profile: object) -> None:
+        base_holder[0] = (
+            profile.base_url
+            if isinstance(profile, ConnectionProfile)
+            else "http://127.0.0.1:8000"
+        )
+        old = client_holder[0]
+        if old is not None:
+            old.close()
+        client_holder[0] = None
+
+    state.connection_changed.connect(_rebind_client)
     if active is not None:
         state.set_connection(active)
+
+    def client_factory() -> ApiClient:
+        if client_holder[0] is None:
+            client_holder[0] = ApiClient(base_holder[0])
+        client = client_holder[0]
+        assert client is not None  # set above when the holder was empty
+        return client
 
     win = MainWindow(state, store, client_factory)
     win.show()

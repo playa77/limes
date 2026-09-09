@@ -17,11 +17,23 @@ def test_banner_refresh_shows_green_state_and_version(qtbot: Any) -> None:
     win = MainWindow(state, ProfileStore(), lambda: client)  # type: ignore[arg-type]
     qtbot.addWidget(win)
 
+    # the startup probe already ran in __init__; refresh_banner is the test seam
+    assert client.health_calls == 1
     win.refresh_banner()
+    assert client.health_calls == 2
+    assert win.banner.status_text() == "ok"
+    assert not win.banner.is_unreachable()
+
+
+def test_startup_probe_hits_health_and_shows_version(qtbot: Any) -> None:
+    state = SessionState()
+    client = FakeClient()
+    win = MainWindow(state, ProfileStore(), lambda: client)  # type: ignore[arg-type]
+    qtbot.addWidget(win)
 
     assert client.health_calls == 1
     assert win.banner.status_text() == "ok"
-    assert not win.banner.is_unreachable()
+    assert win.banner.version_label_text() == "ontology 1.0.0"
 
 
 def test_unreachable_client_sets_banner_unreachable_without_exception(
@@ -67,17 +79,30 @@ def test_views_placeholder_stacked_widget(qtbot: Any) -> None:
         assert win.stack.widget(i).metaObject().className() == "QWidget"
 
 
-def test_connection_changed_updates_banner_profile(qtbot: Any) -> None:
+def test_connection_changed_updates_banner_profile_and_reprobes(
+    qtbot: Any,
+) -> None:
+    calls: dict[str, FakeClient] = {}
+
+    def factory() -> FakeClient:
+        # one client per profile's base_url, like the real __main__ factory
+        return calls.setdefault("client", FakeClient())
+
     state = SessionState()
-    win = MainWindow(state, ProfileStore(), FakeClient)  # type: ignore[arg-type]
+    win = MainWindow(state, ProfileStore(), factory)  # type: ignore[arg-type]
     qtbot.addWidget(win)
+
+    client = calls["client"]
+    startup_calls = client.health_calls  # startup probe already ran
 
     profile = ConnectionProfile(name="local", base_url="http://127.0.0.1:9999")
     state.set_connection(profile)
     assert win.banner.profile_label_text() == "local http://127.0.0.1:9999"
+    assert client.health_calls == startup_calls + 1  # immediate reprobe
 
     state.set_connection(None)
     assert win.banner.profile_label_text() == "disconnected"
+    assert client.health_calls == startup_calls + 2
 
 
 def test_fake_client_type_sanity() -> None:

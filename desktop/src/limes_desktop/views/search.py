@@ -78,14 +78,17 @@ class SearchBar(QWidget):
         self._debounce.setInterval(DEBOUNCE_MS)
         self._debounce.timeout.connect(self._fire_search)
 
-        self.line_edit.textEdited.connect(self._debounce.start)
-        self.line_edit.returnPressed.connect(self._fire_search)
+        self.line_edit.textEdited.connect(self._on_text_edited)
         # arrow keys navigate the list while focus stays in the line edit
         self.line_edit.installEventFilter(self)
 
         state.result_arrived.connect(self._on_result)
 
     # -- seams for tests -----------------------------------------------------
+
+    def _on_text_edited(self, _text: str) -> None:
+        # slot wrapper: QTimer.start(msec) would eat the emitted text as a delay
+        self._debounce.start()
 
     def _fire_search(self) -> None:
         text = self.line_edit.text().strip()

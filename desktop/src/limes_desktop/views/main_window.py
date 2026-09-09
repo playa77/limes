@@ -64,6 +64,9 @@ class _ConnectionBanner(QFrame):
     def profile_label_text(self) -> str:
         return self._profile_label.text()
 
+    def version_label_text(self) -> str:
+        return self._version_label.text()
+
     def refresh(self) -> None:
         """One health probe; safe to call directly from tests (no timer wait)."""
         try:
@@ -116,7 +119,9 @@ class MainWindow(QMainWindow):
         self._state = state
 
         self.banner = _ConnectionBanner(client_factory)
-        self.banner._timer.start()
+        # immediate startup health probe (FR-DC-002): refresh() also starts
+        # the 10 s timer when the API answers, and pauses it when unreachable
+        self.banner.refresh()
         self._toolbar = QToolBar("connection", self)
         self._toolbar.setMovable(False)
         self._toolbar.addWidget(self.banner)
@@ -137,9 +142,6 @@ class MainWindow(QMainWindow):
 
         state.connection_changed.connect(self._on_connection_changed)
 
-    def _banner_toolbar(self) -> QToolBar:
-        return self._toolbar
-
     def refresh_banner(self) -> None:
         self.banner.refresh()
 
@@ -148,6 +150,9 @@ class MainWindow(QMainWindow):
             self.banner._profile_label.setText(f"{profile.name} {profile.base_url}")
         else:
             self.banner._profile_label.setText("disconnected")
+        # the client factory rebinds to the new profile's base_url before this
+        # handler runs (connection order in __main__); probe the new endpoint now
+        self.banner.refresh()
 
     def _run_search(self, query: str) -> None:
         try:
