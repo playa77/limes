@@ -69,13 +69,15 @@ def test_banner_refresh_timer_pausable(qtbot: Any) -> None:
     assert win.banner._timer.isActive()
 
 
-def test_views_placeholder_stacked_widget(qtbot: Any) -> None:
+def test_views_stacked_widget(qtbot: Any) -> None:
     state = SessionState()
     win = MainWindow(state, ProfileStore(), FakeClient)  # type: ignore[arg-type]
     qtbot.addWidget(win)
 
+    # since Task 6 the first stack page is the EntityView, not a placeholder
     assert win.stack.count() > 0
-    for i in range(win.stack.count()):
+    assert win.stack.widget(0) is win.entity_view
+    for i in range(1, win.stack.count()):
         assert win.stack.widget(i).metaObject().className() == "QWidget"
 
 
