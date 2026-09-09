@@ -11,8 +11,8 @@ from __future__ import annotations
 
 import re
 import shutil
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable
 
 from PySide6.QtCore import QObject, QProcess, Signal
 
@@ -25,7 +25,10 @@ _DUMP_RE = re.compile(r"\S*limes-\d+T\d+\.dump")
 
 
 class BackupRunner(QObject):
-    """Runs the worker backup command and verifies recovery afterwards."""
+    """Runs the worker backup command and verifies recovery afterwards.
+
+    ``finished`` carries ``(exit_code: int, health_ok: bool | None)``.
+    """
 
     output_line = Signal(str)
     finished = Signal(int, object)  # exit_code, health_ok (bool | None)

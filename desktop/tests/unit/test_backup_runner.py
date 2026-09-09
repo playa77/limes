@@ -12,11 +12,10 @@ from __future__ import annotations
 from typing import Any
 
 import pytest
-from PySide6.QtCore import QObject, Signal
-
 from limes_desktop.backup_runner import BackupRunner
 from limes_desktop.config import ConnectionProfile
 from limes_desktop.views.backup import BackupDialog
+from PySide6.QtCore import QObject, Signal
 
 _COMMAND = ["docker", "compose", "exec", "worker", "limes", "backup"]
 
@@ -84,7 +83,9 @@ class Recorder:
         self.finished.append((code, health_ok))
 
 
-def make_runner(monkeypatch: pytest.MonkeyPatch, client: FakeClient) -> tuple[BackupRunner, FakeProcess]:
+def make_runner(
+    monkeypatch: pytest.MonkeyPatch, client: FakeClient
+) -> tuple[BackupRunner, FakeProcess]:
     proc = FakeProcess()
 
     def factory() -> FakeProcess:
