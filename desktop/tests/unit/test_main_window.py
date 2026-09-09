@@ -91,7 +91,9 @@ def test_views_stacked_widget(qtbot: Any) -> None:
     assert win.stack.widget(8) is win.ingest_view
     assert win.stack.widget(9) is win.ledger_view
     assert win.stack.widget(10) is win.references_view
-    for i in range(11, win.stack.count()):
+    # Task 11: the backup dialog occupies the final page
+    assert win.stack.widget(11) is win.backup_dialog
+    for i in range(12, win.stack.count()):
         assert win.stack.widget(i).metaObject().className() == "QWidget"
 
 

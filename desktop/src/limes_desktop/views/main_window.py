@@ -182,7 +182,14 @@ class MainWindow(QMainWindow):
         self.stack.addWidget(self.ingest_view)
         self.stack.addWidget(self.ledger_view)
         self.stack.addWidget(self.references_view)
-        self.stack.addWidget(QWidget())  # trailing placeholder for Task 11
+        # Task 11: backup action (FR-DC-060..063) on page 11; the view imports
+        # are local so importing this module stays headless-safe
+        from limes_desktop.backup_runner import BackupRunner
+        from limes_desktop.views.backup import BackupDialog
+
+        self.backup_runner = BackupRunner(client_factory=client_factory)
+        self.backup_dialog = BackupDialog(self.backup_runner, parent=self)
+        self.stack.addWidget(self.backup_dialog)
         self.setCentralWidget(self.stack)
 
         # result bundles flow into the viz views; expansion goes through the
