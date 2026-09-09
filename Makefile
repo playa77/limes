@@ -85,3 +85,12 @@ ctx = build_run_context(settings, needs_inference=True); \
 stamped = stamp_missing_embeddings(ctx.driver, embedder_for(settings, ctx.client)); \
 print(f"stamp-embeddings: {stamped} entities stamped"); \
 ctx.driver.close()'
+
+# Desktop client (wp-01): host-side lint/test, no Docker involved.
+.PHONY: desktop-lint desktop-test
+
+desktop-lint:
+	./venv/bin/ruff check desktop/src desktop/tests
+
+desktop-test:
+	./venv/bin/python -m pytest desktop/tests/unit desktop/tests/contract -q
