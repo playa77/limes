@@ -19,6 +19,7 @@ from PySide6.QtWidgets import (
 from limes_desktop.api.errors import ApiError, ApiUnreachable
 from limes_desktop.config import ConnectionProfile, ProfileStore
 from limes_desktop.state import QueryOutcomeBundle, SessionState
+from limes_desktop.views.coverage_panel import CoveragePanel
 from limes_desktop.views.entity import EntityView
 from limes_desktop.views.query_builder import BuilderView
 from limes_desktop.views.query_cypher import CypherConsole
@@ -139,6 +140,14 @@ class MainWindow(QMainWindow):
         dock.setFeatures(QDockWidget.DockWidgetFeature.DockWidgetMovable)
         self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, dock)
 
+        # FR-DC-034/AC-DC-3: one shared coverage panel across all query
+        # surfaces; the panel self-connects to result_arrived in __init__
+        self.coverage_panel = CoveragePanel(state)
+        coverage_dock = QDockWidget("Coverage", self)
+        coverage_dock.setWidget(self.coverage_panel)
+        coverage_dock.setFeatures(QDockWidget.DockWidgetFeature.DockWidgetMovable)
+        self.addDockWidget(Qt.DockWidgetArea.BottomDockWidgetArea, coverage_dock)
+
         self.stack = QStackedWidget(self)
         # the entity view (Task 6); Tasks 8-11 replace the remaining placeholders
         self.entity_view = EntityView(state)
@@ -199,6 +208,12 @@ class MainWindow(QMainWindow):
         self.network_view.bridge.expand_requested.connect(self._expand_neighbors)
 
         state.connection_changed.connect(self._on_connection_changed)
+        # FR-DC-022: fetch the ontology at connect/profile change so the
+        # entity view's neighbors relation filter is populated (§2.3)
+        self._fetch_ontology()
+        # FR-DC-010/022: a selection (search hit, neighbor click) fetches the
+        # entity, publishes the EntityDetail bundle, and shows the entity page
+        state.selection_changed.connect(self._on_selection_changed)
 
     def _expand_neighbors(self, entity_id: str) -> None:
         try:
@@ -219,6 +234,14 @@ class MainWindow(QMainWindow):
     def refresh_banner(self) -> None:
         self.banner.refresh()
 
+    def _fetch_ontology(self) -> None:
+        try:
+            payload = self.banner.client_factory().ontology()
+        except (ApiError, ApiUnreachable):
+            return  # degrade gracefully: filter stays unpopulated
+        if isinstance(payload, dict):
+            self.entity_view.set_ontology(payload)
+
     def _on_connection_changed(self, profile: object) -> None:
         if isinstance(profile, ConnectionProfile):
             self.banner._profile_label.setText(f"{profile.name} {profile.base_url}")
@@ -227,6 +250,19 @@ class MainWindow(QMainWindow):
         # the client factory rebinds to the new profile's base_url before this
         # handler runs (connection order in __main__); probe the new endpoint now
         self.banner.refresh()
+        self._fetch_ontology()
+
+    def _on_selection_changed(self, entity_id: object) -> None:
+        if not isinstance(entity_id, str) or not entity_id:
+            return
+        try:
+            detail = self.banner.client_factory().entity(entity_id)
+        except (ApiError, ApiUnreachable):
+            return  # degraded: keep the current view, never crash the shell
+        self._state.publish(
+            QueryOutcomeBundle(result=detail, coverage=None, source="selection")
+        )
+        self.stack.setCurrentWidget(self.entity_view)
 
     def _run_search(self, query: str) -> None:
         try:

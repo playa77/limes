@@ -36,7 +36,11 @@ class ApiClient:
     instance; reuse one instance per connection profile."""
 
     def __init__(self, base_url: str, timeout_s: float = 30.0) -> None:
-        self._client = httpx.Client(base_url=base_url, timeout=httpx.Timeout(timeout_s))
+        # follow_redirects=True: a 3xx must be followed to the final response,
+        # never surface as an unparseable non-JSON body
+        self._client = httpx.Client(
+            base_url=base_url, timeout=httpx.Timeout(timeout_s), follow_redirects=True
+        )
 
     def close(self) -> None:
         self._client.close()

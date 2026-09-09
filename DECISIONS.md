@@ -5,6 +5,19 @@ reversibility: **R1** reversible in under an hour, **R2** bounded recoverable
 cost, **R3** one-way door. Written when each decision is made, latest first.
 Nothing here is a status report; unlogged decisions are unmade decisions.
 
+## 2026-09-10 — D-72 (R1) — Single-instance guard removes a stale QLocalServer socket before listening
+
+wp-desktop-client-v1 review finding (Task 5). A crashed prior instance leaves
+the guard's QLocalServer socket file behind, and `server.listen(GUARD_NAME)`
+then fails silently — the app exits as if another instance were running when
+none is. `__main__` now calls `QLocalServer.removeServer(GUARD_NAME)` after
+`already_running()` confirms no live owner, so only a stale socket is cleaned
+up (a running instance's socket is never removed: `already_running` short-
+circuits first). Rejected alternative: listening unconditionally after a
+remove (removes the socket of a genuinely running second instance started
+between the check and the remove; the ordered check-then-remove keeps that
+race harmless — the loser exits). Covered by `test_app.py`'s guard tests.
+
 ## 2026-08-26 — Approval — review-followup-v1.0.0
 
 The human approved review-followup-v1.0.0 (D-68 downgrade guard under the

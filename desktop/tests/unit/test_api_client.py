@@ -293,6 +293,22 @@ def test_sources_and_ontology_versions() -> None:
 
 
 @respx.mock
+def test_redirect_followed_and_final_200_parsed() -> None:
+    respx.get("http://x.test/health").mock(
+        return_value=httpx.Response(
+            307, headers={"Location": "http://x.test/health/v2"}
+        )
+    )
+    respx.get("http://x.test/health/v2").mock(
+        return_value=httpx.Response(
+            200, json={"status": "ok", "neo4j": True, "ontology_version": "1.0.0"}
+        )
+    )
+    info = ApiClient("http://x.test").health()
+    assert info.status == "ok" and info.ontology_version == "1.0.0"
+
+
+@respx.mock
 def test_timeout_raises_api_unreachable() -> None:
     respx.get("http://x.test/health").mock(side_effect=httpx.ReadTimeout("slow"))
     with pytest.raises(ApiUnreachable):
