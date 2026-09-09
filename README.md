@@ -72,6 +72,8 @@ The ontology is a declarative, independently versioned YAML artifact — 17 enti
 
 No query templates exist, by design. Templates encode anticipated questions; the instrument is for unanticipated ones. The saved-query list accretes from what you actually ask.
 
+**Desktop client.** The same query surfaces — search, entity detail with provenance, natural-language and builder queries with their editable Cypher, coverage and diagnosis panels, the saved-query library, and the operational views — in a local PySide6 desktop application (`make desktop-run`; design in `docs/LIMES_Desktop_Client_Architecture_v1.0.0.md`, requirements in `docs/LIMES_Desktop_Client_Requirements_v1.0.0.md`). It holds no database credentials and no ontology literals: everything flows over the HTTP API, so it degrades explicitly (connection banner, per-view states) when the stack is down.
+
 ---
 
 ## Requirements

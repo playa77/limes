@@ -25,6 +25,7 @@ help:
 	@echo "  make migrate ONTOLOGY_VERSION=<v>                   Apply the migration to the target ontology version"
 	@echo "  make backup                                         Offline Neo4j dump into the archive volume (Doc 2 §13.6)"
 	@echo "  make stamp-embeddings                              One-shot: fill null label_embeddings before the first backfill (§13.3)"
+	@echo "  make desktop-run                                   Launch the desktop client (MODE=ui for the real GUI; default prints the version)"
 	@echo
 	@echo "Bootstrap sequence: README.md, or Technical Specification §13.3."
 
@@ -87,10 +88,24 @@ print(f"stamp-embeddings: {stamped} entities stamped"); \
 ctx.driver.close()'
 
 # Desktop client (wp-01): host-side lint/test, no Docker involved.
-.PHONY: desktop-lint desktop-test
+.PHONY: desktop-lint desktop-test desktop-install desktop-run
 
 desktop-lint:
 	./venv/bin/ruff check desktop/src desktop/tests
 
 desktop-test:
 	./venv/bin/python -m pytest desktop/tests/unit desktop/tests/contract -q
+
+desktop-install:
+	uv sync --project desktop
+
+# Launch the desktop client. Default is a headless sanity invocation
+# (--version, offscreen Qt platform): it proves the entry point works on a
+# display-less host without opening a window. MODE=ui drops the offscreen
+# platform and runs the real GUI, which needs a display.
+desktop-run:
+	@if [ "$(MODE)" = "ui" ]; then \
+		uv run --project desktop limes-desktop; \
+	else \
+		QT_QPA_PLATFORM=offscreen uv run --project desktop limes-desktop --version; \
+	fi

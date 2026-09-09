@@ -6,6 +6,44 @@ gold set, prompts) are recorded in their own changelogs.
 
 ---
 
+## 2026-09-09 — Desktop client (wp-desktop-client-v1, wp-01..wp-12)
+
+A local PySide6 desktop client (`desktop/`, workspace member `limes-desktop`
+0.1.0) over the existing HTTP API — specified by
+`docs/LIMES_Desktop_Client_Requirements_v1.0.0.md`, designed by
+`docs/LIMES_Desktop_Client_Architecture_v1.0.0.md`.
+
+- **Typed API seam** (`api/client.py`): 17 endpoint methods over one
+  `httpx.Client`; connection failures → `ApiUnreachable`, non-2xx →
+  `ApiError` with the body preserved. Mirrored models in `api/models.py`,
+  parity pinned by a contract test (AC-DC-7) against the API routers.
+- **Query surfaces**: search with debounce; entity view with VALIDITY vs
+  BELIEF label separation (AC-DC-2); NLQ, builder, and Cypher consoles
+  all showing the editable Cypher and the coverage panel (which is the
+  empty state — AC-DC-3, the hop-level diagnosis instead of a bare empty
+  result). No ontology literals anywhere in the client; a guard test
+  enforces it (AC-DC-4). No DB access.
+- **Saved-query library and ops views**: sources, ingest status, cost
+  ledger, ontology versions — read-only; the client adds no write surface
+  beyond the API's enumerated ones.
+- **Backup dialog** (`backup_runner.py`): streams `limes backup` output
+  in the worker container and verifies the dump file plus `/health` after
+  restart (AC-DC-5's automatable core).
+- **Single-instance guard** (`app.py`): `QLocalServer` named socket, a
+  second instance exits quietly (NFR-DC-070). Headless-safe
+  (`QT_QPA_PLATFORM=offscreen` before any Qt import; `--version` works
+  without a display).
+- **Integration flow test** (`desktop/tests/integration/test_full_flow.py`):
+  the full path — search → entity → neighbors → query_nl (OpenRouter
+  stubbed, no paid calls) → query_builder → query_cypher → save/delete —
+  runs the real FastAPI app in-process inside the `ApiClient`'s transport,
+  against the shared disposable Neo4j container (AC-DC-1's automatable
+  core).
+- **Makefile**: `desktop-install`, `desktop-run` (headless sanity by
+  default, `MODE=ui` for the GUI), `desktop-lint`, `desktop-test`.
+
+---
+
 ## 2026-08-26 — Review follow-up — review-followup-v1.0.0 (operator-approved)
 
 Four findings from the refactor-v1.1.0 code review, implemented and verified:
