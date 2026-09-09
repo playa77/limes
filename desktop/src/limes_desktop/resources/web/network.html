@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<!-- desktop/src/limes_desktop/resources/web/network.html | v0.1.0 | Cytoscape network page (FR-DC-040) -->
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="vendor/cytoscape.min.js"></script>
+  <script src="qrc:///qtwebchannel/qwebchannel.js"></script>
+  <style>
+    html, body { margin: 0; height: 100%; font-family: sans-serif; }
+    #cy { width: 100%; height: calc(100% - 36px); }
+    #bar { height: 36px; padding: 4px; }
+  </style>
+</head>
+<body>
+  <div id="bar">
+    <span id="selected">no selection</span>
+    <button id="expand">Expand neighbors</button>
+  </div>
+  <div id="cy"></div>
+  <script>
+    let bridge = null;
+    let cy = null;
+    let nodeTypes = {};  // filled from payload; colors assigned per type
+
+    new QWebChannel(qt.webChannelTransport, (channel) => {
+      bridge = channel.objects.bridge;
+      bridge.selection_changed.connect((id) => {
+        document.getElementById('selected').textContent = id || 'no selection';
+        if (cy) {
+          cy.nodes().removeClass('selected');
+          if (id) cy.getElementById(id).addClass('selected');
+        }
+      });
+    });
+
+    document.getElementById('expand').addEventListener('click', () => {
+      if (bridge) bridge.on_expand_clicked();
+    });
+
+    function typeColor(type) {
+      if (!(type in nodeTypes)) {
+        const hue = (Object.keys(nodeTypes).length * 47) % 360;
+        nodeTypes[type] = 'hsl(' + hue + ', 60%, 65%)';
+      }
+      return nodeTypes[type];
+    }
+
+    function render(payload) {
+      const elements = payload.nodes.map((n) => ({
+        data: { id: n.id, label: n.label, type: n.type },
+        style: { 'background-color': typeColor(n.type) },
+      })).concat(payload.edges.map((e, i) => ({
+        data: { id: 'a' + i, source: e.source, target: e.target, label: e.relation },
+      })));
+      if (!cy) {
+        cy = cytoscape({
+          container: document.getElementById('cy'),
+          elements: elements,
+          layout: { name: 'cose' },
+          style: [
+            { selector: 'node', style: {
+              'label': 'data(label)', 'font-size': 10, width: 20, height: 20 } },
+            { selector: 'edge', style: {
+              'label': 'data(label)', 'font-size': 7, 'curve-style': 'bezier',
+              'target-arrow-shape': 'triangle' } },
+            { selector: 'node.selected', style: { 'border-width': 3, 'border-color': '#c62828' } },
+          ],
+        });
+        cy.on('tap', 'node', (evt) => {
+          if (bridge) bridge.on_node_clicked(evt.target.id());
+        });
+      } else {
+        cy.elements().remove();
+        cy.add(elements);
+        cy.layout({ name: 'cose' }).run();
+      }
+    }
+
+    window.pushResult = render;
+  </script>
+</body>
+</html>

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<!-- desktop/src/limes_desktop/resources/web/timeline.html | v0.1.0 | Plotly bitemporal timeline page (FR-DC-042) -->
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="vendor/plotly.min.js"></script>
+  <script src="qrc:///qtwebchannel/qwebchannel.js"></script>
+  <style>
+    html, body { margin: 0; height: 100%; }
+    #tl { width: 100%; height: 100%; }
+  </style>
+</head>
+<body>
+  <div id="tl"></div>
+  <script>
+    let bridge = null;
+    const layout = {
+      xaxis: { title: 'time' },
+      yaxis: { tickvals: [], title: 'assertions' },
+      legend: { orientation: 'h' },
+      margin: { l: 40, r: 20, t: 20, b: 40 },
+    };
+
+    new QWebChannel(qt.webChannelTransport, (channel) => {
+      bridge = channel.objects.bridge;
+    });
+
+    // range selection (e.g. plotly_select event) publishes the shared filter
+
+    function trace(events, name, color) {
+      const seen = [];
+      const ys = [];
+      (events || []).forEach((e) => {
+        seen.push(e.t);
+        ys.push(seen.length);
+      });
+      return {
+        x: (events || []).map((e) => e.t),
+        y: ys,
+        text: (events || []).map((e) => e.relation),
+        mode: 'markers',
+        name: name,
+        marker: { color: color },
+      };
+    }
+
+    function render(payload) {
+      Plotly.react('tl', [
+        trace(payload.validity, 'validity time', '#2e7d32'),
+        trace(payload.belief, 'belief time (recorded_at)', '#f9a825'),
+      ], layout);
+    }
+
+    // Plotly relayout publishes drag-zoom ranges as the temporal filter
+    const gd = document.getElementById('tl');
+    const attach = () => {
+      gd.on('plotly_relayout', (evt) => {
+        if (evt['xaxis.range'] && bridge) {
+          bridge.on_temporal_range(evt['xaxis.range'][0].slice(0, 10),
+                                   evt['xaxis.range'][1].slice(0, 10));
+        }
+      });
+    };
+    if (gd.on) attach(); else setTimeout(attach, 500);
+
+    window.pushResult = render;
+  </script>
+</body>
+</html>

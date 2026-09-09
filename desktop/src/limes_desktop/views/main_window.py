@@ -157,10 +157,37 @@ class MainWindow(QMainWindow):
         # schema lazily on first show, never at construction
         self.builder_view = BuilderView(state, client_factory=client_factory)
         self.stack.addWidget(self.builder_view)
-        self.stack.addWidget(QWidget())
+        # Task 9: viz views (FR-DC-040..043). The QtWebEngine-dependent view
+        # modules are imported here (lazily at construction, NFR-DC-071), so
+        # importing this module stays headless-safe; page creation itself
+        # happens on first show().
+        from limes_desktop.views.viz.map import MapView
+        from limes_desktop.views.viz.network import NetworkView
+        from limes_desktop.views.viz.timeline import TimelineView
+
+        self.network_view = NetworkView(state)
+        self.map_view = MapView(state)
+        self.timeline_view = TimelineView(state)
+        self.stack.addWidget(self.network_view)
+        self.stack.addWidget(self.map_view)
+        self.stack.addWidget(self.timeline_view)
+        self.stack.addWidget(QWidget())  # trailing placeholder for Tasks 10-11
         self.setCentralWidget(self.stack)
 
+        # result bundles flow into the viz views; expansion goes through the
+        # API client (the view itself never fetches — FR-DC-040)
+        for viz in (self.network_view, self.map_view, self.timeline_view):
+            state.result_arrived.connect(viz.on_result_arrived)
+        self.network_view.bridge.expand_requested.connect(self._expand_neighbors)
+
         state.connection_changed.connect(self._on_connection_changed)
+
+    def _expand_neighbors(self, entity_id: str) -> None:
+        try:
+            graph = self.banner.client_factory().entity_neighbors(entity_id)
+        except (ApiError, ApiUnreachable):
+            return
+        self.network_view.push_payload(self.network_view.apply_neighbors(entity_id, graph))
 
     def _current_query(self) -> tuple[str, str]:
         """The (surface, query text) of the active query surface, for saving."""
