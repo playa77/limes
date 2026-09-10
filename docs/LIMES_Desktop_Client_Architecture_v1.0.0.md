@@ -47,53 +47,67 @@ The client holds no Neo4j driver, no ontology file, and no extraction code.
 desktop/
   pyproject.toml            # limes-desktop distribution; depends on httpx, PySide6
   src/limes_desktop/
-    __main__.py             # single-instance entry point
-    app.py                  # QApplication bootstrap, stylesheet, lazy QWebEngine
+    __init__.py
+    __main__.py             # entry point: --version, single-instance guard, MainWindow
+    app.py                  # single-instance guard (QLocalServer, NFR-DC-070)
     config.py               # connection profiles in ~/.config/limes-desktop/
+    state.py                # SessionState: Qt signals for selection/history
+    backup_runner.py        # subprocess orchestration (FR-DC-060..063)
     api/
       client.py             # ApiClient: httpx-based, one method per endpoint
       models.py             # mirrors src/limes/api/models.py (AC-DC-7)
       errors.py             # ApiUnreachable, ApiError with verbatim detail
-    state.py                # SessionState: Qt signals for selection/history
     views/
+      main_window.py        # shell: connection banner, docks, stacked views
       search.py             # SearchBar + results
       entity.py             # entity detail + provenance panel
       query_nl.py           # NLQ surface, editable Cypher pane
       query_builder.py      # builder from /builder/schema
       query_cypher.py       # console with history
+      query_history.py      # saved-query panel (FR-DC-033)
+      coverage_panel.py     # shared coverage/diagnosis panel (FR-DC-034)
+      backup.py             # BackupDialog
       viz/                  # QWebEngineView wrappers
-        network.py  map.py  timeline.py  bridge.py   # Qt↔JS bridge
+        page.py             # base page: lazy QWebEnginePage + QWebChannel (NFR-DC-071)
+        network.py  map.py  timeline.py
+        bridge.py           # Qt↔JS bridge
       ops/
         ingest.py  ledger.py  references.py
-      backup.py             # BackupDialog
-    backup_runner.py        # subprocess orchestration (FR-DC-060..063)
     resources/
       web/                  # bundled Cytoscape/Leaflet/Plotly pages (offline assets)
   tests/
     unit/                   # offline; ApiClient via respx; logic under pytest-qt
-    integration/            # against a running API (opt-in, mirrors repo pattern)
-    contract/               # AC-DC-7 model parity tests
+    contract/               # AC-DC-7 model parity + AC-DC-4 ontology-literal guard
+    integration/            # against the API app mounted in-process (opt-in)
 ```
 
 `desktop/` is added as a uv workspace member; the root `Makefile` gains
-`make desktop-test` / `make desktop-lint` targets following the existing
-verification loop (`ruff check src tests desktop`, `mypy` scoped to both
-packages, pytest invocations per suite).
+`desktop-install`, `desktop-run`, `desktop-lint` and `desktop-test` targets:
+`uv sync --project desktop`; a `--version` sanity launch (or `MODE=ui` for the
+real GUI); offline `ruff check desktop/src desktop/tests`; and
+`pytest desktop/tests/unit desktop/tests/contract`. `mypy` is scoped to both
+packages (`pyproject.toml`: `files = ["src/limes", "desktop/src/limes_desktop"]`).
 
 ### 2.2 Client layers and rules
 
-- **ApiClient layer** (`api/client.py`): one async-safe method per endpoint in
-  Technical Specification §9. All HTTP goes through it — no view constructs a
-  request. Errors are typed: unreachable, non-2xx (with the API's error body
-  preserved verbatim), and schema-mismatch.
-- **Model layer** (`api/models.py`): dataclasses mirroring the Pydantic
-  response models (`EntityRef`, `EdgeRef`, `GraphResult`, `CoverageReport`,
-  `Diagnosis`, `NlqOutcome`, `BuilderSpec`, ledger/ingest/source/ontology
-  models). `contract/` tests import the live `limes.api.models` and assert
-  field parity, so an API model change without a client update fails CI
-  (AC-DC-7). Import direction: contract tests may import `limes`; the client
-  runtime must not (it can be installed against a remote API without the
-  server package).
+- **ApiClient layer** (`api/client.py`): one synchronous method per endpoint of
+  the API surface, on a single `httpx.Client` per connection profile. All HTTP
+  goes through it — no view constructs a request. Errors are typed:
+  `ApiUnreachable` for connection-level failures and `ApiError(status, detail)`
+  for non-2xx responses (with the API's error body preserved verbatim), both in
+  `api/errors.py`.
+- **Model layer** (`api/models.py`): dataclasses mirroring the API response
+  models — `EntityRef`, `EdgeRef`, `GraphResult`, `CoverageReport`,
+  `Diagnosis`, `NlqOutcome`, `BuilderHop`, `BuilderSpec`, `HealthInfo`,
+  `SearchHit`, `EntityDetail`, `NeighborRow`, `GraphNeighbors`, `SavedQuery`,
+  `SourceInfo`, `CostEntry`, `CostLedger`, `IngestRun` — plus the composite
+  `QueryOutcome` that fuses results with their coverage/diagnosis. Timestamps
+  stay the strings the JSON carries, so the client needs no Pydantic.
+  `contract/` tests import the live `limes.api.models` and the router view
+  models and assert field parity, so an API model change without a client
+  update fails CI (AC-DC-7). Import direction: contract tests may import
+  `limes`; the client runtime must not (it can be installed against a remote
+  API without the server package).
 - **SessionState**: a plain Qt object carrying current selection (entity id),
   navigation history, temporal filters (validity vs belief time), and the
   active connection profile. Views never mutate each other directly —
@@ -150,18 +164,22 @@ command output when present.
 
 ## 5. Testing strategy
 
-- Unit (offline, `pytest-qt`): SessionState signal flow, config/profile
-  handling, debounce, bitemporal rendering logic, BackupRunner argument
-  construction and output parsing (subprocess mocked).
-- Contract: `tests/contract/` imports both `limes.api.models` and
-  `limes_desktop.api.models`; field-level parity asserted per model (AC-DC-7).
-  Guard test for ontology literals (AC-DC-4).
+- Unit (offline, `pytest-qt`, `desktop/tests/unit/`): SessionState signal flow,
+  config/profile handling, search debounce, coverage panel, entity/query/ops
+  views, viz payload shaping and Qt↔JS bridge, BackupRunner argument
+  construction and output parsing (subprocess mocked, health stubbed).
+- Contract (`desktop/tests/contract/`): `test_model_parity.py` imports the live
+  `limes.api.models` and the router view models and asserts field-level parity
+  with `limes_desktop.api.models` (AC-DC-7); `test_no_ontology_literals.py` is
+  the ontology-literal guard over `desktop/src/limes_desktop/` (AC-DC-4).
 - Integration (needs the shared test Neo4j container, like the existing
-  suites): ApiClient against the real API app mounted in-process; full
-  search → entity → query → coverage flow.
-- Acceptance (Docker): AC-DC-1 and AC-DC-5 against the running Compose stack,
-  following the existing acceptance-test pattern; the backup path is exercised
-  with a short-lived disposable volume.
+  suites; `desktop/tests/integration/`): ApiClient against the real API app
+  mounted in-process (`httpx.ASGITransport`); the full search → entity →
+  neighbors → NLQ → builder → Cypher → save/delete flow, plus the empty-result
+  diagnosis case.
+- AC-DC-1's live Compose walk-through and AC-DC-5's dump/`/health` acceptance
+  are manual hand-off steps recorded in the implementation plan; there is no
+  automated acceptance suite under `desktop/tests/`.
 - No test makes real OpenRouter calls (repo invariant).
 
 ## 6. Security and privacy

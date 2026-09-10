@@ -10,7 +10,7 @@
 | Status | Draft |
 | Ontology version | 1.0.0 |
 | Supersedes | v1.0.0 (2026-07-23), withdrawn |
-| Companion documents | Technical Specification v2.1.0 |
+| Companion documents | Technical Specification v2.1.0; Desktop Client Requirements v1.0.0 and Desktop Client Architecture v1.0.0 |
 
 ## Revision History
 
@@ -284,6 +284,8 @@ The distinction between pre-resolution and resolved assertions is load-bearing a
 **Owns:** three synchronized views with shared selection state; the ontology-generated builder; natural-language input and editable Cypher console; coverage and provenance panels.
 **Does not own:** **any database access.** It calls the API exclusively and holds no credentials.
 
+A native PySide6 desktop client (`desktop/src/limes_desktop/`) is a second user-facing API consumer under the same rule: it holds no database access and no ontology literals, fetching every graph fact over the HTTP API.
+
 ### 4.14 Composition Root
 
 **Owns:** constructing every component the system needs, in dependency order, once per process. It is the only module that instantiates a driver, a registry, an archive, a governor, an extractor, or a gate.
@@ -306,7 +308,7 @@ Every node and edge records the ontology version under which it was written, so 
 
 Seventeen concrete types under three abstract supertypes. Supertypes make traversal expressible without enumerating subtypes.
 
-| # | Type | Supertype | Identifying key |
+| # | Type | Supertype (— = none) | Identifying key |
 |---|---|---|---|
 | 1 | `Person` | `Agent` | Wikidata QID; Bundestag ID; else resolved |
 | 2 | `PublicBody` | `Agent` | Wikidata QID; TED buyer ID; else resolved |
@@ -377,7 +379,7 @@ Geography is stored as points. Region membership is assigned at ingest through t
 | Rank | Sources |
 |---|---|
 | 1.00 | GLEIF, EUR-Lex, EU FSD, TED, Transparency Register, Bundestag DIP, Gesetze im Internet, GISCO/NUTS |
-| 0.90 | Wikidata, UN Digital Library |
+| 0.90 | Wikidata |
 | 0.75 | OpenStreetMap |
 | 0.70 | Commission RAPID, Bundesregierung releases |
 | 0.60 | Curated news outlets |
@@ -424,11 +426,11 @@ No query templates exist anywhere in this system (NG-08). Templates encode antic
 
 ### 6.5 UI Structure
 
-One exploration screen, three synchronized panes over a shared selection: network with node-click expansion, map, timeline with a brush that triggers re-query rather than client-side filtering. Supporting elements: natural-language input, editable Cypher console, generated builder, coverage panel, provenance panel showing the originating sentence, saved-query list, budget indicator.
+One exploration screen, three synchronized panes over a shared selection: network with node-click expansion, map, timeline with a brush that triggers re-query rather than client-side filtering. Supporting elements: natural-language input, editable Cypher console, generated builder, coverage panel, provenance panel showing the originating sentence, saved-query list, budget indicator. A native PySide6 desktop client (`make desktop-run`) presents these same surfaces and is likewise a pure API consumer, holding no database access and no ontology literals.
 
 ### 6.6 Command Line
 
-Ingestion is manual. `make up`, `down`, `bootstrap-db`, `ingest`, `ingest-all`, `backfill`, `reextract`, `select-models`, `evaluate`, `migrate`, `backup`. `backfill` and `reextract` require an explicit budget argument and cannot draw on the steady-state envelope.
+Ingestion is manual. `make up`, `down`, `bootstrap-db`, `ingest`, `ingest-all`, `backfill`, `reextract`, `select-models`, `evaluate`, `migrate`, `backup`, `stamp-embeddings`. `backfill` and `reextract` require an explicit budget argument and cannot draw on the steady-state envelope.
 
 ---
 
@@ -599,7 +601,3 @@ Properties of available data, not defects. The coverage report exists to surface
 ### 11.4 Deferred
 
 Person-scope predicates and pseudonymization; scheduled ingestion; a polygon-capable spatial engine; multi-user access. Each has a reserved insertion point.
-
----
-
-Review this and let me know when you're ready for Document 2.

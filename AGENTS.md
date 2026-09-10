@@ -3,20 +3,24 @@
 Ontology-driven knowledge graph over Neo4j 2026.x Community, Docker Compose,
 four services (`neo4j` / `api` / `worker` / `ui`). Python ≥3.12, uv-managed
 venv at `./venv`. Authoritative artifacts: `docs/LIMES_Design_Document_v2.0.0.md`
-and `docs/LIMES_Technical_Specification_v2.1.0.md` (§15 is the seam register).
+and `docs/LIMES_Technical_Specification_v2.1.0.md` (§15 is the seam register);
+the desktop client has its own pair, `docs/LIMES_Desktop_Client_Requirements_v1.0.0.md`
+and `docs/LIMES_Desktop_Client_Architecture_v1.0.0.md`.
 On re-entry, resume from the last five entries of `DECISIONS.md`.
 
 ## Verification loop
 
 ```bash
 ./venv/bin/ruff check src tests                    # NOT `ruff check .`
-./venv/bin/mypy                                    # strict, scoped to src/limes
+./venv/bin/ruff check desktop/src desktop/tests    # desktop client (make desktop-lint)
+./venv/bin/mypy                                    # strict, scoped to src/limes + desktop/src/limes_desktop
 ./venv/bin/python -m pytest tests/unit -q          # no Docker needed
 # Integration and acceptance are separate invocations: whole-tree collection
 # trips over the acceptance conftest's pytest_plugins under pytest 9.x (D-63).
 # Both need the Docker daemon and share one session-scoped container.
 ./venv/bin/python -m pytest tests/integration -q
 ./venv/bin/python -m pytest tests/acceptance -q
+./venv/bin/python -m pytest desktop/tests/unit desktop/tests/contract -q   # offline (make desktop-test)
 ```
 
 - Plain `ruff check .` fails on the standalone scripts in `tools/`; they are
@@ -63,7 +67,9 @@ stamp-embeddings` exactly between them. Reordering pays for extraction twice.
   relation types, consumed by loader, Cypher validator, query builder, and API.
   Never hardcode type/relation names elsewhere. The UI holds no ontology
   literals and no DB access — AST/source scans enforce this in
-  `tests/integration/test_ui.py`.
+  `tests/integration/test_ui.py`. The desktop client is held to the identical
+  standard (`desktop/tests/contract/test_no_ontology_literals.py`), and its
+  runtime must not import `limes` — only its contract tests may.
 - Query path is read-only by construction: write clauses rejected at parse
   level; the API has exactly three enumerated writes (cost entry, saved query,
   saved-query delete), pinned by acceptance tests. Do not add write surfaces.

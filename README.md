@@ -43,8 +43,9 @@ Sources ──► Adapters ──► Archive (system of record)
               Neo4j — graph · vectors · full text · points
                             │
                             ▼
-              FastAPI query API ──► Dash UI
-                                    network · map · timeline
+              FastAPI query API ──┬──► Dash UI
+                                  │    network · map · timeline
+                                  └──► Desktop client
 ```
 
 One composition root (`src/limes/composition.py`) constructs every component. Nothing below the CLI or the API startup handler instantiates infrastructure.
@@ -78,7 +79,7 @@ No query templates exist, by design. Templates encode anticipated questions; the
 
 ## Requirements
 
-Docker and Docker Compose · 12 GB RAM available to the Docker host · 100 GB free disk · an OpenRouter API key · no GPU.
+Docker and Docker Compose · 12 GB RAM available to the Docker host · 100 GB free disk · an OpenRouter API key · no GPU. The desktop client also needs Python 3.12 or 3.13 and `uv`.
 
 ---
 
@@ -125,6 +126,7 @@ All ingestion is manual. No scheduler, which also means nothing spends money wit
 | `make migrate ONTOLOGY_VERSION=<v>` | Apply ontology migrations |
 | `make backup` | Offline database dump into the archive volume |
 | `make stamp-embeddings` | One-shot `label_embedding` backfill (§13.3) |
+| `make desktop-run` | Launch the desktop client (`MODE=ui` for the real GUI; default prints the version) |
 | `python3 tools/check_docs.py docs/` | Validate specification consistency |
 | `python3 tools/smoke_test.py` | Clean-host smoke test of the bootstrap core (up, ingest, count, down) |
 
@@ -169,11 +171,13 @@ Properties of the available data, not defects. Read the coverage report before d
 |---|---|
 | Design Document v2.0.0 | `docs/LIMES_Design_Document_v2.0.0.md` |
 | Technical Specification v2.1.0 | `docs/LIMES_Technical_Specification_v2.1.0.md` |
+| Desktop Client Requirements v1.0.0 | `docs/LIMES_Desktop_Client_Requirements_v1.0.0.md` |
+| Desktop Client Architecture v1.0.0 | `docs/LIMES_Desktop_Client_Architecture_v1.0.0.md` |
 | Coding agent contract | `AGENTS.md` |
 
 The v1.x document set is withdrawn. It passed every internal consistency check and still stalled implementation three times, because those checks all pass for a specification whose modules cannot reach each other. Technical Specification §15 — a seam register derived from end-to-end call traces — is the artifact whose absence allowed it.
 
-The initial Implementation Roadmap is deleted: it was the plan for a one-time delivery, and that plan is now executed. The Design Document and Technical Specification are the two remaining, authoritative artifacts.
+The initial Implementation Roadmap is deleted: it was the plan for a one-time delivery, and that plan is now executed. The Design Document and Technical Specification remain the authoritative artifacts for the core system; the desktop client is specified by its own v1.0.0 requirements and architecture documents.
 
 ---
 

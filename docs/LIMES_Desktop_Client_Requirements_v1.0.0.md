@@ -55,7 +55,7 @@ Tauri shells (introduce a second language stack the repo does not carry).
 
 Requirements are numbered FR-DC-nnn. "API" means the FastAPI service
 (Technical Specification §9). Every data-driven view degrades gracefully when
-the API is unreachable: connection state is visible at all times (FR-DC-014).
+the API is unreachable: connection state is visible at all times (FR-DC-002).
 
 ### 3.1 Connection management
 

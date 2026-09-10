@@ -6,7 +6,64 @@ gold set, prompts) are recorded in their own changelogs.
 
 ---
 
-## 2026-09-09 — Desktop client (wp-desktop-client-v1, wp-01..wp-12)
+## 2026-09-10 — Documentation sweep — docs↔code reconciliation (code unchanged, D-73)
+
+Full-repo sweep making the documents describe the repository as it is. No code,
+test, configuration, Compose, Makefile, ontology or gold-set file was modified
+(`git diff -- src tests desktop/src desktop/tests` is empty; every change is a
+markdown file).
+
+- **Technical Specification v2.1.0** — §2 project tree gains the `desktop/` uv
+  workspace member and its two module paths the tree had drifted from
+  (`graph/embeddings.py`, `api/builder.py`), and the "three modules exist that
+  v1.x lacked" sentence now matches the four it lists; §3 dependency table gains
+  the desktop-client dependencies (`pyside6`, `pyside6-addons`, `pytest-qt`) and
+  the `coverage` dev dependency; §8.13 names the desktop client as the second API
+  consumer under the same no-ontology-literals rule; §13.3 bootstrap lists the
+  one-shot `make stamp-embeddings` step between steps 6 and 7; the two stale
+  promises of a "Document 3 — Implementation Roadmap" are removed. The §4.2
+  embedded `.env.example` was diffed against the real file — identical, no edit.
+- **Design Document v2.0.0** — companion-documents row names the desktop doc
+  pair; §4.13/§6.5 record the desktop client as a second user-facing API
+  consumer; §5.2's supertype column label now explains its em-dashes; §5.8 drops
+  `UN Digital Library`, a source that exists nowhere in the registry or
+  `feeds.yaml`; §6.6 gains `stamp-embeddings`; the drafting footer is removed.
+- **README.md** — architecture diagram branches the query API to both consumers;
+  operation table gains `make desktop-run`; documentation table lists both
+  desktop docs; the "two remaining authoritative artifacts" sentence no longer
+  contradicts the desktop doc pair; Requirements notes the client's Python/uv
+  need.
+- **AGENTS.md** — verification loop gains the desktop client's lint and offline
+  test invocations; the mypy scope comment now matches
+  `files = ["src/limes", "desktop/src/limes_desktop"]`; the architecture rules
+  state the desktop guard test and the client-runtime-must-not-import-`limes`
+  rule.
+- **Desktop client docs** — `desktop/README.md` rewritten from its stale
+  "under construction (wp-01)" stub; the Architecture's repository layout, model
+  list and testing strategy now match the shipped tree (including `page.py`,
+  `query_history.py`, `coverage_panel.py`, and the absence of an automated
+  acceptance suite — AC-DC-1/AC-DC-5 remain manual hand-off steps); "async-safe
+  method" corrected to the synchronous `httpx.Client` it is.
+- **CHANGELOG.md** — the desktop-client entry's work-package range corrected
+  `wp-01..wp-12` → `wp-01..wp-13`, with WP-13's final-review wiring and 3xx
+  redirect handling added.
+- **Implementation plan** — marked as executed and merged at `5ab2d4e`, with the
+  `pyside6-webengine` → `pyside6-addons` substitution recorded; tasks and
+  checkboxes left exactly as specified.
+
+Verification for this docs-only change: `git diff` touches markdown only (no file
+under `src/`, `tests/`, `desktop/`), and `python3 tools/check_docs.py docs/`
+reports PASS (C1–C7) after the last edit. No test suite was run for this entry —
+an untouched tree cannot be broken by a documentation change.
+
+Recorded from the environment, not from a verification run: `tests/integration`
+and `tests/acceptance` error at fixture setup on this host for a pre-existing
+reason (Docker publishes the port but does not relay bolt — a raw TCP connect
+succeeds, the bolt handshake never answers), so they are verifiable only in CI.
+
+---
+
+## 2026-09-09 — Desktop client (wp-desktop-client-v1, wp-01..wp-13)
 
 A local PySide6 desktop client (`desktop/`, workspace member `limes-desktop`
 0.1.0) over the existing HTTP API — specified by
@@ -41,6 +98,15 @@ A local PySide6 desktop client (`desktop/`, workspace member `limes-desktop`
   core).
 - **Makefile**: `desktop-install`, `desktop-run` (headless sanity by
   default, `MODE=ui` for the GUI), `desktop-lint`, `desktop-test`.
+- **Final-review wiring** (`views/main_window.py`): the shared coverage panel
+  is docked in the main window — one instance across every query surface
+  (FR-DC-034/AC-DC-3); the ontology is fetched at connect and profile change
+  so the entity view's neighbors relation filter is populated (FR-DC-022); a
+  selection (search hit or neighbor click) fetches the entity and navigates to
+  the entity page (FR-DC-010/022).
+- **Redirect handling** (`api/client.py`): the `httpx.Client` follows
+  redirects, so a 3xx is followed to its final response instead of surfacing
+  as an unparseable non-JSON body.
 
 ---
 

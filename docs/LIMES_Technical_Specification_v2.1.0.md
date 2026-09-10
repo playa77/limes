@@ -92,7 +92,7 @@ Recorded so the same ground is not re-covered. Each is resolved in the section n
 
 ## 2. Project Structure
 
-Paths are authoritative. Document 3 references files by these paths.
+Paths are authoritative. The desktop client documents reference files by these paths.
 
 ```
 limes/
@@ -106,7 +106,7 @@ limes/
 ├── docker-compose.yml
 ├── docker-compose.override.yml
 ├── docker/{api,ui,worker}.Dockerfile
-├── docs/                        # the three specification documents
+├── docs/                        # the four specification documents
 ├── ontology/
 │   ├── ontology.yaml
 │   ├── ontology.schema.json
@@ -121,11 +121,15 @@ limes/
 │   └── CHANGELOG.md
 ├── reference_questions/questions.yaml
 ├── tools/check_docs.py          # specification consistency validator
+├── desktop/                     # uv workspace member: PySide6 desktop client
+│   ├── pyproject.toml
+│   ├── src/limes_desktop/**     # api/, views/, resources/web/
+│   └── tests/{unit,contract,integration}/
 ├── src/limes/
 │   ├── config.py  errors.py  logging_setup.py  types.py
 │   ├── composition.py           # THE composition root
 │   ├── ontology/{model,registry,validator}.py
-│   ├── graph/{driver,schema,loader,temporal,lookups,queries}.py
+│   ├── graph/{driver,schema,loader,temporal,lookups,queries,embeddings}.py
 │   ├── archive/store.py
 │   ├── sources/{base,registry}.py
 │   ├── sources/{gisco_nuts,gleif,eurlex,fsd,ted,transparency_register,
@@ -138,7 +142,7 @@ limes/
 │   ├── cost/{ledger,governor}.py
 │   ├── nlq/{generate,validate,plan,service}.py
 │   ├── coverage/{report,diagnose}.py
-│   ├── api/{main,deps,models}.py
+│   ├── api/{main,deps,models,builder}.py
 │   ├── api/routers/{health,ontology,query,entity,search,coverage,
 │   │                saved_queries,sources,cost,ingest_status}.py
 │   ├── ui/{app,layout,api_client}.py
@@ -147,7 +151,7 @@ limes/
 └── tests/{conftest.py,fixtures/,unit/,integration/,acceptance/}
 ```
 
-Three modules exist that v1.x lacked and whose absence caused defects: `composition.py` (S-27), `pipeline/window.py` (window resolution), `resolution/resolve.py` (mention-to-entity conversion), and `graph/lookups.py` (cross-process reference reads).
+Four modules exist that v1.x lacked and whose absence caused defects: `composition.py` (S-27), `pipeline/window.py` (window resolution), `resolution/resolve.py` (mention-to-entity conversion), and `graph/lookups.py` (cross-process reference reads).
 
 ---
 
@@ -180,8 +184,11 @@ Minimum compatible ranges; the committed lock file is authoritative thereafter.
 | `python-dateutil` | `>=2.9` | normalize |
 | `pandas` | `>=2.2` | sources |
 | `typer` | `>=0.12` | cli |
+| `pyside6`, `pyside6-addons` | `>=6.7` | desktop client |
 | `pytest`, `pytest-asyncio`, `respx` | `>=8.3`, `>=0.24`, `>=0.21` | tests |
+| `pytest-qt` | `>=4.4` | desktop client tests |
 | `ruff`, `mypy` | `>=0.6`, `>=1.11` | dev |
+| `coverage` | `>=7.15` | dev |
 
 Host tooling installs into `./venv/`. `--break-system-packages` is prohibited. Container images install directly; no virtual environment inside an image.
 
@@ -620,7 +627,7 @@ All responses carry `X-LIMES-Ontology-Version`. Error envelope:
 | GET | `/ontology/versions` | Versions present in the graph with counts | — |
 | GET | `/builder/schema` | Ontology projection for UI builder generation | — |
 | POST | `/query/cypher` | Execute operator-supplied Cypher after validation | 400, 422, 504 |
-| POST | `/query/nl` | Generate, validate, plan, execute from a question | 400, 402, 422 |
+| POST | `/query/nl` | Generate, validate, plan, execute from a question | 402 |
 | POST | `/query/builder` | Execute a structured builder specification | 400 |
 | GET | `/entity/{id}` | Entity with properties, provenance, edge summary | 404 |
 | GET | `/entity/{id}/neighbors` | One-hop expansion, relation and temporal filters | 404 |
@@ -941,6 +948,8 @@ The generation prompt carries the serialized ontology, the temporal helpers, and
 ### 8.13 UI
 `ui/api_client.py` is the only module performing HTTP; one function per endpoint. No UI module holds ontology knowledge, a type name, or a Cypher fragment — the builder is generated entirely from `/builder/schema`. State lives in `dcc.Store`: `current-result`, `selection`, `temporal-filter`, `builder-spec`. The timeline brush triggers a re-query rather than client-side filtering, so no pane shows a subset the graph cannot reproduce.
 
+The desktop client (`desktop/src/limes_desktop/`) is a second API consumer with the same invariants: `api/client.py` is its only module performing HTTP, and `desktop/tests/contract/test_no_ontology_literals.py` enforces that no client module carries an ontology type name, relation name, or Cypher fragment.
+
 ### 8.14 CLI
 ```
 limes ingest      --source <id> [--since <iso>] [--until <iso>]
@@ -1108,6 +1117,7 @@ Base file: four services, one internal network, volumes `neo4j_data`, `neo4j_log
 4.  make ingest SOURCE=gisco_nuts        # geography + postal correspondence
 5.  make ingest SOURCE=gleif             # legal-entity backbone
 6.  make ingest-all                      # remaining structured sources
+    make stamp-embeddings                # one-shot embedding backfill (§8.3)
 7.  make backfill SOURCE=feeds DAYS=90 BUDGET=<eur>
 8.  make backfill SOURCE=gdelt DAYS=90 BUDGET=<eur>
 9.  build gold set and calibration set from the archive
@@ -1353,4 +1363,4 @@ cli/evaluate.py
 
 ---
 
-Review this technical specification. I will revise on request. When approved, I can optionally produce Document 3 — an Implementation Roadmap decomposing the project into work packages a coding agent can execute end-to-end. Do you want Document 3?
+Review this technical specification. I will revise on request.

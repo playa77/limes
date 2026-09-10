@@ -5,6 +5,57 @@ reversibility: **R1** reversible in under an hour, **R2** bounded recoverable
 cost, **R3** one-way door. Written when each decision is made, latest first.
 Nothing here is a status report; unlogged decisions are unmade decisions.
 
+## 2026-09-10 — D-73 (R2) — Documentation sweep: docs updated to the implementation, code untouched
+
+Operator-instructed full-repo docs↔code reconciliation ("treat the code as
+authoritative; update the documentation; never change code behaviour"). Seven
+file-disjoint doc surfaces were reconciled in parallel and every edit verified
+against the cited code line.
+
+- **In-place edits, no version bumps or renames.** `docs/*` filenames and
+  in-document version tables keep their versions; content is corrected where it
+  described the tree wrongly. Rejected alternative: bumping the documents
+  (Technical Specification v2.2.0 etc.) — it would invalidate every cross-document
+  version reference and trip `check_docs.py` C6 while changing nothing about
+  meaning.
+- **Document numbering kept as found.** Design Document = 1 of 3, Technical
+  Specification = 2 of 3, Desktop Client Requirements = 3 of 3 (the slot the
+  deleted Implementation Roadmap vacated); the Desktop Client Architecture is an
+  unnumbered companion of the Requirements doc. The specification's two
+  surviving promises of a "Document 3 — Implementation Roadmap" (§2 prose and
+  the closing line) are removed; no document was renumbered.
+- **Statement classes.** Factual statements about what exists today (project
+  tree, dependency manifests, counts, paths, write surfaces, Makefile targets,
+  test layout) were corrected. Requirements and design statements the
+  implementation does not (yet) satisfy were **reported, not rewritten** —
+  rewriting a requirement to match a partial implementation would have made the
+  documents consistent by making them weaker.
+- **One inferred edit, disclosed:** `docs/LIMES_Desktop_Client_Requirements_v1.0.0.md`
+  §3 cited `FR-DC-014`, which is defined nowhere in the document; it now cites
+  `FR-DC-002`, the requirement that makes connection state visible at all times
+  (banner implementation). If the author intended a dropped requirement, this is
+  the line to revisit.
+- **Gaps found and left standing** (implementation-side, out of a docs sweep's
+  scope): FR-DC-002 promises "API version and graph summary" from `/health`,
+  which returns only `status`/`neo4j`/`ontology_version`; FR-DC-033's `surface`
+  dimension is discarded by `ApiClient.save_query` (the payload overwrites the
+  `cypher` field) and the API model has no surface field; the Architecture's §4
+  rows for "schema mismatch" and "subprocess/QWebEngine crash" describe handling
+  absent from the client.
+- **Historical records preserved.** `CHANGELOG.md` entries, the design
+  document's Revision History, and the desktop implementation plan
+  (`docs/superpowers/plans/2026-09-09-desktop-client.md`, now carrying an
+  executed-status block with its checkboxes deliberately unticked) are records
+  of what was decided at the time; only factual errors were corrected.
+
+Environment finding, recorded because it blocks verification here: on this
+machine Docker's published ports accept TCP but do not relay the wire protocol
+(`tests/integration` + `tests/acceptance` fail at fixture setup —
+"Neo4j did not become reachable at bolt://127.0.0.1:55239"). Proven with a raw
+socket connect (TCP OK) versus a bolt handshake on the same port (no response),
+the same defect already recorded for this host's postgres publishing. Pre-existing,
+unrelated to this sweep; integration and acceptance remain verifiable only in CI.
+
 ## 2026-09-10 — D-72 (R1) — Single-instance guard removes a stale QLocalServer socket before listening
 
 wp-desktop-client-v1 review finding (Task 5). A crashed prior instance leaves

@@ -1,5 +1,7 @@
 # LIMES Desktop Client Implementation Plan
 
+> **Status:** Executed in full as WP-01..WP-13 and merged to `main` at `5ab2d4e` — "Merge wp-desktop-client-v1: PySide6 desktop client (docs v1.0.0, WP-01..WP-13)". Per-task execution records live in `.superpowers/sdd/2026-09-09-desktop-client/`; the shipped work is recorded in `CHANGELOG.md` (2026-09-09 entry). The tasks below are preserved exactly as originally specified — checkboxes intentionally left unticked.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Build the LIMES desktop client — a PySide6 application in a new `desktop/` uv workspace member that fully replaces the Dash UI, adds read-only ops monitoring, and triggers backups by shelling out to `limes backup` inside the worker container.
@@ -61,7 +63,7 @@ Dependency direction: `views/* → state.py → api/client.py → api/models.py`
   - `class ProfileStore`: `__init__(config_dir: Path | None = None)` (default `~/.config/limes-desktop/`); methods `profiles() -> list[ConnectionProfile]`, `save(profile: ConnectionProfile) -> None`, `delete(name: str) -> None`, `active() -> ConnectionProfile | None`, `set_active(name: str) -> None`. Persists as `profiles.json` + `active` file in the config dir.
   - `class ApiUnreachable(Exception)`, `class ApiError(Exception)` with attributes `status: int`, `detail: str` (verbatim body, FR-DC-062/§4).
 
-- [ ] **Step 1: Write `desktop/pyproject.toml`** — hatchling backend (same rationale as root: future packaged resources), `name = "limes-desktop"`, `dependencies = ["pyside6>=6.7", "pyside6-webengine>=6.7", "httpx>=0.27", "pydantic>=2.8"]`, dev group `["pytest>=8.3", "pytest-qt>=4.4", "respx>=0.21", "ruff>=0.6", "mypy>=1.11"]`, `[project.scripts] limes-desktop = "limes_desktop.__main__:main"`, `[tool.hatch.build.targets.wheel] packages = ["src/limes_desktop"]`, pytest `testpaths = ["tests"]`, `pythonpath = ["src", "../src"]`.
+- [ ] **Step 1: Write `desktop/pyproject.toml`** — hatchling backend (same rationale as root: future packaged resources), `name = "limes-desktop"`, `dependencies = ["pyside6>=6.7", "pyside6-webengine>=6.7", "httpx>=0.27", "pydantic>=2.8"]`, dev group `["pytest>=8.3", "pytest-qt>=4.4", "respx>=0.21", "ruff>=0.6", "mypy>=1.11"]`, `[project.scripts] limes-desktop = "limes_desktop.__main__:main"`, `[tool.hatch.build.targets.wheel] packages = ["src/limes_desktop"]`, pytest `testpaths = ["tests"]`, `pythonpath = ["src", "../src"]`. **Executed as:** `pyside6-webengine>=6.7` does not exist on PyPI (no such project); the shipped dependency is `pyside6-addons>=6.7` (QtWebEngine ships inside PySide6_Addons), carrying a NOTE comment in `desktop/pyproject.toml`.
 
 - [ ] **Step 2: Register the workspace.** Root `pyproject.toml` gains `[tool.uv.workspace] members = ["desktop"]` and `[tool.uv.sources] limes-desktop = { workspace = true }`. Extend mypy: `files = ["src/limes", "desktop/src/limes_desktop"]`. Ruff already runs per-invocation; Makefile targets:
   ```make
@@ -370,7 +372,7 @@ Dependency direction: `views/* → state.py → api/client.py → api/models.py`
 - Test: `desktop/tests/unit/test_query_builder_view.py`
 
 **Interfaces:**
-- Consumes: `ApiClient.builder_schema()` response (`GET /builder/schema` — the same schema the Dash UI's `ui/components/builder.py` consumes; read that file first and mirror its hop-construction logic in client terms), `CoveragePanel`.
+- Consumes: `ApiClient.builder_schema()` response (`GET /builder/schema` — the same schema the Dash UI's `src/limes/ui/components/builder.py` consumes; read that file first and mirror its hop-construction logic in client terms), `CoveragePanel`.
 - Produces: `BuilderView(QWidget)`: start-type combo ← schema `entity_types`; per-hop relation + direction + target combos ← the schema's domain/range data (exactly `relations_for`/`targets_for` semantics as in `tests/integration/test_ui.py`'s admissibility test); "Add hop" / "Remove hop"; submit calls `query_builder(spec)` and publishes the bundle. Zero ontology literals — all options are schema data (guard test from Task 3 enforces).
 
 - [ ] **Step 1: Failing test**: given a canned builder-schema dict (two entity types, one relation with both directions), selecting start type "A" populates exactly the schema-admissible (relation, direction, target) triples; submit builds the expected spec dict and calls `query_builder`. Construct the canned schema from the shape `src/limes/api/routers/ontology.py` actually returns.
