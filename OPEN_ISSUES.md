@@ -1,0 +1,266 @@
+# OPEN_ISSUES.md — LIMES evidenced open-issue ledger
+
+Ledger mechanics: append-only; ids are never renumbered; an item leaves only
+through a `Closed` section carrying a re-runnable evidence line. "Resolved"
+means evidenced, not asserted — a bare "done" is not a closure. Design-level
+deferrals stay in the roadmap with revisit triggers; this file is the
+operational list and is expected to reach zero.
+
+Standing constraints (restated so a fresh session cannot violate them):
+
+- **No commits, staging, or pushes by the agent.** Merging to `main` happens
+  only on explicit operator instruction (AGENTS.md, Conventions).
+- **No model ids anywhere.** No model, prompt, or model-selector change without
+  an operator envelope; tests never make real paid calls.
+- **`.env` is off-limits** — never read, printed, or committed.
+- **VPS co-tenants must not be disturbed.** Brainy runs on the same host; any
+  operator-run VPS command must be scoped to the `limes` stack only. The agent
+  never SSHes; the deployed-revision check is operator-run (OI-01).
+
+Snapshot (every row from the command that produced it; run 2026-09-16):
+
+| Fact | Command | Value |
+|---|---|---|
+| Local HEAD | `git log --oneline -1` | `ad42871` "docs sweep" (2026-09-10) |
+| HEAD vs origin/main | `git rev-parse HEAD origin/main` (local refs only, no network) | equal — `ad428713a75d…` on both; local `main` tracks `origin/main` (`git config branch.main.remote` = origin), so this is last-fetched state |
+| Working tree | `git status --porcelain` | clean — no modified, no untracked files (git-ignored caches only: `.mypy_cache/`, `.ruff_cache/`, `.pytest_cache/`, `.superpowers/sdd/…`, `venv/`, `.venv/`) |
+| Tags | `git tag -l \| wc -l` | 0 — no tags exist in this repo |
+| CI | `ls .github` | no `.github/` directory — no CI workflows at all |
+| Compose vs repo state | `git log -1 -- docker-compose.yml docker-compose.override.yml` | both last touched `b38a5df` 2026-08-03 (WP-37/38); `worker.Dockerfile` last touched `1d7ab44` 2026-09-07 |
+| Deployed revision | operator-run check | see OI-01 — the command is provided as a row there; agent does not SSH |
+| Remote URL (local config) | `git remote -v` | `origin` = https://github.com/playa77/limes (HTTPS only; no `vps` remote configured in this repo) |
+
+---
+
+## Open items
+
+### 1. Contract/correctness
+
+- **OI-01** — The docs' deployment story (local-only, override file removed to
+  "promote to a server") has never described the actual deployment, which runs
+  on the shared VPS at `/opt/limes` via compose with boot-persistence — and the
+  operator ruled 2026-09-15 that the deployment is intentional and the docs are
+  the stale side. Evidence: `docker-compose.override.yml:1-6` ("loopback
+  publication … Promotion to a server is removal of this file (§13.5)");
+  `README.md:13` "not operated as a service … Single operator, local machine";
+  `README.md:107` "promotion to a server is removal of the override";
+  `docs/LIMES_Design_Document_v2.0.0.md:475` (same claim). The repo contains no
+  VPS/deploy docs at all (`grep -rn 'sshpass\|/opt/limes' --include='*.md'`
+  → no tracked hits). Repair path: after the operator supplies the deploy
+  parameters (path, service unit, deploy date), amend Doc 1 §13.5 + README
+  §Operations to describe the actual deployment instead of the override-removal
+  fiction, and record the ruling as a DECISIONS.md entry. **Owner: operator**
+  (supplies deployment facts), then agent (doc amendment).
+- **OI-02** — `desktop/tests/integration/test_full_flow.py` (the desktop
+  client's integration flow, AC-DC-1/3) has never been executed: it was written
+  in wp-12 and blocked by a sandbox Docker NAT failure that pre-existed on the
+  root suite at unmodified HEAD. Evidence: `.superpowers/sdd/2026-09-09-desktop-client/progress.md:81`
+  "Integration test written to convention but not executed … must run on
+  healthy host"; file last touched at `b66feb5` 2026-09-10
+  (`git log -1 -- desktop/tests/integration/test_full_flow.py`); no tracked
+  doc records a later green run. Repair path: one operator-authorized run on
+  the healthy host — `./venv/bin/python -m pytest desktop/tests/integration -q`
+  — and record the result in the ledger's Closed section. **Owner: verify**
+
+### 2. Never-verified behaviour
+
+- **OI-03** — The live/smoke behaviour of the compose stack against the
+  deployed VPS revision has never been evidenced inside this repo: the tracked
+  docs name `tools/smoke_test.py` as the clean-host bootstrap check
+  (`AGENTS.md:38`, `README.md:131`), but no tracked file records a smoke run
+  against the deployed revision, and the runtime behaviour of
+  `worker.Dockerfile:48` `CMD ["sleep", "infinity"]` idle-container pattern on
+  the VPS (post-2026-09-07 deploy, boot-persistent via `limes.service`) is
+  asserted only in session notes, not in any tracked artifact. Repair path:
+  operator runs the deployed-revision check (OI-01's command) plus one
+  documented smoke pass against `/opt/limes`; record both in the ledger's
+  Closed section with the command outputs. **Owner: verify**
+
+### 3. Docs/ledger drift
+
+- **OI-04** — `README.md` and the compose override still describe server
+  promotion as "removal of the override file", which contradicts the actual
+  deployment model ruled intentional on 2026-09-15 (see OI-01); this row stays
+  until the doc amendment lands, because the wrong claim appears in two
+  independent surfaces that a fresh session reads first. Evidence: same lines
+  as OI-01 (`README.md:13,107`; `docker-compose.override.yml:1-6`).
+  Repair path: same amendment as OI-01; this row is the tracked-tree marker
+  that the amendment is the fix, closed only when both files are edited.
+  **Owner: agent** (after operator facts arrive).
+- **OI-05** — The workspace ledger `.superpowers/sdd/2026-09-09-desktop-client/progress.md`
+  (git-ignored) records the desktop branch "MERGED to main (5ab2d4e) and pushed
+  to origin at operator instruction" and 18 `minor (deferred)` review findings
+  that live only in the ignored tree — invisible to every future session and
+  unclosed in any tracked file. Evidence: `grep -c 'minor (deferred)'
+  .superpowers/sdd/2026-09-09-desktop-client/progress.md` → 18; the merge line
+  is at the file tail (`## 2026-09-10 — MERGED to main (5ab2d4e) and pushed`).
+  Repair path: triage the 18 deferred minors into tracked rows or explicit
+  won't-fix notes (the individually evidenced ones are OI-06..OI-09 below);
+  do not delete the trail. **Owner: agent**
+- **OI-06** — `desktop/tests/contract/test_no_ontology_literals.py:21` pins a
+  constant misspelled `CYIPHER_KEYWORDS` (typo inherited from the wp-03 brief,
+  cosmetic but now guard-adjacent — renaming it touches a guard test).
+  Evidence: file line 21 `CYIPHER_KEYWORDS = (`, used at line 47.
+  Repair path: rename to `CYPHER_KEYWORDS` in the same commit that runs the
+  contract suite (`make desktop-test`) to prove the guard still holds.
+  **Owner: agent**
+- **OI-07** — `desktop/src/limes_desktop/api/client.py:31` declares
+  `_TIMEOUT = httpx.Timeout(30.0)` which is dead — `__init__` builds its own
+  `httpx.Timeout(timeout_s)` at line 42, so the module constant misleads a
+  reader about where the timeout comes from. Evidence: lines 31 vs 42 as cited.
+  Repair path: delete line 31 in a commit that keeps `pytest
+  desktop/tests/unit -q` green. **Owner: agent**
+- **OI-08** — `desktop/src/limes_desktop/views/viz/network.py:20,25` maintain
+  `self._expanded_ids` which nothing reads — the expansion-merge in
+  `apply_neighbors` (lines 30-50) rebuilds the payload from history, so the
+  set is bookkeeping with no consumer. Evidence: only two occurrences in the
+  file, both writes (`grep -n '_expanded_ids' network.py` → 20, 25); the merge
+  path at lines 38-47 never consults it. Repair path: delete the attribute and
+  its write, re-run the viz unit tests. **Owner: agent**
+
+### 4. Ops/deploy
+
+- **OI-09** — The deployed revision on the VPS is unknown to this repo — no
+  tracked deploy record, tag, or version stamp ties the running stack to a
+  commit, and the operator-ruled check has not been run. The exact operator-run
+  command (password read from the repo-adjacent access doc, never echoed;
+  scoped so co-tenants are untouched):
+
+  ```bash
+  # operator-run, from the dev machine; sshpass is MANDATORY (no interactive prompt):
+  SSHPASS="$(awk '/limes \(SSH/ {print $NF}' <access-doc>.md)" \
+    sshpass -e ssh <limes-user>@<limes-host> \
+    'cd /opt/limes && git log --oneline -1 && docker compose ps --format json | head -5 && systemctl is-enabled limes.service'
+  ```
+
+  (operator substitutes the real access-doc filename, user and host — the
+  agent neither knows nor looks them up). Evidence: this repo has 0 tags
+  (`git tag -l | wc -l`), no deploy docs (`git ls-files` has no
+  deploy/VPS file), and no tracked deployment record; the deployment claim
+  (deployed 2026-09-07 at `/opt/limes`, boot-persistent `limes.service`)
+  exists only in operator session context, not in any tracked file.
+  Repair path: operator runs the command, pastes the output into this
+  ledger's Closed section; agent then records the deployed SHA in the
+  snapshot table above. **Owner: operator**
+
+### 5. Parked minors (copied out of the git-ignored work trail)
+
+- **OI-10** — `desktop/src/limes_desktop/views/query_builder.py:211-214`
+  refills the relation combo with `refill_relation=False` on text change, so
+  selecting a "self-both" relation whose admissible direction set depends on
+  the relation (not just the type) can leave a stale selection in the
+  direction combo — the wp-08 reviewer flagged it as a defensible seam, not a
+  defect, and it was parked rather than ruled on. Evidence: `.superpowers/…/progress.md`
+  Task 8 line "self-both relation resets user's selection; suggest
+  refill_relation=False"; code at lines 211-214 (`refill_relation=False`) and
+  247-262 (`_refresh_hop` refills direction unconditionally).
+  Repair path: either add a one-line comment pinning the current semantics as
+  intended (cheapest), or implement the suggested `refill_relation` conditional
+  — either way, close this row so the park does not dangle. **Owner: agent**
+- **OI-11** — `desktop/src/limes_desktop/resources/web/map.html:19` fetches OSM
+  tiles at runtime, so offline use shows a blank map — parked at wp-09 as
+  "defensible", but NFR-DC-072 ("no network calls beyond the configured API",
+  Requirements doc line 165) is arguably contradicted, not just uncovered.
+  Evidence: `map.html:19` `L.tileLayer('https://tile.openstreetmap.org/…')`;
+  `docs/LIMES_Desktop_Client_Requirements_v1.0.0.md:165` NFR-DC-072 wording.
+  Repair path: operator decides — either amend NFR-DC-072 to carve out map
+  tiles (one sentence), or vendor a small offline tile set; then close with a
+  pointer to the decision. **Owner: operator** (decision), agent (edit).
+- **OI-12** — `desktop/tests/contract/test_model_parity.py` pins nested model
+  members only for `QueryResponse`/`NeighborResponse`, not the top-level fields
+  (parked at wp-02) — so a top-level field added to either API model can ship
+  without a desktop mirror. Evidence: `.superpowers/…/progress.md` Task 2 line;
+  the parity test's own comment at line 19 ("core models by name for the
+  parity message") and `model_fields` use at line 40 show the mechanism exists
+  but was not extended to those two models' top-level fields.
+  Repair path: add the two model names to the parity list in
+  `test_field_parity()` and run `make desktop-test`. **Owner: agent**
+- **OI-13** — `desktop/tests/integration/test_full_flow.py:33-34` bootstraps
+  the root `tests/` package by absolute `sys.path.insert`, and the Task 12
+  review's deferred note about `__import__('sys')` + duplicated path insertion
+  was ruled cosmetic — recorded here so the seam is visible outside the
+  ignored trail. Evidence: lines 33-34 as cited (`if _TESTS_PKG not in
+  __import__("sys").path: sys.path.insert(0, _TESTS_PKG)`).
+  Repair path: none required now — replace `__import__("sys")` with the
+  already-imported `sys` in the next touch of that file. **Owner: agent**
+
+### 6. Tooling/hygiene
+
+- **OI-14** — The repo has no CI at all: no `.github/` directory, so the docs
+  guard `tools/check_docs.py`, the lint gates, and the offline suites run only
+  when an agent remembers to. Evidence: `ls .github` → "No such file or
+  directory"; `git ls-files | grep -c .` = 359 tracked files with zero
+  workflow files. Repair path: operator decision — add a minimal GitHub
+  Actions workflow running the AGENTS.md verification loop's offline subset
+  (`ruff`, `mypy`, `tests/unit`, `desktop/tests`), or record that single-
+  operator no-CI is deliberate. **Owner: operator** (decision), agent (file).
+- **OI-15** — `venv/` and `.venv/` both exist on disk and both are ignored, but
+  the AGENTS.md verification loop hardcodes `./venv/bin/…` while wp-01 used
+  `uv sync` (which creates `.venv/`) — a fresh session following the docs gets
+  command-not-found against whichever directory it does not have. Evidence:
+  `ls -d venv .venv` → both exist; `.gitignore:48-49` ignores both; AGENTS.md
+  "Verification loop" block uses `./venv/bin/ruff check …` throughout;
+  `Makefile:94,97` also uses `./venv/bin/`. Repair path: one sentence in
+  AGENTS.md/README naming the canonical directory and the command that creates
+  it (`uv venv venv` vs `uv sync`), then verify the loop runs unchanged.
+  **Owner: agent**
+- **OI-16** — `docs/superpowers/plans/2026-09-09-desktop-client.md` is a
+  committed planning artifact inside `docs/` — a work-trail document living in
+  the tracked docs tree, distinct from the tracked work trail the repo keeps
+  nowhere else. Evidence: `git ls-files | grep superpowers` → this one file;
+  the rest of the SDD trail (`.superpowers/sdd/…`) is git-ignored.
+  Repair path: operator decision — keep (it is referenced as plan context in
+  the progress ledger) or move it to `.superpowers/` with the rest of the
+  trail; either is fine, the inconsistency is the item. **Owner: operator**
+
+### 7. Missing guards
+
+- **OI-17** — Nothing enforces the deployment-doc contract mechanically: the
+  repo carries `tools/check_docs.py` (type closure, AC numbering, seam
+  coverage), but no check pins the deployment story (README §Operations vs
+  compose topology vs the actual deployment), which is exactly the class of
+  drift OI-01/OI-04 instantiate — the docs claimed local-only while the stack
+  ran on the VPS, and no gate would have caught it. Evidence: `grep -n
+  'deploy' tools/check_docs.py` → no deployment-related check (file's own
+  header, lines 1-22, lists only type-closure/AC/seam checks); OI-01's
+  evidence lines show the drift shipped unnoticed.
+  Repair path: after OI-01's amendment lands, add a check_docs rule (or a
+  guard test) asserting the deployment paragraph in README matches a single
+  canonical deployment statement, and prove it fails on a deliberate drift
+  before trusting it. **Owner: agent**
+- **OI-18** — The desktop client's no-network guarantee (NFR-DC-072) has no
+  mechanical check: `desktop/tests/contract/` pins ontology literals and model
+  parity, but nothing greps the vendored/runtime web assets for outbound URLs,
+  so OI-11's tile fetch sits undetected. Evidence: `ls
+  desktop/tests/contract/` → `test_model_parity.py`,
+  `test_no_ontology_literals.py` only; `map.html:19` shows the unguarded
+  outbound URL. Repair path: add a contract test asserting the only outbound
+  hosts in `resources/web/` are the configured API (extend as needed once
+  OI-11 is decided); verify it fails against the current `map.html` before the
+  decision, so the guard documents the gap. **Owner: agent**
+
+---
+
+## Closing sequence (ordered)
+
+1. **Operator batch first** — OI-01/OI-04 facts, OI-09 deployed-revision check,
+   OI-11 and OI-14/OI-16 decisions. These unblock every agent row below.
+2. **Verify rows with real runs** — OI-02 (desktop integration on the healthy
+   host), OI-03 (smoke pass against the deployed revision). Evidence into the
+   Closed section, never asserted.
+3. **Agent fixes in dependency order** — OI-05 triage, then the code minors
+   OI-06/OI-07/OI-08/OI-13, then OI-10 and OI-12; each closed with the suite
+   that guards its file.
+4. **Docs amendment + guard** — the OI-01/OI-04 edit lands after any behaviour
+   rows it references, then OI-17's mechanical guard is installed and proven
+   to fail on a deliberate drift; OI-18's network guard alongside it.
+5. **Release mechanics last** — OI-15 (environment canonicalization) plus any
+   tag/deploy steps only on explicit operator instruction, per the standing
+   constraints above.
+
+**Definition of done:** every row above is in `Closed` with a re-runnable
+evidence line; the OI-17/OI-18 guards are green and proven to fail on
+deliberate drift; the operator-gated items (OI-01, OI-09, OI-11, OI-14, OI-16)
+are decided in the operator's own words, not merely acknowledged. An empty
+ledger proves nothing — this one is not empty, and the guards, not the list,
+are what keep it empty afterwards.
