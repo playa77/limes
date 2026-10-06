@@ -6,6 +6,21 @@ gold set, prompts) are recorded in their own changelogs.
 
 ---
 
+## 2026-10-06 — Cloud test and desktop shutdown fixes (D-74)
+
+- Backup integration verifies a nonempty dump inside a named archive volume,
+  without depending on host permissions or Docker's `/tmp` namespace.
+- The shared Neo4j fixture cleans up its container and anonymous volumes on
+  success or startup failure, including when used by desktop integration.
+- Desktop integration uses synchronous `TestClient` with automatic API lifespan
+  cleanup and wires its mock inference client before the natural-language query.
+- Visualization widgets stay lazy until shown, retain the latest hidden result,
+  flush it after HTML loading, and keep each private profile alive until its
+  page is destroyed. Native shutdown and fixture-cleanup regression tests added.
+
+Validation: lint and mypy clean; backend integration 164, acceptance 86, desktop
+unit/contract 135, desktop integration 2, and fixture-cleanup regressions 3 passed.
+
 ## 2026-09-10 — Documentation sweep — docs↔code reconciliation (code unchanged, D-73)
 
 Full-repo sweep making the documents describe the repository as it is. No code,

@@ -1,4 +1,4 @@
-# tests/integration/conftest.py | v1.0.0 | introduced by WP-04
+# tests/integration/conftest.py | v1.0.1 | fixture owns container cleanup in every suite
 """Disposable Neo4j container lifecycle for integration tests.
 
 Starts one Community Edition container per test session via the docker CLI,
@@ -18,6 +18,7 @@ import os
 import socket
 import subprocess
 import time
+from collections.abc import Iterator
 from dataclasses import dataclass
 
 import pytest
@@ -84,10 +85,11 @@ def _create_test_user(uri: str) -> None:
 
 
 @pytest.fixture(scope="session")
-def neo4j_instance() -> Neo4jInstance:
+def neo4j_instance() -> Iterator[Neo4jInstance]:
     if FIXED_URI:
         _wait_ready(FIXED_URI, USER)
-        return Neo4jInstance(uri=FIXED_URI, user=USER, password=PASSWORD, database=DB)
+        yield Neo4jInstance(uri=FIXED_URI, user=USER, password=PASSWORD, database=DB)
+        return
 
     port = _free_port()
     uri = f"bolt://127.0.0.1:{port}"
@@ -118,24 +120,16 @@ def neo4j_instance() -> Neo4jInstance:
     try:
         _wait_ready(uri, ADMIN_USER)
         _create_test_user(uri)
-        return Neo4jInstance(
+        yield Neo4jInstance(
             uri=uri,
             user=USER,
             password=PASSWORD,
             database=DB,
             container_id=container_id,
         )
-    except Exception:
-        subprocess.run(["docker", "rm", "-f", container_id], capture_output=True)
-        raise
-
-
-@pytest.fixture(scope="session", autouse=True)
-def _teardown(neo4j_instance: Neo4jInstance) -> None:
-    yield
-    if neo4j_instance.container_id:
+    finally:
         subprocess.run(
-            ["docker", "rm", "-f", neo4j_instance.container_id],
+            ["docker", "rm", "-fv", container_id],
             capture_output=True,
             check=False,
         )

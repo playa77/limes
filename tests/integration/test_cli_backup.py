@@ -1,11 +1,11 @@
-# tests/integration/test_cli_backup.py | v1.0.0 | introduced by WP-28
+# tests/integration/test_cli_backup.py | v1.0.1 | inspect backups in the Docker volume
 """Backup tests per Doc 2 §13.6 and Doc 1 §8.5.
 
 G4: `limes backup` stops the database, dumps offline to the archive with
 a timestamped filename, restarts, and verifies reachability — a real
 `docker compose` lifecycle against a disposable container. The test's
 compose file is the harness (the production compose is WP-37's): one neo4j
-service from the same image the suite uses, with the archive directory
+service from the same image the suite uses, with a named archive volume
 mounted at `/data/archive` — the mount point the backup command's
 constants declare.
 
@@ -83,9 +83,10 @@ def backup_env(tmp_path: Path) -> dict[str, str]:
       - "{port}:7687"
     volumes:
       - limes-backup-test-data:/data
-      - "{archive}:/data/archive"
+      - limes-backup-test-archive:/data/archive
 volumes:
   limes-backup-test-data:
+  limes-backup-test-archive:
 """,
         encoding="utf-8",
     )
@@ -107,7 +108,6 @@ volumes:
 
 def test_backup_stops_dumps_and_restarts(backup_env: dict[str, str]):
     compose_root = backup_env["compose_root"]
-    archive = Path(backup_env["archive"])
     uri = backup_env["uri"]
     env = backup_env["env"]
 
@@ -135,11 +135,23 @@ def test_backup_stops_dumps_and_restarts(backup_env: dict[str, str]):
         )
         assert result.returncode == 0, result.stderr
 
-        # The timestamped dump landed in the archive volume (the host
-        # mount), and the database came back reachable.
-        dumps = sorted(archive.glob("limes-*.dump"))
-        assert len(dumps) == 1
-        assert dumps[0].stat().st_size > 0
+        # Inspect the production-style named volume through Docker. Neo4j
+        # owns it and may set directory mode 0700; the host's UID and /tmp
+        # namespace need not match the daemon's. Keep the count/size guards.
+        inspection = subprocess.run(
+            [
+                "docker", "compose", "run", "--rm", "--no-deps",
+                "--entrypoint", "sh", "neo4j", "-c",
+                "find /data/archive -maxdepth 1 -type f -name 'limes-*.dump' "
+                "-printf '%f %s\\n'",
+            ],
+            check=True, capture_output=True, text=True, cwd=compose_root, timeout=60,
+        )
+        dumps = inspection.stdout.strip().splitlines()
+        assert len(dumps) == 1, inspection.stdout
+        name, size = dumps[0].split()
+        assert name.startswith("limes-") and name.endswith(".dump")
+        assert int(size) > 0
 
         driver = GraphDatabase.driver(uri, auth=("neo4j", PASSWORD))
         try:

@@ -1,7 +1,7 @@
-# desktop/tests/integration/test_full_flow.py | v0.1.0 | AC-DC-1/3: desktop client over the real API
+# desktop/tests/integration/test_full_flow.py | v0.1.1 | sync TestClient owns API lifespan
 """The desktop client's full flow, in-process, per AC-DC-1's automatable
 core: the real FastAPI application runs inside the ApiClient's httpx
-transport (`ASGITransport`) — no server process — while the graph data
+transport (`TestClient`) — no server process — while the graph data
 comes from the session-scoped disposable Neo4j container exactly like the
 root integration suite (`tests/integration/conftest.py`).
 
@@ -15,15 +15,14 @@ the generated, editable Cypher (AC-DC-2's data path).
 
 from __future__ import annotations
 
-import asyncio
 import sys
-import threading
 from collections.abc import Iterator
+from contextlib import ExitStack
 from pathlib import Path
 from typing import Any
 
-import httpx
 import pytest
+from fastapi.testclient import TestClient
 
 # Shared fixtures live in the root suite (tests/fixtures, tests/integration/
 # conftest.py); make them importable here by absolute path so the desktop
@@ -75,49 +74,6 @@ def ids(neo4j_instance: Any) -> Iterator[dict[str, str]]:
         driver.close()
 
 
-class _SyncLifespan:
-    """Drives the app's async lifespan context on a background event loop
-    so the sync test body — and the sync `httpx.Client` inside the
-    ApiClient — see a fully started application (settings, ontology,
-    driver, provision), the equivalent of TestClient's startup."""
-
-    def __init__(self, app: Any) -> None:
-        self._app = app
-        self._loop: asyncio.AbstractEventLoop | None = None
-        self._thread: threading.Thread | None = None
-        self._stop: asyncio.Event | None = None
-
-    def __enter__(self) -> Any:
-        started = threading.Event()
-        loop_ready = threading.Event()
-
-        async def _run() -> None:
-            stop = asyncio.Event()
-            self._stop = stop
-            loop_ready.set()
-            async with self._app.router.lifespan_context(self._app):
-                loop = asyncio.get_running_loop()
-                loop.call_soon_threadsafe(started.set)
-                await stop.wait()
-
-        loop = asyncio.new_event_loop()
-        self._loop = loop
-        thread = threading.Thread(target=loop.run_until_complete, args=(_run(),), daemon=True)
-        self._thread = thread
-        thread.start()
-        loop_ready.wait()
-        started.wait(timeout=120)
-        return self._app
-
-    def __exit__(self, *exc: Any) -> None:
-        if self._loop is not None and self._stop is not None:
-            self._loop.call_soon_threadsafe(self._stop.set)
-        if self._thread is not None:
-            self._thread.join(timeout=60)
-        if self._loop is not None:
-            self._loop.close()
-
-
 @pytest.fixture()
 def client_factory(
     neo4j_instance: Any, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -132,8 +88,7 @@ def client_factory(
     from limes.api.main import create_app
     from limes.composition import NlqContext
 
-    created: list[ApiClient] = []
-    lifespans: list[_SyncLifespan] = []
+    stack = ExitStack()
 
     def make(stub: StubClient | None = None) -> ApiClient:
         if stub is not None:
@@ -151,32 +106,24 @@ def client_factory(
 
             monkeypatch.setattr(deps, "build_nlq_context", _stubbed)
 
-        lifespan = _SyncLifespan(create_app(api_settings(neo4j_instance, tmp_path)))
-        app = lifespan.__enter__()
-        lifespans.append(lifespan)
-
-        client = ApiClient.__new__(ApiClient)
-        client._client = httpx.Client(
-            base_url="http://limes.test",
-            transport=httpx.ASGITransport(app=app),
-            timeout=httpx.Timeout(30.0),
+        transport = stack.enter_context(
+            TestClient(create_app(api_settings(neo4j_instance, tmp_path)))
         )
-        created.append(client)
+        client = ApiClient.__new__(ApiClient)
+        client._client = transport
         return client
 
-    yield make
-
-    for c in created:
-        c.close()
-    for lifespan in lifespans:
-        lifespan.__exit__(None, None, None)
+    with stack:
+        yield make
 
 
 def test_full_flow_search_to_saved_query(client_factory: Any, ids: dict[str, str]) -> None:
     from limes_desktop.api.client import ApiClient
     from limes_desktop.api.models import GraphNeighbors
 
-    client: ApiClient = client_factory()
+    stub = StubClient()
+    stub.replies = ["MATCH (a:Corporation {lei: 'LEI-ALPHA'})-[:SUBSIDIARY_OF]->(b) RETURN a, b"]
+    client: ApiClient = client_factory(stub)
 
     # 1. search — a real hit over the seeded graph.
     hits = client.search("alpha", kind="entity")
@@ -196,8 +143,6 @@ def test_full_flow_search_to_saved_query(client_factory: Any, ids: dict[str, str
 
     # 4. query_nl — OpenRouter stubbed; the outcome carries the generated,
     #    editable Cypher (AC-DC-2's data path).
-    stub = StubClient()
-    stub.replies = ["MATCH (a:Corporation {lei: 'LEI-ALPHA'})-[:SUBSIDIARY_OF]->(b) RETURN a, b"]
     nl = client.query_nl("What does Alpha own?")
     assert stub.calls == 1
     assert "LIMIT" in nl.cypher  # the generated query is bounded
