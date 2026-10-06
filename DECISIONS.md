@@ -5,6 +5,39 @@ reversibility: **R1** reversible in under an hour, **R2** bounded recoverable
 cost, **R3** one-way door. Written when each decision is made, latest first.
 Nothing here is a status report; unlogged decisions are unmade decisions.
 
+## 2026-10-06 — D-74 (R1) — Cloud-safe backup and desktop resource lifetimes
+
+Operator requested fixes for the three failures found during cloud onboarding.
+
+- The backup integration harness uses a named archive volume, like production,
+  and inspects dump names and sizes inside a disposable Docker container.
+  Neo4j keeps its private directory permissions; the test no longer assumes
+  matching host/container UIDs or a shared `/tmp`. Count, nonempty artifact,
+  CLI-success, and database-reconnect assertions remain in
+  `test_backup_stops_dumps_and_restarts`. Rejected alternative: widening
+  archive permissions or skipping the artifact assertion.
+- `neo4j_instance` is a yield fixture that removes its own container and
+  anonymous volumes in `finally`, including startup failure. Re-exporting it
+  into desktop integration now includes cleanup without relying on a second
+  autouse fixture. Externally supplied databases remain untouched. Guards:
+  `test_fixture_removes_container_and_volumes_on_teardown`,
+  `test_fixture_removes_container_when_startup_fails`, and
+  `test_fixture_preserves_externally_supplied_database`.
+- Desktop integration uses context-managed FastAPI `TestClient` with `ExitStack`
+  for synchronous HTTP and lifespan management. The former `ASGITransport` is
+  async-only, and the custom lifespan thread could swallow startup failures.
+  The NL inference stub is installed before client startup and the query.
+- `VizPage` contains a WebEngine widget created only when shown. Hidden result
+  updates retain the latest payload without implicitly calling `page()` and
+  acquiring default-profile pages. A dedicated off-the-record profile is a
+  child of its page, so the page's WebEngine destructor runs before profile
+  cleanup; payloads flush after HTML loading. Guards:
+  `test_result_does_not_initialize_hidden_viz_views` and subprocess-based
+  `test_visible_page_flushes_latest_payload_and_shuts_down`, which checks real
+  JavaScript delivery, native deletion order, and process exit status.
+
+No dependency, lockfile, ontology, model, or inference-budget change.
+
 ## 2026-09-10 — D-73 (R2) — Documentation sweep: docs updated to the implementation, code untouched
 
 Operator-instructed full-repo docs↔code reconciliation ("treat the code as
