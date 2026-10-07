@@ -145,3 +145,7 @@ desktop.ini
 # reference_questions/questions.yaml
 # docs/*.md                       the specification set
 # .env.example                    the authoritative key list
+
+# Scratch work and local non-secret tuning configuration
+work/
+config/limes.env

@@ -35,7 +35,7 @@ CONSTRUCTOR_PATTERNS = [
     (r"GraphDriver\(", "driver"),
     (r"OpenRouterClient\(", "client"),
     (r"ArchiveStore\(", "archive"),
-    (r"Governor\(", "governor"),
+    (r"CostRecorder\(", "cost recorder"),
     (r"OpenRouterExtractor\(", "extractor"),
     (r"GateContext\(", "gate"),
     (r"RunContext\(", "run context"),
@@ -219,7 +219,7 @@ def test_envelope_governor_created_for_budget(neo4j_instance: Neo4jInstance, tmp
     )
     try:
         assert ctx.governor is not None
-        assert ctx.governor.remaining() == Decimal("3.00")
+        assert ctx.governor.total_spend == Decimal("0")
     finally:
         ctx.driver.close()
 

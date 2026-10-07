@@ -2,7 +2,7 @@
 """Cost ledger endpoint per Technical Specification §6: period spend read
 from the graph (the ledger's own `read_period_spend` — C-07 makes the
 graph the only state that survives between processes), the remaining
-budget from the monthly governor, and the period's entries."""
+budget (null; enforcement was removed), and the period's entries."""
 
 from __future__ import annotations
 
@@ -12,9 +12,8 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
 
-from limes.api.deps import get_driver, get_nlq_context
+from limes.api.deps import get_driver
 from limes.api.models import native_datetime
-from limes.composition import NlqContext
 from limes.cost.ledger import read_period_spend
 from limes.graph.driver import GraphDriver
 
@@ -53,14 +52,13 @@ class LedgerView(BaseModel):
 
     period: str
     spend_eur: float
-    remaining_eur: float
+    remaining_eur: float | None = None
     entries: list[LedgerEntryView]
 
 
 @router.get("/cost/ledger")
 def cost_ledger(
     driver: Annotated[GraphDriver, Depends(get_driver)],
-    nlq_context: Annotated[NlqContext, Depends(get_nlq_context)],
     limit: Annotated[int, Query(ge=1, le=1000)] = 100,
     period: Annotated[
         str,
@@ -92,6 +90,6 @@ def cost_ledger(
     return LedgerView(
         period=period,
         spend_eur=float(spend),
-        remaining_eur=float(nlq_context.governor.remaining()),
+        remaining_eur=None,
         entries=entries,
     )

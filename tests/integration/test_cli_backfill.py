@@ -1,13 +1,6 @@
 # tests/integration/test_cli_backfill.py | v1.0.0 | introduced by WP-28
-"""CLI backfill tests per Doc 2 §8.14 and §15.3 Trace 2.
-
-The `--budget` refusal is exercised across a real process boundary (a
-typer usage error at parse time, before any context is built — no network
-and no graph involved). The end-to-end backfill runs the full CLI stack
-with the feeds adapter: the network boundary is stubbed (adapter fetch,
-respx transport for the paid calls, fake spaCy models) — the same seams
-Trace 2's own test uses; no live service is hit.
-"""
+"""Backfill CLI windowing and passive accounting over mocked inference.
+Budget options are optional compatibility inputs, never enforced."""
 
 import json
 import subprocess
@@ -122,17 +115,14 @@ def _env(neo4j_instance: Neo4jInstance, tmp_path: Path) -> dict[str, str]:
     }
 
 
-def test_backfill_refuses_without_budget():
-    # G2 (subprocess) — the refusal is a typer usage error at parse time:
-    # non-zero exit, the missing option named, no context built, no network.
+def test_backfill_help_does_not_require_budget():
     result = subprocess.run(
-        [sys.executable, "-m", "limes.cli.main", "backfill", "--source", "feeds", "--days", "90"],
-        capture_output=True,
-        text=True,
-        cwd=REPO_ROOT,
+        [sys.executable, "-m", "limes.cli.main", "backfill", "--help"],
+        capture_output=True, text=True, cwd=REPO_ROOT,
     )
-    assert result.returncode != 0
-    assert "--budget" in result.stderr
+    assert result.returncode == 0
+    assert "Deprecated compatibility" in result.stdout
+
 
 
 @pytest.fixture

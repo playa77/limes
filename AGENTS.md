@@ -2,11 +2,12 @@
 
 Ontology-driven knowledge graph over Neo4j 2026.x Community, Docker Compose,
 four services (`neo4j` / `api` / `worker` / `ui`). Python ≥3.12, uv-managed
-venv at `./venv`. Authoritative artifacts: `docs/LIMES_Design_Document_v2.0.0.md`
+venv at `./venv` (`UV_PROJECT_ENVIRONMENT=venv uv sync --all-packages --all-groups`). Authoritative artifacts: `docs/LIMES_Design_Document_v2.0.0.md`
 and `docs/LIMES_Technical_Specification_v2.1.0.md` (§15 is the seam register);
 the desktop client has its own pair, `docs/LIMES_Desktop_Client_Requirements_v1.0.0.md`
 and `docs/LIMES_Desktop_Client_Architecture_v1.0.0.md`.
-On re-entry, resume from the last five entries of `DECISIONS.md`.
+On re-entry, read `REDESIGN_STATUS.md`, the open ledger, and the newest decisions.
+The testing-phase policy below supersedes initial-build process rules (D-75).
 
 ## Verification loop
 
@@ -41,23 +42,25 @@ On re-entry, resume from the last five entries of `DECISIONS.md`.
 
 Operational commands run inside the worker container: every `make` target wraps
 `docker compose exec worker limes …`. Never run ingestion on the host.
-Config flows from `./.env`, mounted into containers and read by the app's own
-dotenv loader — do not add compose `env_file:` or set empty-string env vars:
-an empty string shadows the dotenv value and dead-letters model pins (D-57).
+Configuration loads legacy `.env`, then `config/limes.env`, then nonempty
+environment overrides. Secrets stay in `.env`; tools write only non-secret
+tunables in `config/limes.env`. The config directory is mounted so atomic pin
+replacement is visible. Empty values are unset (D-75).
 
 - The base compose file publishes **no ports** (AC-34); the override publishes
   only the UI on `127.0.0.1:8050`. Server promotion = removing the override.
 - The worker mounts the docker socket and compose files because `limes backup`
   orchestrates the host daemon from inside the container.
 
-## Money
+## Inference and testing-phase iteration
 
-Every OpenRouter call goes through the hard budget governor. `make backfill`
-and `make reextract` refuse without an explicit `BUDGET=` envelope. Never start
-ingestion, backfill, or re-extraction without operator instruction. Bootstrap
-order is load-bearing (README §Bootstrap): structured sources (`gisco_nuts`,
-`gleif`, `ingest-all`) before any unstructured backfill, with `make
-stamp-embeddings` exactly between them. Reordering pays for extraction twice.
+Model calls have passive per-call accounting; no budget governor or BUDGET gate.
+Tests never make paid calls. Routine model/prompt/configuration changes within
+an authorized task need no additional operator envelope or per-work-package
+version ceremony. Keep cache-key prompt/schema versions correct when behavior
+changes and record material behavior changes in the changelog.
+Never run production ingestion or paid evaluation without user authorization.
+Bootstrap ordering remains structured sources → stamp embeddings → backfill.
 
 ## Architecture rules (guarded by tests)
 
@@ -71,8 +74,9 @@ stamp-embeddings` exactly between them. Reordering pays for extraction twice.
   standard (`desktop/tests/contract/test_no_ontology_literals.py`), and its
   runtime must not import `limes` — only its contract tests may.
 - Query path is read-only by construction: write clauses rejected at parse
-  level; the API has exactly three enumerated writes (cost entry, saved query,
-  saved-query delete), pinned by acceptance tests. Do not add write surfaces.
+  level; explicit mutations have named routes and contract tests. New operational
+  routes may be added for the requested access redesign; arbitrary query writes
+  remain forbidden. The existing three-write guard applies until those routes land.
 - Assertions are bitemporal: validity time ≠ belief time. Contradictions are
   retained under different source ids, never overwritten. `recorded_at` comes
   from the assertion, never the wall clock (D-06).
@@ -95,11 +99,9 @@ stamp-embeddings` exactly between them. Reordering pays for extraction twice.
 
 - File headers carry a version comment: `# path | vX.Y.Z | why`. Nothing is
   ever labeled "final".
-- Each versioned artifact has its own changelog: root `CHANGELOG.md` (one entry
-  per work package), `ontology/CHANGELOG.md`, `gold_set/CHANGELOG.md`. A model,
-  prompt, or schema change is a versioned event recorded there.
+- Each versioned artifact has its own changelog: root `CHANGELOG.md` (material behavior changes), `ontology/CHANGELOG.md`, `gold_set/CHANGELOG.md`. Routine model/prompt iterations need no independent governance approval.
 - Guarded invariants get named guard tests referenced from their DECISIONS.md
-  entry (e.g. D-67 → `test_concurrent_provision_is_serialized`); never weaken,
-  skip, or delete one without an R3 decision.
+  entry (e.g. D-67 → `test_concurrent_provision_is_serialized`); update obsolete guards with the redesign decision and replacement evidence;
+  preserve guards for the keep-set.
 - Branches follow `wp-NN-slug` or short topic names; merging to `main` happens
   only on explicit operator instruction.

@@ -5,6 +5,40 @@ reversibility: **R1** reversible in under an hour, **R2** bounded recoverable
 cost, **R3** one-way door. Written when each decision is made, latest first.
 Nothing here is a status report; unlogged decisions are unmade decisions.
 
+## 2026-10-07 — D-75 (R3) — Testing-phase inference and governance redesign
+
+User requested continued implementation of the attached LIMES issues/fixes brief.
+R1 explicitly removes enforcement while preserving accounting; R3 authorizes
+replacing initial-build governance. These requirements supersede the conflicting
+initial-build budget/envelope guards and routine-iteration approval gates.
+
+- OpenRouter completions/embeddings never call `check`. `CostRecorder` persists
+  usage and tracks process-local totals; `Governor` is a legacy import alias
+  with inert budget arguments/check. Run cost uses the recorder delta. Budget
+  exceptions and HTTP 402 mapping are removed from active execution paths.
+- Backfill/reextract require no budget. Old `--budget`/`RunSpec.budget_eur` inputs
+  remain ignored for compatibility. Ledger `remaining_eur` is null and clients
+  display passive accounting. AC-14/15 and G4 now guard this requested behavior.
+- Optional completion temperature/token cap/reasoning effort are validated,
+  forwarded, and logged without messages or secrets. Model selection understands
+  catalogue parameter lists, excludes invalid ids, validates pins, and writes
+  stage/date/pins atomically to `config/limes.env`, never the secrets file.
+  Measured stage requires evaluated winners for every role.
+- `.env` remains a legacy/read-only secrets source. The non-secret config directory
+  is mounted (not a single file), so atomic replacement is visible to readers.
+  Nonempty process environment overrides tuning then legacy configuration.
+- Routine authorized model/prompt iteration needs no extra envelope or versioned
+  work-package ceremony. Preserve no-paid-test calls, composition/ontology
+  boundaries, bitemporal assertions, read-only query validation, and ledger evidence.
+  Topology/root/socket/backup guards will change with their implementations, not
+  be weakened ahead of them. See `REDESIGN_STATUS.md` for the guard inventory.
+- Add CI for offline checks and separate graph-backed invocations. Fix desktop
+  OI-06/07/08 and extend top-level model parity (OI-12). No live deployment changed.
+
+Rejected alternatives: keeping a no-op pre-call gate in inference; overwriting
+secrets with selector pins; labeling partly evaluated pins measured; dropping
+keep-set guards merely to make the redesign green.
+
 ## 2026-10-06 — D-74 (R1) — Cloud-safe backup and desktop resource lifetimes
 
 Operator requested fixes for the three failures found during cloud onboarding.

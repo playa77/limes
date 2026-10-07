@@ -4,8 +4,7 @@
 Every paid call is recorded as a `:CostLedgerEntry` node with all §5.8
 properties; the monthly aggregate for a `YYYY-MM` period is summed from the
 graph, never from process memory — C-07 makes the graph the only state that
-survives between CLI invocations, and the API's governor must see spend that
-the worker committed in another process.
+survives between CLI invocations; the API reports spend committed in any process.
 """
 
 from __future__ import annotations

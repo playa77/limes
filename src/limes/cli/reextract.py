@@ -10,8 +10,7 @@ reproduce — superseded, never deleted — and loads the new set (D-39).
 
 Without `--source`, every unstructured source runs in sequence — the
 document-producing sources are the only ones with anything to re-extract
-(D-45). `--budget` is mandatory: re-extraction is paid inference and must
-not draw on the steady-state envelope (Doc 1 §6.6).
+(D-45). `--budget` is an ignored compatibility option (D-75).
 """
 
 from __future__ import annotations
@@ -33,15 +32,15 @@ def reextract_source(
     source: str | None = typer.Option(
         None, "--source", help="Restrict re-extraction to one source (default: all unstructured)"
     ),
-    budget: float = typer.Option(
-        ..., "--budget", min=0, help="The explicit EUR envelope; mandatory for reextract"
+    budget: float | None = typer.Option(
+        None, "--budget", min=0, help="Deprecated compatibility option; ignored"
     ),
 ) -> None:
     """Re-extract documents under a new prompt version, retracting
     superseded assertions — never deleting (Doc 1 §9.4)."""
     settings = load_settings()
     configure_logging(settings)
-    envelope = Decimal(str(budget))
+    envelope = None
     # The deliberate version: the cache key includes the prompt version, so
     # reextract under the pinned version would hit every cache entry and be
     # a no-op (D-39). The copy keeps the rest of the configuration intact.
@@ -50,7 +49,7 @@ def reextract_source(
         _reextract_one(settings, source_id, envelope)
 
 
-def _reextract_one(settings: Settings, source_id: str, envelope: Decimal) -> None:
+def _reextract_one(settings: Settings, source_id: str, envelope: Decimal | None) -> None:
     from limes.cli.main import adapter_kind, run_with_lock
     from limes.composition import build_run_context
 

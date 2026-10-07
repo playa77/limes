@@ -114,7 +114,11 @@ class LedgerView(QWidget):
             for col, text in enumerate(cells):
                 self.entries_table.setItem(row, col, QTableWidgetItem(text))
         self.total_label.setText(f"total: {self.running_total():.2f} EUR")
-        self.budget_label.setText(f"budget remaining: {ledger.remaining_eur:.2f} EUR")
+        self.budget_label.setText(
+            "cost accounting only; no budget limit"
+            if ledger.remaining_eur is None
+            else f"budget remaining: {ledger.remaining_eur:.2f} EUR"
+        )
 
     def _show_error(self, detail: str | None) -> None:
         if detail is None:

@@ -426,7 +426,7 @@ def test_render_system_status_and_saved_list():
     assert panel is not None
     panel, badge, budget = query_callbacks._render_system_status(None, None, None)
     assert badge == "API: unreachable"
-    assert budget == "€? remaining"
+    assert budget == "Cost accounting only"
     assert "No saved queries yet." in str(query_callbacks._render_saved_list(None))
 
 

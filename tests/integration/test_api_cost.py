@@ -51,10 +51,7 @@ def test_cost_ledger_returns_period_spend_and_entries(
         assert entry["ledger_id"] == "ledger-1"
         assert entry["purpose"] == "nl2cypher"
         assert entry["input_tokens"] == 100
-        # The monthly governor reports the configured ceiling minus the
-        # committed spend for the current month (this entry is in a
-        # different period, so nothing has been drawn).
-        assert body["remaining_eur"] > 0
+        assert body["remaining_eur"] is None
 
 
 def test_cost_ledger_invalid_period_is_rejected(neo4j_instance: Neo4jInstance, tmp_path: Path):

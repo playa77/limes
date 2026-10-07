@@ -1,9 +1,7 @@
 # LIMES — Makefile | v2.0.0 | introduced by WP-01 (stub), full target set by WP-38
 # The operator's primary interface (Doc 1 §6.6, Doc 2 §8.14). Every command
 # runs inside the worker container via `docker compose exec`; configuration
-# flows from ./.env (D-57). `backfill` and `reextract` refuse to run
-# without an explicit BUDGET — the envelope that keeps the monthly ceiling
-# untouched (Doc 1 §9.2, AC-15).
+# flows from configuration files. Model calls are passively ledgered (D-75).
 
 .PHONY: help up down bootstrap-db ingest ingest-all backfill reextract \
 	select-models evaluate migrate backup stamp-embeddings
@@ -17,8 +15,8 @@ help:
 	@echo "  make bootstrap-db                                   No-op: C-01 offers no roles; provisioning runs on every context build"
 	@echo "  make ingest SOURCE=<id>                             Ingest one source (e.g. gisco_nuts, gleif)"
 	@echo "  make ingest-all                                     Ingest every registered source"
-	@echo "  make backfill SOURCE=<id> DAYS=<n> BUDGET=<eur>     Historical load under an explicit envelope (BUDGET mandatory)"
-	@echo "  make reextract PROMPT_VERSION=<v> BUDGET=<eur>      Re-extract archived content (BUDGET mandatory)"
+	@echo "  make backfill SOURCE=<id> DAYS=<n>     Historical load; passive cost accounting"
+	@echo "  make reextract PROMPT_VERSION=<v>      Re-extract archived content"
 	@echo "  make select-models ARGS=\"--provisional\"            Stage 1: rank and pin by criteria (operator confirmation)"
 	@echo "  make select-models ARGS=\"--measured\"               Stage 2: measure the candidates against the gold set"
 	@echo "  make evaluate ARGS=\"--resolution\"                  Measure extraction quality against the gold set; records baseline.json"
@@ -49,13 +47,11 @@ ingest-all:
 backfill:
 	@test -n "$(SOURCE)" || { echo "error: backfill requires SOURCE=<id>"; exit 2; }
 	@test -n "$(DAYS)" || { echo "error: backfill requires DAYS=<n>"; exit 2; }
-	@test -n "$(BUDGET)" || { echo "error: backfill requires BUDGET=<eur>"; exit 2; }
-	docker compose exec worker limes backfill --source $(SOURCE) --days $(DAYS) --budget $(BUDGET)
+	docker compose exec worker limes backfill --source $(SOURCE) --days $(DAYS)
 
 reextract:
 	@test -n "$(PROMPT_VERSION)" || { echo "error: reextract requires PROMPT_VERSION=<v>"; exit 2; }
-	@test -n "$(BUDGET)" || { echo "error: reextract requires BUDGET=<eur>"; exit 2; }
-	docker compose exec worker limes reextract --prompt-version $(PROMPT_VERSION) --budget $(BUDGET)
+	docker compose exec worker limes reextract --prompt-version $(PROMPT_VERSION)
 
 select-models:
 	docker compose exec worker limes select-models $(ARGS)

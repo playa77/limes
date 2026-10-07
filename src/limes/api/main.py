@@ -17,7 +17,7 @@ Every response carries `X-LIMES-Ontology-Version` (Doc 2 §6), and every
 error response uses the §6 envelope
 `{"error": {"code": ..., "message": ..., "details": {}}}` with the §11 HTTP
 mapping: `CypherValidationFailed` 400, `QueryPlanRejected` 422,
-`BudgetExhausted` 402, not found 404, Neo4j timeout 504, unreachable 503,
+not found 404, Neo4j timeout 504, unreachable 503,
 unhandled 500.
 """
 
@@ -48,7 +48,6 @@ from limes.api.routers import (
 )
 from limes.config import Settings, load_settings
 from limes.errors import (
-    BudgetExhausted,
     CypherValidationFailed,
     OntologyError,
     QueryPlanRejected,
@@ -158,10 +157,6 @@ def _register_exception_handlers(app: FastAPI) -> None:
     def _query_plan_rejected(_request: Request, exc: QueryPlanRejected) -> JSONResponse:
         code = getattr(exc, "code", "QUERY_PLAN_REJECTED")
         return envelope(422, "QUERY_PLAN_REJECTED", str(exc), {"code": code})
-
-    @app.exception_handler(BudgetExhausted)
-    def _budget_exhausted(_request: Request, exc: BudgetExhausted) -> JSONResponse:
-        return envelope(402, "BUDGET_EXHAUSTED", str(exc))
 
     @app.exception_handler(BuilderSpecRejected)
     def _builder_rejected(_request: Request, exc: BuilderSpecRejected) -> JSONResponse:

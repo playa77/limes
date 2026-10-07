@@ -35,7 +35,7 @@ import structlog
 
 from limes.archive.store import ArchiveStore
 from limes.config import Settings
-from limes.cost.governor import Governor
+from limes.cost.governor import CostRecorder
 from limes.extraction.base import Extractor
 from limes.extraction.openrouter import OpenRouterExtractor
 from limes.extraction.openrouter_client import OpenRouterClient
@@ -55,14 +55,13 @@ logger = structlog.get_logger(__name__)
 class NlqContext:
     """The §8.15 natural-language-query context, constructed by
     `build_nlq_context` for the API startup handler (WP-32). The client is
-    paid inference and is metered against the monthly ceiling like every
-    other caller."""
+    paid inference with passive per-call accounting."""
 
     settings: Settings
     ontology: Ontology
     driver: GraphDriver
     client: OpenRouterClient
-    governor: Governor
+    governor: CostRecorder
 
 
 def build_run_context(
@@ -74,9 +73,8 @@ def build_run_context(
     """Construct every component one run needs, in dependency order.
 
     Idempotent `provision()` (with the ontology downgrade guard, §4.3) runs
-    on every construction. `budget_eur` gives the governor an envelope
-    instead of the monthly ceiling — the backfill/reextract contract that
-    keeps the steady-state envelope untouched (AC-15).
+    on every construction. `budget_eur` is an ignored compatibility argument;
+    inference is accounted for without enforcement (D-75).
     """
     ontology = load_ontology(settings.ontology_path)
     driver = GraphDriver(
@@ -88,13 +86,7 @@ def build_run_context(
     provision(driver, ontology, settings.embedding_dimensions)
     registry = build_default_registry()
     archive = ArchiveStore(settings.archive_path)
-    governor = Governor(
-        driver,
-        settings.monthly_budget_eur,
-        settings.budget_soft_stop_fraction,
-        settings.usd_eur_rate,
-        envelope_eur=budget_eur,
-    )
+    governor = CostRecorder(driver, usd_eur_rate=settings.usd_eur_rate)
 
     if not needs_inference:
         logger.info(
@@ -144,14 +136,8 @@ def build_nlq_context(
     ontology: Ontology,
     driver: GraphDriver,
 ) -> NlqContext:
-    """The API-side context: monthly-metered client, no envelope (query
-    generation draws on the steady state, §8.15)."""
-    governor = Governor(
-        driver,
-        settings.monthly_budget_eur,
-        settings.budget_soft_stop_fraction,
-        settings.usd_eur_rate,
-    )
+    """The API-side inference client and passive cost recorder."""
+    governor = CostRecorder(driver, usd_eur_rate=settings.usd_eur_rate)
     client = OpenRouterClient(settings, governor)
     return NlqContext(
         settings=settings,

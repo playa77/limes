@@ -1,10 +1,10 @@
 # tests/unit/test_config.py | v1.0.1 | introduced by WP-02, env-file isolation by WP-40
-from decimal import Decimal
 from pathlib import Path
 
 import pytest
 
 from limes import config as config_module
+from limes.config import Settings as RealSettings
 from limes.config import load_settings
 from limes.errors import ConfigurationError
 
@@ -47,8 +47,7 @@ def env(monkeypatch):
 def test_load_settings_all_keys_present(env):
     settings = load_settings()
     assert settings.neo4j_uri == "bolt://localhost:7687"
-    assert settings.monthly_budget_eur == Decimal("10.00")
-    assert settings.budget_soft_stop_fraction == 0.95
+    assert settings.inference_parameters() == {}
     assert settings.embedding_dimensions == 1024
     assert settings.model_pin_stage == "provisional"
     assert settings.archive_path == Path("/tmp/archive")
@@ -86,3 +85,40 @@ def test_settings_ignores_unknown_env_keys(env, monkeypatch):
     monkeypatch.setenv("LIMES_TYPO_KEY", "boom")
     settings = load_settings()
     assert not hasattr(settings, "typo_key")
+
+
+def test_empty_environment_value_does_not_shadow_tuning_file(tmp_path, monkeypatch):
+
+    monkeypatch.setenv("LIMES_EXTRACTION_MODEL", "")
+    settings_file = tmp_path / "limes.env"
+    settings_file.write_text("LIMES_EXTRACTION_MODEL=test/model\n")
+    settings = RealSettings(
+        _env_file=settings_file,
+        **{key.removeprefix("LIMES_").lower(): value for key, value in REQUIRED.items()},
+    )
+    assert settings.extraction_model == "test/model"
+
+
+def test_tuning_file_overrides_legacy_pins_but_environment_wins(tmp_path, monkeypatch):
+
+    legacy = tmp_path / ".env"
+    tuning = tmp_path / "limes.env"
+    legacy.write_text("LIMES_EXTRACTION_MODEL=test/old\n")
+    tuning.write_text("LIMES_EXTRACTION_MODEL=test/new\n")
+    kwargs = {key.removeprefix("LIMES_").lower(): value for key, value in REQUIRED.items()}
+    settings = RealSettings(_env_file=(legacy, tuning), **kwargs)
+    assert settings.extraction_model == "test/new"
+    monkeypatch.setenv("LIMES_EXTRACTION_MODEL", "test/environment")
+    assert RealSettings(_env_file=(legacy, tuning), **kwargs).extraction_model == "test/environment"
+
+
+@pytest.mark.parametrize("field,value", [
+    ("inference_temperature", -1),
+    ("inference_temperature", 3),
+    ("inference_max_tokens", 0),
+    ("inference_reasoning_effort", "typo"),
+])
+def test_invalid_inference_knobs_are_configuration_errors(env, monkeypatch, field, value):
+    monkeypatch.setenv("LIMES_" + field.upper(), str(value))
+    with pytest.raises(ConfigurationError, match=field):
+        load_settings()

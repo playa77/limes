@@ -18,7 +18,7 @@ key. One advisory lock per source is the §9 concurrency answer: a single
 writer holds it for the duration of a run.
 
 All errors surface as `LimesError` → exit 1 with the message on stderr;
-usage errors (missing `--budget`, unknown options) exit 2 via typer. The
+usage errors (missing required source/version, unknown options) exit 2 via typer. The
 app runs as `python -m limes.cli.main` today; the `limes` console script is
 registered with the package install by WP-38 (out of this WP's file scope).
 """
@@ -203,7 +203,7 @@ app = typer.Typer(
     add_completion=False,
     help="LIMES — ontology-driven knowledge graph for German and European "
     "policy analysis. Ingestion is manual (Doc 1 §6.6); backfill and "
-    "reextract require an explicit budget argument.",
+    "reextract record cost without budget enforcement.",
 )
 
 # The command modules import `parse_iso_datetime`, `adapter_kind`, and

@@ -14,7 +14,7 @@ phase's guarded invariants (DECISIONS.md, 2026-08-03):
   G3 — Only the worker image installs the spaCy models (static Dockerfile
        scan plus `import de_core_news_md` against the built images).
   G4 — Every make target from Doc 2 §8.14 exists, and backfill/reextract
-       refuse to run without BUDGET.
+       run without a BUDGET gate.
 
 And the WP-38 verification block itself: `make up` → `make ingest
 SOURCE=gisco_nuts` → `cypher-shell` count > 0 → `make down`.
@@ -195,15 +195,19 @@ def guard_g3_dynamic() -> None:
 
 
 def guard_g4() -> None:
-    """G4: every Doc 2 §8.14 target exists; BUDGET-guarded targets refuse."""
+    """G4: operational targets exist and require no budget envelope."""
     help_text = _make("help", check=False).stdout
     missing = [t for t in MAKE_TARGETS if f"make {t}" not in help_text]
     if missing:
         raise SmokeFailure(f"G4: targets missing from `make help`: {missing}")
-    refused = _make("backfill", ["SOURCE=feeds"], check=False)
-    if refused.returncode == 0:
-        raise SmokeFailure("G4: `make backfill` without BUDGET succeeded; it must refuse")
-    print("G4: all make targets listed; backfill refuses without BUDGET")
+    for target, args in (
+        ("backfill", ["SOURCE=feeds", "DAYS=1"]),
+        ("reextract", ["PROMPT_VERSION=1.0.0"]),
+    ):
+        result = _make(target, ["-n", *args], check=False)
+        if result.returncode != 0 or "--budget" in result.stdout or "BUDGET" in result.stdout:
+            raise SmokeFailure(f"G4: {target} still requires a budget envelope")
+    print("G4: all make targets listed; backfill/reextract have no budget gate")
 
 
 def _wait_neo4j_healthy(timeout_s: int) -> None:

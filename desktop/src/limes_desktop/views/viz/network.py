@@ -17,12 +17,6 @@ class NetworkView(VizPage):
 
     def __init__(self, state: SessionState, parent: QWidget | None = None) -> None:
         super().__init__("network.html", state, parent)
-        self._expanded_ids: set[str] = set()
-        # MainWindow wires this to ApiClient.entity_neighbors (no fetch here)
-        self.bridge.expand_requested.connect(self._mark_expanding)
-
-    def _mark_expanding(self, entity_id: str) -> None:
-        self._expanded_ids.add(entity_id)
 
     def serialize(self, bundle: QueryOutcomeBundle) -> str:
         return network_payload(bundle)

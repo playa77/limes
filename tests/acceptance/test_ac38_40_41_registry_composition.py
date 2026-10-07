@@ -29,7 +29,7 @@ CONSTRUCTOR_PATTERNS = [
     (r"GraphDriver\(", "driver"),
     (r"OpenRouterClient\(", "client"),
     (r"ArchiveStore\(", "archive"),
-    (r"Governor\(", "governor"),
+    (r"CostRecorder\(", "cost recorder"),
     (r"OpenRouterExtractor\(", "extractor"),
     (r"GateContext\(", "gate"),
 ]

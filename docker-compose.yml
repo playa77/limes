@@ -104,12 +104,11 @@ services:
     build:
       context: .
       dockerfile: docker/api.Dockerfile
-    # Configuration flows through the mounted .env and the app's own dotenv
-    # read, not compose env_file: an env var set to an empty string shadows
-    # the dotenv value, which would dead-letter the model pins select_models
-    # writes into .env (D-57). Read-only mount: only the worker writes.
+    # Legacy secrets stay read-only; non-secret tunables load afterwards.
+    # Mount the tuning directory so atomic pin replacement is visible.
     volumes:
       - ./.env:/app/.env:ro
+      - ./config:/app/config:ro
     depends_on:
       neo4j:
         condition: service_healthy
@@ -121,7 +120,8 @@ services:
       context: .
       dockerfile: docker/worker.Dockerfile
     volumes:
-      - ./.env:/app/.env
+      - ./.env:/app/.env:ro
+      - ./config:/app/config
       # The gold set is mounted read-write: `make evaluate` writes the
       # baseline into it and the measured model-selection stage reads it
       # (Doc 2 §12.5, §13.3).

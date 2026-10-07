@@ -89,14 +89,15 @@ Order is a hard dependency chain. See Technical Specification §13.3.
 
 ```bash
 cp .env.example .env                            # 1. populate secrets
+cp config/limes.env.example config/limes.env      # non-secret tuning/pins
 make up                                         # 2. starts the four services; builds the images on first run
 make select-models ARGS="--provisional"         # 3. catalogue criteria only, operator confirmation
 make ingest SOURCE=gisco_nuts                   # 4. geography + postal correspondence
 make ingest SOURCE=gleif                        # 5. legal-entity backbone
 make ingest-all                                 # 6. remaining structured sources
 make stamp-embeddings                           # one-shot embedding backfill (§13.3)
-make backfill SOURCE=feeds DAYS=90 BUDGET=3.00  # 7. unstructured backfill, explicit envelope
-make backfill SOURCE=gdelt DAYS=90 BUDGET=2.00  # 8.
+make backfill SOURCE=feeds DAYS=90  # 7. unstructured backfill, passive accounting
+make backfill SOURCE=gdelt DAYS=90  # 8.
 # 9. build the gold set and calibration set from the archive, then:
 make select-models ARGS="--measured"            # 10. measure the candidates
 make evaluate                                   # 11. records the regression baseline
@@ -118,8 +119,8 @@ All ingestion is manual. No scheduler, which also means nothing spends money wit
 | `make bootstrap-db` | No-op: C-01 offers no roles; provisioning runs on every context build |
 | `make ingest SOURCE=<id>` | Ingest one source |
 | `make ingest-all` | Every registered source |
-| `make backfill SOURCE=<id> DAYS=<n> BUDGET=<eur>` | Historical load; budget mandatory |
-| `make reextract PROMPT_VERSION=<v> BUDGET=<eur>` | Re-extract archived content; budget mandatory |
+| `make backfill SOURCE=<id> DAYS=<n>` | Historical load; cost ledgered |
+| `make reextract PROMPT_VERSION=<v>` | Re-extract archived content; cost ledgered |
 | `make select-models ARGS="--provisional"` | Rank and pin by criteria; operator confirmation |
 | `make select-models ARGS="--measured"` | Measure the candidates against the gold set |
 | `make evaluate ARGS="--resolution"` | Measure extraction quality against the gold set |
@@ -132,7 +133,28 @@ All ingestion is manual. No scheduler, which also means nothing spends money wit
 
 ### Budget
 
-A hard governor, not discipline: every call is metered, and a call that would breach the monthly ceiling is refused and its document queued. Backfill and re-extraction run under separate authorized envelopes and never draw on the monthly budget. `/cost/ledger` and the UI indicator show current spend.
+Every model call records provider-reported usage in the passive cost ledger.
+There is no budget ceiling, soft stop, or required backfill/re-extraction envelope.
+`/cost/ledger` returns spend and entries; `remaining_eur` is null. No call is
+refused based on spend. Production inference remains a deliberate operator action.
+
+Model pins and inference knobs live in `config/limes.env`; secrets remain in
+`.env`. Nonempty environment variables override both files; empty values are
+unset. `select-models` validates candidates against the catalogue and atomically
+writes the tuning file, preserving other knobs. Use `--provisional --yes` for
+noninteractive ranking or `--measured` for gold-set evaluation (paid in production).
+A measured marker requires evaluated winners for all roles; stage and date update
+together. Restart the API after pin changes; settings are loaded at startup.
+
+Optional `LIMES_INFERENCE_TEMPERATURE` (0–2), `LIMES_INFERENCE_MAX_TOKENS` (>0),
+and `LIMES_INFERENCE_REASONING_EFFORT` (`none`, `minimal`, `low`, `medium`, `high`,
+`xhigh`) are sent on chat requests and logged for each completed call. Empty
+knobs use provider defaults. Unsupported parameters produce provider errors.
+
+Testing setup: `UV_PROJECT_ENVIRONMENT=venv uv sync --all-packages --all-groups`.
+The CI workflow runs offline checks and separate Docker-backed suites. See
+`REDESIGN_STATUS.md` for implemented requirements, guard disposition, and remaining
+access/runtime work.
 
 ### Versioned artifacts
 

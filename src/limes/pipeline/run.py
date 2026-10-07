@@ -23,10 +23,7 @@ the only record-level error any module raises today; `ExtractionSchemaError`,
 raisers and land in `errors` when they arrive) are counted in `errors` and
 skipped. Fetch and configuration failures (`SourceFetchError`,
 `ExtractionError`, `GraphWriteError`) abort the run: the run record is
-closed with `errors` counted, then re-raised. `BudgetExhausted` closes the
-run cleanly — `finished_at` set, `last_success_at` untouched — logs the
-queued remainder, and re-raises so the CLI can report the termination
-(AC-14).
+closed with `errors` counted, then re-raised.
 
 **The cache ordering (D-38).** `cache.put` runs only after the document's
 load succeeded; a mid-document failure leaves no cache entry that would
@@ -45,7 +42,6 @@ from pydantic import BaseModel
 
 from limes.composition import embedder_for
 from limes.errors import (
-    BudgetExhausted,
     ExtractionError,
     GraphWriteError,
     SourceFetchError,
@@ -133,8 +129,7 @@ RETURN r.assertion_id AS assertion_id
 
 
 class RunSpec(BaseModel):
-    """One ingestion run request (Doc 2 §8.6.1). `budget_eur` is required
-    for backfill and reextract — the CLI refuses to call without it."""
+    """One ingestion run request. Legacy `budget_eur` is ignored (D-75)."""
 
     source_id: str
     mode: Literal["ingest", "backfill", "reextract"]
@@ -151,8 +146,6 @@ def execute_run(spec: RunSpec, ctx: RunContext) -> IngestionRunRecord:
     and consumes only what the context carries (§8.15).
     """
     adapter = ctx.registry.get(spec.source_id)
-    if spec.mode in ("backfill", "reextract") and spec.budget_eur is None:
-        raise ValueError(f"{spec.mode} requires an explicit budget (RunSpec.budget_eur)")
 
     ctx.driver.write_batch([(_SOURCE_MERGE, _source_params(adapter))])
     source_node = _read_source(ctx, spec.source_id)
@@ -191,26 +184,16 @@ def execute_run(spec: RunSpec, ctx: RunContext) -> IngestionRunRecord:
         budget_eur=spec.budget_eur,
     )
 
-    cost_before = _governor_remaining(ctx)
+    cost_before = _recorded_spend(ctx)
     try:
         for raw in adapter.fetch(since, until):
             record.records_fetched += 1
             _process_record(spec, ctx, adapter, raw, record)
-    except BudgetExhausted:
-        _close_run(ctx, record, cost_before, budget_terminated=True)
-        logger.warning(
-            "ingestion run closed by budget exhaustion; remaining records queued",
-            run_id=record.run_id,
-            source_id=spec.source_id,
-            processed_records=record.records_fetched,
-            budget_eur=spec.budget_eur,
-        )
-        raise
     except (SourceFetchError, ExtractionError, GraphWriteError) as exc:
         # Fetch and configuration failures abort the run; the durable record
         # still closes with the error counted (Doc 2 §8.6.1).
         record.errors += 1
-        _close_run(ctx, record, cost_before, budget_terminated=False)
+        _close_run(ctx, record, cost_before)
         logger.error(
             "ingestion run aborted",
             run_id=record.run_id,
@@ -220,7 +203,7 @@ def execute_run(spec: RunSpec, ctx: RunContext) -> IngestionRunRecord:
         )
         raise
 
-    _close_run(ctx, record, cost_before, budget_terminated=False)
+    _close_run(ctx, record, cost_before)
     ctx.driver.write_batch(
         [
             (
@@ -562,32 +545,25 @@ def _stamp_pipeline_provenance(
         assertion.provenance.schema_version = ctx.settings.extraction_schema_version
 
 
-def _governor_remaining(ctx: RunContext) -> Decimal | None:
-    """The governor's remaining budget at this instant, or None when the
-    context carries none (structured-only run — no paid calls possible, so
-    the run cost is zero by construction)."""
+def _recorded_spend(ctx: RunContext) -> Decimal | None:
+    """Process-local recorded spend, or None for a structured-only context."""
     if ctx.governor is None:
         return None
-    return ctx.governor.remaining()
+    return ctx.governor.total_spend
 
 
 def _close_run(
     ctx: RunContext,
     record: IngestionRunRecord,
     cost_before: Decimal | None,
-    *,
-    budget_terminated: bool,
 ) -> None:
-    """Write the closed run record. `cost_eur` is the governor delta across
-    the run (D-38), floored at zero; on budget termination the remaining
-    spend is still counted and `last_success_at` is deliberately not
-    updated — the run did not succeed."""
+    """Close the record with the passive recorder's spend delta for this run."""
     finished_at = datetime.now(UTC)
     cost = Decimal("0")
     if cost_before is not None:
-        remaining = _governor_remaining(ctx)
+        remaining = _recorded_spend(ctx)
         if remaining is not None:
-            cost = max(Decimal("0"), cost_before - remaining)
+            cost = max(Decimal("0"), remaining - cost_before)
     record.finished_at = finished_at
     record.cost_eur = cost
     ctx.driver.write_batch(
@@ -614,7 +590,6 @@ def _close_run(
         "ingestion run closed",
         run_id=record.run_id,
         source_id=record.source_id,
-        budget_terminated=budget_terminated,
         errors=record.errors,
         cost_eur=str(cost),
     )

@@ -34,7 +34,6 @@ import json
 import re
 from collections import Counter
 from datetime import UTC, datetime
-from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
@@ -120,7 +119,7 @@ def evaluate(
         None,
         "--budget",
         min=0,
-        help="The EUR envelope; without it, evaluation draws on the monthly ceiling",
+        help="Deprecated compatibility option; ignored",
     ),
 ) -> None:
     """Measure extraction quality (default), entity resolution
@@ -135,7 +134,7 @@ def evaluate(
     ctx = build_run_context(
         settings,
         needs_inference=True,
-        budget_eur=Decimal(str(budget)) if budget is not None else None,
+        budget_eur=None,
     )
     try:
         if not (resolution or nl2cypher):

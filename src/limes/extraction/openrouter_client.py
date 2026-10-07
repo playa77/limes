@@ -1,27 +1,9 @@
 # src/limes/extraction/openrouter_client.py | v1.0.0 | introduced by WP-22
-"""The single OpenRouter client per Technical Specification §8.7.6, §11.
+"""OpenRouter chat, embeddings, and catalogue with passive cost accounting.
 
-One client for all OpenRouter interaction: chat completions, embeddings, and
-the model catalogue. It calls `governor.check` before every request and
-`governor.commit` after, using the provider's reported token usage, and is
-therefore the only module that writes `:CostLedgerEntry` (via the governor —
-§15.2). The API key is sent in the Authorization header and never enters a
-log line: no request body, header, or URL is ever logged.
-
-Pricing comes from the model catalogue (`GET /models`), fetched lazily and
-cached per model id; a model absent from the catalogue falls back to a
-deliberately conservative constant and logs a warning — overestimating the
-price makes the governor refuse early, the safe direction. The fallback is
-why a price can be wrong in a test or a network partition, but never silently
-cheap.
-
-Retry policy per §11: exponential backoff from 2 s, factor 2, jittered, at
-most 4 attempts, on connection errors, timeouts, 429, and 5xx — never on
-other 4xx. A request that exhausts its attempts surfaces as `ExtractionError`
-naming the model and purpose. `governor.check` runs once per logical call
-before the first attempt; `governor.commit` runs once per call that returned
-token usage — ledger entries are written only for attempts that returned
-usage (§8.7.6), so a call that died on its last retry never costs anything.
+Only reported usage is ledgered. Requests never consult a budget. Inference
+parameters are included in completion payloads and completion logs; credentials
+and message contents are never logged. Retry policy remains unchanged.
 """
 
 from __future__ import annotations
@@ -34,17 +16,15 @@ from typing import Any, Literal, cast
 import structlog
 
 from limes.config import Settings
-from limes.cost.governor import Governor
+from limes.cost.governor import CostRecorder
 from limes.errors import ExtractionError
-from limes.extraction.base import ESTIMATED_OUTPUT_TOKENS
 from limes.sources.base import PermanentStatus, RetryExhausted, request_with_retry
 from limes.types import CostLedgerEntry
 
 logger = structlog.get_logger(__name__)
 
 # Fallback per-token USD prices (per million tokens) for models absent from
-# the catalogue. Conservative on purpose: an overestimate refuses a call
-# early; an underestimate would silently breach the budget.
+# the catalogue. This affects accounting only, never permission to call.
 FALLBACK_USD_PER_MILLION_INPUT = 0.50
 FALLBACK_USD_PER_MILLION_OUTPUT = 0.50
 
@@ -78,9 +58,9 @@ def post_json_with_retry(
 
 class OpenRouterClient:
     """One client for chat completions, embeddings, and the catalogue; the
-    only module that writes `:CostLedgerEntry` (via the governor)."""
+    only module that writes `:CostLedgerEntry` (via the passive cost recorder)."""
 
-    def __init__(self, settings: Settings, governor: Governor) -> None:
+    def __init__(self, settings: Settings, governor: CostRecorder) -> None:
         self._settings = settings
         self._governor = governor
         # model_id -> (usd_per_input_token, usd_per_output_token, usd_per_request)
@@ -94,23 +74,12 @@ class OpenRouterClient:
         json_schema: dict[str, Any] | None = None,
     ) -> tuple[str, int, int]:
         """One chat completion. Returns (content, input_tokens, output_tokens)
-        with the call checked and committed against the governor."""
+        with reported usage written to the cost ledger."""
         if purpose not in PURPOSES:
             raise ValueError(f"unknown ledger purpose: {purpose!r}")
         input_price, output_price, request_fee = self._price_for(model_id)
-        estimate_in = sum(len(str(m.get("content") or "")) for m in messages) // 4
-        self._governor.check(
-            _cost_eur(
-                estimate_in,
-                ESTIMATED_OUTPUT_TOKENS,
-                input_price,
-                output_price,
-                request_fee,
-                self._governor,
-            )
-        )
-
-        payload: dict[str, Any] = {"model": model_id, "messages": messages}
+        parameters = self._settings.inference_parameters()
+        payload: dict[str, Any] = {"model": model_id, "messages": messages, **parameters}
         if json_schema is not None:
             payload["response_format"] = {
                 "type": "json_schema",
@@ -144,15 +113,14 @@ class OpenRouterClient:
             model_id=model_id,
             input_tokens=input_tokens,
             output_tokens=output_tokens,
+            inference_parameters=parameters,
         )
         return content, input_tokens, output_tokens
 
     def embed(self, texts: list[str], model_id: str) -> list[list[float]]:
-        """One embedding request. Checked and committed like `complete`;
+        """One embedding request. Ledgered like `complete`;
         embeddings bill prompt tokens only."""
         input_price, _, _ = self._price_for(model_id)
-        estimate_in = sum(len(t) for t in texts) // 4
-        self._governor.check(_cost_eur(estimate_in, 0, input_price, 0.0, 0.0, self._governor))
         response = post_json_with_retry(
             f"{self._settings.openrouter_base_url}/embeddings",
             {"model": model_id, "input": texts},
@@ -202,8 +170,7 @@ class OpenRouterClient:
 
     def _price_for(self, model_id: str) -> tuple[float, float, float]:
         """Per-token USD prices for a model: from the cached catalogue, else
-        the conservative fallback (logged — the price affects the ledger and
-        the governor, so a fallback must never be silent)."""
+        the conservative fallback (logged because it affects reported cost)."""
         cached = self._prices.get(model_id)
         if cached is not None:
             return cached
@@ -258,7 +225,7 @@ class OpenRouterClient:
         output_price: float,
         request_fee: float,
     ) -> None:
-        """One ledger entry via the governor — only when the call returned
+        """One ledger entry via the passive cost recorder — only when the call returned
         token usage (§8.7.6). A response without usage is logged with a
         warning: an unmetered call is visible, never silent."""
         if input_tokens == 0 and output_tokens == 0:
@@ -280,18 +247,6 @@ class OpenRouterClient:
             created_at=now,
         )
         self._governor.commit(entry)
-
-
-def _cost_eur(
-    input_tokens: int,
-    output_tokens: int,
-    input_price: float,
-    output_price: float,
-    request_fee: float,
-    governor: Governor,
-) -> Decimal:
-    usd = Decimal(str(input_tokens * input_price + output_tokens * output_price + request_fee))
-    return usd * Decimal(str(governor.usd_eur_rate))
 
 
 def _content_of(response: dict[str, Any]) -> str:

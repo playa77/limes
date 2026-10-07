@@ -5,7 +5,7 @@ Every error the system raises derives from `LimesError`. The subclasses carry
 the retry semantics the specification assigns: `ConfigurationError` and
 `OntologyError` are fatal at startup, `SourceFetchError` and `ExtractionError`
 are retryable, `SourceParseError` and `ExtractionSchemaError` are record-level
-skips, `BudgetExhausted` terminates a run cleanly, and the remaining classes
+skips, and the remaining active classes
 mark assertion-, transaction-, or request-level rejections. Nothing is ever
 silently dropped; a skip is counted at the point it is caught.
 """

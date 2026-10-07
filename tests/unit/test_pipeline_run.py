@@ -323,14 +323,15 @@ def _gate(driver: FakeDriver, tmp_path) -> GateContext:
     )
 
 
-def test_backfill_and_reextract_require_an_explicit_budget(tmp_path):
+@pytest.mark.parametrize("mode", ["backfill", "reextract"])
+def test_backfill_and_reextract_run_without_budget(tmp_path, mode):
     adapter = FakeAdapter()
     driver = FakeDriver()
     ctx = _ctx(tmp_path, driver, adapter)
-    for mode in ("backfill", "reextract"):
-        with pytest.raises(ValueError, match=f"{mode} requires an explicit budget"):
-            execute_run(RunSpec(source_id="test", mode=mode), ctx)
-    assert driver.writes == []  # refused before anything touches the graph
+    record = execute_run(RunSpec(source_id="test", mode=mode), ctx)
+    assert record.finished_at is not None
+    assert record.cost_eur == 0
+    assert driver.writes
 
 
 def test_document_kind_without_payload_is_counted_and_skipped(tmp_path):

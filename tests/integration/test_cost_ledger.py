@@ -1,13 +1,6 @@
 # tests/integration/test_cost_ledger.py | v1.0.0 | introduced by WP-06
-"""Cost ledger integration tests against a disposable Neo4j container.
-
-Covers the §5.8 node schema, period aggregation, and the governor's monthly
-vs envelope metering against the real graph (AC-14 partial, AC-15 partial).
-
-Each test writes into its own `YYYY-MM`-shaped period string so totals are
-order-independent; the monthly governor test derives its expectations from
-`remaining()` for the same reason.
-"""
+"""Passive ledger persistence and period aggregation against a real database.
+Legacy limits cannot refuse calls; process-local totals track run spend."""
 
 from datetime import UTC, datetime
 from decimal import Decimal
@@ -16,7 +9,6 @@ import pytest
 
 from limes.cost.governor import Governor
 from limes.cost.ledger import read_period_spend, write_entry
-from limes.errors import BudgetExhausted
 from limes.graph.driver import GraphDriver
 from limes.types import CostLedgerEntry
 from tests.integration.conftest import Neo4jInstance
@@ -94,24 +86,9 @@ def test_write_entry_is_idempotent_on_ledger_id(driver: GraphDriver):
     assert rows[0]["c"] == 1
 
 
-def test_monthly_governor_refuses_against_real_ledger(driver: GraphDriver):
-    # Expectations derive from remaining(), so the test is independent of any
-    # other spend committed into the real current month. The preseed goes into
-    # that month because the governor meters `now`'s YYYY-MM period.
-    current_period = datetime.now(UTC).strftime("%Y-%m")
-    write_entry(driver, _entry("g-m-1", Decimal("9.00"), current_period))
-    governor = Governor(driver, Decimal("10.00"), 0.95, 0.92)
-    assert governor.remaining() == Decimal("0.50")
-    governor.check(Decimal("0.50"))
-    with pytest.raises(BudgetExhausted):
-        governor.check(Decimal("0.51"))
-
-
-def test_envelope_governor_ignores_monthly_spend(driver: GraphDriver):
-    # AC-15: envelope spend is independent of the monthly ceiling.
-    write_entry(driver, _entry("g-e-0", Decimal("100.00"), "2099-01-envelope"))
-    governor = Governor(driver, Decimal("10.00"), 0.95, 0.92, envelope_eur=Decimal("3.00"))
-    governor.commit(_entry("g-e-1", Decimal("2.00"), "2099-01-envelope"))
-    with pytest.raises(BudgetExhausted):
-        governor.check(Decimal("1.01"))
-    governor.check(Decimal("1.00"))
+def test_passive_recorder_accepts_spend_above_legacy_limits(driver: GraphDriver):
+    recorder = Governor(driver, Decimal("0"), 0.0, 0.92, envelope_eur=Decimal("0"))
+    recorder.commit(_entry("passive-1", Decimal("25"), "2099-01-passive"))
+    recorder.check(Decimal("100"))
+    assert recorder.total_spend == Decimal("25")
+    assert read_period_spend(driver, "2099-01-passive") == Decimal("25")

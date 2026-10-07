@@ -24,7 +24,7 @@ from neo4j.exceptions import Neo4jError, ServiceUnavailable
 from limes.api.deps import get_driver
 from limes.api.main import create_app
 from limes.config import Settings
-from limes.errors import BudgetExhausted, OntologyError
+from limes.errors import OntologyError
 from tests.fixtures.graph_data import ONTOLOGY_PATH
 
 
@@ -71,7 +71,6 @@ class _Neo4jErrorWithCode(Neo4jError):
     ("exc", "status", "code"),
     [
         (ServiceUnavailable("database unreachable"), 503, "NEO4J_UNREACHABLE"),
-        (BudgetExhausted("monthly budget exhausted"), 402, "BUDGET_EXHAUSTED"),
         (
             _Neo4jErrorWithCode(
                 "query timed out", "Neo4j.TransientError.Transaction.TransactionTimedOut"

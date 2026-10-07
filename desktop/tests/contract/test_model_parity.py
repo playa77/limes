@@ -8,6 +8,7 @@ import limes.api.models as api_models
 import limes.api.routers.cost as api_cost
 import limes.api.routers.entity as api_entity
 import limes.api.routers.ingest_status as api_ingest
+import limes.api.routers.query as api_query
 import limes.api.routers.saved_queries as api_saved
 import limes.api.routers.search as api_search
 import limes.api.routers.sources as api_sources
@@ -18,6 +19,8 @@ import limes.api.routers.sources as api_sources
 # change anywhere on the API surface trips this test. Router view models are
 # passed as classes; the core models by name for the parity message.
 MIRRORED: list[tuple[type, str]] = [
+    (api_query.QueryResponse, "QueryOutcome"),
+    (api_entity.NeighborResponse, "GraphNeighbors"),
     (api_models.EntityRef, "EntityRef"),
     (api_models.EdgeRef, "EdgeRef"),
     (api_models.GraphResult, "GraphResult"),

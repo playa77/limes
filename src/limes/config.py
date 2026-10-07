@@ -1,5 +1,5 @@
 # src/limes/config.py | v1.0.0 | introduced by WP-02
-"""Application configuration, loaded from environment variables.
+"""Application configuration: legacy secrets, non-secret tunables, then environment.
 
 `Settings` carries one typed field per Technical Specification §4.2 key.
 `load_settings()` validates at startup: a missing or empty required key is a
@@ -14,9 +14,8 @@ not fields of `Settings`; `extra="ignore"` keeps them out of the model.
 
 from __future__ import annotations
 
-from decimal import Decimal
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import Field, ValidationError
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -31,7 +30,8 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(
         env_prefix="LIMES_",
-        env_file=".env",
+        env_file=(".env", "config/limes.env"),
+        env_ignore_empty=True,
         extra="ignore",
         case_sensitive=False,
     )
@@ -53,6 +53,24 @@ class Settings(BaseSettings):
     model_pin_stage: ModelPinStage = "provisional"
     model_pin_date: str | None = None
 
+    # Omitted knobs retain provider defaults; supplied knobs are validated.
+    inference_temperature: float | None = Field(default=None, ge=0, le=2)
+    inference_max_tokens: int | None = Field(default=None, gt=0)
+    inference_reasoning_effort: Literal[
+        "none", "minimal", "low", "medium", "high", "xhigh"
+    ] | None = None
+
+    def inference_parameters(self) -> dict[str, Any]:
+        """Exact optional parameters sent to chat completions and logged."""
+        parameters: dict[str, Any] = {}
+        if self.inference_temperature is not None:
+            parameters["temperature"] = self.inference_temperature
+        if self.inference_max_tokens is not None:
+            parameters["max_tokens"] = self.inference_max_tokens
+        if self.inference_reasoning_effort is not None:
+            parameters["reasoning"] = {"effort": self.inference_reasoning_effort}
+        return parameters
+
     # ---------- Versioned artifacts ----------
     ontology_path: Path
     feeds_config_path: Path
@@ -63,10 +81,8 @@ class Settings(BaseSettings):
     nl2cypher_prompt_version: str = "1.0.0"
     extraction_schema_version: str = "1.0.0"
 
-    # ---------- Budget ----------
-    monthly_budget_eur: Decimal = Field(default=Decimal("10.00"))
+    # ---------- Passive accounting ----------
     usd_eur_rate: float = 0.92
-    budget_soft_stop_fraction: float = 0.95
 
     # ---------- Gate and extraction ----------
     gate_min_entity_mentions: int = 2

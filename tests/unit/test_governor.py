@@ -1,11 +1,5 @@
 # tests/unit/test_governor.py | v1.0.0 | introduced by WP-06
-"""Governor arithmetic per Doc 2 §8.9.
-
-The stub driver emulates the ledger's behavior (a commit raises the spend a
-subsequent monthly read returns), so these tests exercise the governor's
-decisions, not the graph. Ledger-vs-graph behavior is covered by the
-integration tests.
-"""
+"""Passive accounting and compatibility guards for D-75. No spend-dependent refusal."""
 
 from datetime import UTC, datetime
 from decimal import Decimal
@@ -13,7 +7,6 @@ from decimal import Decimal
 import pytest
 
 from limes.cost.governor import Governor
-from limes.errors import BudgetExhausted
 from limes.types import CostLedgerEntry
 
 PERIOD = "2026-08"
@@ -70,74 +63,32 @@ def _governor(stub: StubDriver, envelope: Decimal | None = None) -> Governor:
     return Governor(stub, CEILING, SOFT_STOP, 0.92, envelope_eur=envelope)
 
 
-def test_check_passes_below_soft_stop_threshold():
-    governor = _governor(StubDriver())
-    governor.check(Decimal("1.00"))  # far below 9.50 threshold
-
-
-def test_check_raises_above_soft_stop_threshold():
-    governor = _governor(StubDriver())
-    with pytest.raises(BudgetExhausted):
-        governor.check(Decimal("9.51"))
-
-
-def test_check_refuses_at_threshold_not_at_ceiling():
-    # Soft stop: refusal at 10.00 * 0.95 = 9.50, not at the 10.00 ceiling.
-    governor = _governor(StubDriver())
-    governor.check(Decimal("9.50"))  # exactly at threshold: passes
-    with pytest.raises(BudgetExhausted):
-        governor.check(Decimal("9.51"))
-
-
-def test_monthly_check_sees_preseeded_period_spend():
-    governor = _governor(StubDriver(preseeded=Decimal("9.00")))
-    governor.check(Decimal("0.49"))  # 9.49 projected: passes
-    with pytest.raises(BudgetExhausted):
-        governor.check(Decimal("0.51"))  # 9.51 projected: refused
-
-
-def test_monthly_check_sees_own_commits():
-    stub = StubDriver()
-    governor = _governor(stub)
-    governor.commit(_entry(Decimal("9.00")))
-    with pytest.raises(BudgetExhausted):
-        governor.check(Decimal("0.60"))
-    governor.check(Decimal("0.49"))
-
-
-def test_commit_writes_entry_to_ledger():
-    stub = StubDriver()
-    governor = _governor(stub)
-    governor.commit(_entry(Decimal("2.50"), ledger_id="ledger-1"))
+def test_legacy_budget_arguments_never_refuse_or_read_spend():
+    stub = StubDriver(preseeded=Decimal("1000"))
+    stub.read = lambda *args, **kwargs: pytest.fail("accounting must not read spend before calls")
+    recorder = _governor(stub, envelope=Decimal("0"))
+    recorder.check(Decimal("1000000"))
+    recorder.commit(_entry(Decimal("50")))
+    recorder.check(Decimal("1000000"))
+    assert recorder.total_spend == Decimal("50")
     assert len(stub.committed) == 1
-    assert stub.committed[0].ledger_id == "ledger-1"
-    assert stub.committed[0].cost_eur == Decimal("2.50")
 
 
-def test_envelope_mode_meters_against_envelope():
-    stub = StubDriver(preseeded=Decimal("100.00"))  # monthly spend is irrelevant
-    governor = _governor(stub, envelope=Decimal("3.00"))
-    governor.commit(_entry(Decimal("2.00"), ledger_id="envelope-1"))
-    governor.check(Decimal("1.00"))  # 3.00 projected against 3.00: passes
-    with pytest.raises(BudgetExhausted):
-        governor.check(Decimal("1.01"))
+def test_failed_ledger_write_does_not_change_process_total():
+    stub = StubDriver()
+    recorder = _governor(stub)
+    def fail(statements):
+        raise RuntimeError("ledger unavailable")
+    stub.write_batch = fail
+    with pytest.raises(RuntimeError, match="ledger unavailable"):
+        recorder.commit(_entry(Decimal("2")))
+    assert recorder.total_spend == 0
 
 
-def test_envelope_mode_ignores_monthly_ceiling():
-    # AC-15: backfill meters against its envelope and never draws on the
-    # monthly ceiling, even when that ceiling is already exhausted.
-    stub = StubDriver(preseeded=Decimal("20.00"))
-    governor = _governor(stub, envelope=Decimal("3.00"))
-    governor.check(Decimal("3.00"))  # monthly would refuse; envelope passes
-
-
-def test_remaining_monthly():
-    stub = StubDriver(preseeded=Decimal("1.00"))
-    governor = _governor(stub)
-    assert governor.remaining() == CEILING * Decimal(str(SOFT_STOP)) - Decimal("1.00")
-
-
-def test_remaining_envelope_never_negative():
-    governor = _governor(StubDriver(), envelope=Decimal("2.00"))
-    governor.commit(_entry(Decimal("5.00"), ledger_id="over"))
-    assert governor.remaining() == Decimal("0")
+def test_recorder_total_is_process_local_and_ledger_entries_preserved():
+    stub = StubDriver(preseeded=Decimal("1000"))
+    recorder = _governor(stub)
+    recorder.commit(_entry(Decimal("2.50"), "first"))
+    recorder.commit(_entry(Decimal("3.50"), "second"))
+    assert recorder.total_spend == Decimal("6")
+    assert [entry.ledger_id for entry in stub.committed] == ["first", "second"]

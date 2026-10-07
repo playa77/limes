@@ -1,15 +1,6 @@
 # tests/acceptance/test_ac14_15_governor.py | v1.0.0 | introduced by WP-39
-"""AC-14 and AC-15: the budget governor.
-
-AC-14: the governor refuses a call that would breach the ceiling, and the
-run terminates cleanly — the `:IngestionRun` record is closed (finished_at
-set) and `:Source.last_success_at` is untouched, with the remaining work
-reported as queued.
-
-AC-15: backfill and reextract meter against their explicit envelope, not
-the monthly ceiling — the distinguishing assertion is a spend the monthly
-ceiling would happily accept but the envelope refuses.
-"""
+"""AC-14/15 rewritten by D-75: model calls proceed without budget enforcement
+and backfill costs remain recorded in both run and ledger."""
 
 from __future__ import annotations
 
@@ -22,10 +13,8 @@ import pytest
 import respx
 from httpx import Response
 
-from limes.cost.governor import Governor
-from limes.errors import BudgetExhausted
 from limes.pipeline.run import RunSpec, execute_run
-from limes.types import CostLedgerEntry, RawRecord
+from limes.types import RawRecord
 from tests.acceptance.conftest import (
     CATALOGUE,
     CATALOGUE_URL,
@@ -141,7 +130,7 @@ def _inference_run(
                     source_id="feeds",
                     mode="backfill",
                     since=datetime.now(UTC) - timedelta(days=7),
-                    budget_eur=envelope or Decimal("3.00"),
+                    budget_eur=envelope,
                 )
                 record = execute_run(spec, ctx)
             return record
@@ -153,84 +142,13 @@ def _inference_run(
         composition_module.spacy.load = real_spacy_load
 
 
-def test_ac14_run_terminates_cleanly_on_budget_exhaustion(
-    neo4j_instance: Neo4jInstance,
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
+def test_backfill_runs_and_records_cost_despite_zero_legacy_envelope(
+    neo4j_instance: Neo4jInstance, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
 ):
-    """A backfill under an envelope so small that the first paid call would
-    breach it: `BudgetExhausted` propagates, the run record is closed, and
-    the source's `last_success_at` stays untouched (the run did not
-    succeed)."""
-    from limes.graph.driver import GraphDriver
-
-    wipe_graph(neo4j_instance)
-    driver = GraphDriver(
-        neo4j_instance.uri,
-        neo4j_instance.user,
-        neo4j_instance.password,
-        neo4j_instance.database,
-    )
-    try:
-        with pytest.raises(BudgetExhausted):
-            _inference_run(
-                neo4j_instance, tmp_path, envelope=Decimal("0.0000001"), monkeypatch=monkeypatch
-            )
-
-        rows = driver.read("MATCH (r:IngestionRun {source_id: 'feeds'}) RETURN r", {}, 30)
-        assert rows, "the aborted run must still leave a durable record"
-        closed = rows[0]["r"]
-        assert closed["finished_at"] is not None, "the run must close cleanly"
-        assert closed["mode"] == "backfill"
-
-        rows = driver.read(
-            "MATCH (s:Source {source_id: 'feeds'}) RETURN s.last_success_at AS last", {}, 30
-        )
-        assert rows[0]["last"] is None, "last_success_at must not advance on a terminated run"
-    finally:
-        driver.close()
-
-
-def test_ac15_envelope_meters_against_envelope_not_monthly_ceiling(
-    neo4j_instance: Neo4jInstance,
-    tmp_path: Path,
-):
-    """The distinguishing property: a spend the monthly ceiling would
-    accept is refused by the envelope."""
-    from limes.graph.driver import GraphDriver
-
-    driver = GraphDriver(
-        neo4j_instance.uri,
-        neo4j_instance.user,
-        neo4j_instance.password,
-        neo4j_instance.database,
-    )
-    try:
-        wipe_graph(neo4j_instance)
-        monthly = Governor(driver, Decimal("10.00"), 0.95, 0.92)
-        envelope = Governor(driver, Decimal("10.00"), 0.95, 0.92, envelope_eur=Decimal("1.00"))
-
-        entry = CostLedgerEntry(
-            ledger_id="ac15-entry-1",
-            period="2099-01",
-            purpose="extraction",
-            model_id="m",
-            input_tokens=1000,
-            output_tokens=0,
-            cost_usd=Decimal("0.80"),
-            cost_eur=Decimal("0.80"),
-            created_at=datetime.now(UTC),
-        )
-        monthly.commit(entry)
-        envelope.commit(entry)
-
-        # Monthly ceiling (soft stop at 9.50): 0.80 + 0.30 < 9.50 — accepted.
-        monthly.check(Decimal("0.30"))
-        # Envelope (1.00): 0.80 + 0.30 > 1.00 — refused.
-        with pytest.raises(BudgetExhausted, match="envelope"):
-            envelope.check(Decimal("0.30"))
-    finally:
-        driver.close()
+    record = _inference_run(neo4j_instance, tmp_path, Decimal("0"), monkeypatch)
+    assert record.finished_at is not None
+    assert record.assertions_written == 1
+    assert record.cost_eur > 0
 
 
 def test_ac15_backfill_under_envelope_meters_and_records(

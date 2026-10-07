@@ -68,7 +68,7 @@ Recorded so the same ground is not re-covered. Each is resolved in the section n
 | S-09 | Gate: hash deduplication, spaCy NER, passage selection |
 | S-10 | Extractor protocol, OpenRouter and Ollama implementations, output schema, prompts |
 | S-11 | Extraction cache |
-| S-12 | Cost ledger and budget governor |
+| S-12 | Passive cost ledger |
 | S-13 | Entity resolution: keys, blocking, adjudication, minting, reversible linking |
 | S-14 | Graph loader: validation, node materialization, bitemporal merge, lookup rows |
 | S-15 | Query API |
@@ -200,7 +200,16 @@ Host tooling installs into `./venv/`. `--break-system-packages` is prohibited. C
 
 All configuration by environment variable, loaded and validated once at startup. A missing or invalid required key is a startup failure naming the key. No host paths in committed files.
 
-### 4.2 `.env.example`
+### 4.2 Configuration examples
+
+Secrets stay in `.env`; non-secret model pins and inference knobs are in
+`config/limes.env`. Copy both examples before bootstrap. The loader accepts
+legacy tuning keys in `.env`, loads the tuning file afterwards, and then applies
+nonempty process environment overrides. Empty values are unset. Model selection
+writes only the tuning file atomically. Optional completion knobs are
+`LIMES_INFERENCE_TEMPERATURE` (0–2), `LIMES_INFERENCE_MAX_TOKENS` (>0), and
+`LIMES_INFERENCE_REASONING_EFFORT` (none/minimal/low/medium/high/xhigh).
+They are included in completion payloads and structured call logs when set.
 
 ```dotenv
 # ---------- Neo4j ----------
@@ -240,9 +249,7 @@ LIMES_NL2CYPHER_PROMPT_VERSION=1.0.0
 LIMES_EXTRACTION_SCHEMA_VERSION=1.0.0
 
 # ---------- Budget ----------
-LIMES_MONTHLY_BUDGET_EUR=10.00
 LIMES_USD_EUR_RATE=0.92
-LIMES_BUDGET_SOFT_STOP_FRACTION=0.95
 
 # ---------- Gate and extraction ----------
 LIMES_GATE_MIN_ENTITY_MENTIONS=2
@@ -635,7 +642,7 @@ All responses carry `X-LIMES-Ontology-Version`. Error envelope:
 | POST | `/coverage` | Coverage report for a query or relation set | 400 |
 | GET/POST/DELETE | `/saved-queries` | Self-accreting query library | 409, 404 |
 | GET | `/sources` | Registry with trust rank and last refresh | — |
-| GET | `/cost/ledger` | Period spend, remaining budget, entries | — |
+| GET | `/cost/ledger` | Period spend, entries; remaining_eur is null | — |
 | GET | `/ingest/status` | Last run per source, counts, errors | — |
 
 Response models `GraphResult`, `CoverageReport`, `Diagnosis`, `EntityRef`, `EdgeRef`, `NlqOutcome`, `BuilderSpec` are defined in `api/models.py` and compose the §5.5 core types.
@@ -808,7 +815,7 @@ class RunSpec(BaseModel):
     mode: Literal["ingest", "backfill", "reextract"]
     since: datetime | None = None
     until: datetime | None = None
-    budget_eur: Decimal | None = None      # required for backfill and reextract
+    budget_eur: Decimal | None = None      # ignored legacy compatibility option
 
 def execute_run(spec: RunSpec, ctx: RunContext) -> IngestionRunRecord: ...
 ```
@@ -876,13 +883,13 @@ Returned offsets are passage-local and are mapped to document offsets using each
 #### 8.7.6 OpenRouter Client
 ```python
 class OpenRouterClient:
-    def __init__(self, settings: Settings, governor: Governor) -> None: ...
+    def __init__(self, settings: Settings, governor: CostRecorder) -> None: ...
     def complete(self, messages: list[dict], model_id: str,
                  purpose: str, json_schema: dict | None = None) -> tuple[str, int, int]: ...
     def embed(self, texts: list[str], model_id: str) -> list[list[float]]: ...
     def catalogue(self) -> list[dict]: ...
 ```
-One client for all OpenRouter interaction: chat completions, embeddings, and the model catalogue. It calls `governor.check` before every request and `governor.commit` after, using reported token usage, and is therefore the only module that writes `:CostLedgerEntry`. Retry policy per §11. Ledger entries are written only for attempts that returned token usage. The API key never reaches a log line.
+One client for all OpenRouter interaction: chat completions, embeddings, and the model catalogue. It records reported token usage after each request without a spend-dependent gate, and is therefore the only module that writes `:CostLedgerEntry`. Retry policy per §11. Ledger entries are written only for attempts that returned token usage. The API key never reaches a log line.
 
 ### 8.8 Resolution
 
@@ -922,12 +929,14 @@ The named converter from pre-resolution to resolved assertions. It creates `:Men
 
 ### 8.9 Cost
 ```python
-class Governor:
-    def check(self, estimated_cost_eur: Decimal) -> None: ...   # raises BudgetExhausted
+class CostRecorder:
+    total_spend: Decimal  # process-local total used to calculate run cost
     def commit(self, actual: CostLedgerEntry) -> None: ...
-    def remaining(self) -> Decimal: ...
 ```
-Every paid call passes `check` before issue and `commit` after. `check` raises when projected spend exceeds the soft-stop fraction of the ceiling. When an envelope is set, the governor meters against it and does not draw on the monthly ceiling.
+Model calls never consult spend before issue. Reported usage is ledgered afterwards.
+The legacy `Governor` import aliases `CostRecorder`; its `check` is an ignored
+compatibility method and is never called by inference. There is no remaining-budget
+calculation. `RunSpec.budget_eur` and CLI `--budget` are ignored compatibility inputs.
 
 ### 8.10 NL-to-Cypher
 
@@ -954,14 +963,14 @@ The desktop client (`desktop/src/limes_desktop/`) is a second API consumer with 
 ```
 limes ingest      --source <id> [--since <iso>] [--until <iso>]
 limes ingest-all
-limes backfill    --source <id> --days <n> --budget <eur>
-limes reextract   --prompt-version <v> [--source <id>] --budget <eur>
+limes backfill    --source <id> --days <n>
+limes reextract   --prompt-version <v> [--source <id>]
 limes select-models (--provisional | --measured)
 limes evaluate    [--resolution] [--nl2cypher]
 limes migrate     --ontology-version <v>
 limes backup
 ```
-`backfill` and `reextract` refuse to run without `--budget`. `cli/main.py` acquires and releases the advisory lock, reclaiming a stale lock older than the run timeout with a warning.
+`backfill` and `reextract` require no budget option. `cli/main.py` acquires and releases the advisory lock, reclaiming a stale lock older than the run timeout with a warning.
 
 ### 8.15 Composition Root
 
@@ -973,7 +982,7 @@ class RunContext:
     driver: GraphDriver
     registry: SourceRegistry
     archive: ArchiveStore
-    governor: Governor | None = None
+    governor: CostRecorder | None = None
     client: OpenRouterClient | None = None
     extractor: Extractor | None = None
     gate: GateContext | None = None
@@ -991,7 +1000,7 @@ class NlqContext:
     ontology: Ontology
     driver: GraphDriver
     client: OpenRouterClient
-    governor: Governor
+    governor: CostRecorder
 
 def build_run_context(settings: Settings, *, needs_inference: bool,
                       budget_eur: Decimal | None = None) -> RunContext: ...
@@ -1003,7 +1012,7 @@ def build_nlq_context(settings: Settings, ontology: Ontology,
 
 `needs_inference` governs spaCy model loading and extractor construction: a structured-only run loads no models and constructs no extractor, which is what keeps it inside the resource contract.
 
-`build_run_context` calls `provision()` on every construction — idempotent, one round trip — and applies the ontology downgrade guard of §4.3. `make evaluate` uses `build_run_context(needs_inference=True, budget_eur=<envelope>)` and ignores the unused slots; there is one construction path.
+`build_run_context` calls `provision()` on every construction — idempotent, one round trip — and applies the ontology downgrade guard of §4.3. `make evaluate` uses `build_run_context(needs_inference=True, budget_eur=None)` and ignores the unused slots; there is one construction path.
 
 ### 8.16 Lookups
 ```python
@@ -1016,7 +1025,7 @@ Graph query with an in-process LRU cache. A miss returns `None`; the caller leav
 
 ## 9. Background Jobs
 
-None. No scheduler, no queue (NG-02). Every long operation is a foreground CLI invocation. Safety comes from: durable progress through the archive and extraction cache; content-derived idempotency; a single writer holding an advisory lock per source; and clean budget termination that closes the run record with remaining work marked queued.
+None. No scheduler, no queue (NG-02). Every long operation is a foreground CLI invocation. Safety comes from: durable progress through the archive and extraction cache; content-derived idempotency; a single writer holding an advisory lock per source; and durable run closure on fetch/inference failures.
 
 The insertion point for a future scheduler is `execute_run`, which takes a fully specified `RunSpec` and a `RunContext` and needs no interactive context.
 
@@ -1024,7 +1033,7 @@ The insertion point for a future scheduler is `execute_run`, which takes a fully
 
 ## 10. Observability
 
-`structlog` JSON with `run_id`, `source_id`, `module`, `event` on every line, and a redaction processor masking secrets. Mandatory events: run started and finished with counts; adapter fetch completed; document gated out with reason; extraction call issued with tokens and cost; cache hit; assertion rejected with reason; adjudication issued; budget refusal; query validated; plan rejected; query executed with duration.
+`structlog` JSON with `run_id`, `source_id`, `module`, `event` on every line, and a redaction processor masking secrets. Mandatory events: run started and finished with counts; adapter fetch completed; document gated out with reason; extraction call issued with tokens and cost; cache hit; assertion rejected with reason; adjudication issued; inference parameters; query validated; plan rejected; query executed with duration.
 
 Durable surfaces: `:IngestionRun` records, the cost ledger, per-source refresh timestamps, and the coverage report on every query. No monitoring stack.
 
@@ -1059,7 +1068,7 @@ HTTP mapping: `CypherValidationFailed` 400, `QueryPlanRejected` 422, `BudgetExha
 ## 12. Testing Strategy
 
 ### 12.1 Unit
-Ontology loading and every rejection case; `permits` supertype resolution; assertion validation partitioning; hash stability across processes; passage offsets; evidence-span mapping and mismatch rejection; every validation code; every plan-gate rejection; governor arithmetic including envelopes; window resolution for both incremental branches; retry policy.
+Ontology loading and every rejection case; `permits` supertype resolution; assertion validation partitioning; hash stability across processes; passage offsets; evidence-span mapping and mismatch rejection; every validation code; every plan-gate rejection; passive accounting without budget enforcement; window resolution for both incremental branches; retry policy.
 
 ### 12.2 Integration
 Against a disposable Neo4j container. Schema provisioning idempotency; node materialization from assertion endpoints and standalone lists; non-destructive re-merge; supertype labeling; lookup-row materialization; bitemporal merge with within-source closure and cross-source non-closure; idempotent re-ingest with zero new nodes and edges; resolution linking and unlinking; cache-hit path costing nothing; coverage accuracy; empty-result diagnosis naming the correct clause; composition-root construction; cross-process lookup.
@@ -1111,15 +1120,15 @@ Base file: four services, one internal network, volumes `neo4j_data`, `neo4j_log
 ### 13.3 Bootstrap
 
 ```
-1.  cp .env.example .env && populate secrets
+1.  cp .env.example .env && populate secrets; cp config/limes.env.example config/limes.env
 2.  make up
 3.  make select-models -- --provisional
 4.  make ingest SOURCE=gisco_nuts        # geography + postal correspondence
 5.  make ingest SOURCE=gleif             # legal-entity backbone
 6.  make ingest-all                      # remaining structured sources
     make stamp-embeddings                # one-shot embedding backfill (§8.3)
-7.  make backfill SOURCE=feeds DAYS=90 BUDGET=<eur>
-8.  make backfill SOURCE=gdelt DAYS=90 BUDGET=<eur>
+7.  make backfill SOURCE=feeds DAYS=90
+8.  make backfill SOURCE=gdelt DAYS=90
 9.  build gold set and calibration set from the archive
 10. make select-models -- --measured
 11. make evaluate                        # records the baseline
@@ -1155,8 +1164,8 @@ Remove the override, publish the UI port behind host-provided access control, ve
 | AC-11 | The gate rejects documents below the mention threshold and records the reason; counts appear in `/ingest/status`. |
 | AC-12 | A cache hit on the current version triple issues no paid call and is recorded as cached. |
 | AC-13 | An assertion whose evidence span does not contain its subject or object surface is rejected as `EVIDENCE_SPAN_MISMATCH`. |
-| AC-14 | The governor refuses a call that would breach the ceiling and terminates the run cleanly with queued work recorded. |
-| AC-15 | Backfill and reextract meter against their explicit envelope and leave monthly spend unchanged. |
+| AC-14 | Model calls proceed independently of prior spend and legacy budget settings; reported usage is ledgered. |
+| AC-15 | Backfill and reextract run without explicit budgets and record run cost and period spend. |
 | AC-16 | Deterministic keys short-circuit resolution with no embedding and no vector query issued. |
 | AC-17 | Resolution routes correctly across all four bands in §8.8.3; the mint branch writes no node directly. |
 | AC-18 | **`src/limes/api/` contains exactly the three writes enumerated in §7.3 and no other write path.** Grep-based test plus a write-attempt corpus including obfuscated forms. |
@@ -1212,7 +1221,7 @@ Every context type used in a signature anywhere in §8 is defined in §8.15: `Ru
 | `ArchiveStore` | `build_run_context` |
 | `OpenRouterClient` | `build_run_context`; `build_nlq_context` |
 | `Governor` (monthly) | `build_run_context`, `build_nlq_context` |
-| `Governor` (envelope) | `build_run_context` from `budget_eur` |
+| `CostRecorder` (passive) | `build_run_context` with no spending gate |
 | `Extractor` | `build_run_context` when `needs_inference` |
 | `GateContext` and spaCy models | `build_run_context` when `needs_inference` |
 | `NlqContext` | `build_nlq_context`, called by `api/deps.py` |
@@ -1267,17 +1276,17 @@ Makefile → worker container → cli/main.py → cli/ingest.py::ingest_source
     close :IngestionRun → release lock
 ```
 
-**Trace 2 — `make backfill SOURCE=feeds DAYS=90 BUDGET=3.00`**
+**Trace 2 — `make backfill SOURCE=feeds DAYS=90`**
 ```
 cli/backfill.py
-  composition.build_run_context(needs_inference=True, budget_eur=3.00)
-    + Governor(envelope) + OpenRouterClient + OpenRouterExtractor + GateContext
+  composition.build_run_context(needs_inference=True, budget_eur=None)
+    + CostRecorder(passive) + OpenRouterClient + OpenRouterExtractor + GateContext
   execute_run
     adapter.fetch → archive → normalize → DocumentPayload
     pipeline/gate.py::gate_document(doc, ctx.gate)
       cache.get → spaCy NER → select_passages
     extractor.extract → ExtractionResult(list[ExtractedAssertion])
-      OpenRouterClient: governor.check → call → ledger.record → governor.commit
+      OpenRouterClient: call → cost recorder commit → ledger write
       map passage offsets → document offsets; reject EVIDENCE_SPAN_MISMATCH
     resolution/resolve.py::resolve_assertions(extracted, ctx, doc)
       create :Mention per endpoint
@@ -1293,7 +1302,7 @@ api/deps.py: GraphDriver(read mode) · build_nlq_context
 routers/query.py::query_nl
   nlq/service.py::answer(question, NlqContext, execute)
     generate → OpenRouterClient.complete
-      governor.check → call → ledger.record (:CostLedgerEntry write, §7.3) → commit
+      call → cost recorder commit → ledger write (:CostLedgerEntry, §7.3)
     validate.validate(cypher, ontology, settings)   [+1 regeneration on failure]
     plan.explain_gate(driver, cypher)
     driver.read(cypher)                              [read session mode]
@@ -1305,7 +1314,7 @@ routers/query.py::query_nl
 **Trace 4 — `make evaluate`**
 ```
 cli/evaluate.py
-  composition.build_run_context(needs_inference=True, budget_eur=<envelope>)
+  composition.build_run_context(needs_inference=True, budget_eur=None)
   load gold_set.jsonl → validate against gold_set.schema.json
   for each item: extractor.extract → list[ExtractedAssertion]
   compare on (subject.surface_normalized, relation, object.surface_normalized)

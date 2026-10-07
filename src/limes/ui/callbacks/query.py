@@ -196,7 +196,8 @@ def _render_system_status(
     runs = (system or {}).get("runs")
     panel = render_system_status(sources, runs, ledger, health)
     badge = "API: " + str((health or {}).get("status", "unreachable"))
-    budget = f"€{(ledger or {}).get('remaining_eur', '?')} remaining"
+    remaining = (ledger or {}).get("remaining_eur")
+    budget = f"€{remaining} remaining" if remaining is not None else "Cost accounting only"
     return panel, badge, budget
 
 

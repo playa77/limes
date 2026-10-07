@@ -10,8 +10,9 @@ Standing constraints (restated so a fresh session cannot violate them):
 
 - **No commits, staging, or pushes by the agent.** Merging to `main` happens
   only on explicit operator instruction (AGENTS.md, Conventions).
-- **No model ids anywhere.** No model, prompt, or model-selector change without
-  an operator envelope; tests never make real paid calls.
+- **Testing-phase iteration (D-75).** Routine model/prompt/selector changes
+  within the requested task require no separate operator envelope. Tests never
+  make real paid calls; production inference is not triggered by this redesign.
 - **`.env` is off-limits** — never read, printed, or committed.
 - **VPS co-tenants must not be disturbed.** Brainy runs on the same host; any
   operator-run VPS command must be scoped to the `limes` stack only. The agent
@@ -264,3 +265,57 @@ deliberate drift; the operator-gated items (OI-01, OI-09, OI-11, OI-14, OI-16)
 are decided in the operator's own words, not merely acknowledged. An empty
 ledger proves nothing — this one is not empty, and the guards, not the list,
 are what keep it empty afterwards.
+
+## Closed / implementation evidence — 2026-10-07 (D-75)
+
+Original inventory rows above are preserved. Entries here supersede their open
+status only for the specified completed work; no deployment facts are invented.
+
+- **OI-02 closed:** `venv/bin/python -m pytest desktop/tests/integration -q`
+  → **2 passed** on the managed Docker host, with mocked OpenRouter and disposable
+  Neo4j; the full typed-client flow now has executed evidence.
+- **OI-06/OI-07/OI-08/OI-12 closed:** corrected constant spelling, removed dead
+  timeout/expansion state, and extended top-level response parity.
+  `venv/bin/python -m pytest desktop/tests/unit desktop/tests/contract -q`
+  → **135 passed**; the subsequent passive-ledger regression plus ops module
+  → **16 passed** (`desktop/tests/unit/test_ops_views.py`).
+- **OI-14 implementation closed:** `.github/workflows/tests.yml` adds offline
+  lint/type/docs/unit/desktop checks and a matrix of isolated graph suites, with
+  JUnit artifacts. Equivalent checks executed below. Hosted CI execution still
+  awaits a push; no push is authorized or performed in this change.
+- **OI-15 closed:** canonical environment creation command is now
+  `UV_PROJECT_ENVIRONMENT=venv uv sync --all-packages --all-groups`; AGENTS, README
+  and CI agree on `venv`. The documented commands below executed successfully.
+
+### Redesign verification
+
+- `venv/bin/ruff check src tests desktop/src desktop/tests` → pass.
+- `venv/bin/mypy` → pass (139 source files).
+- `venv/bin/python tools/check_docs.py docs/` → all seven checks pass.
+- `venv/bin/python -m pytest tests/unit -q` → 705 passed, one stale budget-label
+  expectation failed. Corrected that assertion; reran
+  `tests/unit/test_ui_components.py tests/unit/test_select_models.py` → **46 passed**,
+  including the failed case and new noninteractive selection test.
+- Targeted configuration/OpenRouter/selection run → **61 passed**, including
+  empty-value precedence, parameter payload/logging, no pre-call check,
+  pin-validation, interrupted atomic writes, and partial measured-marker guards.
+- `venv/bin/python -m pytest tests/integration -q` → 161 passed, two old guard
+  expectations failed (wrapped CLI help text and budget refusal). Replaced the
+  obsolete refusal expectation with a zero-budget successful-run/accounting
+  check; reran `test_cli_backfill.py test_cli_reextract.py
+  test_pipeline_run_unstructured.py` → **9 passed**, including both failed cases.
+- `venv/bin/python -m pytest tests/acceptance -q` → 84 passed, one empty-value
+  test failed because a local file supplied the intended fallback. Isolated its
+  working directory; `tests/acceptance/test_ac01_config.py` → **3 passed**, retaining
+  missing-key and ontology-downgrade guards.
+- G4 `guard_g4()` → pass: targets exist, dry-run backfill/reextract carry no
+  BUDGET or `--budget` gate. Full production Compose bootstrap was not run.
+
+All graph runs used disposable containers, never a deployed stack. Offline ASGI,
+Qt, Chromium and Docker tests needed the managed executor's local-socket access;
+sandbox-only attempts were rerun with the required access. No paid model calls,
+production ingestion, secrets-file edits, commits, staging or pushes occurred.
+
+OI-01/03/04/05/09/10/11/13/16/17/18 remain open. The ignored 18-finding source
+trail for OI-05 is absent in this checkout; tracked parked rows are preserved.
+See REDESIGN_STATUS.md for P0 access/runtime work and remaining requirements.

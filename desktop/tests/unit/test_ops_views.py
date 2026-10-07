@@ -364,3 +364,14 @@ def test_ops_views_selection_bar_visible(qtbot: Any) -> None:
     view.show()
     qtbot.waitUntil(lambda: view.table.rowCount() == 2, timeout=2000)
     assert view.table.editTriggers() == QAbstractItemView.EditTrigger.NoEditTriggers
+
+
+def test_ledger_view_displays_passive_accounting(qtbot: Any) -> None:
+    ledger = CostLedger.from_api({
+        "period": "2026-10", "spend_eur": 150.0, "remaining_eur": None, "entries": [],
+    })
+    view = LedgerView(FakeOpsClient)
+    qtbot.addWidget(view)
+    view.set_ledger(ledger)
+    assert ledger.remaining_eur is None
+    assert "no budget limit" in view.budget_label.text()

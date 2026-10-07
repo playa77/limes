@@ -316,7 +316,7 @@ def test_select_models_wires_the_provisional_stage(monkeypatch: pytest.MonkeyPat
         lambda settings, needs_inference, budget_eur=None: ctx,
     )
     monkeypatch.setattr(
-        select_models_module, "_provisional", lambda ctx: calls.append("provisional")
+        select_models_module, "_provisional", lambda ctx, **kwargs: calls.append("provisional")
     )
     monkeypatch.setattr(select_models_module, "_measured", lambda ctx: calls.append("measured"))
     select_models_module.select_models(provisional=True, measured=False, budget=2.5)
@@ -521,3 +521,63 @@ def test_confirm_accepts_only_yes_answers(monkeypatch: pytest.MonkeyPatch):
     assert select_models_module._confirm("Pin? ") is True
     monkeypatch.setattr("builtins.input", lambda prompt: "no")
     assert select_models_module._confirm("Pin? ") is False
+
+
+def test_pin_writer_is_idempotent_and_does_not_touch_secrets(tmp_path, monkeypatch):
+    secrets = tmp_path / ".env"
+    secrets.write_text("LIMES_OPENROUTER_API_KEY=private-test-value\n")
+    tuning = tmp_path / "limes.env"
+    tuning.write_text("# operator settings\nLIMES_INFERENCE_MAX_TOKENS=1024\n")
+    monkeypatch.setattr(select_models_module, "ENV_FILE", tuning)
+    _write_pins({"extraction": "test/model"}, "provisional")
+    first = tuning.read_bytes()
+    _write_pins({"extraction": "test/model"}, "provisional")
+    assert tuning.read_bytes() == first
+    assert secrets.read_text() == "LIMES_OPENROUTER_API_KEY=private-test-value\n"
+    assert "LIMES_INFERENCE_MAX_TOKENS=1024" in tuning.read_text()
+    assert "LIMES_MODEL_PIN_DATE=" in tuning.read_text()
+
+
+def test_failed_atomic_replace_preserves_original_pins(tmp_path, monkeypatch):
+    tuning = tmp_path / "limes.env"
+    original = "LIMES_EXTRACTION_MODEL=test/original\n"
+    tuning.write_text(original)
+    monkeypatch.setattr(select_models_module, "ENV_FILE", tuning)
+    def fail_replace(*args):
+        raise OSError("write interrupted")
+    monkeypatch.setattr(select_models_module.os, "replace", fail_replace)
+    with pytest.raises(OSError, match="write interrupted"):
+        _write_pins({"extraction": "test/new"}, "provisional")
+    assert tuning.read_text() == original
+    assert list(tmp_path.iterdir()) == [tuning]
+
+
+def test_pin_validation_rejects_unknown_model():
+    with pytest.raises(LimesError, match="absent from catalogue"):
+        select_models_module._validate_pins({"extraction": "test/retired"}, CATALOGUE)
+
+
+def test_measured_marker_cannot_be_written_for_partial_evaluation(tmp_path, monkeypatch):
+    tuning = tmp_path / "limes.env"
+    monkeypatch.setattr(select_models_module, "ENV_FILE", tuning)
+    with pytest.raises(LimesError, match="requires every role"):
+        _write_pins({"extraction": "test/model"}, "measured")
+    assert not tuning.exists()
+
+
+def test_catalogue_parameter_list_is_supported_and_invalid_ids_excluded():
+    entry = {
+        "id": "test/chat", "pricing": {"prompt": "0.0000001", "completion": "0.0000001"},
+        "supported_parameters": ["response_format", "temperature"],
+    }
+    assert filter_candidates([entry], "extraction")[0]["id"] == "test/chat"
+    assert filter_candidates([entry | {"id": None}], "extraction") == []
+    assert filter_candidates([entry | {"pricing": {}}], "extraction") == []
+
+
+def test_noninteractive_provisional_does_not_prompt(tmp_path, monkeypatch):
+    tuning = tmp_path / "limes.env"
+    monkeypatch.setattr(select_models_module, "ENV_FILE", tuning)
+    monkeypatch.setattr(select_models_module, "_confirm", lambda prompt: pytest.fail("prompted"))
+    select_models_module._provisional(_ctx(_settings()), confirm=False)
+    assert "LIMES_MODEL_PIN_STAGE=provisional" in tuning.read_text()

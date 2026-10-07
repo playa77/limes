@@ -28,8 +28,6 @@ from limes_desktop.api.models import (
     SourceInfo,
 )
 
-_TIMEOUT = httpx.Timeout(30.0)
-
 
 class ApiClient:
     """Typed client for the LIMES API surface (§6). One `httpx.Client` per

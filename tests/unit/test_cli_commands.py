@@ -141,7 +141,7 @@ def test_reextract_source_copies_the_prompt_version_into_settings(
     # requested version, not the configured one.
     assert seen["prompt_version"] == "2.0.0"
     assert seen["needs_inference"] is True
-    assert seen["budget"] == Decimal("1.5")
+    assert seen["budget"] is None
 
 
 def test_reextract_one_runs_with_the_explicit_source_and_envelope(

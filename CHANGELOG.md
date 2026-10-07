@@ -1,5 +1,14 @@
 # CHANGELOG — LIMES
 
+## 2026-10-07 — Testing-phase inference redesign (D-75)
+
+- Remove spend-dependent inference gates and mandatory backfill/reextract budgets;
+  preserve passive accounting and run-cost totals. Remaining budget is now null.
+- Add configurable/logged completion parameters and catalogue-validated atomic
+  model pins in a separate tuning file; treat empty environment values as unset.
+- Relax routine iteration governance, add CI, fix desktop dead state/constants,
+  and guard top-level API mirror fields. See REDESIGN_STATUS.md for pending work.
+
 All notable changes to this project are recorded here as work happens. Format:
 one entry per work package, latest first. Independent version lines (ontology,
 gold set, prompts) are recorded in their own changelogs.
