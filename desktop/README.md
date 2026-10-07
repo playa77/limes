@@ -1,49 +1,15 @@
-> Current API authentication uses a bearer token kept only for the session; profiles
-> contain no credential. Use HTTPS remotely or a loopback tunnel to port 8000.
-> See ../README.md and ../docs/TESTING_PHASE.md for the current runtime contract.
-> The backup subprocess described below is legacy and awaits the operational redesign.
+# LIMES desktop
 
-# limes-desktop
+The PySide6 desktop is a typed, authenticated HTTP consumer. Profiles contain names
+and URLs, never tokens. Credentials stay in session memory. Use HTTPS remotely or
+a loopback tunnel; Docker membership is unnecessary.
 
-PySide6 (Qt 6) desktop client for the LIMES knowledge graph. It fully replaces
-the Dash UI: search, entity detail with provenance, three query surfaces
-(natural language, query builder, Cypher console), network/map/timeline
-visualization, read-only operational monitoring, and backup orchestration.
+Backup submits an operator-only durable job over the same HTTP connection and
+follows output asynchronously. It requires an operator credential, never Docker,
+a Compose root or host shell access. Neo4j is unavailable during physical backup.
 
-The client is a strict API consumer. Every graph fact comes from the FastAPI
-service over HTTP; the single exception is backup, which shells out to
-`limes backup` inside the worker container. It holds no Neo4j driver, no
-ontology literals, and no extraction code, so it degrades explicitly
-(connection banner, per-view states) when the stack is down.
-
-## Install and run
-
-```bash
-make desktop-install        # uv sync --project desktop
-make desktop-run            # MODE=ui for the real GUI; default prints the version
-```
-
-The entry point is `limes-desktop` (`limes_desktop.__main__:main`, declared in
-`desktop/pyproject.toml`); `limes-desktop --version` prints the version and
-exits.
-
-## Test and lint
-
-```bash
-make desktop-test           # pytest desktop/tests/unit desktop/tests/contract
-make desktop-lint           # ruff check desktop/src desktop/tests
-```
-
-The unit and contract suites are offline (Qt runs on the `offscreen` platform;
-API interactions are `respx`-mocked). The integration suite needs the shared
-test Neo4j container and is invoked separately, like the root suites
-(AGENTS.md, D-63):
-
-```bash
-./venv/bin/python -m pytest desktop/tests/integration -q
-```
-
-## Docs
-
-- Requirements: `docs/LIMES_Desktop_Client_Requirements_v1.0.0.md`
-- Architecture: `docs/LIMES_Desktop_Client_Architecture_v1.0.0.md`
+Install with `UV_PROJECT_ENVIRONMENT=venv uv sync --frozen --all-packages` at the
+repository root, then `venv/bin/limes-desktop`. On headless verification hosts set
+`QT_QPA_PLATFORM=offscreen`. Current design/configuration and release procedures
+are generated in [ARCHITECTURE](../docs/ARCHITECTURE.md) and
+[OPERATIONS](../docs/OPERATIONS.md). Tests never call paid inference.

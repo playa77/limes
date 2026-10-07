@@ -13,7 +13,7 @@ from PySide6.QtWidgets import QDialog, QLabel, QPushButton, QVBoxLayout, QWidget
 from limes_desktop.backup_runner import BackupRunner
 from limes_desktop.config import ConnectionProfile
 
-_CONSEQUENCES = "Neo4j unavailable for the duration; graceful stop up to ~120 s"
+_CONSEQUENCES = "Neo4j unavailable during backup; clean shutdown can take up to 180 seconds"
 
 
 class BackupDialog(QDialog):
@@ -33,7 +33,9 @@ class BackupDialog(QDialog):
         self.run_button.clicked.connect(self._on_run)
 
         layout = QVBoxLayout(self)
-        layout.addWidget(QLabel("This will run the backup in the worker container.", self))
+        layout.addWidget(
+            QLabel("This requests a server backup using your operator credential.", self)
+        )
         layout.addWidget(self.consequence_label)
         layout.addWidget(self.reason_label)
         layout.addWidget(self.run_button)

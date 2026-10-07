@@ -46,14 +46,12 @@ def _parse_size(value: str) -> int:
 
 
 def _neo4j_environment() -> dict[str, str]:
-    data = yaml.safe_load(COMPOSE.read_text(encoding="utf-8"))
-    service = data["services"]["neo4j"]
-    environment = service.get("environment") or []
-    result: dict[str, str] = {}
-    for entry in environment:
-        key, _, value = entry.partition("=")
-        result[key.strip()] = value.strip()
-    return result
+    environment = yaml.safe_load((REPO_ROOT / "docker-compose.yml").read_text())["services"][
+        "neo4j"
+    ]["environment"]
+    if isinstance(environment, dict):
+        return environment
+    return dict(item.split("=", 1) for item in environment)
 
 
 def test_ac32_neo4j_runtime_caps_match_section_13_4():

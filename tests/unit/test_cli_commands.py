@@ -178,79 +178,49 @@ def test_reextract_one_runs_with_the_explicit_source_and_envelope(
     assert "cost EUR 0.0200" in out
 
 
-# --------------------------------------------------------------------------
-# backup.py — the lifecycle, the compose seam, reachability polling
-# --------------------------------------------------------------------------
+# Backup is an authenticated HTTP operation, never host Docker control.
 
 
-def test_backup_stops_dumps_and_restarts(monkeypatch: pytest.MonkeyPatch, capsys):
-    settings = _settings()
+def test_backup_requests_private_lifecycle_owner(monkeypatch, capsys):
+    import httpx
+    from pydantic import SecretStr
+
+    settings = _settings().model_copy(update={"backup_token": SecretStr("backup-test")})
     monkeypatch.setattr(backup_module, "load_settings", lambda: settings)
-    monkeypatch.setattr(backup_module, "configure_logging", lambda settings: None)
-    ctx = SimpleNamespace(driver=SimpleNamespace(close=lambda: None))
-    monkeypatch.setattr(
-        "limes.composition.build_run_context", lambda settings, needs_inference: ctx
-    )
-    compose_calls: list[list[str]] = []
-    monkeypatch.setattr(backup_module, "_compose", lambda args: compose_calls.append(args))
-    monkeypatch.setattr(backup_module, "_wait_reachable", lambda driver, timeout_s: None)
+    seen = []
 
+    def post(url, **kwargs):
+        seen.append((url, kwargs))
+        return httpx.Response(
+            200,
+            json={"dump_name": "limes-20261007T120000-abcd.dump"},
+            request=httpx.Request("POST", url),
+        )
+
+    monkeypatch.setattr(backup_module.httpx, "post", post)
     backup_module.backup()
-    # stop → offline dump → start, in that order (§13.6), then verify.
-    assert [c[0] for c in compose_calls] == ["stop", "run", "start"]
-    out = capsys.readouterr().out
-    assert "backup: complete (limes-" in out
+    assert seen[0][1]["headers"] == {"Authorization": "Bearer backup-test"}
+    assert seen[0][1]["trust_env"] is False
+    assert "backup: complete" in capsys.readouterr().out
 
 
-def test_compose_failure_raises_limes_error(monkeypatch: pytest.MonkeyPatch):
-    import subprocess as subprocess_module
-
-    def fake_run(args, capture_output, text, check):
-        return SimpleNamespace(returncode=1, stderr="container exploded", stdout="")
-
-    monkeypatch.setattr(subprocess_module, "run", fake_run)
-    with pytest.raises(LimesError, match="docker compose stop neo4j failed"):
-        backup_module._compose(["stop", "neo4j"])
+def test_backup_refuses_missing_credential(monkeypatch):
+    monkeypatch.setattr(backup_module, "load_settings", _settings)
+    with pytest.raises(LimesError, match="LIMES_BACKUP_TOKEN"):
+        backup_module.backup()
 
 
-def test_compose_success_logs_the_step(monkeypatch: pytest.MonkeyPatch, capfd):
-    import subprocess as subprocess_module
+def test_backup_does_not_claim_success_on_server_failure(monkeypatch, capsys):
+    import httpx
+    from pydantic import SecretStr
 
-    def fake_run(args, capture_output, text, check):
-        return SimpleNamespace(returncode=0, stderr="", stdout="")
-
-    monkeypatch.setattr(subprocess_module, "run", fake_run)
-    backup_module._compose(["stop", "neo4j"])
-    # The default structlog renderer writes to stdout, command as a kv-pair.
-    captured = capfd.readouterr()
-    assert "docker compose step completed" in captured.out
-    assert "command='stop neo4j'" in captured.out
-
-
-def test_wait_reachable_returns_when_the_database_answers(monkeypatch: pytest.MonkeyPatch):
-    driver = SimpleNamespace(read=lambda cypher, params, timeout_s: [{"ok": 1}])
-    backup_module._wait_reachable(driver, 10)
-
-
-def test_wait_reachable_survives_transient_failures(monkeypatch: pytest.MonkeyPatch):
-    attempts = {"n": 0}
-
-    def read(cypher, params, timeout_s):
-        attempts["n"] += 1
-        if attempts["n"] < 3:
-            raise RuntimeError("not ready yet")
-        return [{"ok": 1}]
-
-    monkeypatch.setattr(backup_module.time, "sleep", lambda seconds: None)
-    backup_module._wait_reachable(SimpleNamespace(read=read), 10)
-    assert attempts["n"] == 3
-
-
-def test_wait_reachable_gives_up_after_the_timeout(monkeypatch: pytest.MonkeyPatch):
-    driver = SimpleNamespace(
-        read=lambda cypher, params, timeout_s: (_ for _ in ()).throw(RuntimeError("down"))
+    settings = _settings().model_copy(update={"backup_token": SecretStr("backup-test")})
+    monkeypatch.setattr(backup_module, "load_settings", lambda: settings)
+    monkeypatch.setattr(
+        backup_module.httpx,
+        "post",
+        lambda url, **kw: httpx.Response(503, request=httpx.Request("POST", url)),
     )
-    # A non-positive timeout means the deadline is already past: the poll
-    # loop never runs and the refusal fires immediately.
-    with pytest.raises(LimesError, match="did not become reachable"):
-        backup_module._wait_reachable(driver, -1)
+    with pytest.raises(LimesError, match="Backup failed"):
+        backup_module.backup()
+    assert "complete" not in capsys.readouterr().out

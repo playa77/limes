@@ -1,3 +1,8 @@
+> Historical design reference. Current runtime, access, operations and deployment
+> are regenerated in [ARCHITECTURE](ARCHITECTURE.md), [OPERATIONS](OPERATIONS.md)
+> and [TESTING_PHASE](TESTING_PHASE.md). Unchanged graph/type/coverage contracts
+> remain applicable; old runtime restrictions and backup shell flows are superseded.
+
 > Initial implementation baseline. Changed runtime, access, configuration,
 > inference and governance behavior is superseded by [TESTING_PHASE.md](TESTING_PHASE.md).
 > Its remaining-work section identifies runtime requirements still pending.

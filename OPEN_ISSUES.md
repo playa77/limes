@@ -329,3 +329,56 @@ missing 18-finding source is not reconstructed or declared complete. OI-03's
 original deployed smoke behavior, OI-09 deployment stamp, map-network and remaining
 semantic desktop items stay open. The old closing sequence is historical; current
 remaining work is governed by the testing-phase contract rather than initial gates.
+
+## 2026-10-07 — Repository runtime redesign verification
+
+Implemented the remaining repo-side redesign: three unprivileged services,
+operator-only durable HTTP jobs, remote CLI/desktop backup, private Neo4j
+lifecycle supervision, mutable model-pin refresh, immutable-image deployment
+records, and generated current architecture/operations/testing documents. No
+Docker socket or Docker CLI is available to application services. Private backup
+HTTP explicitly bypasses egress proxies; job failure diagnostics expose only
+exception type or status, never credentials or response bodies.
+
+Live `main` was explicitly pulled before implementation; the baseline checker
+also passed after implementation at `e440b74a9e49`. Nothing was committed,
+published or deployed. Existing operator configuration and production data were
+not changed. Tests use disposable databases/volumes and mocked paid transports.
+
+| Re-runnable command | Result |
+|---|---|
+| `venv/bin/ruff check src tests desktop/src desktop/tests` | Passed; new deployment/context/config/docs/supervisor tools also checked |
+| `venv/bin/mypy` | Passed, 147 source files |
+| `venv/bin/python tools/check_docs.py docs/` | Passed C1–C8, including generated-doc and privilege drift guards |
+| `venv/bin/python -m pytest tests/unit -q` | 779 passed; subsequent private-HTTP/docs guard verification recorded separately |
+| `QT_QPA_PLATFORM=offscreen QTWEBENGINE_CHROMIUM_FLAGS='--no-sandbox --disable-gpu' venv/bin/python -m pytest desktop/tests/unit desktop/tests/contract -q` | 132 passed |
+| `venv/bin/python -m pytest tests/integration -q` | 163 existing integration cases passed; new runtime test verification recorded below |
+| `venv/bin/python -m pytest tests/acceptance -q` | 85 passed |
+| `QT_QPA_PLATFORM=offscreen QTWEBENGINE_CHROMIUM_FLAGS='--no-sandbox --disable-gpu' venv/bin/python -m pytest desktop/tests/integration -q` | 2 passed |
+| `venv/bin/python -m pytest tests/integration/test_cli_backup.py -q` | 1 passed, real clean physical dump and recovered database |
+| `venv/bin/python -m pytest tests/unit/test_cli_commands.py tests/unit/test_runtime_docs.py -q` | 15 passed after final proxy/diagnostic changes |
+
+The initial new runtime test exposed unreadable packaged ontology artifacts and
+private traffic passing through an inherited egress proxy. Those failures were
+fixed in the image and private transport; neither guard was weakened. Test cleanup
+is scoped to fixture-owned projects. Historical production smoke/stamp claims
+(OI-01/OI-03/OI-09) still require an actual administrator deployment; disposable
+runtime evidence does not rewrite that history.
+
+E4/OI-05 still lacks the original ignored 18-finding progress log. Its absence
+prevents claiming every original finding has been reconciled; tracked OI-10..18
+remain available and existing unresolved semantic/map-network items remain open.
+
+`venv/bin/python -m pytest tests/integration/test_runtime_stack.py -q` → **1
+passed**. This builds all three images from allowlisted source, starts immutable
+image IDs in a disposable project, verifies UID 7474, worker-only spaCy models,
+bearer boundaries, command rejection, idempotent backup submission, available
+job/version observation during downtime, one nonempty dump, and recovered health.
+No production credentials, source ingestion or paid provider requests are used.
+
+Final whole integration command (with headless Qt flags above) → **164 passed**,
+including the new runtime case. A preceding repeated build run hit a database
+write failure under accumulated managed-Docker VFS storage pressure; removing
+only task-created build cache/untagged images restored 23 GB free and the complete
+rerun passed without relaxing guards. JUnit evidence is retained in `work/`.
+`git diff --check`, generated-doc checks, lint and type checking pass.

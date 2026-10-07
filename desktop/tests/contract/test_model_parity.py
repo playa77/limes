@@ -12,6 +12,7 @@ import limes.api.routers.query as api_query
 import limes.api.routers.saved_queries as api_saved
 import limes.api.routers.search as api_search
 import limes.api.routers.sources as api_sources
+import limes.operations.models as api_operations
 
 # Every mirrored model the client consumes, including nested ones
 # (NlqOutcome -> GraphResult -> EntityRef/EdgeRef; EntityDetail -> EntityRef;
@@ -19,6 +20,8 @@ import limes.api.routers.sources as api_sources
 # change anywhere on the API surface trips this test. Router view models are
 # passed as classes; the core models by name for the parity message.
 MIRRORED: list[tuple[type, str]] = [
+    (api_operations.Job, "OperationJob"),
+    (api_operations.JobRequest, "OperationRequest"),
     (api_query.QueryResponse, "QueryOutcome"),
     (api_entity.NeighborResponse, "GraphNeighbors"),
     (api_models.EntityRef, "EntityRef"),

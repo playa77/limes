@@ -105,9 +105,7 @@ class _ConnectionBanner(QFrame):
             "border-radius: 8px; color: white; padding: 2px 10px;"
         )
         self._pill.setText(self._status)
-        self._version_label.setText(
-            f"ontology {self._version}" if self._version else ""
-        )
+        self._version_label.setText(f"ontology {self._version}" if self._version else "")
 
 
 class MainWindow(QMainWindow):
@@ -196,7 +194,12 @@ class MainWindow(QMainWindow):
         from limes_desktop.backup_runner import BackupRunner
         from limes_desktop.views.backup import BackupDialog
 
-        self.backup_runner = BackupRunner(client_factory=client_factory)
+        self.backup_runner = BackupRunner(client_factory=client_factory, parent=self)
+        from PySide6.QtWidgets import QApplication
+
+        application = QApplication.instance()
+        if application is not None:
+            application.aboutToQuit.connect(self.backup_runner.close)
         self.backup_dialog = BackupDialog(self.backup_runner, parent=self)
         self.stack.addWidget(self.backup_dialog)
         self.setCentralWidget(self.stack)
@@ -259,9 +262,7 @@ class MainWindow(QMainWindow):
             detail = self.banner.client_factory().entity(entity_id)
         except (ApiError, ApiUnreachable):
             return  # degraded: keep the current view, never crash the shell
-        self._state.publish(
-            QueryOutcomeBundle(result=detail, coverage=None, source="selection")
-        )
+        self._state.publish(QueryOutcomeBundle(result=detail, coverage=None, source="selection"))
         self.stack.setCurrentWidget(self.entity_view)
 
     def _run_search(self, query: str) -> None:
@@ -269,6 +270,4 @@ class MainWindow(QMainWindow):
             hits = self.banner.client_factory().search(query)
         except (ApiError, ApiUnreachable):
             return
-        self._state.publish(
-            QueryOutcomeBundle(result=hits, coverage=None, source="search")
-        )
+        self._state.publish(QueryOutcomeBundle(result=hits, coverage=None, source="search"))

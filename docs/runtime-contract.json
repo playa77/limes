@@ -1,8 +1,18 @@
 {
-  "services": ["api", "neo4j", "worker"],
+  "services": [
+    "api",
+    "neo4j",
+    "worker"
+  ],
   "api_publication": "127.0.0.1:8000:8000",
   "database_published": false,
   "api_authentication": "bearer",
   "desktop_credentials": "session-only",
-  "budget_enforcement": false
+  "budget_enforcement": false,
+  "service_user": "7474:7474",
+  "host_docker_socket": false,
+  "operations_authentication": "operator-bearer",
+  "backup_transport": "private-http",
+  "job_replay": "manual",
+  "deployment": "immutable-image-ids"
 }

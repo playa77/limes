@@ -1,7 +1,8 @@
 # LIMES Makefile | v2.1.0 | testing-phase operational commands
 # Stack administration still uses Docker; API consumers do not need Docker access.
 # Model calls record passive spend. No mandatory budget envelopes.
-COMPOSE ?= docker compose --env-file config/secrets.env
+COMPOSE ?= docker compose --env-file config/settings.env --env-file config/secrets.env
+REMOTE ?= venv/bin/limes remote run
 
 .PHONY: help up down bootstrap-db ingest ingest-all backfill reextract \
 	select-models evaluate migrate backup stamp-embeddings
@@ -17,9 +18,9 @@ help:
 	@echo "  make ingest-all                                     Ingest every registered source"
 	@echo "  make backfill SOURCE=<id> DAYS=<n>     Historical load with passive cost accounting"
 	@echo "  make reextract PROMPT_VERSION=<v>      Re-extract archived content"
-	@echo "  make select-models ARGS=\"--provisional\"            Stage 1: rank and pin by criteria (confirmation optional)"
-	@echo "  make select-models ARGS=\"--measured\"               Stage 2: measure the candidates against the gold set"
-	@echo "  make evaluate ARGS=\"--resolution\"                  Measure extraction quality against the gold set; records baseline.json"
+	@echo "  make select-models STAGE=provisional            Stage 1: rank and pin by criteria (confirmation optional)"
+	@echo "  make select-models STAGE=measured               Stage 2: measure the candidates against the gold set"
+	@echo "  make evaluate EVALUATION=resolution                  Measure extraction quality against the gold set; records baseline.json"
 	@echo "  make migrate ONTOLOGY_VERSION=<v>                   Apply the migration to the target ontology version"
 	@echo "  make backup                                         Offline Neo4j dump into the archive volume (Doc 2 §13.6)"
 	@echo "  make stamp-embeddings                              One-shot: fill null label_embeddings before the first backfill (§13.3)"
@@ -28,7 +29,7 @@ help:
 	@echo "Bootstrap sequence: README.md, or Technical Specification §13.3."
 
 up:
-	$(COMPOSE) up -d
+	$(COMPOSE) up -d --build
 
 down:
 	$(COMPOSE) down
@@ -39,49 +40,35 @@ bootstrap-db:
 
 ingest:
 	@test -n "$(SOURCE)" || { echo "error: ingest requires SOURCE=<id>"; exit 2; }
-	$(COMPOSE) exec worker limes ingest --source $(SOURCE)
+	$(REMOTE) ingest --source $(SOURCE)
 
 ingest-all:
-	$(COMPOSE) exec worker limes ingest-all
+	$(REMOTE) ingest-all
 
 backfill:
 	@test -n "$(SOURCE)" || { echo "error: backfill requires SOURCE=<id>"; exit 2; }
 	@test -n "$(DAYS)" || { echo "error: backfill requires DAYS=<n>"; exit 2; }
-	$(COMPOSE) exec worker limes backfill --source $(SOURCE) --days $(DAYS)
+	$(REMOTE) backfill --source $(SOURCE) --days $(DAYS)
 
 reextract:
 	@test -n "$(PROMPT_VERSION)" || { echo "error: reextract requires PROMPT_VERSION=<v>"; exit 2; }
-	$(COMPOSE) exec worker limes reextract --prompt-version $(PROMPT_VERSION)
+	$(REMOTE) reextract --version $(PROMPT_VERSION)
 
 select-models:
-	$(COMPOSE) exec worker limes select-models $(ARGS)
+	$(REMOTE) select-models --stage $(or $(STAGE),provisional)
 
 evaluate:
-	$(COMPOSE) exec worker limes evaluate $(ARGS)
+	$(REMOTE) evaluate --evaluation $(or $(EVALUATION),extraction)
 
 migrate:
 	@test -n "$(ONTOLOGY_VERSION)" || { echo "error: migrate requires ONTOLOGY_VERSION=<v>"; exit 2; }
-	$(COMPOSE) exec worker limes migrate --ontology-version $(ONTOLOGY_VERSION)
+	$(REMOTE) migrate --version $(ONTOLOGY_VERSION)
 
 backup:
-	$(COMPOSE) exec worker limes backup
+	$(REMOTE) backup
 
-# The one-shot embedding backfill (§13.3, between bootstrap steps 6 and 7):
-# stamp_missing_embeddings has no CLI command (D-56), so the target runs it
-# through the composition root with the inference context, exactly as a
-# command would. The stamp is idempotent and reports the count.
 stamp-embeddings:
-	$(COMPOSE) exec worker python -c '\
-from limes.config import load_settings; \
-from limes.logging_setup import configure_logging; \
-from limes.composition import build_run_context, embedder_for; \
-from limes.graph.loader import stamp_missing_embeddings; \
-settings = load_settings(); \
-configure_logging(settings); \
-ctx = build_run_context(settings, needs_inference=True); \
-stamped = stamp_missing_embeddings(ctx.driver, embedder_for(settings, ctx.client)); \
-print(f"stamp-embeddings: {stamped} entities stamped"); \
-ctx.driver.close()'
+	$(REMOTE) stamp-embeddings
 
 # Desktop client (wp-01): host-side lint/test, no Docker involved.
 .PHONY: desktop-lint desktop-test desktop-install desktop-run

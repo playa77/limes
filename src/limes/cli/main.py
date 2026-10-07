@@ -18,7 +18,7 @@ key. One advisory lock per source is the §9 concurrency answer: a single
 writer holds it for the duration of a run.
 
 All errors surface as `LimesError` → exit 1 with the message on stderr;
-usage errors (missing `--budget`, unknown options) exit 2 via typer. The
+usage errors (missing required parameters, unknown options) exit 2 via typer. The
 app runs as `python -m limes.cli.main` today; the `limes` console script is
 registered with the package install by WP-38 (out of this WP's file scope).
 """
@@ -203,7 +203,7 @@ app = typer.Typer(
     add_completion=False,
     help="LIMES — ontology-driven knowledge graph for German and European "
     "policy analysis. Ingestion is manual (Doc 1 §6.6); backfill and "
-    "reextract require an explicit budget argument.",
+    "reextract record passive usage; remote operations need an operator token.",
 )
 
 # The command modules import `parse_iso_datetime`, `adapter_kind`, and
@@ -226,6 +226,30 @@ app.command("select-models")(_run(select_models))
 app.command("evaluate")(_run(evaluate))
 app.command("migrate")(_run(migrate))
 app.command("backup")(_run(backup))
+
+
+from limes.cli.remote import app as remote_app  # noqa: E402
+
+app.add_typer(remote_app, name="remote")
+
+
+@app.command("stamp-embeddings")
+@_run
+def stamp_embeddings() -> None:
+    from limes.composition import build_run_context, embedder_for
+    from limes.config import load_settings
+    from limes.graph.loader import stamp_missing_embeddings
+
+    settings = load_settings()
+    ctx = build_run_context(settings, needs_inference=True)
+    try:
+        embedder = embedder_for(settings, ctx.client)
+        if embedder is None:
+            raise LimesError("embedding model is not configured")
+        count = stamp_missing_embeddings(ctx.driver, embedder)
+        typer.echo(f"stamp-embeddings: {count} entities stamped")
+    finally:
+        ctx.driver.close()
 
 
 def main() -> None:

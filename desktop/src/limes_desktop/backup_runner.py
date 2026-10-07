@@ -1,108 +1,109 @@
-# desktop/src/limes_desktop/backup_runner.py | v0.1.0 | FR-DC-060..062: worker-command backup runner
-"""Backup orchestration for the desktop client (Task 11).
-
-No backup logic lives here: the single implementation is the worker command
-`docker compose exec worker limes backup` (FR-DC-060). This runner only
-checks prerequisites, streams the process output line-wise, parses the dump
-filename from that output, and verifies API recovery after exit 0 (FR-DC-062).
-"""
+"""Asynchronous authenticated API backup; the desktop needs no host access."""
 
 from __future__ import annotations
 
 import re
-import shutil
+import time
 from collections.abc import Callable
-from pathlib import Path
+from typing import Any
+from uuid import uuid4
 
-from PySide6.QtCore import QObject, QProcess, Signal
+from PySide6.QtCore import QObject, QThread, Signal
 
 from limes_desktop.config import ConnectionProfile
 
-# FR-DC-060: exact command, verbatim. The worker is the single implementation.
-_COMMAND = ["docker", "compose", "exec", "worker", "limes", "backup"]
 
-_DUMP_RE = re.compile(r"\S*limes-\d+T\d+\.dump")
+class _BackupTask(QThread):
+    output_line = Signal(str)
+    completed = Signal(int, object, object)
+
+    def __init__(self, factory: Callable[[], Any], parent: QObject) -> None:
+        super().__init__(parent)
+        self.factory = factory
+
+    def run(self) -> None:
+        dump: str | None = None
+        try:
+            client = self.factory()
+            job = client.submit_backup(str(uuid4()))
+            self.output_line.emit(f"Backup job: {job.job_id}")
+            previous = ""
+            while True:
+                job = client.operation_status(job.job_id)
+                output = job.output
+                if output != previous:
+                    added = output[len(previous) :] if output.startswith(previous) else output
+                    for line in added.splitlines():
+                        self.output_line.emit(line)
+                    previous = output
+                    match = re.search(r"limes-[0-9T]+-[a-f0-9]+\.dump", output)
+                    if match:
+                        dump = match.group(0)
+                if job.status == "failed":
+                    self.completed.emit(1, None, dump)
+                    return
+                if job.status == "succeeded":
+                    try:
+                        client.health()
+                        healthy = True
+                    except Exception:
+                        healthy = False
+                    self.completed.emit(0, healthy, dump)
+                    return
+                if self.isInterruptionRequested():
+                    self.output_line.emit(
+                        "Disconnected; the server job continues. Use its ID to check status."
+                    )
+                    self.completed.emit(1, None, dump)
+                    return
+                time.sleep(1)
+        except Exception:
+            self.output_line.emit(
+                "Backup request failed; check the operator credential and job status."
+            )
+            self.completed.emit(1, None, dump)
 
 
 class BackupRunner(QObject):
-    """Runs the worker backup command and verifies recovery afterwards.
-
-    ``finished`` carries ``(exit_code: int, health_ok: bool | None)``.
-    """
-
     output_line = Signal(str)
-    finished = Signal(int, object)  # exit_code, health_ok (bool | None)
+    finished = Signal(int, object)
 
-    def __init__(
-        self,
-        client_factory: Callable[[], object],
-        process_factory: Callable[[], QProcess] | None = None,
-        parent: QObject | None = None,
-    ) -> None:
+    def __init__(self, client_factory: Callable[[], Any], parent: QObject | None = None) -> None:
         super().__init__(parent)
         self._client_factory = client_factory
-        self._process_factory: Callable[[], QProcess] = (
-            process_factory if process_factory is not None else self._default_process
-        )
+        self._task: _BackupTask | None = None
         self.health_ok: bool | None = None
         self.dump_path: str | None = None
-        self._running = False
-
-    @staticmethod
-    def _default_process() -> QProcess:
-        proc = QProcess()
-        proc.setProcessChannelMode(QProcess.ProcessChannelMode.MergedChannels)
-        return proc
 
     def prerequisites(self, profile: ConnectionProfile) -> list[str]:
-        """Human-readable reasons backup cannot run; empty list = OK (FR-DC-063)."""
-        reasons: list[str] = []
-        if shutil.which("docker") is None:
-            reasons.append("docker CLI not found in PATH")
-        root = profile.compose_root
-        if root is None:
-            reasons.append("no compose root configured for this profile (backup disabled)")
-        elif not Path(root).is_dir():
-            reasons.append(f"compose root is not a directory: {root}")
-        return reasons
+        try:
+            self._client_factory().operation_capabilities()
+        except Exception:
+            return ["Backup requires a reachable API and an operator credential."]
+        return []
 
     def run(self, profile: ConnectionProfile) -> None:
-        if self._running:
+        if self._task is not None:
             return
-        proc = self._process_factory()
         self.health_ok = None
         self.dump_path = None
-        self._running = True
-        proc.setWorkingDirectory(profile.compose_root or "")
-        proc.readyReadStandardOutput.connect(self._make_reader(proc))
-        proc.finished.connect(self._make_finisher(proc))
-        proc.start(_COMMAND[0], _COMMAND[1:])
+        task = _BackupTask(self._client_factory, self)
+        self._task = task
+        task.output_line.connect(self.output_line)
+        task.completed.connect(self._complete)
+        task.finished.connect(self._cleanup)
+        task.start()
 
-    def _make_reader(self, proc: QProcess) -> Callable[[], None]:
-        def read() -> None:
-            data = bytes(proc.readAll().data()).decode(errors="replace")
-            for line in data.splitlines():
-                if line:
-                    match = _DUMP_RE.search(line)
-                    if match:
-                        self.dump_path = match.group(0)
-                    self.output_line.emit(line)
+    def _complete(self, code: int, health: bool | None, dump: str | None) -> None:
+        self.health_ok, self.dump_path = health, dump
+        self.finished.emit(code, health)
 
-        return read
+    def _cleanup(self) -> None:
+        if self._task is not None:
+            self._task.deleteLater()
+            self._task = None
 
-    def _make_finisher(self, proc: QProcess) -> Callable[[int], None]:
-        def finish(code: int) -> None:
-            self._running = False
-            if code == 0:
-                # FR-DC-062: verify recovery via API health; a failure to reach
-                # the API maps to health_ok=False (no retry — §4).
-                try:
-                    self._client_factory().health()  # type: ignore[attr-defined]
-                    self.health_ok = True
-                except Exception:
-                    self.health_ok = False
-            else:
-                self.health_ok = None
-            self.finished.emit(code, self.health_ok)
-
-        return finish
+    def close(self) -> None:
+        if self._task is not None:
+            self._task.requestInterruption()
+            self._task.wait()

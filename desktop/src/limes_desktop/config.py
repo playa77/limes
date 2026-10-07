@@ -11,7 +11,7 @@ class ConnectionProfile(BaseModel):
 
     name: str
     base_url: str = "http://127.0.0.1:8000"
-    # None means backup is disabled for this profile (FR-DC-063).
+    # Legacy profile field, ignored by API-backed backup.
     compose_root: str | None = None
 
 

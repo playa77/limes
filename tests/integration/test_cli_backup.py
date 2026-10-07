@@ -20,12 +20,14 @@ import socket
 import subprocess
 import sys
 import time
+import uuid
 from pathlib import Path
 
 import pytest
 from neo4j import GraphDatabase
 
-from tests.integration.conftest import IMAGE, PASSWORD
+from tests.integration.conftest import PASSWORD
+from tools.build_context import prepare_context
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 ONTOLOGY_PATH = REPO_ROOT / "ontology" / "ontology.yaml"
@@ -69,18 +71,36 @@ def backup_env(tmp_path: Path) -> dict[str, str]:
     archive = tmp_path / "archive"
     archive.mkdir()
     port = _free_port()
+    control_port = _free_port()
+    context = prepare_context(REPO_ROOT, tmp_path / "image-context")
+    subprocess.run(
+        ["docker", "build", "-f", "docker/neo4j.Dockerfile", "-t", "limes-test-neo4j:local", "."],
+        cwd=context,
+        check=True,
+        capture_output=True,
+        timeout=300,
+    )
     compose = tmp_path / "docker-compose.yml"
     compose.write_text(
-        f"""services:
+        f"""name: limes-backup-test-{uuid.uuid4().hex[:12]}
+services:
   neo4j:
-    image: {IMAGE}
+    image: limes-test-neo4j:local
+    user: "7474:7474"
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    stop_grace_period: 180s
     environment:
       - NEO4J_AUTH=neo4j/{PASSWORD}
+      - LIMES_NEO4J_USER=limes
+      - LIMES_NEO4J_PASSWORD={PASSWORD}
+      - LIMES_BACKUP_TOKEN=test-backup-token
       - NEO4J_server_memory_heap_initial__size=512m
       - NEO4J_server_memory_heap_max__size=512m
       - NEO4J_server_memory_pagecache_size=512m
     ports:
-      - "{port}:7687"
+      - "127.0.0.1:{port}:7687"
+      - "127.0.0.1:{control_port}:9001"
     volumes:
       - limes-backup-test-data:/data
       - limes-backup-test-archive:/data/archive
@@ -94,7 +114,9 @@ volumes:
     env = {
         **os.environ,
         "LIMES_NEO4J_URI": uri,
-        "LIMES_NEO4J_USER": "neo4j",
+        "LIMES_NEO4J_USER": "limes",
+        "LIMES_BACKUP_TOKEN": "test-backup-token",
+        "LIMES_BACKUP_BASE_URL": f"http://127.0.0.1:{control_port}",
         "LIMES_NEO4J_PASSWORD": PASSWORD,
         "LIMES_NEO4J_DATABASE": "neo4j",
         "LIMES_ONTOLOGY_PATH": str(ONTOLOGY_PATH),
@@ -121,6 +143,27 @@ def test_backup_stops_dumps_and_restarts(backup_env: dict[str, str]):
     )
     try:
         _wait_ready(uri)
+        import httpx
+
+        deadline = time.monotonic() + 360
+        with httpx.Client(timeout=2) as client:
+            while True:
+                try:
+                    refused = client.post(env["LIMES_BACKUP_BASE_URL"] + "/backup")
+                    assert refused.status_code == 401
+                    break
+                except httpx.HTTPError:
+                    if time.monotonic() >= deadline:
+                        raise
+                    time.sleep(2)
+        inspected = subprocess.run(
+            ["docker", "compose", "exec", "-T", "neo4j", "id", "-u"],
+            cwd=compose_root,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        assert inspected.stdout.strip() == "7474"
 
         # The command runs as one subprocess CLI invocation from the compose
         # root — the backup lifecycle (stop → dump → start → verify) is the
@@ -140,12 +183,23 @@ def test_backup_stops_dumps_and_restarts(backup_env: dict[str, str]):
         # namespace need not match the daemon's. Keep the count/size guards.
         inspection = subprocess.run(
             [
-                "docker", "compose", "run", "--rm", "--no-deps",
-                "--entrypoint", "sh", "neo4j", "-c",
-                "find /data/archive -maxdepth 1 -type f -name 'limes-*.dump' "
+                "docker",
+                "compose",
+                "run",
+                "--rm",
+                "--no-deps",
+                "--entrypoint",
+                "sh",
+                "neo4j",
+                "-c",
+                "find /data/archive/dumps -maxdepth 1 -type f -name 'limes-*.dump' "
                 "-printf '%f %s\\n'",
             ],
-            check=True, capture_output=True, text=True, cwd=compose_root, timeout=60,
+            check=True,
+            capture_output=True,
+            text=True,
+            cwd=compose_root,
+            timeout=60,
         )
         dumps = inspection.stdout.strip().splitlines()
         assert len(dumps) == 1, inspection.stdout
