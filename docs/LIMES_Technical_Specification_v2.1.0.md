@@ -1,3 +1,7 @@
+> Initial implementation baseline. Changed runtime, access, configuration,
+> inference and governance behavior is superseded by [TESTING_PHASE.md](TESTING_PHASE.md).
+> Its remaining-work section identifies runtime requirements still pending.
+
 <!-- LIMES — Technical Specification | v2.1.0 | 2026-08-01 | Status: Draft -->
 
 # LIMES — Technical Specification

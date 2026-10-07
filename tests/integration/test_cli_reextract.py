@@ -17,24 +17,15 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
-def test_reextract_refuses_without_budget():
-    # G2 — the refusal is a typer usage error: non-zero exit, the missing
-    # option named, no context built, no network.
+def test_reextract_help_documents_optional_ignored_budget():
     result = subprocess.run(
-        [
-            sys.executable,
-            "-m",
-            "limes.cli.main",
-            "reextract",
-            "--prompt-version",
-            "1.0.1",
-        ],
+        [sys.executable, "-m", "limes.cli.main", "reextract", "--help"],
         capture_output=True,
         text=True,
         cwd=REPO_ROOT,
     )
-    assert result.returncode != 0
-    assert "--budget" in result.stderr
+    assert result.returncode == 0
+    assert "ignored" in result.stdout
 
 
 def test_reextract_defaults_to_unstructured_sources():

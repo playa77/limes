@@ -5,6 +5,35 @@ reversibility: **R1** reversible in under an hour, **R2** bounded recoverable
 cost, **R3** one-way door. Written when each decision is made, latest first.
 Nothing here is a status report; unlogged decisions are unmade decisions.
 
+## 2026-10-07 — D-75 (R2) — Testing-phase inference, authenticated access and guard updates
+
+The operator requested continued implementation of the attached issues/redesign
+brief. It supplies requirements; the operator request authorizes these repo changes.
+R1 removes spending enforcement, retaining passive usage and run accounting.
+A1/A2 use bearer authentication on every API surface with a fail-closed startup,
+loopback API publication, session-only desktop credentials, and HTTPS/tunnel access.
+The shipped Dash service is dropped (C4); its sources remain compatibility code.
+A5 separates secrets, settings and atomic model-only pin writes, treating empty
+environment variables as unset. B1 records configured chat parameters; B2/B3 validate
+catalogue-derived pins, automate dates, and require complete scored measured runs.
+Provisional confirmation is opt-in; paid production runs are not implementation
+verification. R3/D2 guard inventory and replacements are in docs/TESTING_PHASE.md.
+These reversible requirement changes supersede the initial-process gates; no
+one-way-door ceremony is needed for ordinary model/prompt iteration. Invariants
+for temporal assertions, ontology, read-only queries, coverage, archives and no
+paid test calls survive. R4 and remote operational/backup redesign remain open;
+this change does not claim rootless operation or a deployed revision.
+
+Guards: test_spending_limit_cannot_prevent_a_request,
+test_zero_legacy_budget_does_not_stop_ingestion,
+test_missing_or_invalid_credentials_reject_every_surface,
+test_api_refuses_to_start_without_a_credential,
+test_empty_environment_does_not_shadow_pin_file,
+test_concurrent_writers_preserve_both_roles,
+test_inference_parameters_sent_and_logged_without_prompt,
+and the rewritten AC-34/smoke publication guards. CI records suite results as JUnit
+artifacts; local verification evidence is appended to OPEN_ISSUES.md.
+
 ## 2026-10-06 — D-74 (R1) — Cloud-safe backup and desktop resource lifetimes
 
 Operator requested fixes for the three failures found during cloud onboarding.

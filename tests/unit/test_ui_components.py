@@ -79,7 +79,7 @@ def test_render_system_status_all_sections():
     )
     text = str(panel)
     assert "API: ok" in text
-    assert "Budget:" in text
+    assert "Spend:" in text
     assert "gleif" in text
     assert "Latest runs" in text
 

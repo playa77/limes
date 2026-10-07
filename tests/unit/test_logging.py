@@ -75,3 +75,12 @@ def test_configure_logging_emits_json_with_event_and_context():
 def test_configure_logging_redacts_secret_in_output():
     line = _emit("started", LIMES_OPENROUTER_API_KEY="sk-secret")
     assert line["LIMES_OPENROUTER_API_KEY"] == REDACTED
+
+
+def test_bearer_credentials_are_redacted_recursively():
+    redactor = SecretRedactor()
+    out = redactor(
+        None, "info", {"LIMES_API_TOKEN": "private", "headers": {"Authorization": "Bearer private"}}
+    )
+    assert out["LIMES_API_TOKEN"] == REDACTED
+    assert out["headers"]["Authorization"] == REDACTED

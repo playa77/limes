@@ -27,7 +27,6 @@ from httpx import Response
 
 from limes.composition import build_run_context
 from limes.config import Settings
-from limes.errors import BudgetExhausted
 from limes.pipeline.run import RunSpec, execute_run
 from limes.sources import feeds as feeds_module
 from limes.types import RawRecord
@@ -382,7 +381,7 @@ def test_documents_gated_out_are_counted(ctx, fixture_fetch):
     assert rows[0]["c"] == 0
 
 
-def test_budget_exhausted_closes_run_cleanly(
+def test_zero_legacy_budget_does_not_stop_ingestion(
     neo4j_instance: Neo4jInstance,
     tmp_path: Path,
     ctx,
@@ -399,16 +398,17 @@ def test_budget_exhausted_closes_run_cleanly(
     try:
         with respx.mock:
             _mock_transport()
-            with pytest.raises(BudgetExhausted):
-                execute_run(
-                    RunSpec(
-                        source_id="feeds",
-                        mode="backfill",
-                        since=datetime(2026, 7, 1, tzinfo=UTC),
-                        budget_eur=Decimal("0.00"),
-                    ),
-                    hungry,
-                )
+            record = execute_run(
+                RunSpec(
+                    source_id="feeds",
+                    mode="backfill",
+                    since=datetime(2026, 7, 1, tzinfo=UTC),
+                    budget_eur=Decimal("0"),
+                ),
+                hungry,
+            )
+            assert record.cost_eur > 0
+            assert record.assertions_written == 1
         rows = hungry.driver.read(
             "MATCH (r:IngestionRun) RETURN r.finished_at IS NOT NULL AS closed "
             "ORDER BY r.started_at DESC LIMIT 1",
@@ -421,7 +421,7 @@ def test_budget_exhausted_closes_run_cleanly(
             {},
             30,
         )
-        assert rows[0]["at"] is None
+        assert rows[0]["at"] is not None
     finally:
         hungry.driver.close()
 

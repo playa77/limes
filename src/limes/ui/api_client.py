@@ -1,17 +1,8 @@
 # src/limes/ui/api_client.py | v1.0.0 | introduced by WP-36
-"""The UI's only HTTP surface (Doc 2 §8.13, Doc 1 §4.13).
+"""Legacy Dash compatibility HTTP client; Dash is no longer shipped.
 
-One function per API endpoint (Doc 2 §6); no other UI module performs HTTP.
-The UI holds no credentials (Doc 1 §7.4): the base URL is the single
-`LIMES_API_BASE_URL` environment variable read here, and nothing else — the
-UI never loads `Settings` and never parses `.env`, which carries the
-OpenRouter key and the database password. The base URL defaults to a bare
-local run's `127.0.0.1:8000`; the compose `ui` service supplies its own
-value through the environment (D-09).
-
-Every function raises `ApiError` with the §6 envelope's `code` and
-`message` on a non-2xx response, so callbacks can display the API's own
-diagnosis instead of a guessed one.
+The API token authenticates HTTP only; this consumer has no database access or
+inference-provider credentials. Desktop is the primary supported client.
 """
 
 from __future__ import annotations
@@ -43,7 +34,9 @@ def api_base_url() -> str:
 def _request(
     method: str, path: str, *, json: Any = None, params: dict[str, Any] | None = None
 ) -> Any:
-    with httpx.Client(base_url=api_base_url(), timeout=_TIMEOUT_S) as client:
+    token = os.environ.get("LIMES_API_TOKEN", "")
+    headers = {"Authorization": f"Bearer {token}"} if token else {}
+    with httpx.Client(base_url=api_base_url(), timeout=_TIMEOUT_S, headers=headers) as client:
         response = client.request(method, path, json=json, params=params)
     if response.status_code >= 400:
         error = (

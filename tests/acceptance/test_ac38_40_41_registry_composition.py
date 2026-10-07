@@ -110,7 +110,7 @@ def test_ac41_structured_only_build_loads_no_spacy_and_constructs_no_extractor(
     )
     try:
         assert isinstance(ctx, RunContext)
-        assert ctx.governor is None
+        assert ctx.recorder is None
         assert ctx.client is None
         assert ctx.extractor is None
         assert ctx.gate is None

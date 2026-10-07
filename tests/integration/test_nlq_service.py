@@ -59,7 +59,7 @@ def _ctx(neo4j_instance: Neo4jInstance, tmp_path: Path, client: StubClient) -> N
         ontology=ctx.ontology,
         driver=ctx.driver,
         client=client,
-        governor=ctx.governor,
+        recorder=ctx.recorder,
     )
 
 

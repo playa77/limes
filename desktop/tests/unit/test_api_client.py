@@ -283,9 +283,7 @@ def test_sources_and_ontology_versions() -> None:
         )
     )
     respx.get("http://x.test/ontology/versions").mock(
-        return_value=httpx.Response(
-            200, json=[{"version": "1.0.0", "count": 42}]
-        )
+        return_value=httpx.Response(200, json=[{"version": "1.0.0", "count": 42}])
     )
     client = ApiClient("http://x.test")
     assert client.sources()[0].source_id == "gleif"
@@ -295,9 +293,7 @@ def test_sources_and_ontology_versions() -> None:
 @respx.mock
 def test_redirect_followed_and_final_200_parsed() -> None:
     respx.get("http://x.test/health").mock(
-        return_value=httpx.Response(
-            307, headers={"Location": "http://x.test/health/v2"}
-        )
+        return_value=httpx.Response(307, headers={"Location": "http://x.test/health/v2"})
     )
     respx.get("http://x.test/health/v2").mock(
         return_value=httpx.Response(
@@ -341,12 +337,48 @@ def test_error_body_preserved_verbatim() -> None:
 
 @respx.mock
 def test_error_non_json_body_falls_back_to_raw_text() -> None:
-    respx.get("http://x.test/health").mock(
-        return_value=httpx.Response(500, text="boom")
-    )
+    respx.get("http://x.test/health").mock(return_value=httpx.Response(500, text="boom"))
     try:
         ApiClient("http://x.test").health()
     except ApiError as exc:
         assert exc.status == 500 and exc.detail == "boom"
     else:
         raise AssertionError("expected ApiError")
+
+
+@respx.mock
+def test_session_token_is_carried_in_authorization_header():
+    route = respx.get("https://api.test/health").mock(
+        return_value=httpx.Response(
+            200, json={"status": "ok", "neo4j": True, "ontology_version": "1.0.0"}
+        )
+    )
+    with_token = ApiClient("https://api.test", token="session-secret")
+    try:
+        with_token.health()
+    finally:
+        with_token.close()
+    assert route.calls[0].request.headers["Authorization"] == "Bearer session-secret"
+
+
+def test_credentials_are_not_sent_over_remote_plain_http():
+    with pytest.raises(ValueError, match="require HTTPS"):
+        ApiClient("http://remote.test", token="session-secret")
+
+
+@respx.mock
+def test_redirect_to_another_host_does_not_receive_token():
+    respx.get("https://api.test/health").mock(
+        return_value=httpx.Response(302, headers={"location": "https://another.test/health"})
+    )
+    destination = respx.get("https://another.test/health").mock(
+        return_value=httpx.Response(
+            200, json={"status": "ok", "neo4j": True, "ontology_version": "1.0.0"}
+        )
+    )
+    client = ApiClient("https://api.test", token="session-secret")
+    try:
+        client.health()
+    finally:
+        client.close()
+    assert "Authorization" not in destination.calls[0].request.headers

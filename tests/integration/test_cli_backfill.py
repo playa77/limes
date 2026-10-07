@@ -122,17 +122,15 @@ def _env(neo4j_instance: Neo4jInstance, tmp_path: Path) -> dict[str, str]:
     }
 
 
-def test_backfill_refuses_without_budget():
-    # G2 (subprocess) — the refusal is a typer usage error at parse time:
-    # non-zero exit, the missing option named, no context built, no network.
+def test_backfill_help_documents_optional_ignored_budget():
     result = subprocess.run(
-        [sys.executable, "-m", "limes.cli.main", "backfill", "--source", "feeds", "--days", "90"],
+        [sys.executable, "-m", "limes.cli.main", "backfill", "--help"],
         capture_output=True,
         text=True,
         cwd=REPO_ROOT,
     )
-    assert result.returncode != 0
-    assert "--budget" in result.stderr
+    assert result.returncode == 0
+    assert "ignored" in result.stdout
 
 
 @pytest.fixture
@@ -258,7 +256,7 @@ def test_cli_backfill_feeds_end_to_end(graph, cli_env):
         _mock_transport()
         result = runner.invoke(
             app,
-            ["backfill", "--source", "feeds", "--days", "90", "--budget", "3.00"],
+            ["backfill", "--source", "feeds", "--days", "90"],
         )
     assert result.exit_code == 0, result.output
 

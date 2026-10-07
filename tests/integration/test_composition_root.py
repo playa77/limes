@@ -114,7 +114,7 @@ def test_ac41_structured_build_loads_no_models_and_constructs_no_extractor(
     ctx = build_run_context(_settings(neo4j_instance, tmp_path), needs_inference=False)
     try:
         assert isinstance(ctx, RunContext)
-        assert ctx.governor is None
+        assert ctx.recorder is None
         assert ctx.client is None
         assert ctx.extractor is None
         assert ctx.gate is None
@@ -145,7 +145,7 @@ def test_inference_build_loads_models_and_constructs_inference_slots(
     )
     try:
         assert loaded == ["de/test", "en/test"]
-        assert ctx.governor is not None
+        assert ctx.recorder is not None
         assert ctx.client is not None
         assert ctx.extractor is not None
         assert ctx.extractor.model_id == "test/extractor"
@@ -218,8 +218,8 @@ def test_envelope_governor_created_for_budget(neo4j_instance: Neo4jInstance, tmp
         budget_eur=Decimal("3.00"),
     )
     try:
-        assert ctx.governor is not None
-        assert ctx.governor.remaining() == Decimal("3.00")
+        assert ctx.recorder is not None
+        assert ctx.recorder.spent_eur == Decimal("0")
     finally:
         ctx.driver.close()
 

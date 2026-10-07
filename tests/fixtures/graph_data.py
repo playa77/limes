@@ -55,6 +55,7 @@ def api_settings(
     **overrides: Any,
 ) -> Settings:
     base: dict[str, Any] = {
+        "api_token": "test-api-token",
         "neo4j_uri": neo4j_instance.uri,
         "neo4j_user": neo4j_instance.user,
         "neo4j_password": neo4j_instance.password,
@@ -181,7 +182,7 @@ def make_api_client(neo4j_instance: Neo4jInstance, tmp_path: Path, **overrides: 
     from limes.api.main import create_app
 
     settings = api_settings(neo4j_instance, tmp_path, **overrides)
-    return TestClient(create_app(settings))
+    return TestClient(create_app(settings), headers={"Authorization": "Bearer test-api-token"})
 
 
 def wipe_graph(neo4j_instance: Neo4jInstance) -> None:

@@ -59,7 +59,7 @@ from pydantic import BaseModel
 
 from limes.archive.store import ArchiveStore
 from limes.config import Settings
-from limes.cost.governor import Governor
+from limes.cost.recorder import CostRecorder
 from limes.errors import ExtractionError, SourceFetchError
 from limes.extraction.base import Extractor
 from limes.extraction.openrouter_client import OpenRouterClient
@@ -88,7 +88,7 @@ logger = structlog.get_logger(__name__)
 @dataclass(frozen=True)
 class RunContext:
     """The §8.15 run context: everything one pipeline run needs, constructed
-    by the composition root (WP-26). `governor`, `client`, `extractor`, and
+    by the composition root (WP-26). `recorder`, `client`, `extractor`, and
     `gate` are None on structured-only runs; resolution requires a client."""
 
     settings: Settings
@@ -96,7 +96,7 @@ class RunContext:
     driver: GraphDriver
     registry: SourceRegistry
     archive: ArchiveStore
-    governor: Governor | None = None
+    recorder: CostRecorder | None = None
     client: OpenRouterClient | None = None
     extractor: Extractor | None = None
     gate: GateContext | None = None

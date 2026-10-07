@@ -323,16 +323,6 @@ def _gate(driver: FakeDriver, tmp_path) -> GateContext:
     )
 
 
-def test_backfill_and_reextract_require_an_explicit_budget(tmp_path):
-    adapter = FakeAdapter()
-    driver = FakeDriver()
-    ctx = _ctx(tmp_path, driver, adapter)
-    for mode in ("backfill", "reextract"):
-        with pytest.raises(ValueError, match=f"{mode} requires an explicit budget"):
-            execute_run(RunSpec(source_id="test", mode=mode), ctx)
-    assert driver.writes == []  # refused before anything touches the graph
-
-
 def test_document_kind_without_payload_is_counted_and_skipped(tmp_path):
     adapter = FakeAdapter(records=[_raw_record()])
     adapter.normalize = lambda record: NormalizedRecord(

@@ -1,3 +1,14 @@
+## 2026-10-07 — Testing-phase redesign foundations
+
+Removed the cost governor while preserving usage/run accounting. Added fail-closed
+API bearer authentication, session credentials in the desktop, and loopback API
+publication; dropped the shipped Dash service. Separated secrets/tuning/model pins,
+added locked atomic pin updates and empty-env fallback, typed chat inference knobs,
+catalogue validation and complete measured-run evidence. Simplified model iteration
+and inventoried guard changes; added CI and fixed tracked desktop hygiene/parity
+items. Worker privileges, remote operational commands and backup replacement remain
+open. Verification evidence: OPEN_ISSUES.md.
+
 # CHANGELOG — LIMES
 
 All notable changes to this project are recorded here as work happens. Format:

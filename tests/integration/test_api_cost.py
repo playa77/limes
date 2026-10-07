@@ -54,7 +54,7 @@ def test_cost_ledger_returns_period_spend_and_entries(
         # The monthly governor reports the configured ceiling minus the
         # committed spend for the current month (this entry is in a
         # different period, so nothing has been drawn).
-        assert body["remaining_eur"] > 0
+        assert "remaining_eur" not in body
 
 
 def test_cost_ledger_invalid_period_is_rejected(neo4j_instance: Neo4jInstance, tmp_path: Path):
