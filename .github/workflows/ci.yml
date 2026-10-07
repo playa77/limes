@@ -37,12 +37,14 @@ jobs:
     env:
       UV_PROJECT_ENVIRONMENT: venv
       QT_QPA_PLATFORM: offscreen
+      QTWEBENGINE_CHROMIUM_FLAGS: --no-sandbox --disable-gpu
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
         with:
           version: '0.12.1'
           enable-cache: true
+      - run: sudo apt-get update && sudo apt-get install -y libegl1 libopengl0 libxcb-cursor0 libxkbcommon-x11-0 libnss3 libasound2t64 libxcomposite1 libxdamage1 libxrandr2 libxtst6 libgbm1
       - run: uv sync --frozen --all-packages --python 3.12
       # Separate sessions avoid pytest's nested acceptance plugin collection issue.
       - run: venv/bin/python -m pytest tests/integration -q --junitxml=test-results/integration.xml

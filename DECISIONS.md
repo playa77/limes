@@ -23,7 +23,10 @@ ledger writes, pin-file/environment precedence and failed/partial pin updates
 remain in the PR diff. A tracked baseline checker fetches main and rejects stale
 checkouts; a repository-local pre-push hook enforces it for publication and fails
 closed on fetch failure. Fresh clones must install the hook; this does not change
-platform initialization. No production changes or paid model calls are involved.
+platform initialization. Hosted graph CI exposed a missing libEGL.so.1 dependency:
+the graph job now installs the same Qt runtime libraries and uses the same
+headless Chromium flags as the offline job. No production changes or paid model
+calls are involved.
 
 ## 2026-10-07 — D-75 (R2) — Testing-phase inference, authenticated access and guard updates
 
