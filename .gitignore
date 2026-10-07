@@ -145,3 +145,10 @@ desktop.ini
 # reference_questions/questions.yaml
 # docs/*.md                       the specification set
 # .env.example                    the authoritative key list
+
+# Split runtime configuration; examples are tracked.
+/config/*.env
+/config/*.env.lock
+work/
+
+/config/*.evaluation.json

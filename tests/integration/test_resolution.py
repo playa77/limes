@@ -434,7 +434,7 @@ def test_ac17_routes_across_all_four_bands(driver: GraphDriver, ontology, tmp_pa
 
     assert assertions[0].subject.entity_id == "ac17-vw"
     assert assertions[0].object.entity_id == "ac17-vw"
-    assert len(governor.checks) == 2  # one embed call, one adjudication call
+    assert governor.checks == []  # one embed call, one adjudication call
     assert assertions[1].subject.entity_id == resolve.hash_entity_id("corporation", "vag")
     assert assertions[1].object.entity_id == resolve.hash_entity_id("corporation", "die firma")
 

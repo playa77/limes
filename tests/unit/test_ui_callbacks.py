@@ -419,14 +419,14 @@ def test_triggered_hop_control_decodes_the_context():
 
 def test_render_system_status_and_saved_list():
     panel, badge, budget = query_callbacks._render_system_status(
-        {"sources": [], "runs": []}, {"remaining_eur": "7.50"}, {"status": "ok"}
+        {"sources": [], "runs": []}, {"spend_eur": "7.50"}, {"status": "ok"}
     )
     assert badge == "API: ok"
-    assert budget == "€7.50 remaining"
+    assert budget == "€7.50 spent"
     assert panel is not None
     panel, badge, budget = query_callbacks._render_system_status(None, None, None)
     assert badge == "API: unreachable"
-    assert budget == "€? remaining"
+    assert budget == "€? spent"
     assert "No saved queries yet." in str(query_callbacks._render_saved_list(None))
 
 

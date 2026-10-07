@@ -1,10 +1,5 @@
 # desktop/src/limes_desktop/views/ops/ledger.py | v0.1.0 | FR-DC-051: cost ledger
-"""Cost ledger view (FR-DC-051): a STRICTLY READ-ONLY table of `CostEntry`
-rows plus client-side groupings — spend per model, spend per run — and the
-running total against the budget from GET /cost/ledger. There is no write
-surface in the API, so none exists here either. Connection failures degrade
-to an inline error pane (AC-DC-6).
-"""
+"""Read-only cost entries, period spend, and per-model/per-run groupings."""
 
 from __future__ import annotations
 
@@ -46,7 +41,7 @@ class LedgerView(QWidget):
         self.entries_table.verticalHeader().setVisible(False)
 
         self.total_label = QLabel("total: —", self)
-        self.budget_label = QLabel("budget remaining: —", self)
+        self.period_label = QLabel("period: —", self)
         self.error_pane = QLabel("", self)
         self.error_pane.setWordWrap(True)
         self.error_pane.setStyleSheet("color: #c62828;")
@@ -56,7 +51,7 @@ class LedgerView(QWidget):
         layout.addWidget(self.error_pane)
         layout.addWidget(self.entries_table)
         layout.addWidget(self.total_label)
-        layout.addWidget(self.budget_label)
+        layout.addWidget(self.period_label)
 
     # -- seams for tests ------------------------------------------------------
 
@@ -114,7 +109,7 @@ class LedgerView(QWidget):
             for col, text in enumerate(cells):
                 self.entries_table.setItem(row, col, QTableWidgetItem(text))
         self.total_label.setText(f"total: {self.running_total():.2f} EUR")
-        self.budget_label.setText(f"budget remaining: {ledger.remaining_eur:.2f} EUR")
+        self.period_label.setText(f"period: {ledger.period}; spend: {ledger.spend_eur:.2f} EUR")
 
     def _show_error(self, detail: str | None) -> None:
         if detail is None:

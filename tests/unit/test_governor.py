@@ -10,10 +10,7 @@ integration tests.
 from datetime import UTC, datetime
 from decimal import Decimal
 
-import pytest
-
-from limes.cost.governor import Governor
-from limes.errors import BudgetExhausted
+from limes.cost.recorder import CostRecorder
 from limes.types import CostLedgerEntry
 
 PERIOD = "2026-08"
@@ -66,78 +63,20 @@ def _entry(cost_eur: Decimal, ledger_id: str = "e1") -> CostLedgerEntry:
     )
 
 
-def _governor(stub: StubDriver, envelope: Decimal | None = None) -> Governor:
-    return Governor(stub, CEILING, SOFT_STOP, 0.92, envelope_eur=envelope)
+def test_cost_recorder_never_reads_monthly_spend():
+    stub = StubDriver(preseeded=Decimal("1000000"))
+    recorder = CostRecorder(stub)
+    recorder.commit(_entry(Decimal("200")))
+    assert recorder.spent_eur == Decimal("200")
+    assert stub.committed[0].cost_eur == Decimal("200")
+    assert not hasattr(recorder, "check")
+    assert not hasattr(recorder, "remaining")
 
 
-def test_check_passes_below_soft_stop_threshold():
-    governor = _governor(StubDriver())
-    governor.check(Decimal("1.00"))  # far below 9.50 threshold
-
-
-def test_check_raises_above_soft_stop_threshold():
-    governor = _governor(StubDriver())
-    with pytest.raises(BudgetExhausted):
-        governor.check(Decimal("9.51"))
-
-
-def test_check_refuses_at_threshold_not_at_ceiling():
-    # Soft stop: refusal at 10.00 * 0.95 = 9.50, not at the 10.00 ceiling.
-    governor = _governor(StubDriver())
-    governor.check(Decimal("9.50"))  # exactly at threshold: passes
-    with pytest.raises(BudgetExhausted):
-        governor.check(Decimal("9.51"))
-
-
-def test_monthly_check_sees_preseeded_period_spend():
-    governor = _governor(StubDriver(preseeded=Decimal("9.00")))
-    governor.check(Decimal("0.49"))  # 9.49 projected: passes
-    with pytest.raises(BudgetExhausted):
-        governor.check(Decimal("0.51"))  # 9.51 projected: refused
-
-
-def test_monthly_check_sees_own_commits():
+def test_process_spend_accumulates_provider_costs():
     stub = StubDriver()
-    governor = _governor(stub)
-    governor.commit(_entry(Decimal("9.00")))
-    with pytest.raises(BudgetExhausted):
-        governor.check(Decimal("0.60"))
-    governor.check(Decimal("0.49"))
-
-
-def test_commit_writes_entry_to_ledger():
-    stub = StubDriver()
-    governor = _governor(stub)
-    governor.commit(_entry(Decimal("2.50"), ledger_id="ledger-1"))
-    assert len(stub.committed) == 1
-    assert stub.committed[0].ledger_id == "ledger-1"
-    assert stub.committed[0].cost_eur == Decimal("2.50")
-
-
-def test_envelope_mode_meters_against_envelope():
-    stub = StubDriver(preseeded=Decimal("100.00"))  # monthly spend is irrelevant
-    governor = _governor(stub, envelope=Decimal("3.00"))
-    governor.commit(_entry(Decimal("2.00"), ledger_id="envelope-1"))
-    governor.check(Decimal("1.00"))  # 3.00 projected against 3.00: passes
-    with pytest.raises(BudgetExhausted):
-        governor.check(Decimal("1.01"))
-
-
-def test_envelope_mode_ignores_monthly_ceiling():
-    # AC-15: backfill meters against its envelope and never draws on the
-    # monthly ceiling, even when that ceiling is already exhausted.
-    stub = StubDriver(preseeded=Decimal("20.00"))
-    governor = _governor(stub, envelope=Decimal("3.00"))
-    governor.check(Decimal("3.00"))  # monthly would refuse; envelope passes
-
-
-def test_remaining_monthly():
-    stub = StubDriver(preseeded=Decimal("1.00"))
-    governor = _governor(stub)
-    assert governor.remaining() == CEILING * Decimal(str(SOFT_STOP)) - Decimal("1.00")
-
-
-def test_remaining_envelope_never_negative():
-    governor = _governor(StubDriver(), envelope=Decimal("2.00"))
-    governor.commit(_entry(Decimal("5.00"), ledger_id="over"))
-    assert governor.remaining() == Decimal("0")
+    recorder = CostRecorder(stub)
+    recorder.commit(_entry(Decimal("2.50"), "first"))
+    recorder.commit(_entry(Decimal("1.50"), "second"))
+    assert recorder.spent_eur == Decimal("4.00")
+    assert len(stub.committed) == 2

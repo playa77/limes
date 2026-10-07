@@ -134,6 +134,7 @@ def live_api(
     env = dict(os.environ)
     env.update(
         {
+            "LIMES_API_TOKEN": "test-api-token",
             "LIMES_NEO4J_URI": neo4j_instance.uri,
             "LIMES_NEO4J_USER": neo4j_instance.user,
             "LIMES_NEO4J_PASSWORD": neo4j_instance.password,
@@ -172,7 +173,9 @@ def live_api(
         if process.poll() is not None:
             pytest.fail(f"api server exited early with code {process.returncode}")
         try:
-            with httpx.Client(timeout=5) as client:
+            with httpx.Client(
+                timeout=5, headers={"Authorization": "Bearer test-api-token"}
+            ) as client:
                 if client.get(f"{url}/health").status_code == 200:
                     break
         except httpx.HTTPError:
@@ -468,6 +471,7 @@ def test_ac28_evidence_document_absent_states_so(live_api: str, monkeypatch: pyt
     test documents this), so `get_entity` 404s and the panel states the
     evidence coordinates instead of fabricating a sentence (D-10)."""
     monkeypatch.setenv("LIMES_API_BASE_URL", live_api)
+    monkeypatch.setenv("LIMES_API_TOKEN", "test-api-token")
     from limes.ui.callbacks import selection as selection_callbacks
 
     edge = {
@@ -764,6 +768,7 @@ def test_api_client_reaches_the_live_api(
     against the real server process, the error envelope on a 404, and the
     AC-28 evidence-document gap as the API actually answers it."""
     monkeypatch.setenv("LIMES_API_BASE_URL", live_api)
+    monkeypatch.setenv("LIMES_API_TOKEN", "test-api-token")
 
     health = api_client.get_health()
     assert health["status"] == "ok"
@@ -789,7 +794,8 @@ def test_api_client_reaches_the_live_api(
     sources = api_client.get_sources()
     assert any(source["source_id"] == "gisco_nuts" for source in sources)
     ledger = api_client.get_cost_ledger()
-    assert "remaining_eur" in ledger
+    assert "spend_eur" in ledger
+    assert "remaining_eur" not in ledger
     api_client.get_ingest_status()
     saved = api_client.get_saved_queries()
     assert isinstance(saved, list)

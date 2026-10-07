@@ -29,7 +29,7 @@ from fastapi.testclient import TestClient
 # tree stays self-contained under pytest's rootdir-based `tests` package.
 _REPO_ROOT = Path(__file__).resolve().parents[3]
 _TESTS_PKG = str(_REPO_ROOT / "tests")
-if _TESTS_PKG not in __import__("sys").path:
+if _TESTS_PKG not in sys.path:
     sys.path.insert(0, _TESTS_PKG)
 
 from fixtures.graph_data import (  # noqa: E402  (path bootstrap must precede)
@@ -75,9 +75,7 @@ def ids(neo4j_instance: Any) -> Iterator[dict[str, str]]:
 
 
 @pytest.fixture()
-def client_factory(
-    neo4j_instance: Any, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-):
+def client_factory(neo4j_instance: Any, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     """Builds an ApiClient whose httpx transport is the real in-process
     FastAPI app. The OpenRouter stub is wired through `api.deps` — the
     composition-root seam the root suite's NLQ tests use — before the app
@@ -101,13 +99,16 @@ def client_factory(
                     ontology=ctx.ontology,
                     driver=ctx.driver,
                     client=stub,
-                    governor=ctx.governor,
+                    recorder=ctx.recorder,
                 )
 
             monkeypatch.setattr(deps, "build_nlq_context", _stubbed)
 
         transport = stack.enter_context(
-            TestClient(create_app(api_settings(neo4j_instance, tmp_path)))
+            TestClient(
+                create_app(api_settings(neo4j_instance, tmp_path)),
+                headers={"Authorization": "Bearer test-api-token"},
+            )
         )
         client = ApiClient.__new__(ApiClient)
         client._client = transport

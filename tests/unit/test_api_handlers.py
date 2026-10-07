@@ -24,7 +24,7 @@ from neo4j.exceptions import Neo4jError, ServiceUnavailable
 from limes.api.deps import get_driver
 from limes.api.main import create_app
 from limes.config import Settings
-from limes.errors import BudgetExhausted, OntologyError
+from limes.errors import OntologyError
 from tests.fixtures.graph_data import ONTOLOGY_PATH
 
 
@@ -32,6 +32,7 @@ def _settings(tmp_path: Path) -> Settings:
     """Settings pointing at an unreachable database: the app starts and
     /health reports 503, which is exactly the state these tests need."""
     return Settings(
+        api_token="test-api-token",
         neo4j_uri="bolt://127.0.0.1:1",
         neo4j_user="u",
         neo4j_password="p",
@@ -57,6 +58,16 @@ class _RaiseDriver:
         pass
 
 
+@pytest.fixture(autouse=True)
+def offline_startup(monkeypatch: pytest.MonkeyPatch):
+    # Unit handler tests must not wait on a live driver's connection retries.
+    monkeypatch.setattr(
+        "limes.api.main.GraphDriver",
+        lambda *args: _RaiseDriver(ServiceUnavailable("database unreachable")),
+    )
+    monkeypatch.setattr("limes.api.main.provision", lambda *args: None)
+
+
 class _Neo4jErrorWithCode(Neo4jError):
     """Neo4jError with a controllable `code` — the driver's constructor
     derives the code from the server response, so a test builds the
@@ -71,7 +82,6 @@ class _Neo4jErrorWithCode(Neo4jError):
     ("exc", "status", "code"),
     [
         (ServiceUnavailable("database unreachable"), 503, "NEO4J_UNREACHABLE"),
-        (BudgetExhausted("monthly budget exhausted"), 402, "BUDGET_EXHAUSTED"),
         (
             _Neo4jErrorWithCode(
                 "query timed out", "Neo4j.TransientError.Transaction.TransactionTimedOut"
@@ -89,7 +99,9 @@ class _Neo4jErrorWithCode(Neo4jError):
 def test_request_database_failures_map_to_the_defined_envelope(
     tmp_path: Path, exc: Exception, status: int, code: str
 ):
-    with TestClient(create_app(_settings(tmp_path))) as client:
+    with TestClient(
+        create_app(_settings(tmp_path)), headers={"Authorization": "Bearer test-api-token"}
+    ) as client:
         client.app.dependency_overrides[get_driver] = lambda: _RaiseDriver(exc)
         response = client.get("/entity/some-entity")
         assert response.status_code == status
@@ -102,7 +114,11 @@ def test_unhandled_exception_maps_to_500_internal_error(tmp_path: Path):
     # The catch-all Exception handler is the ServerErrorMiddleware's 500
     # handler, which re-raises after producing the response; the client
     # must not re-raise it back into the test.
-    with TestClient(create_app(_settings(tmp_path)), raise_server_exceptions=False) as client:
+    with TestClient(
+        create_app(_settings(tmp_path)),
+        raise_server_exceptions=False,
+        headers={"Authorization": "Bearer test-api-token"},
+    ) as client:
         client.app.dependency_overrides[get_driver] = lambda: _RaiseDriver(RuntimeError("boom"))
         response = client.get("/entity/some-entity")
         assert response.status_code == 500
@@ -120,7 +136,9 @@ def test_plain_detail_http_exception_maps_to_http_error(tmp_path: Path):
 
         raise HTTPException(400, "plain message")
 
-    with TestClient(create_app(_settings(tmp_path))) as client:
+    with TestClient(
+        create_app(_settings(tmp_path)), headers={"Authorization": "Bearer test-api-token"}
+    ) as client:
         client.app.dependency_overrides[get_driver] = _raise_plain
         response = client.get("/entity/some-entity")
         assert response.status_code == 400
@@ -143,7 +161,9 @@ def test_provisioning_failure_that_is_not_connectivity_aborts_startup(
     # attribute there, not the schema module's.
     monkeypatch.setattr("limes.api.main.provision", explode)
     with pytest.raises(OntologyError, match="older than the graph"):
-        with TestClient(create_app(_settings(tmp_path))):
+        with TestClient(
+            create_app(_settings(tmp_path)), headers={"Authorization": "Bearer test-api-token"}
+        ):
             pass
 
 
@@ -157,7 +177,9 @@ def test_builder_spec_whose_translation_fails_validation_maps_to_400(
     settings = _settings(tmp_path).model_copy(
         update={"query_default_limit": 6000, "query_max_limit": 5000}
     )
-    with TestClient(create_app(settings)) as client:
+    with TestClient(
+        create_app(settings), headers={"Authorization": "Bearer test-api-token"}
+    ) as client:
         response = client.post(
             "/query/builder",
             json={"start_type": "Corporation", "hops": []},

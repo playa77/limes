@@ -349,7 +349,6 @@ class CostLedger:
 
     period: str
     spend_eur: float
-    remaining_eur: float
     entries: list[CostEntry] = field(default_factory=list)
 
     @classmethod
@@ -357,7 +356,6 @@ class CostLedger:
         return cls(
             period=str(d["period"]),
             spend_eur=float(d["spend_eur"]),
-            remaining_eur=float(d["remaining_eur"]),
             entries=[CostEntry.from_api(e) for e in d.get("entries") or []],
         )
 

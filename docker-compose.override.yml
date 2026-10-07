@@ -1,15 +1,6 @@
-# LIMES — Compose override (local development) | v1.0.0 | introduced by WP-37
-# Local-only concerns per Doc 1 §8.1 and Doc 2 §13.2: loopback publication
-# of the UI port (the only published port in the whole topology),
-# source mounts so code edits do not require an image rebuild, and debug
-# logging. Promotion to a server is removal of this file (§13.5) — nothing
-# here changes the topology, only its local ergonomics.
-
+# LIMES Compose development override | v1.1.0 | source mounts and reload
+# Publication and authentication are identical to the base topology.
 services:
-  ui:
-    ports:
-      - "127.0.0.1:8050:8050"
-
   api:
     command:
       - uvicorn

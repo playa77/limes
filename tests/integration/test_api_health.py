@@ -29,6 +29,7 @@ def test_health_returns_503_when_neo4j_unreachable(tmp_path: Path):
     from tests.fixtures.graph_data import ONTOLOGY_PATH
 
     settings = Settings(
+        api_token="test-api-token",
         neo4j_uri="bolt://127.0.0.1:1",
         neo4j_user="u",
         neo4j_password="p",
@@ -38,7 +39,9 @@ def test_health_returns_503_when_neo4j_unreachable(tmp_path: Path):
         baseline_path=tmp_path / "baseline.json",
         archive_path=tmp_path / "archive",
     )
-    with TestClient(create_app(settings)) as client:
+    with TestClient(
+        create_app(settings), headers={"Authorization": "Bearer test-api-token"}
+    ) as client:
         response = client.get("/health")
         assert response.status_code == 503
         body = response.json()

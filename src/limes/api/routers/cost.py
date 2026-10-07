@@ -1,8 +1,5 @@
 # src/limes/api/routers/cost.py | v1.0.0 | introduced by WP-32
-"""Cost ledger endpoint per Technical Specification §6: period spend read
-from the graph (the ledger's own `read_period_spend` — C-07 makes the
-graph the only state that survives between processes), the remaining
-budget from the monthly governor, and the period's entries."""
+"""Read passive period spend and provider-reported model/token ledger entries."""
 
 from __future__ import annotations
 
@@ -12,9 +9,8 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
 
-from limes.api.deps import get_driver, get_nlq_context
+from limes.api.deps import get_driver
 from limes.api.models import native_datetime
-from limes.composition import NlqContext
 from limes.cost.ledger import read_period_spend
 from limes.graph.driver import GraphDriver
 
@@ -49,18 +45,16 @@ class LedgerEntryView(BaseModel):
 
 
 class LedgerView(BaseModel):
-    """The ledger for one period: total spend, remaining budget, entries."""
+    """The ledger for one period: total spend and entries."""
 
     period: str
     spend_eur: float
-    remaining_eur: float
     entries: list[LedgerEntryView]
 
 
 @router.get("/cost/ledger")
 def cost_ledger(
     driver: Annotated[GraphDriver, Depends(get_driver)],
-    nlq_context: Annotated[NlqContext, Depends(get_nlq_context)],
     limit: Annotated[int, Query(ge=1, le=1000)] = 100,
     period: Annotated[
         str,
@@ -70,7 +64,7 @@ def cost_ledger(
         ),
     ] = _current_period(),
 ) -> LedgerView:
-    """Period spend, remaining budget, and the period's entries."""
+    """Period spend and the period's entries."""
     spend = read_period_spend(driver, period)
     entries = []
     for row in driver.read(_ENTRIES_QUERY, {"period": period, "limit": limit}, 30):
@@ -92,6 +86,5 @@ def cost_ledger(
     return LedgerView(
         period=period,
         spend_eur=float(spend),
-        remaining_eur=float(nlq_context.governor.remaining()),
         entries=entries,
     )

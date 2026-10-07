@@ -86,12 +86,13 @@ def test_ac01_missing_configuration_key_names_it_in_a_clean_process(
     assert "neo4j_uri" in result.stderr, result.stderr
 
 
-def test_ac01_empty_required_key_names_it(monkeypatch: pytest.MonkeyPatch):
+def test_ac01_empty_required_key_names_it(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
     """The empty-value form of AC-01: a key present but blank is the same
     failure, naming the key."""
     from limes.config import load_settings
     from limes.errors import ConfigurationError
 
+    monkeypatch.chdir(tmp_path)  # no legacy/split file can fill the empty required key
     for key in REQUIRED_KEYS:
         monkeypatch.setenv(key, "set")
     monkeypatch.setenv("LIMES_NEO4J_USER", "")

@@ -1,12 +1,5 @@
 # src/limes/cost/ledger.py | v1.0.0 | introduced by WP-06
-"""Cost ledger writes and reads per Technical Specification §5.8, §8.9.
-
-Every paid call is recorded as a `:CostLedgerEntry` node with all §5.8
-properties; the monthly aggregate for a `YYYY-MM` period is summed from the
-graph, never from process memory — C-07 makes the graph the only state that
-survives between CLI invocations, and the API's governor must see spend that
-the worker committed in another process.
-"""
+"""Durable provider cost accounting; period totals are read from the graph."""
 
 from __future__ import annotations
 

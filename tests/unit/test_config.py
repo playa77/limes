@@ -1,5 +1,4 @@
 # tests/unit/test_config.py | v1.0.1 | introduced by WP-02, env-file isolation by WP-40
-from decimal import Decimal
 from pathlib import Path
 
 import pytest
@@ -30,7 +29,7 @@ def no_env_file(monkeypatch):
     monkeypatch.setattr(
         config_module,
         "Settings",
-        lambda **kwargs: real_settings(_env_file=None, **kwargs),
+        lambda **kwargs: real_settings(**{"_env_file": None, **kwargs}),
     )
 
 
@@ -47,8 +46,6 @@ def env(monkeypatch):
 def test_load_settings_all_keys_present(env):
     settings = load_settings()
     assert settings.neo4j_uri == "bolt://localhost:7687"
-    assert settings.monthly_budget_eur == Decimal("10.00")
-    assert settings.budget_soft_stop_fraction == 0.95
     assert settings.embedding_dimensions == 1024
     assert settings.model_pin_stage == "provisional"
     assert settings.archive_path == Path("/tmp/archive")
@@ -86,3 +83,37 @@ def test_settings_ignores_unknown_env_keys(env, monkeypatch):
     monkeypatch.setenv("LIMES_TYPO_KEY", "boom")
     settings = load_settings()
     assert not hasattr(settings, "typo_key")
+
+
+def test_empty_environment_does_not_shadow_pin_file(tmp_path, monkeypatch):
+    from limes.config import Settings
+
+    pin_file = tmp_path / "models.env"
+    pin_file.write_text("LIMES_EXTRACTION_MODEL=test/pinned\n")
+    monkeypatch.setenv("LIMES_EXTRACTION_MODEL", "")
+    settings = Settings(
+        _env_file=pin_file, **{k.removeprefix("LIMES_").lower(): v for k, v in REQUIRED.items()}
+    )
+    assert settings.extraction_model == "test/pinned"
+
+
+@pytest.mark.parametrize(
+    "field,value",
+    [
+        ("inference_temperature", -1),
+        ("inference_temperature", 3),
+        ("inference_max_tokens", 0),
+        ("inference_reasoning_effort", "typo"),
+    ],
+)
+def test_invalid_inference_parameters_fail_configuration(field, value):
+    from pydantic import ValidationError
+
+    from limes.config import Settings
+
+    with pytest.raises(ValidationError):
+        Settings(
+            _env_file=None,
+            **{k.removeprefix("LIMES_").lower(): v for k, v in REQUIRED.items()},
+            **{field: value},
+        )

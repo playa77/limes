@@ -2,7 +2,6 @@
 import pytest
 
 from limes.errors import (
-    BudgetExhausted,
     ConfigurationError,
     CypherValidationFailed,
     EndpointUnidentified,
@@ -27,7 +26,6 @@ from limes.errors import (
         SourceParseError,
         ExtractionError,
         ExtractionSchemaError,
-        BudgetExhausted,
         ValidationRejected,
         EndpointUnidentified,
         GraphWriteError,

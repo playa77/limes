@@ -11,6 +11,7 @@ mirrored models of `limes_desktop.api.models`. No view ever imports httpx
 from __future__ import annotations
 
 from typing import Any
+from urllib.parse import urlsplit
 
 import httpx
 
@@ -28,18 +29,26 @@ from limes_desktop.api.models import (
     SourceInfo,
 )
 
-_TIMEOUT = httpx.Timeout(30.0)
-
 
 class ApiClient:
     """Typed client for the LIMES API surface (§6). One `httpx.Client` per
     instance; reuse one instance per connection profile."""
 
-    def __init__(self, base_url: str, timeout_s: float = 30.0) -> None:
+    def __init__(self, base_url: str, timeout_s: float = 30.0, *, token: str = "") -> None:
         # follow_redirects=True: a 3xx must be followed to the final response,
         # never surface as an unparseable non-JSON body
+        endpoint = urlsplit(base_url)
+        if (
+            token
+            and endpoint.scheme != "https"
+            and endpoint.hostname not in {"127.0.0.1", "localhost", "::1"}
+        ):
+            raise ValueError("authenticated remote connections require HTTPS or a loopback tunnel")
         self._client = httpx.Client(
-            base_url=base_url, timeout=httpx.Timeout(timeout_s), follow_redirects=True
+            base_url=base_url,
+            timeout=httpx.Timeout(timeout_s),
+            follow_redirects=True,
+            headers={"Authorization": f"Bearer {token}"} if token else {},
         )
 
     def close(self) -> None:
@@ -93,9 +102,7 @@ class ApiClient:
 
     # -- search & coverage ----------------------------------------------------
 
-    def search(
-        self, query: str, kind: str | None = None, limit: int = 50
-    ) -> list[SearchHit]:
+    def search(self, query: str, kind: str | None = None, limit: int = 50) -> list[SearchHit]:
         params: dict[str, Any] = {"q": query, "limit": limit}
         if kind is not None:
             params["kind"] = kind

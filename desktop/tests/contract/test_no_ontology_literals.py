@@ -18,7 +18,7 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 CLIENT_ROOT = REPO_ROOT / "desktop" / "src" / "limes_desktop"
 ONTOLOGY_PATH = REPO_ROOT / "ontology" / "ontology.yaml"
 
-CYIPHER_KEYWORDS = (
+CYPHER_KEYWORDS = (
     "MATCH",
     "RETURN",
     "MERGE",
@@ -44,6 +44,6 @@ def test_no_ontology_literals() -> None:
         for node in ast.walk(tree):
             if isinstance(node, ast.Constant) and isinstance(node.value, str):
                 assert node.value not in names, f"{py_file.name}: literal {node.value!r}"
-                assert not any(keyword in node.value for keyword in CYIPHER_KEYWORDS), (
+                assert not any(keyword in node.value for keyword in CYPHER_KEYWORDS), (
                     f"{py_file.name}: literal {node.value!r} contains a Cypher keyword"
                 )

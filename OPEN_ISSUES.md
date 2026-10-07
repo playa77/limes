@@ -6,16 +6,12 @@ means evidenced, not asserted — a bare "done" is not a closure. Design-level
 deferrals stay in the roadmap with revisit triggers; this file is the
 operational list and is expected to reach zero.
 
-Standing constraints (restated so a fresh session cannot violate them):
-
-- **No commits, staging, or pushes by the agent.** Merging to `main` happens
-  only on explicit operator instruction (AGENTS.md, Conventions).
-- **No model ids anywhere.** No model, prompt, or model-selector change without
-  an operator envelope; tests never make real paid calls.
-- **`.env` is off-limits** — never read, printed, or committed.
-- **VPS co-tenants must not be disturbed.** Brainy runs on the same host; any
-  operator-run VPS command must be scoped to the `limes` stack only. The agent
-  never SSHes; the deployed-revision check is operator-run (OI-01).
+Current testing-phase constraints are in `AGENTS.md` and `docs/TESTING_PHASE.md`.
+They supersede the initial operator-envelope/no-model-id restrictions. Tests never
+make paid calls; existing secrets remain private. No staging, commits, pushes,
+merges or deployment without explicit instruction. Production/co-tenant operations
+are outside implementation scope. Snapshot and issue rows below are historical
+records; subsequent evidence/closures are appended without erasing them.
 
 Snapshot (every row from the command that produced it; run 2026-09-16):
 
@@ -264,3 +260,72 @@ deliberate drift; the operator-gated items (OI-01, OI-09, OI-11, OI-14, OI-16)
 are decided in the operator's own words, not merely acknowledged. An empty
 ledger proves nothing — this one is not empty, and the guards, not the list,
 are what keep it empty afterwards.
+
+## 2026-10-07 — Redesign implementation and verification evidence
+
+D-75 and `docs/TESTING_PHASE.md` define the implemented tranche. This is repo-side
+work against HEAD `0aa9d67`; no staging, commits, pushes, production data runs,
+deployment or real paid inference occurred. R1, A1/A2's API/desktop access, A5,
+B1, selector/pin improvements, C4 and the R3/D2 inventory are implemented. R2's
+operational CLI and A3/A4/R4/C1/C2 remain open together; C3 and E1 are still pending.
+Live model measurement (B2) remains an operator data run; mocked evaluation exercises
+the complete scoring/report/pinning path. CI is configured but no remote CI run is
+claimed. The initial full spec regeneration awaits the runtime redesign.
+
+Local evidence (2026-10-07, managed cloud host):
+
+| Re-runnable command | Result |
+|---|---|
+| `venv/bin/ruff check src tests desktop/src desktop/tests` | Passed |
+| `venv/bin/mypy` | Passed, 140 source files |
+| `venv/bin/python tools/check_docs.py docs/` | Passed C1–C8; includes visible topology/access/accounting claims |
+| `docker compose --env-file config/secrets.env.example config --quiet` | Passed without printing configuration/secrets |
+| `venv/bin/python -m pytest tests/unit -q` | 737 passed; then 26 API-auth cases passed after the bearer-scheme case regression expanded the suite |
+| `QTWEBENGINE_CHROMIUM_FLAGS='--no-sandbox --disable-gpu' venv/bin/python -m pytest desktop/tests/unit desktop/tests/contract -q` | 138 passed |
+| `venv/bin/python -m pytest tests/integration -q` | 163 passed |
+| `venv/bin/python -m pytest tests/acceptance -q` | 85 passed |
+| `venv/bin/python -m pytest desktop/tests/integration -q` | 2 passed, including the previously unexecuted end-to-end flow |
+| `venv/bin/python -m pytest tests/unit/test_runtime_docs.py -q` | 3 passed; deliberately changing publication or visible authentication prose is rejected |
+| `git diff --check` | Passed |
+
+Local sockets, the Docker daemon and Qt process creation required the managed
+sandbox's reviewed execution access. No test invariant was skipped or weakened to
+bypass that environment constraint. Container/volume cleanup used fixture-owned
+resources only. Existing Starlette/runpy deprecation warnings remain non-failures.
+A production Compose smoke/build/deployment was not run: it would start operational
+services and fetch source data. Rendered Compose and all test suites are verified;
+production startup still requires administrator deployment validation.
+
+### Closed with evidence
+
+- **OI-02** — Desktop integration is now executed: `venv/bin/python -m pytest
+  desktop/tests/integration -q` → 2 passed. No paid calls.
+- **OI-04** — README and override no longer describe server promotion as override
+  removal. Current loopback API and HTTPS/tunnel access are documented. Evidence:
+  `venv/bin/python tools/check_docs.py docs/` plus
+  `venv/bin/python -m pytest tests/unit/test_runtime_docs.py -q` → 3 passed.
+  OI-01/OI-09's original production-deployment evidence remains open.
+- **OI-06 / OI-07 / OI-08** — Guard constant renamed, dead timeout removed and unused
+  graph-expansion bookkeeping removed. Evidence: desktop unit/contract command
+  above → 138 passed, including visualization tests.
+- **OI-12** — `QueryResponse`/`NeighborResponse` top-level fields now have parity
+  guards against `QueryOutcome`/`GraphNeighbors`. Evidence: desktop contract suite.
+- **OI-13** — Dynamic `__import__('sys')` replaced by the existing `sys` import.
+  Evidence: desktop integration → 2 passed.
+- **OI-14** — GitHub Actions verification workflow added, with offline and graph
+  jobs and JUnit artifacts. Its commands are evidenced locally above; remote CI
+  execution is pending publication and is not a closure claim about a CI run.
+- **OI-15** — Canonical environment is documented as `venv/` created by
+  `UV_PROJECT_ENVIRONMENT=venv uv sync --frozen --all-packages`. Make lint/test
+  commands use that path and the verification commands above execute successfully.
+- **OI-17** — C8 checks the canonical runtime JSON against both Compose files and
+  current README/contract snapshots and visible fact tables. Deliberate port and
+  authentication-summary drift tests fail the checker as intended.
+
+OI-05/E4 cannot be fully closed: the original ignored
+`.superpowers/sdd/2026-09-09-desktop-client/progress.md` is absent in this checkout
+(`test -f ...` → absent). Tracked OI-10..18 findings remain available, but the
+missing 18-finding source is not reconstructed or declared complete. OI-03's
+original deployed smoke behavior, OI-09 deployment stamp, map-network and remaining
+semantic desktop items stay open. The old closing sequence is historical; current
+remaining work is governed by the testing-phase contract rather than initial gates.
