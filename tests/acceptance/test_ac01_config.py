@@ -92,7 +92,7 @@ def test_ac01_empty_required_key_names_it(monkeypatch: pytest.MonkeyPatch, tmp_p
     from limes.config import load_settings
     from limes.errors import ConfigurationError
 
-    monkeypatch.chdir(tmp_path)  # empty means unset; no local file may supply a fallback
+    monkeypatch.chdir(tmp_path)  # no legacy/split file can fill the empty required key
     for key in REQUIRED_KEYS:
         monkeypatch.setenv(key, "set")
     monkeypatch.setenv("LIMES_NEO4J_USER", "")

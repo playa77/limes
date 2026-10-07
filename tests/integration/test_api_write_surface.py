@@ -136,7 +136,10 @@ def test_ac18_read_session_enforces_read_only(
     from limes.api.main import create_app
     from tests.fixtures.graph_data import api_settings
 
-    with TestClient(create_app(api_settings(neo4j_instance, tmp_path))) as client:
+    with TestClient(
+        create_app(api_settings(neo4j_instance, tmp_path)),
+        headers={"Authorization": "Bearer test-api-token"},
+    ) as client:
         # A crafted write that the validator's keyword check could not see
         # as a clause (a procedure with a write side effect) still cannot
         # execute — the driver's read mode is the backstop.

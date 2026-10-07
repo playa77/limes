@@ -381,14 +381,15 @@ def test_documents_gated_out_are_counted(ctx, fixture_fetch):
     assert rows[0]["c"] == 0
 
 
-def test_zero_legacy_budget_does_not_refuse_and_run_cost_is_recorded(
+def test_zero_legacy_budget_does_not_stop_ingestion(
     neo4j_instance: Neo4jInstance,
     tmp_path: Path,
     ctx,
     fixture_fetch,
 ):
-    # Legacy zero envelopes no longer gate calls. Accounting and successful
-    # run/source closure must survive removal of enforcement (D-75).
+    # The envelope governs the run (AC-15); the first paid call is refused,
+    # the run record closes with finished_at set, the source's last-success
+    # mark stays untouched, and the exception surfaces for the CLI.
     hungry = build_run_context(
         _settings(neo4j_instance, tmp_path),
         needs_inference=True,
@@ -399,13 +400,15 @@ def test_zero_legacy_budget_does_not_refuse_and_run_cost_is_recorded(
             _mock_transport()
             record = execute_run(
                 RunSpec(
-                    source_id="feeds", mode="backfill",
-                    since=datetime(2026, 7, 1, tzinfo=UTC), budget_eur=Decimal("0"),
+                    source_id="feeds",
+                    mode="backfill",
+                    since=datetime(2026, 7, 1, tzinfo=UTC),
+                    budget_eur=Decimal("0"),
                 ),
                 hungry,
             )
-        assert record.cost_eur > 0
-        assert record.assertions_written == 1
+            assert record.cost_eur > 0
+            assert record.assertions_written == 1
         rows = hungry.driver.read(
             "MATCH (r:IngestionRun) RETURN r.finished_at IS NOT NULL AS closed "
             "ORDER BY r.started_at DESC LIMIT 1",

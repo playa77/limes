@@ -1,208 +1,139 @@
-<!-- LIMES — README | v2.1.1 | 2026-08-03 -->
-
 # LIMES
 
-An ontology-driven knowledge graph for German and European policy and geostrategic analysis.
+LIMES is an ontology-driven research knowledge graph for German and European
+policy analysis. It combines official registries with German and English text
+extraction, preserves source provenance and bitemporal assertions, and exposes
+network, geographic and temporal views through a PySide6 desktop client.
 
-LIMES ingests official registries and unstructured German- and English-language text, maps both onto a fixed ontology of real-world entities and relationships, and provides network, geographic, and temporal views over the result. It does not count transactions. It records that a specific corporation was a subsidiary of a specific parent during a specific interval, according to a specific source, with a specific confidence — and lets you traverse outward from there.
+LIMES is a **personal research artifact**. Source coverage is uneven and extracted
+claims can be wrong; inspect provenance and hop-level coverage before interpreting
+a result. Information about public office holders and registered representatives
+has no automated retention or pseudonymization policy.
 
----
+## Current runtime
 
-## Disclaimer
+<!-- limes-runtime: {"services":["api","neo4j","worker"],"api_publication":"127.0.0.1:8000:8000","database_published":false,"api_authentication":"bearer","desktop_credentials":"session-only","budget_enforcement":false} -->
 
-**LIMES is a personal research artifact.** It is not operated as a service, not distributed, and not intended for third-party access. Single operator, local machine.
+| Runtime fact | Current contract |
+|---|---|
+| Shipped services | api, neo4j, worker |
+| API publication | `127.0.0.1:8000:8000` |
+| Database publication | None |
+| API authentication | Bearer token |
+| Desktop credentials | Session memory only |
+| Spending enforcement | None |
 
-It stores information about named natural persons in public roles — office holders, registered directors, registered interest representatives — with relationships inferred between them. It implements no person-scope rule, no retention policy, and no pseudonymization. These are explicit non-goals (Design Document §2.4, NG-03); the architecture reserves insertion points but implements nothing.
 
-No warranty of accuracy. A substantial fraction of the graph comes from language-model extraction over news text and is wrong some of the time. Every assertion carries its source, confidence, and where applicable the sentence that produced it, precisely so no claim has to be taken on faith. Use the provenance panel.
+Compose ships Neo4j, the authenticated API, and the existing operational worker.
+The desktop replaces Dash; the Dash service is removed from both Compose files.
+Legacy Dash code is retained for compatibility tests and is not a shipped service.
+The API publishes `127.0.0.1:8000`; Neo4j has no published port.
+`docs/TESTING_PHASE.md` is the current contract for redesigned behavior and remaining
+work. The original specifications retain the graph/type/coverage contracts.
 
----
+Starting or changing the stack requires its administrator. Using the API or desktop
+requires the API credential, without Docker-group membership or host root access.
+The worker and physical backup privilege redesign is still outstanding; operational
+CLI commands currently run inside that worker. This is not yet a rootless stack.
 
-## Design Principles
+## Configure and run
 
-**The structured backbone costs no inference.** Eleven of thirteen sources are deterministic parsers over official registries — GLEIF, EUR-Lex, the EU sanctions database, TED, the Transparency Register, Bundestag DIP. They produce the most valuable and most reliable edges: ownership, sanctions, contracts, office-holding, legal citation. They cost nothing per record and cannot hallucinate. Language-model extraction is a supplement over news text, not the engine.
-
-**Every assertion is bitemporal.** Validity time — when a fact was true in the world — is recorded independently of belief time, when the system came to believe it. That makes "who controlled this company in March 2025" and "what did the graph believe in March 2025" two separately answerable questions. The second is how extraction quality is measured over time.
-
-**Contradictions are retained, not resolved.** Two sources disagreeing persist as two assertions under different source identifiers; a trust ranking picks a default at query time. In this domain, disagreement is frequently the signal.
-
-**An empty result is diagnosed, never merely returned.** The characteristic failure of a system like this is absence of evidence reading as evidence of absence. When a query returns nothing, LIMES decomposes it, executes each clause independently, and reports which hop emptied the set alongside graph-wide counts. Every result — empty or not — carries a coverage report.
-
----
-
-## Architecture
-
-```
-Sources ──► Adapters ──► Archive (system of record)
-                            │
-                            ▼
-            Normalize ──► Gate ──► Extract ──► Resolve ──► Load
-            (structured records bypass Gate and Extract)
-                            │
-                            ▼
-              Neo4j — graph · vectors · full text · points
-                            │
-                            ▼
-              FastAPI query API ──┬──► Dash UI
-                                  │    network · map · timeline
-                                  └──► Desktop client
-```
-
-One composition root (`src/limes/composition.py`) constructs every component. Nothing below the CLI or the API startup handler instantiates infrastructure.
-
-| Component | Choice | Reason |
-|---|---|---|
-| Storage | Neo4j Community | Graph, vectors, full text, point geometry in one engine |
-| Inference | OpenRouter | Extraction, adjudication, embedding, Cypher generation |
-| Local NLP | spaCy | Free deterministic gate before any paid call |
-| API | FastAPI | The contract that keeps the UI replaceable |
-| Interface | Dash + Cytoscape + Leaflet + Plotly | Real event model; supports incremental graph expansion |
-| Runtime | Docker Compose | Single host, no orchestrator |
-
-The ontology is a declarative, independently versioned YAML artifact — 17 entity types under 3 supertypes, 30 relations with declared domain and range — consumed by the loader, the Cypher validator, the query builder, and the API. One definition, not four drifting copies.
-
----
-
-## Querying
-
-**Natural language.** A German or English question is sent with the complete serialized ontology, small enough to include in full. Generated Cypher is then validated deterministically: labels and relations must exist, domain and range must be satisfied, write clauses are refused at parse level, `EXPLAIN` runs before execution. The generated query is always displayed and always editable.
-
-**Query builder.** Generated from the ontology at runtime, not authored. It cannot construct an invalid query and costs nothing per use.
-
-**Cypher console.** Direct, validated, read-only.
-
-No query templates exist, by design. Templates encode anticipated questions; the instrument is for unanticipated ones. The saved-query list accretes from what you actually ask.
-
-**Desktop client.** The same query surfaces — search, entity detail with provenance, natural-language and builder queries with their editable Cypher, coverage and diagnosis panels, the saved-query library, and the operational views — in a local PySide6 desktop application (`make desktop-run`; design in `docs/LIMES_Desktop_Client_Architecture_v1.0.0.md`, requirements in `docs/LIMES_Desktop_Client_Requirements_v1.0.0.md`). It holds no database credentials and no ontology literals: everything flows over the HTTP API, so it degrades explicitly (connection banner, per-view states) when the stack is down.
-
----
-
-## Requirements
-
-Docker and Docker Compose · 12 GB RAM available to the Docker host · 100 GB free disk · an OpenRouter API key · no GPU. The desktop client also needs Python 3.12 or 3.13 and `uv`.
-
----
-
-## Bootstrap
-
-Order is a hard dependency chain. See Technical Specification §13.3.
+Copy these templates, keeping actual configuration untracked:
 
 ```bash
-cp .env.example .env                            # 1. populate secrets
-cp config/limes.env.example config/limes.env      # non-secret tuning/pins
-make up                                         # 2. starts the four services; builds the images on first run
-make select-models ARGS="--provisional"         # 3. catalogue criteria only, operator confirmation
-make ingest SOURCE=gisco_nuts                   # 4. geography + postal correspondence
-make ingest SOURCE=gleif                        # 5. legal-entity backbone
-make ingest-all                                 # 6. remaining structured sources
-make stamp-embeddings                           # one-shot embedding backfill (§13.3)
-make backfill SOURCE=feeds DAYS=90  # 7. unstructured backfill, passive accounting
-make backfill SOURCE=gdelt DAYS=90  # 8.
-# 9. build the gold set and calibration set from the archive, then:
-make select-models ARGS="--measured"            # 10. measure the candidates
-make evaluate                                   # 11. records the regression baseline
+cp config/settings.env.example config/settings.env
+cp config/models.env.example config/models.env
+cp config/secrets.env.example config/secrets.env
 ```
 
-**Ordering constraints.** Steps 4–6 must precede 7–8: extraction against an empty entity backbone produces mentions with nothing to resolve against; every one becomes a fresh canonical entity and the work is paid for twice — the single most expensive avoidable mistake in the bootstrap. The one-shot embedding backfill runs after step 6 and before step 7, so the vector index is fully populated before the first unstructured backfill; a partially populated index silently under-recalls. Step 9 precedes 10 precedes 11 — a measurement taken before the corpus exists is not a measurement. There is no separate `bootstrap-db` step: Community Edition offers no roles to create (C-01), and schema provisioning runs on every context build. The `limes` database user is created by the Neo4j service's own boot wrapper on every fresh data volume (see DECISIONS.md).
+Set Neo4j credentials and the OpenRouter key in `config/secrets.env`. Generate a
+bearer token with `python -c 'import secrets; print(secrets.token_urlsafe(32))'` and
+set `LIMES_API_TOKEN` in that file. Supply the same Neo4j password to Compose
+interpolation with `docker compose --env-file config/secrets.env up -d --build`.
+Settings and model pins contain no secrets. The API refuses startup without a token.
 
-UI at `http://127.0.0.1:8050`, published to loopback only by the local override file. The base Compose file publishes no ports at all (AC-34); promotion to a server is removal of the override, not a rewrite (§13.5).
+Defaults in `config/settings.env.example` use container paths. Host-side development
+can override paths and Neo4j connection settings. Empty environment values are
+unset, so an empty exported model variable cannot hide a file pin. Environment
+values override file values; split files override legacy host `.env` settings.
+Model selection writes only `config/models.env`, via serialized atomic replacement.
 
----
+For local use, choose `http://127.0.0.1:8000` in the desktop. It asks for the token
+once per endpoint and keeps it only in memory; profiles.json contains no credential.
+`LIMES_API_TOKEN` may supply the initial endpoint's session credential. The token
+is sent in the `Authorization: Bearer …` header, including for `/health` and `/docs`.
 
-## Operation
+For a remote server, use HTTPS termination or a loopback tunnel:
 
-All ingestion is manual. No scheduler, which also means nothing spends money without you initiating it. Every command runs inside the worker container; configuration flows from `.env`.
+```bash
+ssh -N -L 8000:127.0.0.1:8000 account@server
+```
 
-| Command | Purpose |
+The SSH account need not belong to the Docker group. Keep the desktop URL on
+loopback for that tunnel. Authenticated remote plain HTTP is rejected by the client.
+For direct HTTPS, forward a server's TLS proxy to its loopback API; do not publish
+Neo4j. Removing the development override is not a server-promotion procedure.
+
+## Operations and inference
+
+| Command | Behavior |
 |---|---|
-| `make up` / `make down` | Start / stop the four services |
-| `make bootstrap-db` | No-op: C-01 offers no roles; provisioning runs on every context build |
-| `make ingest SOURCE=<id>` | Ingest one source |
-| `make ingest-all` | Every registered source |
-| `make backfill SOURCE=<id> DAYS=<n>` | Historical load; cost ledgered |
-| `make reextract PROMPT_VERSION=<v>` | Re-extract archived content; cost ledgered |
-| `make select-models ARGS="--provisional"` | Rank and pin by criteria; operator confirmation |
-| `make select-models ARGS="--measured"` | Measure the candidates against the gold set |
-| `make evaluate ARGS="--resolution"` | Measure extraction quality against the gold set |
-| `make migrate ONTOLOGY_VERSION=<v>` | Apply ontology migrations |
-| `make backup` | Offline database dump into the archive volume |
-| `make stamp-embeddings` | One-shot `label_embedding` backfill (§13.3) |
-| `make desktop-run` | Launch the desktop client (`MODE=ui` for the real GUI; default prints the version) |
-| `python3 tools/check_docs.py docs/` | Validate specification consistency |
-| `python3 tools/smoke_test.py` | Clean-host smoke test of the bootstrap core (up, ingest, count, down) |
+| `make up` / `make down` | Administrator starts/stops the three services |
+| `make ingest SOURCE=<id>` / `make ingest-all` | Operational worker commands |
+| `make backfill SOURCE=<id> DAYS=<n>` | Historical ingestion; no budget gate |
+| `make reextract PROMPT_VERSION=<v>` | Re-extract archived text with a cache/provenance version |
+| `make select-models ARGS="--provisional"` | Catalogue-ranked model pins, no confirmation ceremony |
+| `make select-models ARGS="--provisional --confirm"` | Optional interactive confirmation |
+| `make select-models ARGS="--measured"` | Evaluate all roles, record scores and measured pins |
+| `make evaluate ARGS="--resolution"` | Evaluate the gold/calibration sets |
+| `make migrate ONTOLOGY_VERSION=<v>` | Apply an ontology migration |
+| `make backup` | Existing administrator-only offline dump; replacement pending |
+| `make stamp-embeddings` | Fill missing embeddings after the structured backbone |
+| `make desktop-run MODE=ui` | Launch the desktop client |
 
-### Budget
+Operational Make targets currently need the worker's Docker access. Paid data runs
+are explicit operator actions. Bootstrap structured sources before unstructured
+backfill, with embedding stamping between them, to avoid duplicated extraction.
 
-Every model call records provider-reported usage in the passive cost ledger.
-There is no budget ceiling, soft stop, or required backfill/re-extraction envelope.
-`/cost/ledger` returns spend and entries; `remaining_eur` is null. No call is
-refused based on spend. Production inference remains a deliberate operator action.
+There is no spending enforcement. `/cost/ledger` reports period spend and per-call
+model/token accounting; it has no remaining-budget field. Old `--budget` options
+are accepted and ignored. Run costs are calculated from the process's recorded
+costs, rather than a monthly allowance shared with other processes.
 
-Model pins and inference knobs live in `config/limes.env`; secrets remain in
-`.env`. Nonempty environment variables override both files; empty values are
-unset. `select-models` validates candidates against the catalogue and atomically
-writes the tuning file, preserving other knobs. Use `--provisional --yes` for
-noninteractive ranking or `--measured` for gold-set evaluation (paid in production).
-A measured marker requires evaluated winners for all roles; stage and date update
-together. Restart the API after pin changes; settings are loaded at startup.
+Chat parameters `LIMES_INFERENCE_TEMPERATURE`, `LIMES_INFERENCE_MAX_TOKENS`, and
+`LIMES_INFERENCE_REASONING_EFFORT` control requests. Empty values omit the provider
+parameter. Each successful chat call logs the exact configured parameter payload
+alongside purpose, model and token usage, without prompts or credentials.
 
-Optional `LIMES_INFERENCE_TEMPERATURE` (0–2), `LIMES_INFERENCE_MAX_TOKENS` (>0),
-and `LIMES_INFERENCE_REASONING_EFFORT` (`none`, `minimal`, `low`, `medium`, `high`,
-`xhigh`) are sent on chat requests and logged for each completed call. Empty
-knobs use provider defaults. Unsupported parameters produce provider errors.
+Provisional pins are validated against the fetched catalogue and dated automatically.
+Measured pins require finite scores and winners for all four roles, and create
+`config/models.evaluation.json` with scores, winners, dataset hash, date and inference
+settings. Changing extraction/embedding models reports affected data without
+triggering re-extraction. Real model measurement is still an operator data run;
+implementation tests exercise the flow with mocked inference.
 
-Testing setup: `UV_PROJECT_ENVIRONMENT=venv uv sync --all-packages --all-groups`.
-The CI workflow runs offline checks and separate Docker-backed suites. See
-`REDESIGN_STATUS.md` for implemented requirements, guard disposition, and remaining
-access/runtime work.
+## Development and verification
 
-### Versioned artifacts
+Python 3.12 and uv are required. Use one canonical environment:
 
-| Artifact | Changelog |
-|---|---|
-| Project | `CHANGELOG.md` |
-| Ontology | `ontology/CHANGELOG.md` |
-| Gold set | `gold_set/CHANGELOG.md` (baseline in `gold_set/baseline.json`) |
-| Prompts and extraction schema | filename-embedded, recorded in `CHANGELOG.md` |
+```bash
+UV_PROJECT_ENVIRONMENT=venv uv sync --frozen --all-packages
+venv/bin/ruff check src tests desktop/src desktop/tests
+venv/bin/mypy
+venv/bin/python tools/check_docs.py docs/
+venv/bin/python -m pytest tests/unit -q
+venv/bin/python -m pytest desktop/tests/unit desktop/tests/contract -q
+venv/bin/python -m pytest tests/integration -q
+venv/bin/python -m pytest tests/acceptance -q
+venv/bin/python -m pytest desktop/tests/integration -q
+```
 
-Every assertion records the ontology version, prompt version, schema version, and model that produced it. A model or prompt change is a versioned, re-runnable, costed event with a measurable effect — not silent drift.
+Graph suites create and destroy only their disposable Neo4j containers. Use
+`LIMES_TEST_NEO4J_URI` for a dedicated existing test database when Docker publishing
+is unavailable. Run acceptance separately. Tests never make real paid model calls.
+GitHub Actions runs lint, types, docs, unit, desktop contract, integration,
+acceptance and desktop integration checks, retaining JUnit evidence as artifacts.
 
----
-
-## Security Posture, Stated Honestly
-
-Neo4j Community Edition has **no role-based access control**. A read-only database user is not creatable. Read-only on the query path is enforced by parse-level rejection of write clauses, by driver session access mode, and by the API having exactly three enumerated writes — a cost ledger entry, a saved query, and a saved-query delete — verified mechanically.
-
-**Residual risk:** a defect in the Cypher validator combined with a defect in session-mode selection can write to the graph. On Community Edition the database cannot prevent this. For a single-operator local system this is accepted, and it is recorded here rather than concealed behind a privilege claim the engine cannot honor.
-
----
-
-## Known Coverage Limitations
-
-Properties of the available data, not defects. Read the coverage report before drawing a conclusion from an empty result.
-
-1. **Supplier relationships have no structured source.** `SUPPLIES` edges come from news extraction only — sparse, low-confidence, biased toward what was reported.
-2. **Current German directorships are structurally weak.** OffeneRegister is materially stale and is ingested at the lowest trust rank with its own publication date as `recorded_at`, not the ingestion date.
-3. **OpenStreetMap infrastructure coverage is uneven** in completeness and tagging discipline.
-
----
-
-## Documentation
-
-| Document | Location |
-|---|---|
-| Design Document v2.0.0 | `docs/LIMES_Design_Document_v2.0.0.md` |
-| Technical Specification v2.1.0 | `docs/LIMES_Technical_Specification_v2.1.0.md` |
-| Desktop Client Requirements v1.0.0 | `docs/LIMES_Desktop_Client_Requirements_v1.0.0.md` |
-| Desktop Client Architecture v1.0.0 | `docs/LIMES_Desktop_Client_Architecture_v1.0.0.md` |
-| Coding agent contract | `AGENTS.md` |
-
-The v1.x document set is withdrawn. It passed every internal consistency check and still stalled implementation three times, because those checks all pass for a specification whose modules cannot reach each other. Technical Specification §15 — a seam register derived from end-to-end call traces — is the artifact whose absence allowed it.
-
-The initial Implementation Roadmap is deleted: it was the plan for a one-time delivery, and that plan is now executed. The Design Document and Technical Specification remain the authoritative artifacts for the core system; the desktop client is specified by its own v1.0.0 requirements and architecture documents.
-
----
-
-## Non-Goals
-
-Multi-user access, authentication, authorization. Scheduled ingestion. Personal-data scoping and pseudonymization. Paid data sources. Quantitative economic series. Polygon geospatial operations. Production deployment. Distribution.
+Read `AGENTS.md`, `DECISIONS.md`, and `OPEN_ISSUES.md` for constraints and evidence.
+Authentication and deployment are now in scope; worker privileges, remote operational
+commands, backup orchestration and version-stamped deployments remain redesign work.

@@ -17,7 +17,7 @@ Every response carries `X-LIMES-Ontology-Version` (Doc 2 §6), and every
 error response uses the §6 envelope
 `{"error": {"code": ..., "message": ..., "details": {}}}` with the §11 HTTP
 mapping: `CypherValidationFailed` 400, `QueryPlanRejected` 422,
-not found 404, Neo4j timeout 504, unreachable 503,
+unauthorized 401, not found 404, Neo4j timeout 504, unreachable 503,
 unhandled 500.
 """
 
@@ -25,12 +25,14 @@ from __future__ import annotations
 
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from secrets import compare_digest
 from typing import Any
 
 import structlog
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from fastapi.security import HTTPBearer
 from neo4j.exceptions import Neo4jError, ServiceUnavailable
 
 from limes.api.builder import BuilderSpecRejected
@@ -48,6 +50,7 @@ from limes.api.routers import (
 )
 from limes.config import Settings, load_settings
 from limes.errors import (
+    ConfigurationError,
     CypherValidationFailed,
     OntologyError,
     QueryPlanRejected,
@@ -69,6 +72,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         loaded = settings or load_settings()
+        if not loaded.api_token.get_secret_value():
+            raise ConfigurationError("LIMES_API_TOKEN must be set to serve the API")
         ontology_model = load_ontology(loaded.ontology_path)
         driver = GraphDriver(
             loaded.neo4j_uri,
@@ -106,6 +111,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app = FastAPI(
         title="LIMES Query API",
         lifespan=lifespan,
+        dependencies=[Depends(HTTPBearer())],
         # The §6 envelope replaces FastAPI's default error shapes; the
         # default OpenAPI docs remain useful for an operator.
         docs_url="/docs",
@@ -113,8 +119,29 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
 
     @app.middleware("http")
-    async def ontology_version_header(request: Request, call_next: Any) -> Any:
-        response = await call_next(request)
+    async def authenticate_and_version(request: Request, call_next: Any) -> Any:
+        loaded = getattr(request.app.state, "settings", None)
+        expected = loaded.api_token.get_secret_value() if loaded is not None else ""
+        supplied = request.headers.get("Authorization", "")
+        scheme, _, credential = supplied.partition(" ")
+        if (
+            not expected
+            or scheme.lower() != "bearer"
+            or not compare_digest(credential.encode(), expected.encode())
+        ):
+            response = JSONResponse(
+                status_code=401,
+                content={
+                    "error": {
+                        "code": "UNAUTHORIZED",
+                        "message": "valid bearer token required",
+                        "details": {},
+                    }
+                },
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        else:
+            response = await call_next(request)
         state = request.app.state
         if hasattr(state, "ontology"):
             response.headers["X-LIMES-Ontology-Version"] = state.ontology.version

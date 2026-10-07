@@ -1,9 +1,8 @@
+> Initial implementation baseline. Changed runtime, access, configuration,
+> inference and governance behavior is superseded by [TESTING_PHASE.md](TESTING_PHASE.md).
+> Its remaining-work section identifies runtime requirements still pending.
+
 <!-- LIMES — Desktop Client Architecture | v1.0.0 | 2026-09-08 | Status: Draft -->
-
-> Testing-phase redesign is in progress (D-75). The implemented inference and
-> governance changes in `../REDESIGN_STATUS.md` supersede initial-build budget
-> and operator-envelope rules. Access/runtime redesign remains pending.
-
 
 # LIMES — Desktop Client Architecture
 

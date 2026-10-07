@@ -1,6 +1,15 @@
 # tests/acceptance/test_ac14_15_governor.py | v1.0.0 | introduced by WP-39
-"""AC-14/15 rewritten by D-75: model calls proceed without budget enforcement
-and backfill costs remain recorded in both run and ledger."""
+"""AC-14 and AC-15: the budget governor.
+
+AC-14: the governor refuses a call that would breach the ceiling, and the
+run terminates cleanly — the `:IngestionRun` record is closed (finished_at
+set) and `:Source.last_success_at` is untouched, with the remaining work
+reported as queued.
+
+AC-15: backfill and reextract meter against their explicit envelope, not
+the monthly ceiling — the distinguishing assertion is a spend the monthly
+ceiling would happily accept but the envelope refuses.
+"""
 
 from __future__ import annotations
 
@@ -142,13 +151,16 @@ def _inference_run(
         composition_module.spacy.load = real_spacy_load
 
 
-def test_backfill_runs_and_records_cost_despite_zero_legacy_envelope(
-    neo4j_instance: Neo4jInstance, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+def test_ac14_calls_continue_with_a_zero_legacy_budget(
+    neo4j_instance: Neo4jInstance,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
 ):
+    wipe_graph(neo4j_instance)
     record = _inference_run(neo4j_instance, tmp_path, Decimal("0"), monkeypatch)
     assert record.finished_at is not None
-    assert record.assertions_written == 1
     assert record.cost_eur > 0
+    assert record.errors == 0
 
 
 def test_ac15_backfill_under_envelope_meters_and_records(

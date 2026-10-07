@@ -27,12 +27,12 @@ def _load(path: Path) -> dict:
     return data
 
 
-def test_ac34_base_compose_publishes_no_ports():
-    base = _load(COMPOSE)
-    for name, service in base["services"].items():
-        assert "ports" not in service, (
-            f"service {name} publishes ports in the base file: {service.get('ports')}"
-        )
+def test_ac34_base_compose_publishes_only_api_on_loopback():
+    services = _load(COMPOSE)["services"]
+    assert "ui" not in services
+    assert services["api"]["ports"] == ["127.0.0.1:8000:8000"]
+    assert not services["neo4j"].get("ports")
+    assert not services["worker"].get("ports")
 
 
 def test_ac34_database_port_unpublished_in_both_files():
@@ -52,8 +52,7 @@ def test_ac34_database_port_unpublished_in_both_files():
                 raise AssertionError(f"{path}:{line_number}: stray Neo4j port: {line.strip()}")
 
 
-def test_ac34_override_publishes_only_the_ui_port_on_loopback():
+def test_ac34_override_adds_no_publication():
     override = _load(OVERRIDE)
-    for _name, service in override["services"].items():
-        for port in service.get("ports", []):
-            assert "127.0.0.1:8050" in str(port), f"override publishes a non-UI port: {port}"
+    assert "ui" not in override["services"]
+    assert all(not service.get("ports") for service in override["services"].values())

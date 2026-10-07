@@ -1,12 +1,16 @@
 # tests/unit/test_governor.py | v1.0.0 | introduced by WP-06
-"""Passive accounting and compatibility guards for D-75. No spend-dependent refusal."""
+"""Governor arithmetic per Doc 2 §8.9.
+
+The stub driver emulates the ledger's behavior (a commit raises the spend a
+subsequent monthly read returns), so these tests exercise the governor's
+decisions, not the graph. Ledger-vs-graph behavior is covered by the
+integration tests.
+"""
 
 from datetime import UTC, datetime
 from decimal import Decimal
 
-import pytest
-
-from limes.cost.governor import Governor
+from limes.cost.recorder import CostRecorder
 from limes.types import CostLedgerEntry
 
 PERIOD = "2026-08"
@@ -59,36 +63,35 @@ def _entry(cost_eur: Decimal, ledger_id: str = "e1") -> CostLedgerEntry:
     )
 
 
-def _governor(stub: StubDriver, envelope: Decimal | None = None) -> Governor:
-    return Governor(stub, CEILING, SOFT_STOP, 0.92, envelope_eur=envelope)
+def test_cost_recorder_never_reads_monthly_spend():
+    stub = StubDriver(preseeded=Decimal("1000000"))
+    recorder = CostRecorder(stub)
+    recorder.commit(_entry(Decimal("200")))
+    assert recorder.spent_eur == Decimal("200")
+    assert stub.committed[0].cost_eur == Decimal("200")
+    assert not hasattr(recorder, "check")
+    assert not hasattr(recorder, "remaining")
 
 
-def test_legacy_budget_arguments_never_refuse_or_read_spend():
-    stub = StubDriver(preseeded=Decimal("1000"))
-    stub.read = lambda *args, **kwargs: pytest.fail("accounting must not read spend before calls")
-    recorder = _governor(stub, envelope=Decimal("0"))
-    recorder.check(Decimal("1000000"))
-    recorder.commit(_entry(Decimal("50")))
-    recorder.check(Decimal("1000000"))
-    assert recorder.total_spend == Decimal("50")
-    assert len(stub.committed) == 1
-
-
-def test_failed_ledger_write_does_not_change_process_total():
+def test_process_spend_accumulates_provider_costs():
     stub = StubDriver()
-    recorder = _governor(stub)
+    recorder = CostRecorder(stub)
+    recorder.commit(_entry(Decimal("2.50"), "first"))
+    recorder.commit(_entry(Decimal("1.50"), "second"))
+    assert recorder.spent_eur == Decimal("4.00")
+    assert len(stub.committed) == 2
+
+
+def test_failed_ledger_write_does_not_increment_process_spend():
+    import pytest
+
+    stub = StubDriver()
+    recorder = CostRecorder(stub)
+
     def fail(statements):
         raise RuntimeError("ledger unavailable")
+
     stub.write_batch = fail
     with pytest.raises(RuntimeError, match="ledger unavailable"):
         recorder.commit(_entry(Decimal("2")))
-    assert recorder.total_spend == 0
-
-
-def test_recorder_total_is_process_local_and_ledger_entries_preserved():
-    stub = StubDriver(preseeded=Decimal("1000"))
-    recorder = _governor(stub)
-    recorder.commit(_entry(Decimal("2.50"), "first"))
-    recorder.commit(_entry(Decimal("3.50"), "second"))
-    assert recorder.total_spend == Decimal("6")
-    assert [entry.ledger_id for entry in stub.committed] == ["first", "second"]
+    assert recorder.spent_eur == 0

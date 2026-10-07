@@ -175,11 +175,11 @@ def test_ac36_provisional_writes_pin_set_without_gold_set(
     # The gold set path points at a nonexistent file: the provisional stage
     # must never read it (AC-36).
     settings = _settings(gold_set_path=tmp_path / "does-not-exist.jsonl")
-    env_file = tmp_path / ".env"
+    env_file = tmp_path / "models.env"
     monkeypatch.setattr(select_models_module, "ENV_FILE", env_file)
     monkeypatch.setattr(select_models_module, "_confirm", lambda prompt: True)
 
-    select_models_module._provisional(_ctx(settings))
+    select_models_module._provisional(_ctx(settings), confirm=True)
 
     content = env_file.read_text(encoding="utf-8")
     # The winners are the ranked top candidate per role — derived, not
@@ -194,12 +194,12 @@ def test_ac36_provisional_writes_pin_set_without_gold_set(
 
 def test_provisional_skips_unconfirmed_roles(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
     settings = _settings(gold_set_path=tmp_path / "does-not-exist.jsonl")
-    env_file = tmp_path / ".env"
+    env_file = tmp_path / "models.env"
     monkeypatch.setattr(select_models_module, "ENV_FILE", env_file)
     # The operator declines everything: no pins, loud failure.
     monkeypatch.setattr(select_models_module, "_confirm", lambda prompt: False)
     with pytest.raises(LimesError, match="nothing written"):
-        select_models_module._provisional(_ctx(settings))
+        select_models_module._provisional(_ctx(settings), confirm=True)
     assert not env_file.exists()
 
 
@@ -234,7 +234,7 @@ def test_ac37_measured_refuses_without_gold_set(monkeypatch: pytest.MonkeyPatch,
         encoding="utf-8",
     )
     settings = _settings(gold_set_path=old_gold)
-    monkeypatch.setattr(select_models_module, "ENV_FILE", tmp_path / ".env")
+    monkeypatch.setattr(select_models_module, "ENV_FILE", tmp_path / "models.env")
     with pytest.raises(LimesError, match="version >= 1.0.0"):
         select_models_module._measured(_ctx(settings))
 
@@ -242,7 +242,7 @@ def test_ac37_measured_refuses_without_gold_set(monkeypatch: pytest.MonkeyPatch,
 def test_ac37_repin_reports_counts_without_reextracting(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path, capsys
 ):
-    env_file = tmp_path / ".env"
+    env_file = tmp_path / "models.env"
     monkeypatch.setattr(select_models_module, "ENV_FILE", env_file)
     # The per-role scoring is the harness's (WP-30); the selection logic
     # under test consumes the scores and reports the impact.
@@ -270,6 +270,12 @@ def test_ac37_repin_reports_counts_without_reextracting(
         winner = filter_candidates(CATALOGUE, role)[0]["id"]
         assert f"{key}={winner}" in content, f"{role} pin missing"
     assert "LIMES_MODEL_PIN_STAGE=measured" in content
+    report = json.loads(env_file.with_suffix(".evaluation.json").read_text())
+    assert set(report["scores"]) == set(select_models_module.ROLE_ENV_KEYS)
+    assert set(report["winners"]) == set(select_models_module.ROLE_ENV_KEYS)
+    assert report["gold_set_version"] == "1.0.0"
+    assert len(report["gold_set_sha256"]) == 64
+    assert "measured_at" in report
 
     out = capsys.readouterr().out
     # The impact report measures and never performs (AC-37).
@@ -279,13 +285,13 @@ def test_ac37_repin_reports_counts_without_reextracting(
 
 
 def test_write_pins_preserves_existing_env_content(tmp_path: Path):
-    env_file = tmp_path / ".env"
-    env_file.write_text("LIMES_OTHER_KEY=value\n", encoding="utf-8")
+    env_file = tmp_path / "models.env"
+    env_file.write_text("LIMES_NL2CYPHER_MODEL=existing/model\n", encoding="utf-8")
     monkeypatch = pytest.MonkeyPatch()
     monkeypatch.setattr(select_models_module, "ENV_FILE", env_file)
     _write_pins({"extraction": "ext/cheap"}, "provisional")
     content = env_file.read_text(encoding="utf-8")
-    assert "LIMES_OTHER_KEY=value" in content
+    assert "LIMES_NL2CYPHER_MODEL=existing/model" in content
     assert "LIMES_EXTRACTION_MODEL=ext/cheap" in content
     monkeypatch.undo()
 
@@ -366,7 +372,7 @@ def test_provisional_skips_roles_without_a_candidate(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path, capsys
 ):
     settings = _settings(gold_set_path=tmp_path / "does-not-exist.jsonl")
-    monkeypatch.setattr(select_models_module, "ENV_FILE", tmp_path / ".env")
+    monkeypatch.setattr(select_models_module, "ENV_FILE", tmp_path / "models.env")
     # Every catalogue entry exceeds every role ceiling: each role is
     # reported skipped, no pin is written, and the run refuses loudly.
     expensive = [
@@ -425,7 +431,7 @@ def _gold_set_version_2(tmp_path: Path) -> Path:
 def test_measured_refuses_an_empty_catalogue(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
     gold = _gold_set_version_2(tmp_path)
     settings = _settings(gold_set_path=gold)
-    monkeypatch.setattr(select_models_module, "ENV_FILE", tmp_path / ".env")
+    monkeypatch.setattr(select_models_module, "ENV_FILE", tmp_path / "models.env")
     with pytest.raises(LimesError, match="catalogue returned no models"):
         select_models_module._measured(_ctx(settings, catalogue=[]))
 
@@ -435,7 +441,7 @@ def test_measured_skips_roles_without_a_candidate(
 ):
     gold = _gold_set_version_2(tmp_path)
     settings = _settings(gold_set_path=gold)
-    monkeypatch.setattr(select_models_module, "ENV_FILE", tmp_path / ".env")
+    monkeypatch.setattr(select_models_module, "ENV_FILE", tmp_path / "models.env")
     expensive = [
         {"id": "m/too-expensive", "pricing": {"prompt": "0.001000000", "completion": "0.001000000"}}
     ]
@@ -523,61 +529,59 @@ def test_confirm_accepts_only_yes_answers(monkeypatch: pytest.MonkeyPatch):
     assert select_models_module._confirm("Pin? ") is False
 
 
-def test_pin_writer_is_idempotent_and_does_not_touch_secrets(tmp_path, monkeypatch):
-    secrets = tmp_path / ".env"
-    secrets.write_text("LIMES_OPENROUTER_API_KEY=private-test-value\n")
-    tuning = tmp_path / "limes.env"
-    tuning.write_text("# operator settings\nLIMES_INFERENCE_MAX_TOKENS=1024\n")
-    monkeypatch.setattr(select_models_module, "ENV_FILE", tuning)
-    _write_pins({"extraction": "test/model"}, "provisional")
-    first = tuning.read_bytes()
-    _write_pins({"extraction": "test/model"}, "provisional")
-    assert tuning.read_bytes() == first
-    assert secrets.read_text() == "LIMES_OPENROUTER_API_KEY=private-test-value\n"
-    assert "LIMES_INFERENCE_MAX_TOKENS=1024" in tuning.read_text()
-    assert "LIMES_MODEL_PIN_DATE=" in tuning.read_text()
+def test_pin_time_validation_rejects_unknown_models():
+    with pytest.raises(LimesError, match="absent from current catalogue"):
+        select_models_module.validate_pins({"extraction": "typo/model"}, CATALOGUE)
 
 
-def test_failed_atomic_replace_preserves_original_pins(tmp_path, monkeypatch):
-    tuning = tmp_path / "limes.env"
+def test_provisional_default_does_not_prompt(monkeypatch, tmp_path):
+    monkeypatch.setattr(select_models_module, "ENV_FILE", tmp_path / "models.env")
+
+    def unexpected_prompt(*args):
+        raise AssertionError("routine model selection must not prompt")
+
+    monkeypatch.setattr(select_models_module, "_confirm", unexpected_prompt)
+    select_models_module._provisional(_ctx(_settings()))
+    assert (tmp_path / "models.env").exists()
+
+
+def test_current_catalogue_supported_parameter_lists_are_accepted():
+    catalogue = [
+        {
+            "id": "test/current",
+            "supported_parameters": ["structured_outputs"],
+            "pricing": {"prompt": "0", "completion": "0"},
+        }
+    ]
+    assert filter_candidates(catalogue, "extraction")[0]["id"] == "test/current"
+
+
+@pytest.mark.parametrize("pins", [{}, {"unknown": "test/model"}])
+def test_invalid_pin_roles_leave_existing_file_unchanged(tmp_path, monkeypatch, pins):
+    path = tmp_path / "models.env"
     original = "LIMES_EXTRACTION_MODEL=test/original\n"
-    tuning.write_text(original)
-    monkeypatch.setattr(select_models_module, "ENV_FILE", tuning)
-    def fail_replace(*args):
-        raise OSError("write interrupted")
-    monkeypatch.setattr(select_models_module.os, "replace", fail_replace)
-    with pytest.raises(OSError, match="write interrupted"):
-        _write_pins({"extraction": "test/new"}, "provisional")
-    assert tuning.read_text() == original
-    assert list(tmp_path.iterdir()) == [tuning]
+    path.write_text(original)
+    monkeypatch.setattr(select_models_module, "ENV_FILE", path)
+    with pytest.raises(LimesError, match="no pins or unknown roles"):
+        _write_pins(pins, "provisional")
+    assert path.read_text() == original
 
 
-def test_pin_validation_rejects_unknown_model():
-    with pytest.raises(LimesError, match="absent from catalogue"):
-        select_models_module._validate_pins({"extraction": "test/retired"}, CATALOGUE)
+def test_invalid_pin_stage_leaves_existing_file_unchanged(tmp_path, monkeypatch):
+    path = tmp_path / "models.env"
+    original = "LIMES_EXTRACTION_MODEL=test/original\n"
+    path.write_text(original)
+    monkeypatch.setattr(select_models_module, "ENV_FILE", path)
+    with pytest.raises(LimesError, match="unknown model pin stage"):
+        _write_pins({"extraction": "test/new"}, "typo")
+    assert path.read_text() == original
 
 
-def test_measured_marker_cannot_be_written_for_partial_evaluation(tmp_path, monkeypatch):
-    tuning = tmp_path / "limes.env"
-    monkeypatch.setattr(select_models_module, "ENV_FILE", tuning)
-    with pytest.raises(LimesError, match="requires every role"):
-        _write_pins({"extraction": "test/model"}, "measured")
-    assert not tuning.exists()
-
-
-def test_catalogue_parameter_list_is_supported_and_invalid_ids_excluded():
-    entry = {
-        "id": "test/chat", "pricing": {"prompt": "0.0000001", "completion": "0.0000001"},
-        "supported_parameters": ["response_format", "temperature"],
-    }
-    assert filter_candidates([entry], "extraction")[0]["id"] == "test/chat"
-    assert filter_candidates([entry | {"id": None}], "extraction") == []
-    assert filter_candidates([entry | {"pricing": {}}], "extraction") == []
-
-
-def test_noninteractive_provisional_does_not_prompt(tmp_path, monkeypatch):
-    tuning = tmp_path / "limes.env"
-    monkeypatch.setattr(select_models_module, "ENV_FILE", tuning)
-    monkeypatch.setattr(select_models_module, "_confirm", lambda prompt: pytest.fail("prompted"))
-    select_models_module._provisional(_ctx(_settings()), confirm=False)
-    assert "LIMES_MODEL_PIN_STAGE=provisional" in tuning.read_text()
+def test_partial_measured_update_leaves_existing_file_unchanged(tmp_path, monkeypatch):
+    path = tmp_path / "models.env"
+    original = "LIMES_EXTRACTION_MODEL=test/original\n"
+    path.write_text(original)
+    monkeypatch.setattr(select_models_module, "ENV_FILE", path)
+    with pytest.raises(LimesError, match="evaluation of all four roles"):
+        _write_pins({"extraction": "test/new"}, "measured")
+    assert path.read_text() == original

@@ -24,6 +24,7 @@ Usage:  python3 tools/check_docs.py docs/
 
 from __future__ import annotations
 
+import json
 import re
 import sys
 from dataclasses import dataclass, field
@@ -277,6 +278,64 @@ def check_placeholders(docs: dict[str, Doc], report: Report) -> None:
 
 # --------------------------------------------------------------------------
 
+def check_runtime_contract(docs: dict[str, Doc], report: Report, repo: Path) -> None:
+    """C8: current operations prose and actual Compose publication agree."""
+    import yaml
+
+    contract_path = repo / "docs" / "runtime-contract.json"
+    try:
+        contract = json.loads(contract_path.read_text(encoding="utf-8"))
+        base = yaml.safe_load((repo / "docker-compose.yml").read_text(encoding="utf-8"))
+        override = yaml.safe_load((repo / "docker-compose.override.yml").read_text(encoding="utf-8"))
+    except (OSError, ValueError, yaml.YAMLError) as exc:
+        report.fail("C8", f"runtime contract unavailable: {exc}")
+        return
+    services = base["services"]
+    if sorted(services) != contract["services"]:
+        report.fail("C8", "Compose services differ from runtime-contract.json")
+    ports = services.get("api", {}).get("ports", [])
+    if ports != [contract["api_publication"]]:
+        report.fail("C8", "API publication differs from runtime-contract.json")
+    for name, service in services.items():
+        if name != "api" and service.get("ports"):
+            report.fail("C8", f"unexpected publication on {name}")
+    if any(service.get("ports") for service in override["services"].values()):
+        report.fail("C8", "development override changes runtime publication")
+    if set(override["services"]) - set(services):
+        report.fail("C8", "development override adds an undocumented service")
+    if contract.get("database_published") is not False:
+        report.fail("C8", "database must remain unpublished")
+    if contract.get("api_authentication") != "bearer":
+        report.fail("C8", "authenticated API access contract missing")
+    if contract.get("desktop_credentials") != "session-only":
+        report.fail("C8", "desktop credential storage contract missing")
+    if contract.get("budget_enforcement") is not False:
+        report.fail("C8", "spending enforcement contract has regressed")
+    current_docs = [repo / "README.md", repo / "docs" / "TESTING_PHASE.md"]
+    for path in current_docs:
+        try:
+            text = path.read_text(encoding="utf-8")
+            marker = re.search(r"<!-- limes-runtime: (.*?) -->", text)
+            snapshot = json.loads(marker.group(1)) if marker else None
+        except (OSError, ValueError) as exc:
+            report.fail("C8", f"invalid runtime snapshot in {path.name}: {exc}")
+            continue
+        if snapshot != contract:
+            report.fail("C8", f"runtime snapshot in {path.name} differs from contract")
+        summary_rows = (
+            f"| Shipped services | {', '.join(contract['services'])} |",
+            f"| API publication | `{contract['api_publication']}` |",
+            "| Database publication | None |",
+            "| API authentication | Bearer token |",
+            "| Desktop credentials | Session memory only |",
+            "| Spending enforcement | None |",
+        )
+        for row in summary_rows:
+            if row not in text:
+                report.fail("C8", f"visible runtime summary in {path.name} differs from contract")
+    report.note("C8: topology, publication, access and accounting snapshots checked")
+
+
 def main(argv: list[str]) -> int:
     root = Path(argv[1]) if len(argv) > 1 else Path("docs")
     if not root.is_dir():
@@ -303,6 +362,7 @@ def main(argv: list[str]) -> int:
 
     check_version_refs(docs, report)
     check_placeholders(docs, report)
+    check_runtime_contract(docs, report, root.resolve().parent)
 
     print("=" * 66)
     print("LIMES specification consistency check")

@@ -1,5 +1,5 @@
 # src/limes/config.py | v1.0.0 | introduced by WP-02
-"""Application configuration: legacy secrets, non-secret tunables, then environment.
+"""Application configuration, loaded from environment variables.
 
 `Settings` carries one typed field per Technical Specification §4.2 key.
 `load_settings()` validates at startup: a missing or empty required key is a
@@ -15,9 +15,9 @@ not fields of `Settings`; `extra="ignore"` keeps them out of the model.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Literal
+from typing import Literal
 
-from pydantic import Field, ValidationError
+from pydantic import Field, SecretStr, ValidationError
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from limes.errors import ConfigurationError
@@ -30,7 +30,7 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(
         env_prefix="LIMES_",
-        env_file=(".env", "config/limes.env"),
+        env_file=(".env", "config/settings.env", "config/models.env", "config/secrets.env"),
         env_ignore_empty=True,
         extra="ignore",
         case_sensitive=False,
@@ -49,27 +49,15 @@ class Settings(BaseSettings):
     adjudication_model: str = ""
     embedding_model: str = ""
     nl2cypher_model: str = ""
+    # None omits the parameter: provider defaults remain explicit in logs.
+    inference_temperature: float | None = Field(default=None, ge=0, le=2)
+    inference_max_tokens: int | None = Field(default=None, gt=0)
+    inference_reasoning_effort: (
+        Literal["none", "minimal", "low", "medium", "high", "xhigh"] | None
+    ) = None
     embedding_dimensions: int = 1024
     model_pin_stage: ModelPinStage = "provisional"
     model_pin_date: str | None = None
-
-    # Omitted knobs retain provider defaults; supplied knobs are validated.
-    inference_temperature: float | None = Field(default=None, ge=0, le=2)
-    inference_max_tokens: int | None = Field(default=None, gt=0)
-    inference_reasoning_effort: Literal[
-        "none", "minimal", "low", "medium", "high", "xhigh"
-    ] | None = None
-
-    def inference_parameters(self) -> dict[str, Any]:
-        """Exact optional parameters sent to chat completions and logged."""
-        parameters: dict[str, Any] = {}
-        if self.inference_temperature is not None:
-            parameters["temperature"] = self.inference_temperature
-        if self.inference_max_tokens is not None:
-            parameters["max_tokens"] = self.inference_max_tokens
-        if self.inference_reasoning_effort is not None:
-            parameters["reasoning"] = {"effort": self.inference_reasoning_effort}
-        return parameters
 
     # ---------- Versioned artifacts ----------
     ontology_path: Path
@@ -113,6 +101,7 @@ class Settings(BaseSettings):
     http_max_retries: int = 4
 
     # ---------- Service ----------
+    api_token: SecretStr = SecretStr("")
     api_base_url: str = "http://api:8000"
     log_level: str = "INFO"
     log_format: Literal["json", "console"] = "json"

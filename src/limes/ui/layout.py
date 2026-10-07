@@ -139,7 +139,8 @@ def render_system_status(
     if ledger:
         rows.append(
             html.Div(
-                f"Spend: €{ledger.get('spend_eur', '?')} in {ledger.get('period', '?')}",
+                f"Spend: €{ledger.get('spend_eur', '?')} "
+                f"in {ledger.get('period', '?')}",
                 style={"font-size": "12px"},
             )
         )

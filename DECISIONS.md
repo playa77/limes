@@ -5,39 +5,54 @@ reversibility: **R1** reversible in under an hour, **R2** bounded recoverable
 cost, **R3** one-way door. Written when each decision is made, latest first.
 Nothing here is a status report; unlogged decisions are unmade decisions.
 
-## 2026-10-07 — D-75 (R3) — Testing-phase inference and governance redesign
+## 2026-10-07 — D-76 (R1) — Reconcile stale-checkout work with merged foundations
 
-User requested continued implementation of the attached LIMES issues/fixes brief.
-R1 explicitly removes enforcement while preserving accounting; R3 authorizes
-replacing initial-build governance. These requirements supersede the conflicting
-initial-build budget/envelope guards and routine-iteration approval gates.
+PR #2 was merged before this work began. The implementing agent failed to fetch
+main before implementation and publication, duplicating the foundations in PR #3
+from the old `0aa9d67` checkout. This was a workflow error, not a later concurrent
+change. PR #3 was never merged; main's `304bbad` implementation remains authoritative.
 
-- OpenRouter completions/embeddings never call `check`. `CostRecorder` persists
-  usage and tracks process-local totals; `Governor` is a legacy import alias
-  with inert budget arguments/check. Run cost uses the recorder delta. Budget
-  exceptions and HTTP 402 mapping are removed from active execution paths.
-- Backfill/reextract require no budget. Old `--budget`/`RunSpec.budget_eur` inputs
-  remain ignored for compatibility. Ledger `remaining_eur` is null and clients
-  display passive accounting. AC-14/15 and G4 now guard this requested behavior.
-- Optional completion temperature/token cap/reasoning effort are validated,
-  forwarded, and logged without messages or secrets. Model selection understands
-  catalogue parameter lists, excludes invalid ids, validates pins, and writes
-  stage/date/pins atomically to `config/limes.env`, never the secrets file.
-  Measured stage requires evaluated winners for every role.
-- `.env` remains a legacy/read-only secrets source. The non-secret config directory
-  is mounted (not a single file), so atomic replacement is visible to readers.
-  Nonempty process environment overrides tuning then legacy configuration.
-- Routine authorized model/prompt iteration needs no extra envelope or versioned
-  work-package ceremony. Preserve no-paid-test calls, composition/ontology
-  boundaries, bitemporal assertions, read-only query validation, and ledger evidence.
-  Topology/root/socket/backup guards will change with their implementations, not
-  be weakened ahead of them. See `REDESIGN_STATUS.md` for the guard inventory.
-- Add CI for offline checks and separate graph-backed invocations. Fix desktop
-  OI-06/07/08 and extend top-level model parity (OI-12). No live deployment changed.
+The correction imports main into the PR branch and preserves its authentication,
+three-service topology, split/locked configuration, strict ledger contract,
+recorder implementation, CI, docs guards and existing closure evidence. Duplicate
+code, the second workflow, incompatible config example, and misleading redesign
+status/closure claims from the stale branch are removed from the resulting tree.
 
-Rejected alternatives: keeping a no-op pre-call gate in inference; overwriting
-secrets with selector pins; labeling partly evaluated pins measured; dropping
-keep-set guards merely to make the redesign green.
+Only incremental role/stage pin-write validation and regression tests for failed
+ledger writes, pin-file/environment precedence and failed/partial pin updates
+remain in the PR diff. A tracked baseline checker fetches main and rejects stale
+checkouts; a repository-local pre-push hook enforces it for publication and fails
+closed on fetch failure. Fresh clones must install the hook; this does not change
+platform initialization. No production changes or paid model calls are involved.
+
+## 2026-10-07 — D-75 (R2) — Testing-phase inference, authenticated access and guard updates
+
+The operator requested continued implementation of the attached issues/redesign
+brief. It supplies requirements; the operator request authorizes these repo changes.
+R1 removes spending enforcement, retaining passive usage and run accounting.
+A1/A2 use bearer authentication on every API surface with a fail-closed startup,
+loopback API publication, session-only desktop credentials, and HTTPS/tunnel access.
+The shipped Dash service is dropped (C4); its sources remain compatibility code.
+A5 separates secrets, settings and atomic model-only pin writes, treating empty
+environment variables as unset. B1 records configured chat parameters; B2/B3 validate
+catalogue-derived pins, automate dates, and require complete scored measured runs.
+Provisional confirmation is opt-in; paid production runs are not implementation
+verification. R3/D2 guard inventory and replacements are in docs/TESTING_PHASE.md.
+These reversible requirement changes supersede the initial-process gates; no
+one-way-door ceremony is needed for ordinary model/prompt iteration. Invariants
+for temporal assertions, ontology, read-only queries, coverage, archives and no
+paid test calls survive. R4 and remote operational/backup redesign remain open;
+this change does not claim rootless operation or a deployed revision.
+
+Guards: test_spending_limit_cannot_prevent_a_request,
+test_zero_legacy_budget_does_not_stop_ingestion,
+test_missing_or_invalid_credentials_reject_every_surface,
+test_api_refuses_to_start_without_a_credential,
+test_empty_environment_does_not_shadow_pin_file,
+test_concurrent_writers_preserve_both_roles,
+test_inference_parameters_sent_and_logged_without_prompt,
+and the rewritten AC-34/smoke publication guards. CI records suite results as JUnit
+artifacts; local verification evidence is appended to OPEN_ISSUES.md.
 
 ## 2026-10-06 — D-74 (R1) — Cloud-safe backup and desktop resource lifetimes
 

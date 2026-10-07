@@ -1,8 +1,5 @@
 # src/limes/api/routers/cost.py | v1.0.0 | introduced by WP-32
-"""Cost ledger endpoint per Technical Specification §6: period spend read
-from the graph (the ledger's own `read_period_spend` — C-07 makes the
-graph the only state that survives between processes), the remaining
-budget (null; enforcement was removed), and the period's entries."""
+"""Read passive period spend and provider-reported model/token ledger entries."""
 
 from __future__ import annotations
 
@@ -48,11 +45,10 @@ class LedgerEntryView(BaseModel):
 
 
 class LedgerView(BaseModel):
-    """The ledger for one period: total spend, remaining budget, entries."""
+    """The ledger for one period: total spend and entries."""
 
     period: str
     spend_eur: float
-    remaining_eur: float | None = None
     entries: list[LedgerEntryView]
 
 
@@ -68,7 +64,7 @@ def cost_ledger(
         ),
     ] = _current_period(),
 ) -> LedgerView:
-    """Period spend, remaining budget, and the period's entries."""
+    """Period spend and the period's entries."""
     spend = read_period_spend(driver, period)
     entries = []
     for row in driver.read(_ENTRIES_QUERY, {"period": period, "limit": limit}, 30):
@@ -90,6 +86,5 @@ def cost_ledger(
     return LedgerView(
         period=period,
         spend_eur=float(spend),
-        remaining_eur=None,
         entries=entries,
     )

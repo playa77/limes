@@ -158,7 +158,6 @@ class FakeOpsClient:
         return CostLedger(
             period="2026-09",
             spend_eur=1.50,
-            remaining_eur=48.50,
             entries=list(_CANNED_ENTRIES),
         )
 
@@ -291,12 +290,12 @@ def test_ledger_view_groups_spend_by_run(qtbot: Any) -> None:
     assert abs(by_run["(no run)"] - 0.25) < 1e-9
 
 
-def test_ledger_view_shows_budget_remaining(qtbot: Any) -> None:
+def test_ledger_view_shows_period_spend(qtbot: Any) -> None:
     view = LedgerView(FakeOpsClient)
     qtbot.addWidget(view)
     view.show()
     qtbot.waitUntil(lambda: view.entries_table.rowCount() == 3, timeout=2000)
-    assert "48.50" in view.budget_label.text()
+    assert "1.50" in view.period_label.text()
 
 
 def test_ledger_view_unreachable_degrades_without_exception(qtbot: Any) -> None:
@@ -364,14 +363,3 @@ def test_ops_views_selection_bar_visible(qtbot: Any) -> None:
     view.show()
     qtbot.waitUntil(lambda: view.table.rowCount() == 2, timeout=2000)
     assert view.table.editTriggers() == QAbstractItemView.EditTrigger.NoEditTriggers
-
-
-def test_ledger_view_displays_passive_accounting(qtbot: Any) -> None:
-    ledger = CostLedger.from_api({
-        "period": "2026-10", "spend_eur": 150.0, "remaining_eur": None, "entries": [],
-    })
-    view = LedgerView(FakeOpsClient)
-    qtbot.addWidget(view)
-    view.set_ledger(ledger)
-    assert ledger.remaining_eur is None
-    assert "no budget limit" in view.budget_label.text()

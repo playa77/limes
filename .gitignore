@@ -146,6 +146,9 @@ desktop.ini
 # docs/*.md                       the specification set
 # .env.example                    the authoritative key list
 
-# Scratch work and local non-secret tuning configuration
+# Split runtime configuration; examples are tracked.
+/config/*.env
+/config/*.env.lock
 work/
-config/limes.env
+
+/config/*.evaluation.json

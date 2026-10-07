@@ -1,16 +1,7 @@
 # src/limes/cli/reextract.py | v1.0.0 | introduced by WP-28
-"""The `reextract` command (Doc 2 §8.14, Doc 1 §9.4).
+"""Re-extract archived text under an explicit prompt/cache version.
 
-Deliberate re-extraction always carries a version (D-39): `--prompt-version`
-is copied into `Settings`, which gates the extraction cache key — a changed
-version is a cache miss, so the run re-extracts instead of short-circuiting
-on the gate's zero-cost check. `execute_run` then retracts exactly the
-source's prior assertions for each document that the new extraction did not
-reproduce — superseded, never deleted — and loads the new set (D-39).
-
-Without `--source`, every unstructured source runs in sequence — the
-document-producing sources are the only ones with anything to re-extract
-(D-45). `--budget` is an ignored compatibility option (D-75).
+Superseded assertions are retracted, never deleted. Legacy --budget is ignored.
 """
 
 from __future__ import annotations
@@ -40,7 +31,7 @@ def reextract_source(
     superseded assertions — never deleting (Doc 1 §9.4)."""
     settings = load_settings()
     configure_logging(settings)
-    envelope = None
+    envelope = Decimal(str(budget)) if budget is not None else None
     # The deliberate version: the cache key includes the prompt version, so
     # reextract under the pinned version would hit every cache entry and be
     # a no-op (D-39). The copy keeps the rest of the configuration intact.

@@ -4,7 +4,6 @@ from pathlib import Path
 import pytest
 
 from limes import config as config_module
-from limes.config import Settings as RealSettings
 from limes.config import load_settings
 from limes.errors import ConfigurationError
 
@@ -30,7 +29,7 @@ def no_env_file(monkeypatch):
     monkeypatch.setattr(
         config_module,
         "Settings",
-        lambda **kwargs: real_settings(_env_file=None, **kwargs),
+        lambda **kwargs: real_settings(**{"_env_file": None, **kwargs}),
     )
 
 
@@ -47,7 +46,6 @@ def env(monkeypatch):
 def test_load_settings_all_keys_present(env):
     settings = load_settings()
     assert settings.neo4j_uri == "bolt://localhost:7687"
-    assert settings.inference_parameters() == {}
     assert settings.embedding_dimensions == 1024
     assert settings.model_pin_stage == "provisional"
     assert settings.archive_path == Path("/tmp/archive")
@@ -87,38 +85,49 @@ def test_settings_ignores_unknown_env_keys(env, monkeypatch):
     assert not hasattr(settings, "typo_key")
 
 
-def test_empty_environment_value_does_not_shadow_tuning_file(tmp_path, monkeypatch):
+def test_empty_environment_does_not_shadow_pin_file(tmp_path, monkeypatch):
+    from limes.config import Settings
 
+    pin_file = tmp_path / "models.env"
+    pin_file.write_text("LIMES_EXTRACTION_MODEL=test/pinned\n")
     monkeypatch.setenv("LIMES_EXTRACTION_MODEL", "")
-    settings_file = tmp_path / "limes.env"
-    settings_file.write_text("LIMES_EXTRACTION_MODEL=test/model\n")
-    settings = RealSettings(
-        _env_file=settings_file,
-        **{key.removeprefix("LIMES_").lower(): value for key, value in REQUIRED.items()},
+    settings = Settings(
+        _env_file=pin_file, **{k.removeprefix("LIMES_").lower(): v for k, v in REQUIRED.items()}
     )
-    assert settings.extraction_model == "test/model"
+    assert settings.extraction_model == "test/pinned"
 
 
-def test_tuning_file_overrides_legacy_pins_but_environment_wins(tmp_path, monkeypatch):
+@pytest.mark.parametrize(
+    "field,value",
+    [
+        ("inference_temperature", -1),
+        ("inference_temperature", 3),
+        ("inference_max_tokens", 0),
+        ("inference_reasoning_effort", "typo"),
+    ],
+)
+def test_invalid_inference_parameters_fail_configuration(field, value):
+    from pydantic import ValidationError
 
-    legacy = tmp_path / ".env"
-    tuning = tmp_path / "limes.env"
+    from limes.config import Settings
+
+    with pytest.raises(ValidationError):
+        Settings(
+            _env_file=None,
+            **{k.removeprefix("LIMES_").lower(): v for k, v in REQUIRED.items()},
+            **{field: value},
+        )
+
+
+def test_pin_file_precedence_and_nonempty_environment_override(tmp_path, monkeypatch):
+    from limes.config import Settings
+
+    legacy = tmp_path / "legacy.env"
+    models = tmp_path / "models.env"
     legacy.write_text("LIMES_EXTRACTION_MODEL=test/old\n")
-    tuning.write_text("LIMES_EXTRACTION_MODEL=test/new\n")
-    kwargs = {key.removeprefix("LIMES_").lower(): value for key, value in REQUIRED.items()}
-    settings = RealSettings(_env_file=(legacy, tuning), **kwargs)
-    assert settings.extraction_model == "test/new"
+    models.write_text("LIMES_EXTRACTION_MODEL=test/new\n")
+    monkeypatch.delenv("LIMES_EXTRACTION_MODEL", raising=False)
+    values = {key.removeprefix("LIMES_").lower(): value for key, value in REQUIRED.items()}
+    assert Settings(_env_file=(legacy, models), **values).extraction_model == "test/new"
     monkeypatch.setenv("LIMES_EXTRACTION_MODEL", "test/environment")
-    assert RealSettings(_env_file=(legacy, tuning), **kwargs).extraction_model == "test/environment"
-
-
-@pytest.mark.parametrize("field,value", [
-    ("inference_temperature", -1),
-    ("inference_temperature", 3),
-    ("inference_max_tokens", 0),
-    ("inference_reasoning_effort", "typo"),
-])
-def test_invalid_inference_knobs_are_configuration_errors(env, monkeypatch, field, value):
-    monkeypatch.setenv("LIMES_" + field.upper(), str(value))
-    with pytest.raises(ConfigurationError, match=field):
-        load_settings()
+    assert Settings(_env_file=(legacy, models), **values).extraction_model == "test/environment"

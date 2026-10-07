@@ -1,36 +1,16 @@
 # src/limes/cli/select_models.py | v1.0.0 | introduced by WP-29
-"""The `select-models` command (Doc 2 §8.7.2, Doc 1 §11.2 OQ-01).
+"""Select and validate catalogue models, optionally measuring all four roles.
 
-No model identifier is asserted here. Two stages:
-
-**Stage 1, `--provisional`** — filters the OpenRouter catalogue by the §8.7.2
-role criteria (cost ceiling, declared structured output, embedding
-dimensions), ranks by blended per-token cost, prints the top three per
-role, and writes the top candidate with `LIMES_MODEL_PIN_STAGE=provisional`
-after operator confirmation. Language competence (German+English) is not
-declared in the catalogue, so it is exactly what the confirmation is for.
-The gold set is never read (AC-36).
-
-**Stage 2, `--measured`** — requires a gold set at version 1.0.0 or higher
-(AC-37), evaluates the top three candidates per role with the WP-30
-harness, and writes the winner with stage `measured`. The per-role score is
-the §8.7.2 selector: gold-set macro-F1 (extraction), calibration-set
-accuracy (adjudication), calibration recall@10 (embedding),
-reference-question validation-pass rate (NL-to-Cypher). On a change to the
-extraction or embedding model the affected source and document counts and
-a re-extraction cost estimate are reported — nothing is re-extracted, and
-an embedding change additionally reports a required vector index rebuild
-without executing it (AC-37).
-
-Pins are catalogue-validated and written atomically into `config/limes.env`.
-Secret configuration in `.env` is never written by model selection.
+Provisional confirmation is opt-in. Complete measured selections record scores,
+dataset identity, inference parameters and dated pins in separate non-secret files.
+Nothing triggers data re-extraction; changes report their impact instead.
 """
 
 from __future__ import annotations
 
-import os
-import re
-import tempfile
+import hashlib
+import json
+import math
 from datetime import UTC, datetime
 from decimal import Decimal
 from pathlib import Path
@@ -49,13 +29,15 @@ from limes.cli.evaluate import (
     nl2cypher_evaluation,
     resolution_evaluation,
 )
+from limes.config_files import update_model_pins
 from limes.errors import LimesError
 from limes.logging_setup import configure_logging
 
 logger = structlog.get_logger(__name__)
 
-# Non-secret tunables file, loaded after the legacy secrets file by Settings.
-ENV_FILE = Path("config/limes.env")
+# Refresh point: the local configuration file the pins are written into —
+# the same file `load_settings` reads (`env_file=".env"`).
+ENV_FILE = Path("config/models.env")
 
 # §8.7.2 role criteria: cost ceiling in USD per million tokens (blended:
 # mean of prompt and completion price) and whether declared structured
@@ -89,7 +71,7 @@ def select_models(
     measured: bool = typer.Option(
         False, "--measured", help="Stage 2: evaluate the top candidates, pin the winner"
     ),
-    yes: bool = typer.Option(False, "--yes", help="Pin provisional candidates without prompts"),
+    confirm: bool = typer.Option(False, "--confirm", help="Ask before each provisional pin"),
     budget: float | None = typer.Option(
         None,
         "--budget",
@@ -109,29 +91,37 @@ def select_models(
     ctx = build_run_context(
         settings,
         needs_inference=True,
-        budget_eur=None,
+        budget_eur=Decimal(str(budget)) if budget is not None else None,
     )
     try:
         if provisional:
-            _provisional(ctx, confirm=yes is not True)
+            _provisional(ctx, confirm=(confirm is True))
         else:
             _measured(ctx)
     finally:
         ctx.driver.close()
 
 
+def validate_pins(pins: dict[str, str], catalogue: list[dict[str, Any]]) -> None:
+    """Refuse missing, typoed or retired identifiers before writing any pin."""
+    available = {entry.get("id") for entry in catalogue}
+    unknown = [f"{role}: {model}" for role, model in pins.items() if model not in available]
+    if unknown:
+        raise LimesError("models absent from current catalogue: " + ", ".join(unknown))
+
+
 def filter_candidates(catalogue: list[dict[str, Any]], role: str) -> list[dict[str, Any]]:
     """The catalogue entries that satisfy the role's machine-verifiable
     §8.7.2 criteria, ranked by blended cost then by declared structured
-    output. An entry without pricing is excluded: an unpriced entry is not a candidate."""
+    output. Models without declared pricing are excluded."""
     criteria = ROLE_CRITERIA[role]
     candidates: list[dict[str, Any]] = []
     for entry in catalogue:
         model_id = entry.get("id")
         if not isinstance(model_id, str) or not model_id.strip():
             continue
-        pricing = entry.get("pricing")
-        if not isinstance(pricing, dict) or "prompt" not in pricing:
+        pricing = entry.get("pricing") or {}
+        if "prompt" not in pricing or "completion" not in pricing:
             continue
         try:
             prompt = float(pricing.get("prompt") or 0.0)
@@ -168,7 +158,7 @@ def filter_candidates(catalogue: list[dict[str, Any]], role: str) -> list[dict[s
     return sorted(candidates, key=lambda c: (c["blended_per_m"], not c["structured_outputs"]))
 
 
-def _provisional(ctx: Any, *, confirm: bool = True) -> None:
+def _provisional(ctx: Any, *, confirm: bool = False) -> None:
     """Stage 1: print and confirm the top candidate per role, write the
     pins. Never reads the gold set (AC-36)."""
     catalogue = ctx.client.catalogue()
@@ -193,7 +183,7 @@ def _provisional(ctx: Any, *, confirm: bool = True) -> None:
             typer.echo(f"  {role}: skipped by operator")
     if not pins:
         raise LimesError("no role pinned; nothing written")
-    _validate_pins(pins, catalogue)
+    validate_pins(pins, catalogue)
     _write_pins(pins, "provisional")
 
 
@@ -217,6 +207,7 @@ def _measured(ctx: Any) -> None:
     if not catalogue:
         raise LimesError("catalogue returned no models")
     winners: dict[str, str] = {}
+    measurements: dict[str, dict[str, float]] = {}
     for role in ROLE_CRITERIA:
         candidates = filter_candidates(catalogue, role)[:MEASURED_CANDIDATES_PER_ROLE]
         if not candidates:
@@ -228,6 +219,9 @@ def _measured(ctx: Any) -> None:
             )
             for candidate in candidates
         }
+        if any(not math.isfinite(score) or not 0 <= score <= 1 for score in scores.values()):
+            raise LimesError(f"invalid evaluation score for {role}; pins unchanged")
+        measurements[role] = scores
         winner = max(scores, key=lambda model: scores[model])
         winners[role] = winner
         ranked = sorted(scores.items(), key=lambda kv: -kv[1])
@@ -239,9 +233,25 @@ def _measured(ctx: Any) -> None:
         raise LimesError("no role pinned; nothing written")
     if set(winners) != set(ROLE_ENV_KEYS):
         raise LimesError(
-            "measured selection needs evaluated winners for every role; nothing written"
+            "measured selection requires candidates for all four roles; pins unchanged"
         )
-    _validate_pins(winners, catalogue)
+    validate_pins(winners, catalogue)
+    report = {
+        "measured_at": datetime.now(UTC).isoformat(),
+        "gold_set_version": version,
+        "gold_set_sha256": hashlib.sha256(ctx.settings.gold_set_path.read_bytes()).hexdigest(),
+        "scores": measurements,
+        "winners": winners,
+        "inference_parameters": {
+            "temperature": ctx.settings.inference_temperature,
+            "max_tokens": ctx.settings.inference_max_tokens,
+            "reasoning_effort": ctx.settings.inference_reasoning_effort,
+        },
+    }
+    report_path = ENV_FILE.with_suffix(".evaluation.json")
+    from limes.config_files import atomic_write_text
+
+    atomic_write_text(report_path, json.dumps(report, indent=2) + "\n")
     _write_pins(winners, "measured")
     _report_affected(ctx, winners)
 
@@ -279,7 +289,7 @@ def _report_affected(ctx: Any, winners: dict[str, str]) -> None:
     """Stage-2 impact report (AC-37): what a model change means, measured,
     never executed."""
     previous = ctx.settings
-    if "extraction" in winners and winners["extraction"] != previous.extraction_model:
+    if winners.get("extraction") != previous.extraction_model:
         documents = _count_cached_documents(ctx.driver, previous.extraction_model)
         sources = _count_extraction_sources(ctx.driver, previous.extraction_model)
         estimate = _reextraction_cost_estimate(ctx, documents, winners["extraction"])
@@ -288,7 +298,7 @@ def _report_affected(ctx: Any, winners: dict[str, str]) -> None:
             f"{winners['extraction']}: {sources} sources, {documents} cached documents affected; "
             f"re-extraction cost estimate EUR {estimate:.4f}; no re-extraction performed"
         )
-    if "embedding" in winners and winners["embedding"] != previous.embedding_model:
+    if winners.get("embedding") != previous.embedding_model:
         entities = _count_entity_nodes(ctx.driver)
         typer.echo(
             f"select-models: embedding model change: {previous.embedding_model or '(none)'} -> "
@@ -324,8 +334,8 @@ def _count_entity_nodes(driver: Any) -> int:
 
 def _reextraction_cost_estimate(ctx: Any, documents: int, model_id: str) -> Decimal:
     """The re-extraction cost estimate: documents × the §9.3 measured token
-    basis × the winner's blended price, in EUR. The basis is documented;
-    this estimate is informational only."""
+    basis × the winner's blended price, in EUR. An overestimate is the safe
+    direction for planning; the basis is documented."""
     from limes.cli.evaluate import TOKENS_PER_DOCUMENT
 
     blended = _blended_price(ctx.client.catalogue(), model_id)
@@ -349,54 +359,22 @@ def _blended_price(catalogue: list[dict[str, Any]], model_id: str) -> float:
     return 0.50
 
 
-def _validate_pins(pins: dict[str, str], catalogue: list[dict[str, Any]]) -> None:
-    """Reject unknown or retired identifiers before changing local pins."""
-    available = {entry.get("id") for entry in catalogue if isinstance(entry.get("id"), str)}
-    invalid = [model for model in pins.values() if model not in available]
-    if invalid:
-        raise LimesError("models absent from catalogue: " + ", ".join(invalid))
-
-
 def _write_pins(pins: dict[str, str], stage: str) -> None:
-    """Atomically replace non-secret tuning configuration, preserving other keys.
+    """Publish validated role pins through the existing locked model-only writer.
 
-    A partial provisional update resets the global stage. A measured marker
-    requires evaluated winners for all four roles; a partial result cannot make
-    stale pins appear measured. Repeating a write on the same day is idempotent.
+    Reject malformed role/stage updates before constructing keys or touching the
+    file, so failed selections leave the previous pins usable.
     """
     if not pins or not set(pins) <= set(ROLE_ENV_KEYS):
         raise LimesError("pin update contains no pins or unknown roles")
     if stage not in ("provisional", "measured"):
         raise LimesError("unknown model pin stage")
     if stage == "measured" and set(pins) != set(ROLE_ENV_KEYS):
-        raise LimesError("measured pin update requires every role")
-    if any(not re.fullmatch(r"[A-Za-z0-9_./:@+\-]+", model) for model in pins.values()):
-        raise LimesError("invalid model identifier")
-    updates = {ROLE_ENV_KEYS[role]: model for role, model in pins.items()}
-    updates["LIMES_MODEL_PIN_STAGE"] = stage
-    updates["LIMES_MODEL_PIN_DATE"] = datetime.now(UTC).date().isoformat()
-    text = ENV_FILE.read_text(encoding="utf-8") if ENV_FILE.exists() else ""
-    lines = []
-    for line in text.splitlines():
-        match = re.match(r"^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=", line)
-        if match is None or match[1] not in updates:
-            lines.append(line)
-    lines.extend(f"{key}={value}" for key, value in updates.items())
-    content = "\n".join(lines) + "\n"
-    ENV_FILE.parent.mkdir(parents=True, exist_ok=True)
-    temporary: str | None = None
-    try:
-        with tempfile.NamedTemporaryFile(
-            mode="w", encoding="utf-8", dir=ENV_FILE.parent, delete=False
-        ) as handle:
-            temporary = handle.name
-            handle.write(content)
-            handle.flush()
-            os.fsync(handle.fileno())
-        os.replace(temporary, ENV_FILE)
-    finally:
-        if temporary is not None:
-            Path(temporary).unlink(missing_ok=True)
+        raise LimesError("measured pins require successful evaluation of all four roles")
+    values = {ROLE_ENV_KEYS[role]: model for role, model in pins.items()}
+    values["LIMES_MODEL_PIN_STAGE"] = stage
+    values["LIMES_MODEL_PIN_DATE"] = datetime.now(UTC).date().isoformat()
+    update_model_pins(ENV_FILE, values)
     typer.echo(
         f"select-models: {len(pins)} pins written to {ENV_FILE} with LIMES_MODEL_PIN_STAGE={stage}"
     )

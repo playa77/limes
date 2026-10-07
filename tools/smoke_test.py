@@ -6,15 +6,12 @@ Runs the paid-free core of Technical Specification §13.3 end-to-end
 against a clean Docker Compose environment and mechanically asserts the
 phase's guarded invariants (DECISIONS.md, 2026-08-03):
 
-  G1 — AC-34: the base Compose file publishes no ports, and the Neo4j port
-       appears in neither file except as the LIMES_NEO4J_URI value.
-  G2 — The `ui` service holds no credentials: no env_file and no
-       Neo4j/OpenRouter key in its environment; its only variable is
-       LIMES_API_BASE_URL.
+  G1 — API publishes on loopback; the database remains internal.
+  G2 — The retired Dash service is absent.
   G3 — Only the worker image installs the spaCy models (static Dockerfile
        scan plus `import de_core_news_md` against the built images).
   G4 — Every make target from Doc 2 §8.14 exists, and backfill/reextract
-       run without a BUDGET gate.
+       carry no mandatory budget envelope.
 
 And the WP-38 verification block itself: `make up` → `make ingest
 SOURCE=gisco_nuts` → `cypher-shell` count > 0 → `make down`.
@@ -50,11 +47,10 @@ MAKE_TARGETS = (
 
 DOCKERFILES = {
     "api": REPO_ROOT / "docker" / "api.Dockerfile",
-    "ui": REPO_ROOT / "docker" / "ui.Dockerfile",
     "worker": REPO_ROOT / "docker" / "worker.Dockerfile",
 }
 
-COMPOSE = ["docker", "compose"]
+COMPOSE = ["docker", "compose", "--env-file", "config/secrets.env"]
 
 # How long `make up` may take on a first run (three image builds).
 UP_TIMEOUT_S = 1800
@@ -72,15 +68,20 @@ def _run(
     cwd: Path = REPO_ROOT,
     timeout: int = 300,
     check: bool = True,
+    show_output: bool = True,
 ) -> subprocess.CompletedProcess[str]:
-    print(f"$ {' '.join(argv)}")
+    display = list(argv)
+    for index, value in enumerate(argv[:-1]):
+        if value in {"-p", "--password"}:
+            display[index + 1] = "<redacted>"
+    print(f"$ {' '.join(display)}")
     result = subprocess.run(argv, cwd=cwd, text=True, capture_output=True, timeout=timeout)
-    if result.stdout:
+    if result.stdout and show_output:
         print(result.stdout.rstrip())
     if result.returncode != 0 and check:
         if result.stderr:
             print(result.stderr.rstrip(), file=sys.stderr)
-        raise SmokeFailure(" ".join(argv))
+        raise SmokeFailure(" ".join(display))
     return result
 
 
@@ -99,7 +100,7 @@ def _compose_config(files: list[str]) -> dict:
     for f in files:
         argv += ["-f", str(REPO_ROOT / f)]
     argv += ["config", "--format", "json"]
-    result = _run(argv, check=True)
+    result = _run(argv, check=True, show_output=False)
     return json.loads(result.stdout)
 
 
@@ -124,17 +125,19 @@ def guard_g1_g2(files: tuple[str, ...] = ("docker-compose.yml", "docker-compose.
     base = _compose_config([files[0]])
     combined = _compose_config(list(files))
 
-    # AC-34 constrains the base file: no published ports at all. The
-    # override may publish exactly the UI port on loopback — anything else
-    # in the combined config is a violation.
-    for service in base.get("services", {}).values():
-        if service.get("ports"):
-            raise SmokeFailure(f"G1: base compose publishes ports: {service['ports']}")
-    for name, service in combined.get("services", {}).items():
-        for port in service.get("ports") or []:
-            if not (name == "ui" and port.get("host_ip") == "127.0.0.1" and str(port.get("published")) == "8050"):
-                raise SmokeFailure(f"G1: {name} publishes {port} — only the UI on 127.0.0.1:8050 is allowed")
-    print("G1: no published ports in the base config; only the UI's loopback port in the override (AC-34)")
+    for config in (base, combined):
+        services = config["services"]
+        if "ui" in services:
+            raise SmokeFailure("G2: retired Dash service is still shipped")
+        api_ports = services["api"].get("ports", [])
+        if len(api_ports) != 1:
+            raise SmokeFailure("G1: API must publish exactly one loopback port")
+        for name, service in services.items():
+            for port in service.get("ports") or []:
+                if not (name == "api" and port.get("host_ip") == "127.0.0.1"
+                        and str(port.get("published")) == "8000"):
+                    raise SmokeFailure(f"G1: unexpected publication: {name} {port}")
+    print("G1: authenticated API on loopback; database remains internal")
 
     for raw in files:
         text = (REPO_ROOT / raw).read_text(encoding="utf-8")
@@ -143,36 +146,26 @@ def guard_g1_g2(files: tuple[str, ...] = ("docker-compose.yml", "docker-compose.
                 raise SmokeFailure(f"G1: Neo4j port 7687 in {raw}: {line.strip()}")
     print("G1: Neo4j port appears in neither file outside LIMES_NEO4J_URI")
 
-    ui = combined["services"].get("ui", {})
-    if ui.get("env_file"):
-        raise SmokeFailure("G2: ui service carries an env_file")
-    env = ui.get("environment", {}) or {}
-    if set(env) != {"LIMES_API_BASE_URL"}:
-        raise SmokeFailure(f"G2: ui environment is not exactly LIMES_API_BASE_URL: {sorted(env)}")
-    joined = " ".join(str(v).lower() for v in env.values())
-    for token in ("password", "openrouter", "neo4j", "bolt://", "key="):
-        if token in joined:
-            raise SmokeFailure(f"G2: credential material in ui environment: {token}")
-    print("G2: ui service holds no credentials; only LIMES_API_BASE_URL")
+    print("G2: retired Dash service is absent")
 
     for service in ("api", "worker"):
         volumes = combined["services"].get(service, {}).get("volumes", [])
-        if not any("/app/.env" in (str(v.get("source", "")) + str(v.get("target", ""))) for v in volumes):
-            raise SmokeFailure(f"config delivery: {service} lacks the .env mount")
-    print("config delivery: api and worker receive configuration via the .env mount (D-57)")
+        if not any("/app/config" in (str(v.get("source", "")) + str(v.get("target", ""))) for v in volumes):
+            raise SmokeFailure(f"config delivery: {service} lacks the config mount")
+    print("config delivery: api and worker receive configuration via the split config directory")
 
 
 def guard_g3_static() -> None:
-    """G3 (static half): the api and ui Dockerfiles prune the model wheels;
+    """G3 (static half): the api Dockerfile prune the model wheels;
     the worker's does not."""
-    for name in ("api", "ui"):
+    for name in ("api",):
         text = DOCKERFILES[name].read_text(encoding="utf-8")
         if "--prune de-core-news-md" not in text or "--prune en-core-web-md" not in text:
             raise SmokeFailure(f"G3: {name}.Dockerfile does not prune the spaCy model wheels")
     worker = DOCKERFILES["worker"].read_text(encoding="utf-8")
     if "--prune" in worker:
         raise SmokeFailure("G3: worker.Dockerfile prunes a dependency; it must install everything")
-    print("G3: api/ui prune the spaCy model wheels; worker installs them (static scan)")
+    print("G3: api prunes the spaCy model wheels; worker installs them (static scan)")
 
 
 def guard_g3_dynamic() -> None:
@@ -195,19 +188,15 @@ def guard_g3_dynamic() -> None:
 
 
 def guard_g4() -> None:
-    """G4: operational targets exist and require no budget envelope."""
+    """G4: every operational target exists and budget enforcement is absent."""
     help_text = _make("help", check=False).stdout
     missing = [t for t in MAKE_TARGETS if f"make {t}" not in help_text]
     if missing:
         raise SmokeFailure(f"G4: targets missing from `make help`: {missing}")
-    for target, args in (
-        ("backfill", ["SOURCE=feeds", "DAYS=1"]),
-        ("reextract", ["PROMPT_VERSION=1.0.0"]),
-    ):
-        result = _make(target, ["-n", *args], check=False)
-        if result.returncode != 0 or "--budget" in result.stdout or "BUDGET" in result.stdout:
-            raise SmokeFailure(f"G4: {target} still requires a budget envelope")
-    print("G4: all make targets listed; backfill/reextract have no budget gate")
+    dry_run = _run(["make", "-n", "backfill", "SOURCE=feeds", "DAYS=7"])
+    if "--budget" in dry_run.stdout or "BUDGET" in dry_run.stdout:
+        raise SmokeFailure("G4: backfill still enforces a budget envelope")
+    print("G4: all make targets listed; backfill has no budget gate")
 
 
 def _wait_neo4j_healthy(timeout_s: int) -> None:
@@ -251,6 +240,20 @@ def main() -> int:
         return 1
 
     try:
+        config_dir = REPO_ROOT / "config"
+        for name in ("secrets", "settings", "models"):
+            path = config_dir / f"{name}.env"
+            if not path.exists():
+                text = (config_dir / f"{name}.env.example").read_text(encoding="utf-8")
+                if name == "secrets":
+                    import secrets
+                    text = text.replace("LIMES_API_TOKEN=\n",
+                                        f"LIMES_API_TOKEN={secrets.token_urlsafe(32)}\n")
+                path.write_text(text, encoding="utf-8")
+                path.chmod(0o600)
+                print(f"smoke: created split {name} configuration")
+        env_path = config_dir / "secrets.env"
+
         guard_g1_g2()
         guard_g3_static()
         guard_g4()
@@ -267,14 +270,9 @@ def main() -> int:
             _run([*COMPOSE, "down", "-v", "--remove-orphans"], timeout=300)
             print("smoke: existing limes project torn down (--clean)")
 
-        env_path = REPO_ROOT / ".env"
-        if not env_path.is_file():
-            env_path.write_text((REPO_ROOT / ".env.example").read_text(encoding="utf-8"), encoding="utf-8")
-            print("smoke: created .env from .env.example (secrets unpopulated — no paid step runs here)")
-
         _make("up", timeout=UP_TIMEOUT_S)
         _wait_neo4j_healthy(NEO4J_HEALTHY_TIMEOUT_S)
-        print("smoke: all four services up; neo4j healthy")
+        print("smoke: all three services up; neo4j healthy")
 
         guard_g3_dynamic()
 

@@ -1,107 +1,94 @@
-# AGENTS.md — LIMES
+# AGENTS.md — LIMES testing phase
 
-Ontology-driven knowledge graph over Neo4j 2026.x Community, Docker Compose,
-four services (`neo4j` / `api` / `worker` / `ui`). Python ≥3.12, uv-managed
-venv at `./venv` (`UV_PROJECT_ENVIRONMENT=venv uv sync --all-packages --all-groups`). Authoritative artifacts: `docs/LIMES_Design_Document_v2.0.0.md`
-and `docs/LIMES_Technical_Specification_v2.1.0.md` (§15 is the seam register);
-the desktop client has its own pair, `docs/LIMES_Desktop_Client_Requirements_v1.0.0.md`
-and `docs/LIMES_Desktop_Client_Architecture_v1.0.0.md`.
-On re-entry, read `REDESIGN_STATUS.md`, the open ledger, and the newest decisions.
-The testing-phase policy below supersedes initial-build process rules (D-75).
+Read the newest five entries in `DECISIONS.md`, the current contract in
+`docs/TESTING_PHASE.md`, and `OPEN_ISSUES.md` on re-entry. Older design/specification
+files describe the initial implementation; the testing-phase contract supersedes
+changed behavior. Runtime currently has three services: Neo4j, API and worker.
 
-## Verification loop
+## Repository baseline — before any implementation or publication
+
+At session entry inspect `git status` and the current branch. Run
+`python3 tools/check_git_baseline.py`: it fetches main and requires the checkout
+to contain its current history. If stale, preserve local work, reconcile with
+main and review the resulting diff before implementation. A supplied workspace
+or cached `origin/main` ref is never evidence that GitHub is current.
+
+Install the repository-local publication guard once per checkout with
+`git config --local core.hooksPath .githooks`. Its pre-push hook fetches live main,
+checks every pushed commit, and fails closed on stale history or fetch failure.
+Do not bypass this hook. It does not merge or overwrite working-tree files.
+Inspect `git diff origin/main` before committing/pushing and describe the current
+PR diff, not work already merged through an earlier PR. An installed local hook
+is not a platform-wide initialization guarantee; fresh clones must install it.
+
+## Verification
+
+The canonical environment is `venv/`: create/update it with
+`UV_PROJECT_ENVIRONMENT=venv uv sync --frozen --all-packages`.
 
 ```bash
-./venv/bin/ruff check src tests                    # NOT `ruff check .`
-./venv/bin/ruff check desktop/src desktop/tests    # desktop client (make desktop-lint)
-./venv/bin/mypy                                    # strict, scoped to src/limes + desktop/src/limes_desktop
-./venv/bin/python -m pytest tests/unit -q          # no Docker needed
-# Integration and acceptance are separate invocations: whole-tree collection
-# trips over the acceptance conftest's pytest_plugins under pytest 9.x (D-63).
-# Both need the Docker daemon and share one session-scoped container.
-./venv/bin/python -m pytest tests/integration -q
-./venv/bin/python -m pytest tests/acceptance -q
-./venv/bin/python -m pytest desktop/tests/unit desktop/tests/contract -q   # offline (make desktop-test)
+venv/bin/ruff check src tests desktop/src desktop/tests
+venv/bin/mypy
+venv/bin/python tools/check_docs.py docs/
+venv/bin/python -m pytest tests/unit -q
+venv/bin/python -m pytest desktop/tests/unit desktop/tests/contract -q
+venv/bin/python -m pytest tests/integration -q
+venv/bin/python -m pytest tests/acceptance -q
+venv/bin/python -m pytest desktop/tests/integration -q
 ```
 
-- Plain `ruff check .` fails on the standalone scripts in `tools/`; they are
-  not part of the lint gate.
-- E501 is waived only for `src/limes/graph/schema.py` (single-string Cypher
-  DDL); everywhere else the limit is 100.
-- Integration and acceptance share one session-scoped disposable Neo4j
-  container booted via the docker CLI (first boot can take ~4 min). Reuse a
-  running instance with `LIMES_TEST_NEO4J_URI`; override image with
-  `LIMES_TEST_NEO4J_IMAGE`.
-- Tests never make real paid calls: OpenRouter endpoints are respx-mocked and
-  spaCy models are faked. Keep it that way when adding tests.
-- After editing `docs/`: `python3 tools/check_docs.py docs/` (type closure, AC
-  numbering, seam coverage; C7 rejects TBD/FIXME/"final").
-- `python3 tools/smoke_test.py` = clean-host bootstrap smoke test.
+Graph suites use disposable Docker containers. A dedicated external test database
+may be selected using `LIMES_TEST_NEO4J_URI`; never point this at operator data.
+Run acceptance separately because pytest rejects its nested plugin declaration in
+whole-tree collection. Headless desktop checks use `QT_QPA_PLATFORM=offscreen`;
+WebEngine may need platform-specific test flags in constrained CI environments.
+Never skip a failing guard merely to get a green run.
 
-## Runtime vs host
+## Surviving invariants
 
-Operational commands run inside the worker container: every `make` target wraps
-`docker compose exec worker limes …`. Never run ingestion on the host.
-Configuration loads legacy `.env`, then `config/limes.env`, then nonempty
-environment overrides. Secrets stay in `.env`; tools write only non-secret
-tunables in `config/limes.env`. The config directory is mounted so atomic pin
-replacement is visible. Empty values are unset (D-75).
+- Tests never make real paid model calls. Mock OpenRouter transports.
+- `composition.py` owns infrastructure construction (API startup is its existing
+  documented exception). No infrastructure construction inside pipeline consumers.
+- Ontology remains the single source of entity/relation types. Consumers derive
+  their schema and never embed ontology literals or database access in the desktop.
+- Query validation and read-mode sessions remain independent barriers to writes.
+  Dedicated operational endpoints may be added with explicit authentication,
+  bounded parameters and tests; the initial fixed write count is not a product rule.
+- Assertions remain bitemporal. Keep contradictions; use assertion `recorded_at`.
+- Empty results include hop-level coverage and diagnosis.
+- Content-addressed archive remains the system of record. Preserve clean shutdown
+  for physical Neo4j dumps and the 180-second stop grace.
+- Neo4j schema provisioning uses one DDL statement per transaction and serializes
+  provisioners with the existing advisory lock.
 
-- The base compose file publishes **no ports** (AC-34); the override publishes
-  only the UI on `127.0.0.1:8050`. Server promotion = removing the override.
-- The worker mounts the docker socket and compose files because `limes backup`
-  orchestrates the host daemon from inside the container.
+## Routine iteration
 
-## Inference and testing-phase iteration
+Model and prompt changes need normal implementation review and meaningful tests,
+not an operator budget envelope or a work-package ceremony. Model identifiers are
+allowed in configuration and examples. Preserve cache/provenance version keys;
+record material behavior/schema changes in the changelog. Make testing evidence
+and remaining gaps visible in the tracked issue ledger.
 
-Model calls have passive per-call accounting; no budget governor or BUDGET gate.
-Tests never make paid calls. Routine model/prompt/configuration changes within
-an authorized task need no additional operator envelope or per-work-package
-version ceremony. Keep cache-key prompt/schema versions correct when behavior
-changes and record material behavior changes in the changelog.
-Never run production ingestion or paid evaluation without user authorization.
-Bootstrap ordering remains structured sources → stamp embeddings → backfill.
+There is no cost governor. The passive ledger records provider usage and run spend.
+Old `--budget` CLI arguments are optional, accepted for compatibility and ignored.
+Do not execute ingestion, backfill, re-extraction or live paid evaluation merely to
+verify an implementation; an implementation request does not request a data run.
 
-## Architecture rules (guarded by tests)
+## Runtime and secrets
 
-- One composition root: `src/limes/composition.py` constructs every component;
-  nothing below CLI/API startup instantiates infrastructure.
-- `ontology/ontology.yaml` is the single source of truth for entity and
-  relation types, consumed by loader, Cypher validator, query builder, and API.
-  Never hardcode type/relation names elsewhere. The UI holds no ontology
-  literals and no DB access — AST/source scans enforce this in
-  `tests/integration/test_ui.py`. The desktop client is held to the identical
-  standard (`desktop/tests/contract/test_no_ontology_literals.py`), and its
-  runtime must not import `limes` — only its contract tests may.
-- Query path is read-only by construction: write clauses rejected at parse
-  level; explicit mutations have named routes and contract tests. New operational
-  routes may be added for the requested access redesign; arbitrary query writes
-  remain forbidden. The existing three-write guard applies until those routes land.
-- Assertions are bitemporal: validity time ≠ belief time. Contradictions are
-  retained under different source ids, never overwritten. `recorded_at` comes
-  from the assertion, never the wall clock (D-06).
-- Empty query results carry a coverage report naming which hop emptied the set;
-  never return a bare empty result.
+`config/secrets.env`, `config/settings.env`, and `config/models.env` separate
+credentials, tuning and tool-written pins. Never print/read existing secret files
+or commit credentials. Empty environment values are unset. Pin writes validate a
+model-only allowlist and use locked atomic replacement. Legacy host `.env` loads
+remain supported for migration; Compose mounts only the split config directory.
 
-## Neo4j quirks (details in DECISIONS.md)
+Every API surface requires `LIMES_API_TOKEN`, including docs and health. Desktop
+credentials are session-only; use HTTPS remotely or a loopback SSH tunnel. Starting
+the stack is an administrator action; using the HTTP API needs no Docker membership.
 
-- First-boot admin must be named `neo4j`; the app user `limes` is created by
-  the compose boot wrapper on every fresh volume.
-- `provision()` issues one DDL statement per transaction (many-DDL transactions
-  fail with "insanely frequent schema changes") and serializes concurrent
-  provisioners through an `:AdvisoryLock` mutex (D-67b).
-- Schema provisioning runs on every context build — `make bootstrap-db` is a
-  deliberate no-op.
-- Clean shutdown takes up to ~120 s (`stop_grace_period: 180s`); after an
-  abrupt kill, `neo4j-admin database dump` refuses to run.
-
-## Conventions
-
-- File headers carry a version comment: `# path | vX.Y.Z | why`. Nothing is
-  ever labeled "final".
-- Each versioned artifact has its own changelog: root `CHANGELOG.md` (material behavior changes), `ontology/CHANGELOG.md`, `gold_set/CHANGELOG.md`. Routine model/prompt iterations need no independent governance approval.
-- Guarded invariants get named guard tests referenced from their DECISIONS.md
-  entry (e.g. D-67 → `test_concurrent_provision_is_serialized`); update obsolete guards with the redesign decision and replacement evidence;
-  preserve guards for the keep-set.
-- Branches follow `wp-NN-slug` or short topic names; merging to `main` happens
-  only on explicit operator instruction.
+Remaining privilege defects are tracked, not endorsed: the worker is still an idle
+exec container with a Docker socket, and physical backup still uses it. Do not
+expand that privilege surface. Finish the worker/backup redesign before claiming
+rootless operations. No agent staging, commits, pushes, deployment or merges unless
+explicitly requested. Changes to production data and co-tenant services are outside
+an implementation request.

@@ -6,17 +6,12 @@ means evidenced, not asserted — a bare "done" is not a closure. Design-level
 deferrals stay in the roadmap with revisit triggers; this file is the
 operational list and is expected to reach zero.
 
-Standing constraints (restated so a fresh session cannot violate them):
-
-- **No commits, staging, or pushes by the agent.** Merging to `main` happens
-  only on explicit operator instruction (AGENTS.md, Conventions).
-- **Testing-phase iteration (D-75).** Routine model/prompt/selector changes
-  within the requested task require no separate operator envelope. Tests never
-  make real paid calls; production inference is not triggered by this redesign.
-- **`.env` is off-limits** — never read, printed, or committed.
-- **VPS co-tenants must not be disturbed.** Brainy runs on the same host; any
-  operator-run VPS command must be scoped to the `limes` stack only. The agent
-  never SSHes; the deployed-revision check is operator-run (OI-01).
+Current testing-phase constraints are in `AGENTS.md` and `docs/TESTING_PHASE.md`.
+They supersede the initial operator-envelope/no-model-id restrictions. Tests never
+make paid calls; existing secrets remain private. No staging, commits, pushes,
+merges or deployment without explicit instruction. Production/co-tenant operations
+are outside implementation scope. Snapshot and issue rows below are historical
+records; subsequent evidence/closures are appended without erasing them.
 
 Snapshot (every row from the command that produced it; run 2026-09-16):
 
@@ -266,56 +261,71 @@ are decided in the operator's own words, not merely acknowledged. An empty
 ledger proves nothing — this one is not empty, and the guards, not the list,
 are what keep it empty afterwards.
 
-## Closed / implementation evidence — 2026-10-07 (D-75)
+## 2026-10-07 — Redesign implementation and verification evidence
 
-Original inventory rows above are preserved. Entries here supersede their open
-status only for the specified completed work; no deployment facts are invented.
+D-75 and `docs/TESTING_PHASE.md` define the implemented tranche. This is repo-side
+work against HEAD `0aa9d67`; no staging, commits, pushes, production data runs,
+deployment or real paid inference occurred. R1, A1/A2's API/desktop access, A5,
+B1, selector/pin improvements, C4 and the R3/D2 inventory are implemented. R2's
+operational CLI and A3/A4/R4/C1/C2 remain open together; C3 and E1 are still pending.
+Live model measurement (B2) remains an operator data run; mocked evaluation exercises
+the complete scoring/report/pinning path. CI is configured but no remote CI run is
+claimed. The initial full spec regeneration awaits the runtime redesign.
 
-- **OI-02 closed:** `venv/bin/python -m pytest desktop/tests/integration -q`
-  → **2 passed** on the managed Docker host, with mocked OpenRouter and disposable
-  Neo4j; the full typed-client flow now has executed evidence.
-- **OI-06/OI-07/OI-08/OI-12 closed:** corrected constant spelling, removed dead
-  timeout/expansion state, and extended top-level response parity.
-  `venv/bin/python -m pytest desktop/tests/unit desktop/tests/contract -q`
-  → **135 passed**; the subsequent passive-ledger regression plus ops module
-  → **16 passed** (`desktop/tests/unit/test_ops_views.py`).
-- **OI-14 implementation closed:** `.github/workflows/tests.yml` adds offline
-  lint/type/docs/unit/desktop checks and a matrix of isolated graph suites, with
-  JUnit artifacts. Equivalent checks executed below. Hosted CI execution still
-  awaits a push; no push is authorized or performed in this change.
-- **OI-15 closed:** canonical environment creation command is now
-  `UV_PROJECT_ENVIRONMENT=venv uv sync --all-packages --all-groups`; AGENTS, README
-  and CI agree on `venv`. The documented commands below executed successfully.
+Local evidence (2026-10-07, managed cloud host):
 
-### Redesign verification
+| Re-runnable command | Result |
+|---|---|
+| `venv/bin/ruff check src tests desktop/src desktop/tests` | Passed |
+| `venv/bin/mypy` | Passed, 140 source files |
+| `venv/bin/python tools/check_docs.py docs/` | Passed C1–C8; includes visible topology/access/accounting claims |
+| `docker compose --env-file config/secrets.env.example config --quiet` | Passed without printing configuration/secrets |
+| `venv/bin/python -m pytest tests/unit -q` | 737 passed; then 26 API-auth cases passed after the bearer-scheme case regression expanded the suite |
+| `QTWEBENGINE_CHROMIUM_FLAGS='--no-sandbox --disable-gpu' venv/bin/python -m pytest desktop/tests/unit desktop/tests/contract -q` | 138 passed |
+| `venv/bin/python -m pytest tests/integration -q` | 163 passed |
+| `venv/bin/python -m pytest tests/acceptance -q` | 85 passed |
+| `venv/bin/python -m pytest desktop/tests/integration -q` | 2 passed, including the previously unexecuted end-to-end flow |
+| `venv/bin/python -m pytest tests/unit/test_runtime_docs.py -q` | 3 passed; deliberately changing publication or visible authentication prose is rejected |
+| `git diff --check` | Passed |
 
-- `venv/bin/ruff check src tests desktop/src desktop/tests` → pass.
-- `venv/bin/mypy` → pass (139 source files).
-- `venv/bin/python tools/check_docs.py docs/` → all seven checks pass.
-- `venv/bin/python -m pytest tests/unit -q` → 705 passed, one stale budget-label
-  expectation failed. Corrected that assertion; reran
-  `tests/unit/test_ui_components.py tests/unit/test_select_models.py` → **46 passed**,
-  including the failed case and new noninteractive selection test.
-- Targeted configuration/OpenRouter/selection run → **61 passed**, including
-  empty-value precedence, parameter payload/logging, no pre-call check,
-  pin-validation, interrupted atomic writes, and partial measured-marker guards.
-- `venv/bin/python -m pytest tests/integration -q` → 161 passed, two old guard
-  expectations failed (wrapped CLI help text and budget refusal). Replaced the
-  obsolete refusal expectation with a zero-budget successful-run/accounting
-  check; reran `test_cli_backfill.py test_cli_reextract.py
-  test_pipeline_run_unstructured.py` → **9 passed**, including both failed cases.
-- `venv/bin/python -m pytest tests/acceptance -q` → 84 passed, one empty-value
-  test failed because a local file supplied the intended fallback. Isolated its
-  working directory; `tests/acceptance/test_ac01_config.py` → **3 passed**, retaining
-  missing-key and ontology-downgrade guards.
-- G4 `guard_g4()` → pass: targets exist, dry-run backfill/reextract carry no
-  BUDGET or `--budget` gate. Full production Compose bootstrap was not run.
+Local sockets, the Docker daemon and Qt process creation required the managed
+sandbox's reviewed execution access. No test invariant was skipped or weakened to
+bypass that environment constraint. Container/volume cleanup used fixture-owned
+resources only. Existing Starlette/runpy deprecation warnings remain non-failures.
+A production Compose smoke/build/deployment was not run: it would start operational
+services and fetch source data. Rendered Compose and all test suites are verified;
+production startup still requires administrator deployment validation.
 
-All graph runs used disposable containers, never a deployed stack. Offline ASGI,
-Qt, Chromium and Docker tests needed the managed executor's local-socket access;
-sandbox-only attempts were rerun with the required access. No paid model calls,
-production ingestion, secrets-file edits, commits, staging or pushes occurred.
+### Closed with evidence
 
-OI-01/03/04/05/09/10/11/13/16/17/18 remain open. The ignored 18-finding source
-trail for OI-05 is absent in this checkout; tracked parked rows are preserved.
-See REDESIGN_STATUS.md for P0 access/runtime work and remaining requirements.
+- **OI-02** — Desktop integration is now executed: `venv/bin/python -m pytest
+  desktop/tests/integration -q` → 2 passed. No paid calls.
+- **OI-04** — README and override no longer describe server promotion as override
+  removal. Current loopback API and HTTPS/tunnel access are documented. Evidence:
+  `venv/bin/python tools/check_docs.py docs/` plus
+  `venv/bin/python -m pytest tests/unit/test_runtime_docs.py -q` → 3 passed.
+  OI-01/OI-09's original production-deployment evidence remains open.
+- **OI-06 / OI-07 / OI-08** — Guard constant renamed, dead timeout removed and unused
+  graph-expansion bookkeeping removed. Evidence: desktop unit/contract command
+  above → 138 passed, including visualization tests.
+- **OI-12** — `QueryResponse`/`NeighborResponse` top-level fields now have parity
+  guards against `QueryOutcome`/`GraphNeighbors`. Evidence: desktop contract suite.
+- **OI-13** — Dynamic `__import__('sys')` replaced by the existing `sys` import.
+  Evidence: desktop integration → 2 passed.
+- **OI-14** — GitHub Actions verification workflow added, with offline and graph
+  jobs and JUnit artifacts. Its commands are evidenced locally above; remote CI
+  execution is pending publication and is not a closure claim about a CI run.
+- **OI-15** — Canonical environment is documented as `venv/` created by
+  `UV_PROJECT_ENVIRONMENT=venv uv sync --frozen --all-packages`. Make lint/test
+  commands use that path and the verification commands above execute successfully.
+- **OI-17** — C8 checks the canonical runtime JSON against both Compose files and
+  current README/contract snapshots and visible fact tables. Deliberate port and
+  authentication-summary drift tests fail the checker as intended.
+
+OI-05/E4 cannot be fully closed: the original ignored
+`.superpowers/sdd/2026-09-09-desktop-client/progress.md` is absent in this checkout
+(`test -f ...` → absent). Tracked OI-10..18 findings remain available, but the
+missing 18-finding source is not reconstructed or declared complete. OI-03's
+original deployed smoke behavior, OI-09 deployment stamp, map-network and remaining
+semantic desktop items stay open. The old closing sequence is historical; current
+remaining work is governed by the testing-phase contract rather than initial gates.

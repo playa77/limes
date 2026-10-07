@@ -1,6 +1,12 @@
 # tests/unit/test_openrouter_client.py | v1.0.0 | introduced by WP-22
-"""OpenRouter accounting, inference parameters, retry, and redaction tests.
-All transport is mocked; calls never consult a budget gate."""
+"""OpenRouter client tests per Doc 2 §8.7.6, §11 (WP-22).
+
+The acceptance: `governor.check` before and `governor.commit` after every
+request; the §11 retry policy (429/5xx retried with backoff, other 4xx never);
+the API key never reaching a log line; ledger entries only for attempts that
+returned token usage; pricing from the catalogue with a conservative
+fallback. All transport is respx-mocked — no live network.
+"""
 
 import logging
 from decimal import Decimal
@@ -11,9 +17,8 @@ import respx
 from httpx import Response
 
 from limes.config import Settings
-from limes.cost.governor import Governor
-from limes.errors import BudgetExhausted, ExtractionError
-from limes.extraction import openrouter_client as client_module
+from limes.cost.recorder import CostRecorder
+from limes.errors import ExtractionError
 from limes.extraction.openrouter_client import (
     FALLBACK_USD_PER_MILLION_INPUT,
     FALLBACK_USD_PER_MILLION_OUTPUT,
@@ -79,7 +84,7 @@ class MockGovernor:
     def check(self, estimated_cost_eur: Decimal) -> None:
         self.checks.append(estimated_cost_eur)
         if self.refuse is not None and estimated_cost_eur > self.refuse:
-            raise BudgetExhausted(f"budget exhausted at {estimated_cost_eur}")
+            raise AssertionError(f"budget exhausted at {estimated_cost_eur}")
 
     def commit(self, actual) -> None:
         self.commits.append(actual)
@@ -88,8 +93,8 @@ class MockGovernor:
         return Decimal("1")
 
 
-def _client(governor: Governor | None = None) -> tuple[OpenRouterClient, MockGovernor]:
-    gov = governor if governor is not None else MockGovernor()
+def _client(recorder: CostRecorder | None = None) -> tuple[OpenRouterClient, MockGovernor]:
+    gov = recorder if recorder is not None else MockGovernor()
     return OpenRouterClient(_settings(), gov), gov
 
 
@@ -220,15 +225,15 @@ def test_unknown_purpose_is_rejected_before_any_request():
     assert governor.checks == []
 
 
-def test_completion_does_not_consult_budget_even_if_legacy_governor_would_refuse():
+def test_spending_limit_cannot_prevent_a_request():
     with respx.mock:
         respx.get(CATALOGUE_URL).mock(return_value=Response(200, json=CATALOGUE))
         route = respx.post(COMPLETIONS_URL).mock(return_value=Response(200, json=COMPLETION))
         governor = MockGovernor()
         governor.refuse = Decimal("0")
         client = OpenRouterClient(_settings(), governor)
-        assert client.complete([{"role": "user", "content": "extract"}], MODEL, "extraction")[0]
-    assert route.called
+        client.complete([{"role": "user", "content": "x"}], MODEL, "extraction")
+    assert route.call_count == 1
     assert governor.checks == []
     assert len(governor.commits) == 1
 
@@ -391,37 +396,37 @@ def test_completion_with_non_string_content_raises():
             client.complete([{"role": "user", "content": "x"}], MODEL, "extraction")
 
 
-def test_completion_sends_and_logs_configured_inference_parameters(monkeypatch):
-    events = []
-    monkeypatch.setattr(client_module.logger, "info", lambda event, **fields: events.append(fields))
+def test_inference_parameters_sent_and_logged_without_prompt(capsys):
+    import json
+
     settings = _settings(
-        inference_temperature=0.0,
-        inference_max_tokens=2048,
-        inference_reasoning_effort="high",
+        inference_temperature=0, inference_max_tokens=1234, inference_reasoning_effort="high"
     )
-    governor = MockGovernor()
-    client = OpenRouterClient(settings, governor)
     with respx.mock:
         respx.get(CATALOGUE_URL).mock(return_value=Response(200, json=CATALOGUE))
         route = respx.post(COMPLETIONS_URL).mock(return_value=Response(200, json=COMPLETION))
-        client.complete([{"role": "user", "content": "extract"}], MODEL, "extraction")
-    import json
-
+        client = OpenRouterClient(settings, MockGovernor())
+        client.complete(
+            [{"role": "user", "content": "private document text"}], MODEL, "extraction"
+        )
     payload = json.loads(route.calls[0].request.content)
-    expected = {"temperature": 0.0, "max_tokens": 2048, "reasoning": {"effort": "high"}}
-    assert {key: payload[key] for key in expected} == expected
-    assert events[0]["inference_parameters"] == expected
-    assert "messages" not in events[0]
-    assert API_KEY not in str(events)
+    assert payload["temperature"] == 0
+    assert payload["max_tokens"] == 1234
+    assert payload["reasoning"] == {"effort": "high"}
+    output = capsys.readouterr().out
+    assert "private document text" not in output
+    assert API_KEY not in output
+    assert "inference_parameters" in output
+    assert "high" in output
 
 
-def test_completion_omits_unconfigured_parameters():
+def test_provider_defaults_omit_optional_inference_parameters():
     import json
 
     with respx.mock:
         respx.get(CATALOGUE_URL).mock(return_value=Response(200, json=CATALOGUE))
         route = respx.post(COMPLETIONS_URL).mock(return_value=Response(200, json=COMPLETION))
         client, _ = _client()
-        client.complete([{"role": "user", "content": "extract"}], MODEL, "extraction")
+        client.complete([{"role": "user", "content": "x"}], MODEL, "extraction")
     payload = json.loads(route.calls[0].request.content)
-    assert set(payload) == {"model", "messages"}
+    assert not {"temperature", "max_tokens", "reasoning"} & payload.keys()

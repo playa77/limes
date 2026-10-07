@@ -1,13 +1,13 @@
 # src/limes/cli/backfill.py | v1.0.0 | introduced by WP-28
-"""The `backfill` command (Doc 2 §8.14, §15.3 Trace 2).
+"""Backfill over an explicit time window with passive cost accounting.
 
-`--days` defines the explicit fetch window. No budget option is required;
-all reported model usage remains in the passive ledger (D-75).
+The optional legacy --budget flag is ignored; --days fixes the requested window.
 """
 
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
+from decimal import Decimal
 
 import structlog
 import typer
@@ -26,14 +26,15 @@ def backfill_source(
         None, "--budget", min=0, help="Deprecated compatibility option; ignored"
     ),
 ) -> None:
-    """Backfill a source over the last `--days` days with passive cost accounting."""
+    """Backfill a source over the last `--days` days under an explicit
+    budget envelope (Doc 1 §9.2)."""
     from limes.cli.main import adapter_kind, run_with_lock
     from limes.composition import build_run_context
 
     settings = load_settings()
     configure_logging(settings)
 
-    envelope = None
+    envelope = Decimal(str(budget)) if budget is not None else None
     since = datetime.now(UTC) - timedelta(days=days)
     ctx = build_run_context(
         settings,

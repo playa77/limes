@@ -128,7 +128,7 @@ def test_ac36_provisional_writes_complete_pin_set_without_reading_gold_set(
     try:
         with respx.mock:
             respx.get(CATALOGUE_URL).mock(return_value=Response(200, json=SELECT_CATALOGUE))
-            _provisional(ctx)
+            _provisional(ctx, confirm=True)
 
         assert written, "the provisional stage must pin at least one role"
         roles = {role for role, _value, _stage in written}
@@ -164,7 +164,7 @@ def test_ac36_provisional_requires_operator_confirmation(
         with respx.mock:
             respx.get(CATALOGUE_URL).mock(return_value=Response(200, json=SELECT_CATALOGUE))
             with pytest.raises(LimesError, match="no role pinned"):
-                _provisional(ctx)
+                _provisional(ctx, confirm=True)
         assert written == []
     finally:
         ctx.driver.close()

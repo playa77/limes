@@ -64,7 +64,7 @@ def _stub_client(monkeypatch: pytest.MonkeyPatch, client: StubClient) -> None:
             ontology=ctx.ontology,
             driver=ctx.driver,
             client=client,
-            governor=ctx.governor,
+            recorder=ctx.recorder,
         )
 
     monkeypatch.setattr(deps, "build_nlq_context", _stubbed)

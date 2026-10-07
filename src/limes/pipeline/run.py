@@ -23,7 +23,10 @@ the only record-level error any module raises today; `ExtractionSchemaError`,
 raisers and land in `errors` when they arrive) are counted in `errors` and
 skipped. Fetch and configuration failures (`SourceFetchError`,
 `ExtractionError`, `GraphWriteError`) abort the run: the run record is
-closed with `errors` counted, then re-raised.
+closed with `errors` counted, then re-raised. `BudgetExhausted` closes the
+run cleanly — `finished_at` set, `last_success_at` untouched — logs the
+queued remainder, and re-raises so the CLI can report the termination
+(AC-14).
 
 **The cache ordering (D-38).** `cache.put` runs only after the document's
 load succeeded; a mid-document failure leaves no cache entry that would
@@ -129,7 +132,7 @@ RETURN r.assertion_id AS assertion_id
 
 
 class RunSpec(BaseModel):
-    """One ingestion run request. Legacy `budget_eur` is ignored (D-75)."""
+    """An ingestion request; the legacy budget_eur field is ignored."""
 
     source_id: str
     mode: Literal["ingest", "backfill", "reextract"]
@@ -181,7 +184,6 @@ def execute_run(spec: RunSpec, ctx: RunContext) -> IngestionRunRecord:
         mode=spec.mode,
         window_from=since,
         window_to=until,
-        budget_eur=spec.budget_eur,
     )
 
     cost_before = _recorded_spend(ctx)
@@ -242,7 +244,7 @@ def _process_record(
 ) -> None:
     """Archive, normalize, and route one raw record. Every record-level
     failure is counted in `record.errors` and skipped — nothing aborts the
-    run but fetch/configuration failures and budget exhaustion."""
+    run but fetch/configuration failures."""
     try:
         content_hash = ctx.archive.put(spec.source_id, raw.payload, raw.content_type)
         normalized = adapter.normalize(raw)
@@ -546,10 +548,10 @@ def _stamp_pipeline_provenance(
 
 
 def _recorded_spend(ctx: RunContext) -> Decimal | None:
-    """Process-local recorded spend, or None for a structured-only context."""
-    if ctx.governor is None:
+    """Process spend, or None when this context cannot issue inference calls."""
+    if ctx.recorder is None:
         return None
-    return ctx.governor.total_spend
+    return ctx.recorder.spent_eur
 
 
 def _close_run(
@@ -557,13 +559,13 @@ def _close_run(
     record: IngestionRunRecord,
     cost_before: Decimal | None,
 ) -> None:
-    """Close the record with the passive recorder's spend delta for this run."""
+    """Close the run with its own process-spend delta and durable counters."""
     finished_at = datetime.now(UTC)
     cost = Decimal("0")
     if cost_before is not None:
-        remaining = _recorded_spend(ctx)
-        if remaining is not None:
-            cost = max(Decimal("0"), remaining - cost_before)
+        spent = _recorded_spend(ctx)
+        if spent is not None:
+            cost = max(Decimal("0"), spent - cost_before)
     record.finished_at = finished_at
     record.cost_eur = cost
     ctx.driver.write_batch(

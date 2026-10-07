@@ -1,0 +1,55 @@
+name: CI
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  offline:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      UV_PROJECT_ENVIRONMENT: venv
+      QT_QPA_PLATFORM: offscreen
+      QTWEBENGINE_CHROMIUM_FLAGS: --no-sandbox --disable-gpu
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: '0.12.1'
+          enable-cache: true
+      - run: sudo apt-get update && sudo apt-get install -y libegl1 libopengl0 libxcb-cursor0 libxkbcommon-x11-0 libnss3 libasound2t64 libxcomposite1 libxdamage1 libxrandr2 libxtst6 libgbm1
+      - run: uv sync --frozen --all-packages --python 3.12
+      - run: venv/bin/ruff check src tests desktop/src desktop/tests
+      - run: venv/bin/mypy
+      - run: venv/bin/python tools/check_docs.py docs/
+      - run: venv/bin/python -m pytest tests/unit -q --junitxml=test-results/unit.xml
+      - run: venv/bin/python -m pytest desktop/tests/unit desktop/tests/contract -q --junitxml=test-results/desktop.xml
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: offline-results
+          path: test-results/
+  graph:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      UV_PROJECT_ENVIRONMENT: venv
+      QT_QPA_PLATFORM: offscreen
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: '0.12.1'
+          enable-cache: true
+      - run: uv sync --frozen --all-packages --python 3.12
+      # Separate sessions avoid pytest's nested acceptance plugin collection issue.
+      - run: venv/bin/python -m pytest tests/integration -q --junitxml=test-results/integration.xml
+      - run: venv/bin/python -m pytest tests/acceptance -q --junitxml=test-results/acceptance.xml
+      - run: venv/bin/python -m pytest desktop/tests/integration -q --junitxml=test-results/desktop-integration.xml
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: graph-results
+          path: test-results/

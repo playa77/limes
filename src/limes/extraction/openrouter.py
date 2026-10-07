@@ -2,7 +2,7 @@
 """The OpenRouter extractor per Technical Specification §8.7.1–§8.7.4.
 
 `OpenRouterExtractor` is the production `Extractor`: schema-constrained calls
-through the budget governor, ledgered by the client, batching passages under
+ledgered by the client, batching passages under
 `LIMES_EXTRACTION_MAX_PASSAGES_PER_CALL` and `LIMES_EXTRACTION_MAX_INPUT_TOKENS`
 (Doc 2 §8.7.4). Every batch response passes the deterministic half —
 `parse_extraction_response` (schema → ontology → offset mapping → evidence

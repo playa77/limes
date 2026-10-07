@@ -1,3 +1,8 @@
+> Current API authentication uses a bearer token kept only for the session; profiles
+> contain no credential. Use HTTPS remotely or a loopback tunnel to port 8000.
+> See ../README.md and ../docs/TESTING_PHASE.md for the current runtime contract.
+> The backup subprocess described below is legacy and awaits the operational redesign.
+
 # limes-desktop
 
 PySide6 (Qt 6) desktop client for the LIMES knowledge graph. It fully replaces

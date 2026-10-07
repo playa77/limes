@@ -1,14 +1,21 @@
 # tests/integration/test_cost_ledger.py | v1.0.0 | introduced by WP-06
-"""Passive ledger persistence and period aggregation against a real database.
-Legacy limits cannot refuse calls; process-local totals track run spend."""
+"""Cost ledger integration tests against a disposable Neo4j container.
+
+Covers the §5.8 node schema, period aggregation, and the governor's monthly
+vs envelope metering against the real graph (AC-14 partial, AC-15 partial).
+
+Each test writes into its own `YYYY-MM`-shaped period string so totals are
+order-independent; the monthly governor test derives its expectations from
+`remaining()` for the same reason.
+"""
 
 from datetime import UTC, datetime
 from decimal import Decimal
 
 import pytest
 
-from limes.cost.governor import Governor
 from limes.cost.ledger import read_period_spend, write_entry
+from limes.cost.recorder import CostRecorder
 from limes.graph.driver import GraphDriver
 from limes.types import CostLedgerEntry
 from tests.integration.conftest import Neo4jInstance
@@ -86,9 +93,9 @@ def test_write_entry_is_idempotent_on_ledger_id(driver: GraphDriver):
     assert rows[0]["c"] == 1
 
 
-def test_passive_recorder_accepts_spend_above_legacy_limits(driver: GraphDriver):
-    recorder = Governor(driver, Decimal("0"), 0.0, 0.92, envelope_eur=Decimal("0"))
-    recorder.commit(_entry("passive-1", Decimal("25"), "2099-01-passive"))
-    recorder.check(Decimal("100"))
-    assert recorder.total_spend == Decimal("25")
-    assert read_period_spend(driver, "2099-01-passive") == Decimal("25")
+
+def test_passive_recorder_writes_large_costs(driver: GraphDriver):
+    recorder = CostRecorder(driver)
+    recorder.commit(_entry("passive-cost", Decimal("100"), "2099-01-passive"))
+    assert recorder.spent_eur == Decimal("100")
+    assert read_period_spend(driver, "2099-01-passive") == Decimal("100")

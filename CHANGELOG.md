@@ -1,13 +1,24 @@
+## 2026-10-07 — Testing-phase redesign foundations
+
+## 2026-10-07 — Pin-write validation and regression checks
+
+- Reject empty/unknown pin roles and invalid stages before modifying model pins.
+- Verify failed/partial pin updates preserve the original file, failed ledger
+  writes preserve process totals, and environment overrides respect pin precedence.
+- Reconcile PR #3 with the already-merged foundations; preserve PR #2 behavior.
+- Add a live-main baseline check and local pre-push guard, with stale-checkout
+  rejection and fetch-failure regression tests.
+
+Removed the cost governor while preserving usage/run accounting. Added fail-closed
+API bearer authentication, session credentials in the desktop, and loopback API
+publication; dropped the shipped Dash service. Separated secrets/tuning/model pins,
+added locked atomic pin updates and empty-env fallback, typed chat inference knobs,
+catalogue validation and complete measured-run evidence. Simplified model iteration
+and inventoried guard changes; added CI and fixed tracked desktop hygiene/parity
+items. Worker privileges, remote operational commands and backup replacement remain
+open. Verification evidence: OPEN_ISSUES.md.
+
 # CHANGELOG — LIMES
-
-## 2026-10-07 — Testing-phase inference redesign (D-75)
-
-- Remove spend-dependent inference gates and mandatory backfill/reextract budgets;
-  preserve passive accounting and run-cost totals. Remaining budget is now null.
-- Add configurable/logged completion parameters and catalogue-validated atomic
-  model pins in a separate tuning file; treat empty environment values as unset.
-- Relax routine iteration governance, add CI, fix desktop dead state/constants,
-  and guard top-level API mirror fields. See REDESIGN_STATUS.md for pending work.
 
 All notable changes to this project are recorded here as work happens. Format:
 one entry per work package, latest first. Independent version lines (ontology,
