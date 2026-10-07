@@ -360,9 +360,15 @@ def _blended_price(catalogue: list[dict[str, Any]], model_id: str) -> float:
 
 
 def _write_pins(pins: dict[str, str], stage: str) -> None:
-    """Write the pins into `.env`: one key per role plus the stage marker
-    and its date. python-dotenv updates keys in place and preserves the
-    rest of the file; nothing is committed (T4)."""
+    """Publish validated role pins through the existing locked model-only writer.
+
+    Reject malformed role/stage updates before constructing keys or touching the
+    file, so failed selections leave the previous pins usable.
+    """
+    if not pins or not set(pins) <= set(ROLE_ENV_KEYS):
+        raise LimesError("pin update contains no pins or unknown roles")
+    if stage not in ("provisional", "measured"):
+        raise LimesError("unknown model pin stage")
     if stage == "measured" and set(pins) != set(ROLE_ENV_KEYS):
         raise LimesError("measured pins require successful evaluation of all four roles")
     values = {ROLE_ENV_KEYS[role]: model for role, model in pins.items()}

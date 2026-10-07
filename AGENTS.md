@@ -5,6 +5,22 @@ Read the newest five entries in `DECISIONS.md`, the current contract in
 files describe the initial implementation; the testing-phase contract supersedes
 changed behavior. Runtime currently has three services: Neo4j, API and worker.
 
+## Repository baseline — before any implementation or publication
+
+At session entry inspect `git status` and the current branch. Run
+`python3 tools/check_git_baseline.py`: it fetches main and requires the checkout
+to contain its current history. If stale, preserve local work, reconcile with
+main and review the resulting diff before implementation. A supplied workspace
+or cached `origin/main` ref is never evidence that GitHub is current.
+
+Install the repository-local publication guard once per checkout with
+`git config --local core.hooksPath .githooks`. Its pre-push hook fetches live main,
+checks every pushed commit, and fails closed on stale history or fetch failure.
+Do not bypass this hook. It does not merge or overwrite working-tree files.
+Inspect `git diff origin/main` before committing/pushing and describe the current
+PR diff, not work already merged through an earlier PR. An installed local hook
+is not a platform-wide initialization guarantee; fresh clones must install it.
+
 ## Verification
 
 The canonical environment is `venv/`: create/update it with

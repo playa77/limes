@@ -554,3 +554,34 @@ def test_current_catalogue_supported_parameter_lists_are_accepted():
         }
     ]
     assert filter_candidates(catalogue, "extraction")[0]["id"] == "test/current"
+
+
+@pytest.mark.parametrize("pins", [{}, {"unknown": "test/model"}])
+def test_invalid_pin_roles_leave_existing_file_unchanged(tmp_path, monkeypatch, pins):
+    path = tmp_path / "models.env"
+    original = "LIMES_EXTRACTION_MODEL=test/original\n"
+    path.write_text(original)
+    monkeypatch.setattr(select_models_module, "ENV_FILE", path)
+    with pytest.raises(LimesError, match="no pins or unknown roles"):
+        _write_pins(pins, "provisional")
+    assert path.read_text() == original
+
+
+def test_invalid_pin_stage_leaves_existing_file_unchanged(tmp_path, monkeypatch):
+    path = tmp_path / "models.env"
+    original = "LIMES_EXTRACTION_MODEL=test/original\n"
+    path.write_text(original)
+    monkeypatch.setattr(select_models_module, "ENV_FILE", path)
+    with pytest.raises(LimesError, match="unknown model pin stage"):
+        _write_pins({"extraction": "test/new"}, "typo")
+    assert path.read_text() == original
+
+
+def test_partial_measured_update_leaves_existing_file_unchanged(tmp_path, monkeypatch):
+    path = tmp_path / "models.env"
+    original = "LIMES_EXTRACTION_MODEL=test/original\n"
+    path.write_text(original)
+    monkeypatch.setattr(select_models_module, "ENV_FILE", path)
+    with pytest.raises(LimesError, match="evaluation of all four roles"):
+        _write_pins({"extraction": "test/new"}, "measured")
+    assert path.read_text() == original

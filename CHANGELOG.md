@@ -1,5 +1,15 @@
 ## 2026-10-07 — Testing-phase redesign foundations
 
+## 2026-10-07 — Pin-write validation and regression checks
+
+- Reject empty/unknown pin roles and invalid stages before modifying model pins.
+- Verify failed/partial pin updates preserve the original file, failed ledger
+  writes preserve process totals, and environment overrides respect pin precedence.
+- Reconcile PR #3 with the already-merged foundations; preserve PR #2 behavior.
+- Install Qt runtime libraries in the graph CI job as well as the offline job.
+- Add a live-main baseline check and local pre-push guard, with stale-checkout
+  rejection and fetch-failure regression tests.
+
 Removed the cost governor while preserving usage/run accounting. Added fail-closed
 API bearer authentication, session credentials in the desktop, and loopback API
 publication; dropped the shipped Dash service. Separated secrets/tuning/model pins,

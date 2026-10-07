@@ -5,6 +5,29 @@ reversibility: **R1** reversible in under an hour, **R2** bounded recoverable
 cost, **R3** one-way door. Written when each decision is made, latest first.
 Nothing here is a status report; unlogged decisions are unmade decisions.
 
+## 2026-10-07 — D-76 (R1) — Reconcile stale-checkout work with merged foundations
+
+PR #2 was merged before this work began. The implementing agent failed to fetch
+main before implementation and publication, duplicating the foundations in PR #3
+from the old `0aa9d67` checkout. This was a workflow error, not a later concurrent
+change. PR #3 was never merged; main's `304bbad` implementation remains authoritative.
+
+The correction imports main into the PR branch and preserves its authentication,
+three-service topology, split/locked configuration, strict ledger contract,
+recorder implementation, CI, docs guards and existing closure evidence. Duplicate
+code, the second workflow, incompatible config example, and misleading redesign
+status/closure claims from the stale branch are removed from the resulting tree.
+
+Only incremental role/stage pin-write validation and regression tests for failed
+ledger writes, pin-file/environment precedence and failed/partial pin updates
+remain in the PR diff. A tracked baseline checker fetches main and rejects stale
+checkouts; a repository-local pre-push hook enforces it for publication and fails
+closed on fetch failure. Fresh clones must install the hook; this does not change
+platform initialization. Hosted graph CI exposed a missing libEGL.so.1 dependency:
+the graph job now installs the same Qt runtime libraries and uses the same
+headless Chromium flags as the offline job. No production changes or paid model
+calls are involved.
+
 ## 2026-10-07 — D-75 (R2) — Testing-phase inference, authenticated access and guard updates
 
 The operator requested continued implementation of the attached issues/redesign

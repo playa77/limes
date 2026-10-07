@@ -117,3 +117,17 @@ def test_invalid_inference_parameters_fail_configuration(field, value):
             **{k.removeprefix("LIMES_").lower(): v for k, v in REQUIRED.items()},
             **{field: value},
         )
+
+
+def test_pin_file_precedence_and_nonempty_environment_override(tmp_path, monkeypatch):
+    from limes.config import Settings
+
+    legacy = tmp_path / "legacy.env"
+    models = tmp_path / "models.env"
+    legacy.write_text("LIMES_EXTRACTION_MODEL=test/old\n")
+    models.write_text("LIMES_EXTRACTION_MODEL=test/new\n")
+    monkeypatch.delenv("LIMES_EXTRACTION_MODEL", raising=False)
+    values = {key.removeprefix("LIMES_").lower(): value for key, value in REQUIRED.items()}
+    assert Settings(_env_file=(legacy, models), **values).extraction_model == "test/new"
+    monkeypatch.setenv("LIMES_EXTRACTION_MODEL", "test/environment")
+    assert Settings(_env_file=(legacy, models), **values).extraction_model == "test/environment"

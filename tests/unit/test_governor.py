@@ -80,3 +80,18 @@ def test_process_spend_accumulates_provider_costs():
     recorder.commit(_entry(Decimal("1.50"), "second"))
     assert recorder.spent_eur == Decimal("4.00")
     assert len(stub.committed) == 2
+
+
+def test_failed_ledger_write_does_not_increment_process_spend():
+    import pytest
+
+    stub = StubDriver()
+    recorder = CostRecorder(stub)
+
+    def fail(statements):
+        raise RuntimeError("ledger unavailable")
+
+    stub.write_batch = fail
+    with pytest.raises(RuntimeError, match="ledger unavailable"):
+        recorder.commit(_entry(Decimal("2")))
+    assert recorder.spent_eur == 0
