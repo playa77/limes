@@ -152,3 +152,5 @@ desktop.ini
 work/
 
 /config/*.evaluation.json
+
+deployments/

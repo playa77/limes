@@ -1,7 +1,9 @@
 # AGENTS.md — LIMES testing phase
 
-Read the newest five entries in `DECISIONS.md`, the current contract in
-`docs/TESTING_PHASE.md`, and `OPEN_ISSUES.md` on re-entry. Older design/specification
+Read the newest five entries in `DECISIONS.md`, generated current design in
+`docs/ARCHITECTURE.md` and `docs/OPERATIONS.md`, `docs/TESTING_PHASE.md`, and
+`OPEN_ISSUES.md` on re-entry. Regenerate current runtime docs with
+`python3 tools/generate_runtime_docs.py`; the docs checker rejects drift. Older design/specification
 files describe the initial implementation; the testing-phase contract supersedes
 changed behavior. Runtime currently has three services: Neo4j, API and worker.
 
@@ -80,15 +82,16 @@ verify an implementation; an implementation request does not request a data run.
 credentials, tuning and tool-written pins. Never print/read existing secret files
 or commit credentials. Empty environment values are unset. Pin writes validate a
 model-only allowlist and use locked atomic replacement. Legacy host `.env` loads
-remain supported for migration; Compose mounts only the split config directory.
+remain supported for migration; Compose mounts split configuration read-only; writable model pins live in the
+named models volume and override seed pins. The API reloads atomic model pins before its next NL query.
 
 Every API surface requires `LIMES_API_TOKEN`, including docs and health. Desktop
 credentials are session-only; use HTTPS remotely or a loopback SSH tunnel. Starting
 the stack is an administrator action; using the HTTP API needs no Docker membership.
 
-Remaining privilege defects are tracked, not endorsed: the worker is still an idle
-exec container with a Docker socket, and physical backup still uses it. Do not
-expand that privilege surface. Finish the worker/backup redesign before claiming
-rootless operations. No agent staging, commits, pushes, deployment or merges unless
+All services must run as UID/GID 7474, drop capabilities and disallow new
+privileges. Never add a Docker socket, host-control CLI or arbitrary command
+execution to a service. Operations use bounded authenticated jobs; backup is the
+private Neo4j supervisor action. Interrupted jobs are never automatically replayed. No agent staging, commits, pushes, deployment or merges unless
 explicitly requested. Changes to production data and co-tenant services are outside
 an implementation request.

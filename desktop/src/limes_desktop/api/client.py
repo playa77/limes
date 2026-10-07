@@ -23,6 +23,7 @@ from limes_desktop.api.models import (
     GraphNeighbors,
     HealthInfo,
     IngestRun,
+    OperationJob,
     QueryOutcome,
     SavedQuery,
     SearchHit,
@@ -139,6 +140,20 @@ class ApiClient:
 
     def ingest_status(self) -> list[IngestRun]:
         return [IngestRun.from_api(r) for r in self._request("GET", "/ingest/status")]
+
+    def operation_capabilities(self) -> dict[str, bool]:
+        data: dict[str, bool] = self._request("GET", "/operations/capabilities")
+        return data
+
+    def submit_backup(self, request_id: str) -> OperationJob:
+        return OperationJob.from_api(
+            self._request(
+                "POST", "/operations/jobs", json={"request_id": request_id, "command": "backup"}
+            )
+        )
+
+    def operation_status(self, job_id: str) -> OperationJob:
+        return OperationJob.from_api(self._request("GET", f"/operations/jobs/{job_id}"))
 
     # -- transport ----------------------------------------------------------
 

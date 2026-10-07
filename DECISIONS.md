@@ -5,6 +5,40 @@ reversibility: **R1** reversible in under an hour, **R2** bounded recoverable
 cost, **R3** one-way door. Written when each decision is made, latest first.
 Nothing here is a status report; unlogged decisions are unmade decisions.
 
+## 2026-10-07 — D-77 (R2) — Unprivileged runtime and HTTP operational jobs
+
+The operator requested completion of the repo-side redesign brief. Live main was
+explicitly pulled and the baseline checker passed at e440b74a9e49 before edits.
+The brief is requirements input; it does not authorize publication, production
+changes, data ingestion or paid model measurement.
+
+- Preserve separate consumer and operator capabilities through independent bearer
+  tokens. The existing consumer query path stays read-only. Dedicated operations
+  accept a fixed parameter/command allowlist, never caller shell commands or paths.
+- Use a durable SQLite queue on a local named volume and one locked worker daemon.
+  Request UUIDs prevent duplicate submissions; output/time/active queue are bounded.
+  Interrupted jobs fail rather than replaying possibly paid or partially written work.
+- Run all three services as UID/GID 7474 with capabilities dropped and no new
+  privileges. Remove Docker tools/socket and the idle exec carrier. Configuration
+  binds remain operator-owned and read-only; mutable data/pins use named volumes.
+  Owner-applied ACLs make secrets readable to the service UID without root-owned binds.
+- Keep physical backup beside Neo4j: an unprivileged supervisor starts the stock
+  entrypoint, provisions a validated app user, forwards termination, and exposes
+  only a private token-protected backup action. Clean stop is required before dump;
+  restart/readiness run even after dump failure. No online-backup or host-control
+  privilege is invented for Community Edition. Archive and dumps share a volume.
+- Desktop backup and operational Make/remote CLI use authenticated HTTP. Pin updates
+  refresh API query contexts on next use, without administrator restart. Keep desktop
+  credentials in memory and HTTPS/loopback transport for remote consumers/operators.
+- Generate authoritative runtime/access docs from the checked contract, retaining
+  old specs as historical references for surviving graph contracts. A clean-source
+  deployment tool records OCI revision labels and immutable image IDs and fails on
+  source drift. Disposable smoke replaces the old live bootstrap/data-run script.
+
+The absent original ignored 18-finding review trail is an evidence gap, not a
+license to invent closure. Historical deployment evidence and a real measured
+model run are not claimed by repo implementation or disposable tests.
+
 ## 2026-10-07 — D-76 (R1) — Reconcile stale-checkout work with merged foundations
 
 PR #2 was merged before this work began. The implementing agent failed to fetch

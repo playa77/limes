@@ -14,6 +14,7 @@ not fields of `Settings`; `extra="ignore"` keeps them out of the model.
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import Literal
 
@@ -30,7 +31,13 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(
         env_prefix="LIMES_",
-        env_file=(".env", "config/settings.env", "config/models.env", "config/secrets.env"),
+        env_file=(
+            ".env",
+            "config/settings.env",
+            "config/models.env",
+            "/data/models/models.env",
+            "config/secrets.env",
+        ),
         env_ignore_empty=True,
         extra="ignore",
         case_sensitive=False,
@@ -101,7 +108,14 @@ class Settings(BaseSettings):
     http_max_retries: int = 4
 
     # ---------- Service ----------
+    model_pins_path: Path = Path("/data/models/models.env")
+    revision: str = "dev"
     api_token: SecretStr = SecretStr("")
+    operator_token: SecretStr = SecretStr("")
+    backup_token: SecretStr = SecretStr("")
+    backup_base_url: str = "http://neo4j:9001"
+    jobs_path: Path = Path("/data/jobs/jobs.sqlite3")
+    job_timeout_seconds: int = Field(default=86400, ge=60, le=604800)
     api_base_url: str = "http://api:8000"
     log_level: str = "INFO"
     log_format: Literal["json", "console"] = "json"
@@ -152,3 +166,25 @@ def load_settings() -> Settings:
             )
 
     return settings
+
+
+def reload_model_pins(settings: Settings) -> Settings:
+    """Refresh only the non-secret pin overlay without reloading credentials/tuning."""
+    from dotenv import dotenv_values
+
+    from limes.config_files import MODEL_KEYS
+
+    if not settings.model_pins_path.exists():
+        return settings
+    values = dotenv_values(settings.model_pins_path, interpolate=False)
+    if not values.keys() <= MODEL_KEYS:
+        raise ConfigurationError("model pin overlay contains a non-model key")
+    updates = {
+        key.removeprefix("LIMES_").lower(): value
+        for key, value in values.items()
+        if value and not os.environ.get(key)
+    }
+    try:
+        return Settings.model_validate({**settings.model_dump(), **updates})
+    except ValidationError as exc:
+        raise ConfigurationError("invalid model pin overlay") from exc

@@ -26,6 +26,7 @@ from __future__ import annotations
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from secrets import compare_digest
+from threading import Lock
 from typing import Any
 
 import structlog
@@ -43,6 +44,7 @@ from limes.api.routers import (
     health,
     ingest_status,
     ontology,
+    operations,
     query,
     saved_queries,
     search,
@@ -74,6 +76,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         loaded = settings or load_settings()
         if not loaded.api_token.get_secret_value():
             raise ConfigurationError("LIMES_API_TOKEN must be set to serve the API")
+        if loaded.operator_token.get_secret_value() and loaded.operator_token == loaded.api_token:
+            raise ConfigurationError("API and operator tokens must be different")
         ontology_model = load_ontology(loaded.ontology_path)
         driver = GraphDriver(
             loaded.neo4j_uri,
@@ -97,6 +101,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 error_type=type(exc).__name__,
                 error=str(exc),
             )
+        app.state.nlq_context_lock = Lock()
         app.state.settings = loaded
         app.state.ontology = ontology_model
         app.state.driver = driver
@@ -122,12 +127,16 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def authenticate_and_version(request: Request, call_next: Any) -> Any:
         loaded = getattr(request.app.state, "settings", None)
         expected = loaded.api_token.get_secret_value() if loaded is not None else ""
+        operator = loaded.operator_token.get_secret_value() if loaded is not None else ""
         supplied = request.headers.get("Authorization", "")
         scheme, _, credential = supplied.partition(" ")
         if (
             not expected
             or scheme.lower() != "bearer"
-            or not compare_digest(credential.encode(), expected.encode())
+            or not (
+                compare_digest(credential.encode(), expected.encode())
+                or (operator and compare_digest(credential.encode(), operator.encode()))
+            )
         ):
             response = JSONResponse(
                 status_code=401,
@@ -150,6 +159,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     _register_exception_handlers(app)
 
     for router in (
+        operations.router,
         health.router,
         ontology.router,
         entity.router,

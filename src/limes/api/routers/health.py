@@ -10,7 +10,8 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from limes.api.deps import get_driver, get_ontology
+from limes.api.deps import get_driver, get_ontology, get_settings
+from limes.config import Settings
 from limes.graph.driver import GraphDriver
 from limes.ontology.model import Ontology
 
@@ -34,3 +35,8 @@ def health(
             detail={"code": "NEO4J_UNREACHABLE", "message": f"Neo4j unreachable: {exc}"},
         ) from exc
     return {"status": "ok", "neo4j": True, "ontology_version": ontology.version}
+
+
+@router.get("/version")
+def version(settings: Annotated[Settings, Depends(get_settings)]) -> dict[str, str]:
+    return {"revision": settings.revision}

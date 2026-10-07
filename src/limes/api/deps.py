@@ -11,12 +11,13 @@ module on the first query that needs paid inference, per §15.2's seam
 
 from __future__ import annotations
 
+from threading import Lock
 from typing import cast
 
 from fastapi import Request
 
 from limes.composition import NlqContext, build_nlq_context
-from limes.config import Settings
+from limes.config import Settings, reload_model_pins
 from limes.graph.driver import GraphDriver
 from limes.ontology.model import Ontology
 
@@ -37,13 +38,16 @@ def get_driver(request: Request) -> GraphDriver:
 
 
 def get_nlq_context(request: Request) -> NlqContext:
-    """The `NlqContext` for the query path, built on first use and cached.
-    Construction is deferred: the context owns the paid-inference client
-    and the monthly governor, which no request should pay for before a
-    natural-language query is actually asked."""
+    """Cache query resources, refreshing atomically published model pins on next use."""
     state = request.app.state
-    context = getattr(state, "nlq_context", None)
-    if context is None:
-        context = build_nlq_context(state.settings, state.ontology, state.driver)
-        state.nlq_context = context
-    return cast(NlqContext, context)
+    lock = getattr(state, "nlq_context_lock", None)
+    if lock is None:
+        lock = Lock()
+        state.nlq_context_lock = lock
+    with lock:
+        current = reload_model_pins(state.settings)
+        context = getattr(state, "nlq_context", None)
+        if context is None or context.settings != current:
+            context = build_nlq_context(current, state.ontology, state.driver)
+            state.nlq_context = context
+        return cast(NlqContext, context)

@@ -311,6 +311,14 @@ def check_runtime_contract(docs: dict[str, Doc], report: Report, repo: Path) -> 
         report.fail("C8", "desktop credential storage contract missing")
     if contract.get("budget_enforcement") is not False:
         report.fail("C8", "spending enforcement contract has regressed")
+    invariants = {
+        "service_user": "7474:7474", "host_docker_socket": False,
+        "operations_authentication": "operator-bearer", "backup_transport": "private-http",
+        "job_replay": "manual", "deployment": "immutable-image-ids",
+    }
+    for key, expected in invariants.items():
+        if contract.get(key) != expected:
+            report.fail("C8", f"required runtime invariant {key} has regressed")
     current_docs = [repo / "README.md", repo / "docs" / "TESTING_PHASE.md"]
     for path in current_docs:
         try:
@@ -333,7 +341,45 @@ def check_runtime_contract(docs: dict[str, Doc], report: Report, repo: Path) -> 
         for row in summary_rows:
             if row not in text:
                 report.fail("C8", f"visible runtime summary in {path.name} differs from contract")
-    report.note("C8: topology, publication, access and accounting snapshots checked")
+    for name, service in services.items():
+        if service.get("user") != contract.get("service_user"):
+            report.fail("C8", f"{name} service user differs from non-root contract")
+        if service.get("cap_drop") != ["ALL"]:
+            report.fail("C8", f"{name} does not drop all capabilities")
+        if "no-new-privileges:true" not in service.get("security_opt", []):
+            report.fail("C8", f"{name} permits new privileges")
+        for volume in service.get("volumes", []):
+            if "docker.sock" in str(volume):
+                report.fail("C8", f"{name} mounts the host Docker socket")
+        extra = override["services"].get(name, {})
+        for volume in extra.get("volumes", []):
+            if "docker.sock" in str(volume):
+                report.fail("C8", f"development override mounts Docker socket on {name}")
+        for key in ("user", "privileged", "cap_add", "ports", "entrypoint"):
+            if extra.get(key):
+                report.fail("C8", f"development override changes {name} privilege/publication")
+        if service.get("privileged") or service.get("cap_add"):
+            report.fail("C8", f"{name} expands container privilege")
+        dockerfile = repo / service["build"]["dockerfile"]
+        try:
+            image_text = dockerfile.read_text()
+            if "USER " + contract["service_user"] not in image_text:
+                report.fail("C8", f"{name} image lacks non-root USER")
+            if name == "worker" and any(token in image_text for token in (
+                "docker-cli", "docker.sock", '["sleep", "infinity"]',
+            )):
+                report.fail("C8", "worker still carries host-control or idle-exec packaging")
+        except OSError as exc:
+            report.fail("C8", f"cannot inspect {name} image: {exc}")
+    try:
+        from tools.generate_runtime_docs import render
+    except ModuleNotFoundError:
+        from generate_runtime_docs import render
+    for name, expected in render(contract).items():
+        path = repo / name
+        if not path.exists() or path.read_text() != expected:
+            report.fail("C8", f"generated authoritative document {name} is stale")
+    report.note("C8: topology, publication, access, privilege and generated docs checked")
 
 
 def main(argv: list[str]) -> int:

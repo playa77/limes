@@ -423,3 +423,33 @@ class QueryOutcome:
             ),
             notes=list(d.get("notes") or []),
         )
+
+
+@dataclass(frozen=True, slots=True)
+class OperationRequest:
+    request_id: str
+    command: str
+    source: str | None = None
+    days: int | None = None
+    version: str | None = None
+    stage: str | None = None
+    evaluation: str | None = None
+
+    @classmethod
+    def from_api(cls, d: dict[str, Any]) -> Self:
+        return cls(**d)
+
+
+@dataclass(frozen=True, slots=True)
+class OperationJob:
+    job_id: str
+    request: OperationRequest
+    status: str
+    created_at: str
+    updated_at: str
+    output: str = ""
+    exit_code: int | None = None
+
+    @classmethod
+    def from_api(cls, d: dict[str, Any]) -> Self:
+        return cls(**{**d, "request": OperationRequest.from_api(d["request"])})

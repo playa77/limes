@@ -11,6 +11,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+import os
 from datetime import UTC, datetime
 from decimal import Decimal
 from pathlib import Path
@@ -36,8 +37,8 @@ from limes.logging_setup import configure_logging
 logger = structlog.get_logger(__name__)
 
 # Refresh point: the local configuration file the pins are written into —
-# the same file `load_settings` reads (`env_file=".env"`).
-ENV_FILE = Path("config/models.env")
+# host development uses config/models.env; the worker uses its named model volume.
+ENV_FILE = Path(os.environ.get("LIMES_MODELS_FILE", "config/models.env"))
 
 # §8.7.2 role criteria: cost ceiling in USD per million tokens (blended:
 # mean of prompt and completion price) and whether declared structured
@@ -66,7 +67,7 @@ ROLE_ENV_KEYS = {
 
 def select_models(
     provisional: bool = typer.Option(
-        False, "--provisional", help="Stage 1: rank by criteria, pin after confirmation"
+        False, "--provisional", help="Stage 1: rank by criteria and pin; confirmation is optional"
     ),
     measured: bool = typer.Option(
         False, "--measured", help="Stage 2: evaluate the top candidates, pin the winner"

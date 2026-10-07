@@ -151,8 +151,14 @@ def test_ac31_regression_gate_exceeds_threshold(tmp_path: Path):
 def test_ac31_makefile_evaluate_target_exists():
     makefile = (REPO_ROOT / "Makefile").read_text(encoding="utf-8")
     assert re_search_target(makefile, "evaluate")
-    # The Makefile's evaluate target is the CLI command (Trace 4).
-    assert "limes evaluate" in makefile
+    # Ordinary operation uses authenticated HTTP, without Compose exec privilege.
+    import subprocess
+
+    result = subprocess.run(
+        ["make", "-n", "evaluate"], cwd=REPO_ROOT, capture_output=True, text=True, check=True
+    )
+    assert "remote run evaluate --evaluation extraction" in result.stdout
+    assert "compose exec" not in result.stdout
 
 
 def re_search_target(makefile: str, target: str) -> bool:

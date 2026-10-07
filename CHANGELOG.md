@@ -1,3 +1,18 @@
+## 2026-10-07 — Complete runtime/access redesign (D-77)
+
+- Replace idle worker and Docker socket/control tools with bounded durable jobs,
+  an operator-only API and an HTTP remote CLI; operational Make targets use HTTP.
+- Run all services unprivileged with dropped capabilities and read-only config.
+- Replace inline database boot wrapper and host backup with an unprivileged Neo4j
+  supervisor; clean physical dumps always restore and verify database readiness.
+- Desktop backup uses typed API jobs asynchronously, without host shell access.
+- Store model pins separately on a named volume and refresh API contexts on change.
+- Add clean-source immutable-image deployments, revision labels/endpoint, owner
+  ACL configuration initialization, allowlisted image contexts, and generated
+  authoritative architecture/operations docs with privilege/drift guards.
+- Exercise the real three-service runtime only in disposable tests. Paid inference,
+  production deployment and the missing ignored review trail are not claimed.
+
 ## 2026-10-07 — Testing-phase redesign foundations
 
 ## 2026-10-07 — Pin-write validation and regression checks
