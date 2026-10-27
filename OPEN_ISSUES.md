@@ -382,3 +382,25 @@ write failure under accumulated managed-Docker VFS storage pressure; removing
 only task-created build cache/untagged images restored 23 GB free and the complete
 rerun passed without relaxing guards. JUnit evidence is retained in `work/`.
 `git diff --check`, generated-doc checks, lint and type checking pass.
+
+## 2026-10-27 — News review investigation: open ingestion defects
+
+WP-NEWS-DESIGN (D-78) investigated the supplied ChatGPT review against `5295cab`.
+Full evidence, pinned public source/hash and reproduction instructions are in
+[NEWS_REVIEW](docs/NEWS_REVIEW.md). These are new **open** rows; investigation
+does not close them. Owner: agent for WP-NEWS-INGEST implementation and evidence.
+Existing historical closures and unresolved operator/desktop rows remain intact.
+
+| ID | Confirmed behavior | Repair and closure condition |
+|---|---|---|
+| OI-19 | GDELT URL has wrong directory/suffix and extra seconds; parser expects plain comma CSV and 55 fields versus published ZIP/TSV with 61 | Complete upstream transport/field-map repair, bounded ZIP parsing and independent format fixture; prove source-to-loader behavior |
+| OI-20 | GDELT returns document-kind output with structured assertions; real routing bypasses the structured handler (5 fixture assertions, 0 structured calls) | Explicit mixed-channel handling with gate/cache/retry/reextract ownership and disposable graph evidence for both channels |
+| OI-21 | Export-wide synthetic summaries replace per-report evidence; SOURCEURL/DATEADDED are not retained in normalized provenance; event date is labeled publication time | Preserve export/row/report identity, honest dates and separate dispatch versions; prove evidence retrieval without fabricated article text |
+| OI-22 | Geography assumes FIPS codes are ISO2, excludes non-US Geo_Type 4/5; slot rounding includes a boundary earlier than fractional `since`; docstrings claim ignored budgets bound work | Correct code mappings, supported geography and inclusive boundary rounding with independent expectations; remove misleading cost-limit claims |
+
+Public inspection downloaded one 76,729-byte export only, without graph writes,
+production ingestion, inference or agency access. All 1,178 rows had 61 fields;
+the current normalizer rejected the ZIP with `SourceParseError`. The routing probe
+mocked handlers, not the routing decision. Existing unit suites describe current
+behavior, not upstream compatibility. [ROADMAP](docs/ROADMAP.md) defines complete
+repair acceptance and the source/corpus prerequisites for integrated extraction.

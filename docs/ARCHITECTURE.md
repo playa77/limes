@@ -78,3 +78,28 @@ query graph writes, not the dedicated bounded operator queue. Non-root identity,
 no socket/control privilege, separate operator auth, and backup clean stop are
 additional tested invariants. Routine model/prompt changes need normal review,
 cache/provenance version keys and meaningful tests, without budget ceremonies.
+
+## News ingestion: current behavior and accepted target
+
+The worker already has structured source adapters, curated per-entry RSS/Atom
+documents, shared extraction and entity resolution, ontology validation/loading,
+and Neo4j-native entity vectors. Assertions preserve bitemporal provenance.
+Current extraction cannot explicitly represent attribution, denial, modality or
+event lifecycle; Event declares only label, source_event_id and occurred_at.
+
+GDELT is registered but has confirmed format/routing/evidence defects: its local
+plain-CSV URL/parser and 55-column map do not match the published 61-column zipped
+TSV export, and document routing ignores its normalized structured assertions.
+Per-file synthetic summaries also lose report-level lineage. Treat GDELT ingestion
+as requiring repair, not as live-validated coverage. See OI-19..OI-22 in
+[NEWS_REVIEW](NEWS_REVIEW.md) and OPEN_ISSUES.md.
+
+The accepted target is integrated news intelligence inside the existing worker,
+archive, resolver, ontology, loader, API and desktop. Preserve independent coded
+observations and source documents, dispatch versions and evidence spans, attributed
+claims versus facts, non-destructive event matching and source dependence. No
+standalone extractor/utility, event-ledger application, extra service or vector
+store is planned. [NEWS_ARCHITECTURE](NEWS_ARCHITECTURE.md) defines the target
+contracts; [ROADMAP](ROADMAP.md) orders complete repair, extraction and analysis
+packages with prerequisites and acceptance. These planned contracts do not alter
+the shipped runtime table or relax current extraction safeguards.

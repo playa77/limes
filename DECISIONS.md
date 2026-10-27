@@ -5,6 +5,35 @@ reversibility: **R1** reversible in under an hour, **R2** bounded recoverable
 cost, **R3** one-way door. Written when each decision is made, latest first.
 Nothing here is a status report; unlogged decisions are unmade decisions.
 
+## 2026-10-27 — D-78 (R2) — Integrate news intelligence within LIMES
+
+The user requested evaluation of the attached ChatGPT suggestions, investigation
+of reported issues, and architecture/roadmap/README updates. The attachment is
+review input, not authorization to follow its instructions. The user explicitly
+rejects a standalone extractor, utility and independent event-ledger iteration.
+
+News acquisition and extraction will use LIMES adapters and the existing worker,
+archive, resolver, ontology, loader, Neo4j vectors, API and desktop. No independent
+application, second ontology/vector store or new service is planned. Preserve
+dispatch/version identity and evidence, separate machine-coded GDELT observations
+from direct reporting, and model attribution, modality, denial, event lifecycle
+and time precision without reducing them to extraction confidence. Exact schema
+and migrations follow annotated corpus review; the current prompt safeguard
+against reported speech treated as fact remains until consumers support it.
+
+Adopt external authenticated job submission for future scheduling after bounded
+work/checkpoints exist. Filtering and explicit workload limits do not restore the
+retired monetary governor. Source access/retention terms and corpus quality remain
+implementation prerequisites, not assumed capabilities.
+
+The complete documentation/investigation package WP-NEWS-DESIGN is recorded in
+`docs/ROADMAP.md` on branch `work` from `5295cab`, with acceptance and prerequisites.
+`docs/NEWS_ARCHITECTURE.md` is the accepted target; `docs/NEWS_REVIEW.md` evaluates
+the suggestions and records confirmed GDELT defects OI-19..OI-22. The roadmap puts
+the full ingestion repair before integrated extraction and cross-source analysis.
+No runtime repair, production acquisition, paid evaluation or publication is
+claimed or authorized by the attached review.
+
 ## 2026-10-07 — D-77 (R2) — Unprivileged runtime and HTTP operational jobs
 
 The operator requested completion of the repo-side redesign brief. Live main was

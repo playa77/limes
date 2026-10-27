@@ -7,6 +7,40 @@ Read the newest five entries in `DECISIONS.md`, generated current design in
 files describe the initial implementation; the testing-phase contract supersedes
 changed behavior. Runtime currently has three services: Neo4j, API and worker.
 
+## Delivery contract for LIMES
+
+This contract takes precedence over conflicting instructions elsewhere in this
+file or in existing project guidance.
+
+1. **Deliver one full work package per session, branch and PR.** Children are
+   internal steps and commits. Do not invent smaller delivery packages to fit a
+   turn or context window. Continue through compaction and resume the same parent
+   after interruption. Partial delivery requires an explicit user instruction.
+2. **Define completion before coding.** Record the selected WP, acceptance
+   checklist, actual prerequisites and branch. Every handoff maps delivered
+   behavior to that checklist. Preserve incomplete obligations and identify
+   concrete blockers; never call a child the completed parent. Flag an impractical
+   package boundary before beginning instead of silently changing the plan.
+3. **Validate proportionately.** During development run affected tests and shared
+   invariant checks. Use one authoritative full pre-merge candidate run; routine
+   main pushes get bounded smoke. Documentation gets relevant lightweight checks.
+   Run independent CI lanes on separate runners. Keep full manual/release checks,
+   exact candidate evidence and a stable fail-closed required status.
+4. **Require a reason for new verification cost.** New tests cover a distinct
+   behavior, regression or failure; shared invariants live in shared coverage.
+   Preserve independently derived numerical expectations. Do not use fixed test
+   quotas, copied pair suites or cumulative pass counts as a delivery target.
+5. **Report behavior and measurements honestly.** Lead with completed acceptance
+   and remaining blockers. Separate handwritten implementation, tests/helpers,
+   fixture data, generated files and documentation. Separate additions/deletions
+   from net growth, and new tests from cumulative passes. Measure validation and
+   merge latency separately from implementation effort when evidence permits.
+6. **Review the workflow after the first three PRs.** Check that complete WPs are
+   shipping and compare implementation, validation and merge delay. Investigate
+   sustained CI growth, repeated corrections, copied registrations or repeated
+   partial handoffs immediately. Correct the process within the active scope;
+   do not respond by creating still smaller PRs.
+
 ## Repository baseline — before any implementation or publication
 
 At session entry inspect `git status` and the current branch. Run
@@ -27,6 +61,10 @@ is not a platform-wide initialization guarantee; fresh clones must install it.
 
 The canonical environment is `venv/`: create/update it with
 `UV_PROJECT_ENVIRONMENT=venv uv sync --frozen --all-packages`.
+
+Select checks according to the delivery contract above. The commands below are
+the full verification inventory, not a requirement to rerun every suite during
+each development iteration or documentation change.
 
 ```bash
 venv/bin/ruff check src tests desktop/src desktop/tests
@@ -65,8 +103,8 @@ Never skip a failing guard merely to get a green run.
 
 ## Routine iteration
 
-Model and prompt changes need normal implementation review and meaningful tests,
-not an operator budget envelope or a work-package ceremony. Model identifiers are
+Model and prompt changes follow the delivery contract above and need normal
+implementation review and meaningful tests, without an operator budget envelope. Model identifiers are
 allowed in configuration and examples. Preserve cache/provenance version keys;
 record material behavior/schema changes in the changelog. Make testing evidence
 and remaining gaps visible in the tracked issue ledger.

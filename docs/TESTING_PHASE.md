@@ -51,8 +51,13 @@ OPEN_ISSUES retains append-only history and rerunnable closure evidence.
 ## Verification
 
 Canonical environment: `UV_PROJECT_ENVIRONMENT=venv uv sync --frozen --all-packages`.
-Run ruff, mypy, docs checks, root unit, desktop unit/contract, integration,
-acceptance (separately), and desktop integration. Set `QT_QPA_PLATFORM=offscreen`
+The full candidate inventory is ruff, mypy, docs checks, root unit, desktop
+unit/contract, integration, acceptance (separately), and desktop integration.
+During development select affected tests and shared invariant checks; documentation
+uses relevant lightweight checks. Use one authoritative full pre-merge candidate
+run and bounded smoke for routine main pushes, per AGENTS.md. Run independent CI
+lanes on separate runners and retain exact candidate evidence and a stable
+fail-closed required status. Set `QT_QPA_PLATFORM=offscreen`
 on headless hosts; constrained WebEngine test hosts may need Chromium test flags.
 Graph suites own disposable containers and volumes. Only a dedicated external
 test database may be selected via `LIMES_TEST_NEO4J_URI`; never operator data.
@@ -62,3 +67,22 @@ Worker queue tests cover replay protection, concurrent claims, output bounds,
 parameter rejection and failed process exit codes. Runtime tests reject privilege,
 port, source and documentation drift. Production smoke is a separate administrator
 action; integration smoke uses only disposable configuration and mocked paid paths.
+
+## News design and verification status — 2026-10-27
+
+[NEWS_REVIEW](NEWS_REVIEW.md) evaluates the supplied ChatGPT suggestions and
+records a bounded public-export check plus a mocked routing probe. GDELT format,
+mixed-payload loss, report granularity, geography and slot rounding defects remain
+open as OI-19..OI-22. Existing comma-CSV fixtures and implementation-derived URLs
+do not prove external-format compatibility; no source-to-graph ingestion or paid
+extraction result is claimed by that investigation.
+
+[NEWS_ARCHITECTURE](NEWS_ARCHITECTURE.md) is the accepted integrated target;
+[ROADMAP](ROADMAP.md) defines complete packages and acceptance. Representative
+agency access and an independently annotated DE/EN corpus precede claim-schema
+implementation. Future verification must distinguish extraction fidelity, source
+trust, corroboration, event matching and evidence lineage, including corrections,
+denials, proposals and syndicated copies. Reuse shared invariant coverage and add
+tests only for distinct behaviors/regressions; no fixed quotas or cumulative pass
+targets. Paid corpus evaluation remains an explicit operator run. No standalone
+extractor or independent event-ledger iteration is part of this roadmap.

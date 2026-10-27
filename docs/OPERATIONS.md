@@ -94,3 +94,19 @@ No code-generation tool or test automatically deploys, tags, commits, pushes,
 merges, touches production or makes paid calls. Historical test-instance facts
 cannot establish a current release stamp; deploy records are created only by an
 actual authorized deployment. CI records JUnit results for every required suite.
+
+## News acquisition and scheduling (planned)
+
+GDELT backfill is exposed by the CLI, but source format, routing and provenance
+defects OI-19..OI-22 remain open. Do not treat job submission or mocked adapter
+tests as proof of successful live ingestion. See [NEWS_REVIEW](NEWS_REVIEW.md).
+
+Agency acquisition remains within the existing worker's operator jobs; no
+standalone utility or additional service is planned. Provider access/retention
+terms, bounded acquisition, per-channel checkpoints and retry behavior must be
+settled before unattended ingestion. An external timer may later submit the same
+authenticated HTTP jobs, reuse request UUIDs after uncertain responses, observe
+completion and avoid overlapping runs. This is planned operational guidance,
+not an installed scheduler. Current legacy budget flags are ignored; job timeout
+is not a monetary spending cap. Cheap filtering and explicit work limits are
+future requirements in [ROADMAP](ROADMAP.md).
