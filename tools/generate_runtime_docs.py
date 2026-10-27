@@ -71,6 +71,22 @@ LIMES is a personal research artifact. Source coverage is uneven and extracted
 claims can be wrong; inspect provenance and hop-level coverage when interpreting
 results. Public-person data has no automatic retention policy.
 
+## Planned: integrated news intelligence
+
+Agency dispatches and news reports will enrich the same LIMES graph as official
+registries, with source evidence, attributed claims and proposed versus completed
+events visible in research views. Extraction belongs inside the existing worker;
+there is no standalone utility or event-ledger application, additional service or
+separate vector database.
+
+This is planned work. Curated RSS/Atom ingestion and shared text extraction exist,
+but dedicated agency integration and qualified claim/event semantics are pending.
+Investigation confirmed defects in GDELT's export format, mixed-record routing and
+source granularity; the documented backfill command is not evidence of working
+live GDELT ingestion. Repair comes first. See the [roadmap](docs/ROADMAP.md),
+[target architecture](docs/NEWS_ARCHITECTURE.md) and
+[review findings](docs/NEWS_REVIEW.md) for acceptance, evidence and open blockers.
+
 ## Architecture and runtime
 
 {snapshot}
@@ -129,6 +145,10 @@ models volume, separate from host secrets; the API refreshes atomic pins before
 its next NL query without an administrator restart.
 
 ## Verification
+
+Use affected tests and shared invariant checks during development, one full
+pre-merge candidate run, and lightweight checks for documentation, per AGENTS.md.
+The commands below are the full verification inventory.
 
 ```bash
 UV_PROJECT_ENVIRONMENT=venv uv sync --frozen --all-packages
@@ -213,6 +233,31 @@ query graph writes, not the dedicated bounded operator queue. Non-root identity,
 no socket/control privilege, separate operator auth, and backup clean stop are
 additional tested invariants. Routine model/prompt changes need normal review,
 cache/provenance version keys and meaningful tests, without budget ceremonies.
+
+## News ingestion: current behavior and accepted target
+
+The worker already has structured source adapters, curated per-entry RSS/Atom
+documents, shared extraction and entity resolution, ontology validation/loading,
+and Neo4j-native entity vectors. Assertions preserve bitemporal provenance.
+Current extraction cannot explicitly represent attribution, denial, modality or
+event lifecycle; Event declares only label, source_event_id and occurred_at.
+
+GDELT is registered but has confirmed format/routing/evidence defects: its local
+plain-CSV URL/parser and 55-column map do not match the published 61-column zipped
+TSV export, and document routing ignores its normalized structured assertions.
+Per-file synthetic summaries also lose report-level lineage. Treat GDELT ingestion
+as requiring repair, not as live-validated coverage. See OI-19..OI-22 in
+[NEWS_REVIEW](NEWS_REVIEW.md) and OPEN_ISSUES.md.
+
+The accepted target is integrated news intelligence inside the existing worker,
+archive, resolver, ontology, loader, API and desktop. Preserve independent coded
+observations and source documents, dispatch versions and evidence spans, attributed
+claims versus facts, non-destructive event matching and source dependence. No
+standalone extractor/utility, event-ledger application, extra service or vector
+store is planned. [NEWS_ARCHITECTURE](NEWS_ARCHITECTURE.md) defines the target
+contracts; [ROADMAP](ROADMAP.md) orders complete repair, extraction and analysis
+packages with prerequisites and acceptance. These planned contracts do not alter
+the shipped runtime table or relax current extraction safeguards.
 """
     operations = f"""# LIMES configuration, access and releases
 
@@ -309,6 +354,22 @@ No code-generation tool or test automatically deploys, tags, commits, pushes,
 merges, touches production or makes paid calls. Historical test-instance facts
 cannot establish a current release stamp; deploy records are created only by an
 actual authorized deployment. CI records JUnit results for every required suite.
+
+## News acquisition and scheduling (planned)
+
+GDELT backfill is exposed by the CLI, but source format, routing and provenance
+defects OI-19..OI-22 remain open. Do not treat job submission or mocked adapter
+tests as proof of successful live ingestion. See [NEWS_REVIEW](NEWS_REVIEW.md).
+
+Agency acquisition remains within the existing worker's operator jobs; no
+standalone utility or additional service is planned. Provider access/retention
+terms, bounded acquisition, per-channel checkpoints and retry behavior must be
+settled before unattended ingestion. An external timer may later submit the same
+authenticated HTTP jobs, reuse request UUIDs after uncertain responses, observe
+completion and avoid overlapping runs. This is planned operational guidance,
+not an installed scheduler. Current legacy budget flags are ignored; job timeout
+is not a monetary spending cap. Cheap filtering and explicit work limits are
+future requirements in [ROADMAP](ROADMAP.md).
 """
     testing = f"""# LIMES testing-phase contract — 2026-10-07
 
@@ -349,8 +410,13 @@ OPEN_ISSUES retains append-only history and rerunnable closure evidence.
 ## Verification
 
 Canonical environment: `UV_PROJECT_ENVIRONMENT=venv uv sync --frozen --all-packages`.
-Run ruff, mypy, docs checks, root unit, desktop unit/contract, integration,
-acceptance (separately), and desktop integration. Set `QT_QPA_PLATFORM=offscreen`
+The full candidate inventory is ruff, mypy, docs checks, root unit, desktop
+unit/contract, integration, acceptance (separately), and desktop integration.
+During development select affected tests and shared invariant checks; documentation
+uses relevant lightweight checks. Use one authoritative full pre-merge candidate
+run and bounded smoke for routine main pushes, per AGENTS.md. Run independent CI
+lanes on separate runners and retain exact candidate evidence and a stable
+fail-closed required status. Set `QT_QPA_PLATFORM=offscreen`
 on headless hosts; constrained WebEngine test hosts may need Chromium test flags.
 Graph suites own disposable containers and volumes. Only a dedicated external
 test database may be selected via `LIMES_TEST_NEO4J_URI`; never operator data.
@@ -360,6 +426,25 @@ Worker queue tests cover replay protection, concurrent claims, output bounds,
 parameter rejection and failed process exit codes. Runtime tests reject privilege,
 port, source and documentation drift. Production smoke is a separate administrator
 action; integration smoke uses only disposable configuration and mocked paid paths.
+
+## News design and verification status — 2026-10-27
+
+[NEWS_REVIEW](NEWS_REVIEW.md) evaluates the supplied ChatGPT suggestions and
+records a bounded public-export check plus a mocked routing probe. GDELT format,
+mixed-payload loss, report granularity, geography and slot rounding defects remain
+open as OI-19..OI-22. Existing comma-CSV fixtures and implementation-derived URLs
+do not prove external-format compatibility; no source-to-graph ingestion or paid
+extraction result is claimed by that investigation.
+
+[NEWS_ARCHITECTURE](NEWS_ARCHITECTURE.md) is the accepted integrated target;
+[ROADMAP](ROADMAP.md) defines complete packages and acceptance. Representative
+agency access and an independently annotated DE/EN corpus precede claim-schema
+implementation. Future verification must distinguish extraction fidelity, source
+trust, corroboration, event matching and evidence lineage, including corrections,
+denials, proposals and syndicated copies. Reuse shared invariant coverage and add
+tests only for distinct behaviors/regressions; no fixed quotas or cumulative pass
+targets. Paid corpus evaluation remains an explicit operator run. No standalone
+extractor or independent event-ledger iteration is part of this roadmap.
 """
     return {"README.md": readme, "docs/ARCHITECTURE.md": architecture,
             "docs/OPERATIONS.md": operations, "docs/TESTING_PHASE.md": testing}

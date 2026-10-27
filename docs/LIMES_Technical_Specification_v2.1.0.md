@@ -5,7 +5,11 @@
 
 > Initial implementation baseline. Changed runtime, access, configuration,
 > inference and governance behavior is superseded by [TESTING_PHASE.md](TESTING_PHASE.md).
-> Its remaining-work section identifies runtime requirements still pending.
+> Current pending work is tracked in [OPEN_ISSUES](../OPEN_ISSUES.md) and the
+> [roadmap](ROADMAP.md). [NEWS_ARCHITECTURE](NEWS_ARCHITECTURE.md) extends the
+> planned news design under D-78; [NEWS_REVIEW](NEWS_REVIEW.md) records confirmed
+> GDELT transport, column-map, mixed-record and evidence defects affecting §8.5.2
+> and §8.6.1. Those older contracts do not prove live-source compatibility.
 
 <!-- LIMES — Technical Specification | v2.1.0 | 2026-08-01 | Status: Draft -->
 

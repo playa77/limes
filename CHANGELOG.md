@@ -1,3 +1,16 @@
+## 2026-10-27 — WP-NEWS-DESIGN: integrated news design and issue investigation (D-78)
+
+- Evaluate the supplied review; plan agency/news extraction inside LIMES with
+  shared archive, resolution, ontology, loader, API and desktop. Omit the
+  standalone extractor/utility and independent event-ledger iteration.
+- Define source/version/evidence and qualified claim/event requirements, and
+  complete ingestion, extraction and analysis packages with acceptance/blockers.
+- Confirm GDELT ZIP/TSV/column-map, mixed-record routing and report-granularity
+  defects; identify additional geography and slot-rounding issues (OI-19..OI-22).
+- Update generated architecture, README, operations/testing guidance and historical
+  document navigation. This changes documentation and its renderer only; runtime
+  repairs and agency extraction remain planned. Evidence: docs/NEWS_REVIEW.md.
+
 ## 2026-10-07 — Complete runtime/access redesign (D-77)
 
 - Replace idle worker and Docker socket/control tools with bounded durable jobs,

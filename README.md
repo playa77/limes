@@ -43,6 +43,22 @@ LIMES is a personal research artifact. Source coverage is uneven and extracted
 claims can be wrong; inspect provenance and hop-level coverage when interpreting
 results. Public-person data has no automatic retention policy.
 
+## Planned: integrated news intelligence
+
+Agency dispatches and news reports will enrich the same LIMES graph as official
+registries, with source evidence, attributed claims and proposed versus completed
+events visible in research views. Extraction belongs inside the existing worker;
+there is no standalone utility or event-ledger application, additional service or
+separate vector database.
+
+This is planned work. Curated RSS/Atom ingestion and shared text extraction exist,
+but dedicated agency integration and qualified claim/event semantics are pending.
+Investigation confirmed defects in GDELT's export format, mixed-record routing and
+source granularity; the documented backfill command is not evidence of working
+live GDELT ingestion. Repair comes first. See the [roadmap](docs/ROADMAP.md),
+[target architecture](docs/NEWS_ARCHITECTURE.md) and
+[review findings](docs/NEWS_REVIEW.md) for acceptance, evidence and open blockers.
+
 ## Architecture and runtime
 
 <!-- limes-runtime: {"services":["api","neo4j","worker"],"api_publication":"127.0.0.1:8000:8000","database_published":false,"api_authentication":"bearer","desktop_credentials":"session-only","budget_enforcement":false,"service_user":"7474:7474","host_docker_socket":false,"operations_authentication":"operator-bearer","backup_transport":"private-http","job_replay":"manual","deployment":"immutable-image-ids"} -->
@@ -114,6 +130,10 @@ models volume, separate from host secrets; the API refreshes atomic pins before
 its next NL query without an administrator restart.
 
 ## Verification
+
+Use affected tests and shared invariant checks during development, one full
+pre-merge candidate run, and lightweight checks for documentation, per AGENTS.md.
+The commands below are the full verification inventory.
 
 ```bash
 UV_PROJECT_ENVIRONMENT=venv uv sync --frozen --all-packages

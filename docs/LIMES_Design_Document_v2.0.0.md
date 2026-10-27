@@ -5,7 +5,10 @@
 
 > Initial implementation baseline. Changed runtime, access, configuration,
 > inference and governance behavior is superseded by [TESTING_PHASE.md](TESTING_PHASE.md).
-> Its remaining-work section identifies runtime requirements still pending.
+> Current pending work is tracked in [OPEN_ISSUES](../OPEN_ISSUES.md) and the
+> [roadmap](ROADMAP.md). [NEWS_ARCHITECTURE](NEWS_ARCHITECTURE.md) extends the
+> planned news design under D-78; [NEWS_REVIEW](NEWS_REVIEW.md) records confirmed
+> GDELT defects. The standalone extractor/utility iteration is excluded.
 
 <!-- LIMES — Design Document | v2.0.0 | 2026-07-28 | Status: Draft -->
 
