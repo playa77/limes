@@ -30,12 +30,48 @@ def render(contract: dict) -> dict[str, str]:
     readme = f"""# LIMES
 
 {notice}
-LIMES is an ontology-driven research knowledge graph for German and European
-policy analysis. Official registries and text extraction feed a bitemporal graph;
-a PySide6 desktop client exposes network, geographic and temporal research views.
-LIMES is a personal research artifact. Inspect provenance and hop-level coverage:
-source coverage is uneven and extracted claims can be wrong.
-Public-person data has no automatic retention policy.
+**An evidence-backed world model for German and European policy research.**
+
+LIMES connects official registries and extracted text in a shared, queryable model
+of entities, relationships and change. It brings AI-assisted extraction,
+ontology-driven knowledge representation and visual investigation into one
+research platform, turning fragmented public information into a connected view
+that analysts can explore and inspect.
+
+Follow a relationship across sources, place it in its geographic context and
+trace how it changes over time. A PySide6 desktop workspace brings network,
+geographic and temporal views together, while natural-language questions open a
+path into the graph through validated, read-only queries.
+
+## From public information to connected intelligence
+
+- **Build a shared model.** Official registries and text extraction feed an
+  ontology-driven Neo4j knowledge graph. Entity resolution links records across
+  sources so research can follow relationships beyond individual documents.
+- **Investigate in context.** Explore connections through the desktop's network,
+  map and timeline views. Use natural language, a visual query builder or Cypher
+  to approach the same graph from different research questions.
+- **Understand what changed, and when.** Bitemporal assertions distinguish when a
+  claim was valid from when it was recorded. Conflicting claims are preserved,
+  keeping disagreement and evolving knowledge available for analysis.
+- **Keep the evidence within reach.** Provenance connects claims to their
+  sources, and a content-addressed archive remains the system of record.
+  Hop-level coverage and diagnosis accompany empty results, helping researchers
+  assess where evidence may be missing.
+- **Operate through a consistent interface.** Authenticated HTTP connects the
+  desktop and remote CLI to queries and durable operator jobs, from ingestion
+  and backfill to physical backup.
+
+A typical investigation moves from a question to a set of connected entities,
+then through their relationships, locations and history to the underlying
+sources. The result is a world model whose evidence and gaps remain visible
+throughout the research process.
+
+LIMES is a personal research artifact. Source coverage is uneven and extracted
+claims can be wrong; inspect provenance and hop-level coverage when interpreting
+results. Public-person data has no automatic retention policy.
+
+## Architecture and runtime
 
 {snapshot}
 
@@ -53,16 +89,25 @@ service is root, holds a Docker socket, or invokes Docker. Named volumes hold al
 mutable service data; host configuration stays owned by its operator and read-only
 in containers. The retired Dash service is absent.
 
+## Getting started
+
 Initialize with `python3 tools/init_config.py` (requires the host `acl` utility).
 Set the OpenRouter key privately in `config/secrets.env`. For a disposable local
 stack, run `docker compose --env-file config/settings.env --env-file
 config/secrets.env -f docker-compose.yml up -d --build`. For a release, use
 `python3 tools/deploy.py` from a clean committed checkout; see OPERATIONS.
 
+### Desktop access
+
+Launch the desktop with `venv/bin/limes-desktop` after installing the workspace
+dependencies shown under Verification below.
+
 Desktop: use `http://127.0.0.1:8000` locally, HTTPS remotely, or a loopback SSH
 forward (`ssh -N -L 8000:127.0.0.1:8000 account@server`). The SSH account needs no
 Docker membership. Profiles never store credentials. Use the operator credential
 for desktop backup; a consumer token cannot submit operational jobs.
+
+### Remote operations
 
 ```bash
 # On the client; supply the operator token in the environment, never an argument.
@@ -73,6 +118,8 @@ venv/bin/limes remote run backup
 venv/bin/limes remote status JOB_UUID --wait
 ```
 
+## Model selection and usage accounting
+
 There is no cost governor or budget envelope. Calls record model, purpose, tokens
 and cost. Real ingestion, backfill and model measurement are operator actions;
 tests mock all paid transports. Provisional selection validates catalogue IDs and
@@ -80,6 +127,8 @@ pins the date; measured selection scores all four roles and publishes a complete
 report and pins only after successful scoring. Worker pins live in the named
 models volume, separate from host secrets; the API refreshes atomic pins before
 its next NL query without an administrator restart.
+
+## Verification
 
 ```bash
 UV_PROJECT_ENVIRONMENT=venv uv sync --frozen --all-packages
