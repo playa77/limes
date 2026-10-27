@@ -16,6 +16,8 @@ Checks performed:
   C5  Seam coverage    — every module in the call traces appears in the register
   C6  Version refs     — cross-document references cite existing versions
   C7  No placeholders  — no TBD, FIXME, XXX, or "final"
+  C8  Runtime drift    — generated claims, topology and privilege agree
+  C9  Organization     — package definitions and active local links remain intact
 
 Exit code 0 if all checks pass, 1 otherwise.
 
@@ -248,7 +250,7 @@ def check_version_refs(docs: dict[str, Doc], report: Report) -> None:
                     report.fail("C6", f"{doc.name} references {kind} v{ver} "
                                       f"but the present version is "
                                       f"v{present[kind]}")
-    report.note(f"C6: versions present — " +
+    report.note("C6: versions present — " +
                 ", ".join(f"{k} v{v}" for k, v in sorted(present.items())))
 
 
@@ -286,7 +288,9 @@ def check_runtime_contract(docs: dict[str, Doc], report: Report, repo: Path) -> 
     try:
         contract = json.loads(contract_path.read_text(encoding="utf-8"))
         base = yaml.safe_load((repo / "docker-compose.yml").read_text(encoding="utf-8"))
-        override = yaml.safe_load((repo / "docker-compose.override.yml").read_text(encoding="utf-8"))
+        override = yaml.safe_load(
+            (repo / "docker-compose.override.yml").read_text(encoding="utf-8")
+        )
     except (OSError, ValueError, yaml.YAMLError) as exc:
         report.fail("C8", f"runtime contract unavailable: {exc}")
         return
@@ -382,6 +386,64 @@ def check_runtime_contract(docs: dict[str, Doc], report: Report, repo: Path) -> 
     report.note("C8: topology, publication, access, privilege and generated docs checked")
 
 
+def check_document_organization(repo: Path, report: Report) -> None:
+    """C9: package sequences and active document links cannot silently disappear.
+
+    This checks documentation integrity, not implementation or acceptance truth.
+    Archived definitions and append-only historical ledgers are not active plans.
+    """
+    root = repo / "docs"
+    defined_packages: set[str] = set()
+    for track, filename in (
+        ("BE", "BACKEND_ROADMAP.md"), ("DC", "DESKTOP_ROADMAP.md"),
+    ):
+        path = root / filename
+        if not path.exists():
+            report.fail("C9", f"missing authoritative {track} register: {filename}")
+            continue
+        text = path.read_text()
+        ids = re.findall(
+            rf"^(?:\|\s*|###\s+)({track}-\d{{2}}[a-z]?)(?=\s+[|—])", text, re.M
+        )
+        if not ids:
+            report.fail("C9", f"no package definitions in {filename}")
+            continue
+        duplicates = sorted({item for item in ids if ids.count(item) > 1})
+        defined_packages.update(ids)
+        if duplicates:
+            report.fail("C9", f"duplicate {track} definitions: {', '.join(duplicates)}")
+        numbers = {int(re.search(r"\d+", item).group()) for item in ids}
+        for number in sorted(set(range(1, max(numbers) + 1)) - numbers):
+            report.fail("C9", f"missing {track}-{number:02d} package definition")
+        report.note(f"C9: {track} register has {len(ids)} unique package slots checked")
+    historical = root / "archive/backend-roadmap-2026-08-01.md"
+    if historical.exists():
+        for number in re.findall(r"^### WP-(\d{2}[a-z]?) —", historical.read_text(), re.M):
+            if "BE-" + number not in defined_packages:
+                report.fail("C9", f"historical backend package BE-{number} lost its mapping")
+    active = [repo / "README.md", root / "superpowers/plans/2026-09-09-desktop-client.md"]
+    active.extend(root.glob("*.md"))
+    for path in active:
+        if not path.exists():
+            report.fail("C9", f"missing active document {path.relative_to(repo)}")
+            continue
+        if path.name.endswith("ROADMAP.md"):
+            references = set(re.findall(r"\b(?:BE|DC)-\d{2}[a-z]?\b", path.read_text()))
+            for reference in sorted(references - defined_packages):
+                report.fail("C9", f"undefined package {reference} referenced in {path.name}")
+        for target in re.findall(r"\]\(([^)]+)\)", path.read_text()):
+            if "://" in target or target.startswith("#"):
+                continue
+            local = target.split("#", 1)[0]
+            if local and not (path.parent / local).exists():
+                report.fail("C9", f"broken local link in {path.name}: {target}")
+    if (root / "NEWS_ARCHITECTURE.md").exists():
+        report.fail("C9", "standalone news architecture must remain consolidated in core docs")
+    report.note(
+        "C9: active navigation and consolidated architecture checked; acceptance not inferred"
+    )
+
+
 def main(argv: list[str]) -> int:
     root = Path(argv[1]) if len(argv) > 1 else Path("docs")
     if not root.is_dir():
@@ -409,6 +471,7 @@ def main(argv: list[str]) -> int:
     check_version_refs(docs, report)
     check_placeholders(docs, report)
     check_runtime_contract(docs, report, root.resolve().parent)
+    check_document_organization(root.resolve().parent, report)
 
     print("=" * 66)
     print("LIMES specification consistency check")

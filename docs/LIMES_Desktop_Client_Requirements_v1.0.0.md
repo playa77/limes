@@ -1,13 +1,4 @@
-> Historical design reference. Current runtime, access, operations and deployment
-> are regenerated in [ARCHITECTURE](ARCHITECTURE.md), [OPERATIONS](OPERATIONS.md)
-> and [TESTING_PHASE](TESTING_PHASE.md). Unchanged graph/type/coverage contracts
-> remain applicable; old runtime restrictions and backup shell flows are superseded.
-
-> Initial implementation baseline. Changed runtime, access, configuration,
-> inference and governance behavior is superseded by [TESTING_PHASE.md](TESTING_PHASE.md).
-> Its remaining-work section identifies runtime requirements still pending.
-
-<!-- LIMES — Desktop Client Requirements | v1.0.0 | 2026-09-08 | Status: Draft -->
+<!-- LIMES — Desktop Client Requirements | v1.0.0 | 2026-09-08 | Status: Maintained -->
 
 # LIMES — Desktop Client Requirements
 
@@ -15,9 +6,9 @@
 |---|---|
 | Document | LIMES — Desktop Client Requirements (Document 3 of 3) |
 | Version | 1.0.0 |
-| Date | 2026-09-08 |
-| Status | Draft |
-| Depends on | LIMES — Design Document v2.0.0 (§4, §6); LIMES — Technical Specification v2.1.0 (§9 API, §13.2 topology) |
+| Date | 2026-09-08; reconciled 2026-10-27 |
+| Status | Maintained requirements; per-package evidence in DESKTOP_ROADMAP.md |
+| Depends on | LIMES — Design Document v2.0.0 (§4, §6); LIMES — Technical Specification v2.1.0 (§6 API, §13.2 topology) |
 | Supersedes | none (initial) |
 
 This document defines the requirements for the LIMES desktop client: a native
@@ -34,17 +25,18 @@ window: find entities, interrogate the graph through three query surfaces
 map, and timeline with full provenance and coverage reporting, and monitor and
 operate the running stack (ingest status, cost ledger, backups).
 
-In scope: everything the Dash UI (`src/limes/ui`) does today; read-only
-monitoring of ingest status and the cost ledger; backup triggering by shelling
-out to the existing `limes backup` command inside the worker container;
-connection management for local and remote API endpoints.
+In scope: native query/entity/network/map/timeline investigation, qualified
+news/event evidence within the same graph as registries, source coverage, passive
+usage monitoring, authenticated API connection management and operator backup
+jobs. [DESKTOP_ROADMAP](DESKTOP_ROADMAP.md) records actual implementation and
+acceptance gaps separately from these complete-product requirements.
 
-Out of scope: any new API write surface (the API's three enumerated writes —
-cost entry, saved query, saved-query delete — are the only writes the client
-can invoke); ingest/backfill/re-extract orchestration (these remain CLI-only
-under the budget governor); person-scope, retention, and pseudonymization
-(Design Document §2.4 non-goals); Windows/macOS packaging (Ubuntu only this
-version).
+The client is an API consumer. It contains no extractor, ontology literals,
+Neo4j driver, Docker invocation or host backup command. Ingestion remains a
+bounded operator HTTP/CLI job; no separate news ledger application is delivered.
+Multi-user accounts, automatic retention and distribution packaging remain
+outside current scope. Shared backend requirements are in the core design and
+technical specification; runtime settings are in OPERATIONS.
 
 ## 2. Technology decisions
 
@@ -52,7 +44,7 @@ version).
 |---|---|---|
 | Toolkit | Python 3.12 + PySide6 (Qt 6) | Same language and venv as the repo; native desktop chrome |
 | Graph/map/timeline rendering | QWebEngineView hosting Cytoscape.js, Leaflet, Plotly | Exact visual parity with the Dash UI; the web components are proven |
-| Application structure | New `desktop/` workspace member (`desktop/src/limes_desktop/`) | Isolated from `src/limes`; shares types, not infrastructure |
+| Application structure | `desktop/` workspace member (`desktop/src/limes_desktop/`) | Isolated from `src/limes`; shares types, not infrastructure |
 | API contract | Typed client mirroring `src/limes/api/models.py` Pydantic models | Contract tests pin client models to API models; drift fails CI |
 | Distribution | uv-managed; installable via `pipx`/`uv tool install` in v1; `.deb` later | Lowest-friction path first |
 
@@ -63,21 +55,17 @@ Tauri shells (introduce a second language stack the repo does not carry).
 ## 3. Functional requirements
 
 Requirements are numbered FR-DC-nnn. "API" means the FastAPI service
-(Technical Specification §9). Every data-driven view degrades gracefully when
+(Technical Specification §6). Every data-driven view degrades gracefully when
 the API is unreachable: connection state is visible at all times (FR-DC-002).
 
 ### 3.1 Connection management
 
 - FR-DC-001: The client connects to the API over HTTP at a user-configurable
-  base URL. Default: `http://127.0.0.1:8000` (the Compose API when promoted;
-  the base compose file publishes no ports, so remote connections target a
-  promoted or tunneled deployment).
+  base URL. Default: `http://127.0.0.1:8000`, published by base Compose. Remote access uses HTTPS or loopback SSH forwarding.
 - FR-DC-002: On startup and on connection-profile change, the client calls
   `GET /health` and displays reachability, API version, and graph summary.
 - FR-DC-003: The client stores named connection profiles (name, base URL) in
-  an XDG-conformant config location (`~/.config/limes-desktop/`). No
-  credentials in v1 — the API is unauthenticated by design (single operator,
-  loopback).
+  an XDG-conformant config location (`~/.config/limes-desktop/`). Credentials stay in session memory and are sent as bearer tokens. All surfaces require authentication; only operator credentials can submit/read operational jobs. Profiles never store tokens. The legacy compose_root field is ignored.
 
 ### 3.2 Search
 
@@ -105,7 +93,7 @@ the API is unreachable: connection state is visible at all times (FR-DC-002).
 - FR-DC-030: Natural-language query via `POST /query/nl`: question in German
   or English, generated Cypher always displayed alongside results and always
   editable before execution, NLQ outcome (including adjudication metadata)
-  shown per Technical Specification §9.
+  shown per Technical Specification §6.
 - FR-DC-031: Query builder: constructed at runtime from
   `GET /builder/schema`; the client contains no ontology literals (same
   invariant enforced on the Dash UI by `tests/integration/test_ui.py` — the
@@ -142,7 +130,7 @@ the API is unreachable: connection state is visible at all times (FR-DC-002).
   stage, per-source state; auto-refresh configurable (default: 10 s while the
   panel is visible, disabled otherwise).
 - FR-DC-051: Cost ledger via `GET /cost/ledger`: entries with spend by model,
-  by run, and running totals against the configured budget. The ledger view is
+  by run, and passive totals without a budget ceiling. The ledger view is
   read-only in the client in v1 — cost entries are written by the pipeline.
 - FR-DC-052: Sources and ontology metadata via `GET /sources`,
   `GET /ontology`, and `GET /ontology/versions`, presented as reference
@@ -150,21 +138,16 @@ the API is unreachable: connection state is visible at all times (FR-DC-002).
 
 ### 3.7 Backup orchestration
 
-- FR-DC-060: The client triggers a backup by invoking, on the desktop host,
-  `docker compose exec worker limes backup` in the configured compose root.
-  The client is a shell around the existing command — it adds no backup logic
-  of its own.
-- FR-DC-061: Because Community Edition has no online backup (the command stops
-  Neo4j, dumps, and restarts — Technical Specification §13.6), the client
-  shows an explicit confirmation naming the consequences (graph unavailable
-  for the duration; up to ~120 s graceful stop) before invoking.
-- FR-DC-062: Backup progress is surfaced by streaming the command's output;
-  completion is verified by calling `GET /health` after the command exits.
-  Failure states (compose root missing, docker CLI absent, dump failure) are
-  reported verbatim, not paraphrased.
-- FR-DC-063: The compose root path is part of the connection profile. The
-  client never guesses it; if unset or invalid, backup is offered disabled
-  with the reason shown.
+- FR-DC-060: Submit backup via the API's operator-only `/operations/jobs` using
+  an idempotent request UUID. No local Docker, shell or compose-root access.
+- FR-DC-061: Confirm the consequence before submission: graph unavailable during
+  clean stop/dump/recovery; supervisor stop grace is 180 seconds. Never retry a
+  failed paid/operational job automatically.
+- FR-DC-062: Poll job status asynchronously, surface bounded output/dump name and
+  success/failure, then verify API health. Disconnecting does not cancel the server
+  job; retain its identifier for observation. Protect credentials in errors/logs.
+- FR-DC-063: Disable backup with a precise explanation when the API is unreachable
+  or an operator credential/capability is absent. A consumer token cannot submit it.
 
 ### 3.8 Non-functional requirements
 
@@ -172,13 +155,12 @@ the API is unreachable: connection state is visible at all times (FR-DC-002).
 - NFR-DC-071: Startup to interactive search in ≤ 3 s on the reference machine;
   the QWebEngineView runtime is lazy-loaded on first visualization use.
 - NFR-DC-072: No telemetry, no network calls beyond the configured API and
-  the backup subprocess — local-first defaults (user's architectural
-  direction, 2026-09).
+  operator job API — local-first defaults. Current external OSM tiles violate this requirement; OI-11/DC-14 requires an explicit policy or conforming map repair, not a silent exception.
 - NFR-DC-073: Offline unit test suites for all client logic; API interactions
   mocked; no test makes real inference calls (repo invariant).
 - NFR-DC-074: The client is replaceable against the API contract: it must work
   unmodified against any conformant implementation of Technical
-  Specification §9.
+  Specification §6.
 
 ## 4. Acceptance criteria
 
@@ -193,7 +175,7 @@ the API is unreachable: connection state is visible at all times (FR-DC-002).
 - AC-DC-4: Source scan of `desktop/src/limes_desktop/` finds no ontology type
   or relation literals (guard test, mirroring `test_ui.py` for the Dash UI).
 - AC-DC-5: Triggering backup from the client produces a timestamped
-  `limes-<ts>.dump` in the archive volume and a successful post-backup
+  `limes-<timestamp>-<suffix>.dump` in the archive volume and a successful post-backup
   `/health` check, with the confirmation dialog shown before execution
   (FR-DC-061).
 - AC-DC-6: With the API stopped, every view shows the unreachable state
@@ -202,8 +184,25 @@ the API is unreachable: connection state is visible at all times (FR-DC-002).
   the client against the live Pydantic models in `src/limes/api/models.py`;
   a model change without a client update fails CI.
 
-## 5. Open items
+## 5. Qualified news and event requirements
 
-None. Decisions deliberately deferred: `.deb` packaging (v1.x), API
-authentication (would require a Technical Specification amendment), cost-ledger
-write UI (v1.x, if operator demand materializes).
+- FR-DC-023: Show dispatch/provider/version, text span or coded row/report locator,
+  correction and syndication lineage, source trust, extraction confidence and
+  evidence assessment as separate facts. Missing text or attribution stays visible.
+- FR-DC-044: Render statement kind, modality, attributed speaker/proposition,
+  event lifecycle and temporal precision in query/entity/network/timeline views.
+  Support validity-time and recorded-time exploration; a denial/proposal never
+  renders as an unqualified completed fact.
+- AC-DC-8: In the BE-43/DC-15 end-to-end scenario, navigate from a qualified claim
+  to its immutable evidence and correction. Preserve unknowns and dependent reports,
+  update parity/ontology guards, and show API failure without losing the session.
+- AC-DC-9: In BE-44/DC-16, compare proposal, denial, agreement and official registry
+  confirmation across sources and both time axes without implying causality.
+
+## 6. Open acceptance and deferred scope
+
+DESKTOP_ROADMAP has a disposition for every AC and NFR, current defects and next
+packages. OI-10 builder semantics, OI-11/18 map network policy/guard, missing original
+review evidence and reference-platform/performance/manual qualification remain open.
+Authentication and API backup are implemented current requirements, not deferred.
+Distribution packaging and ledger write UI have no implementation commitment.

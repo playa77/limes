@@ -32,8 +32,9 @@ def render(contract: dict) -> dict[str, str]:
 {notice}
 **An evidence-backed world model for German and European policy research.**
 
-LIMES connects official registries and extracted text in a shared, queryable model
-of entities, relationships and change. It brings AI-assisted extraction,
+LIMES connects official registries, agency dispatches, curated reporting and coded
+event observations in a shared, queryable model of entities, relationships and
+change. It brings AI-assisted extraction,
 ontology-driven knowledge representation and visual investigation into one
 research platform, turning fragmented public information into a connected view
 that analysts can explore and inspect.
@@ -45,17 +46,22 @@ path into the graph through validated, read-only queries.
 
 ## From public information to connected intelligence
 
-- **Build a shared model.** Official registries and text extraction feed an
+- **Build a shared model.** Registry records and source-attributed news claims feed an
   ontology-driven Neo4j knowledge graph. Entity resolution links records across
   sources so research can follow relationships beyond individual documents.
 - **Investigate in context.** Explore connections through the desktop's network,
   map and timeline views. Use natural language, a visual query builder or Cypher
   to approach the same graph from different research questions.
+- **Follow developments across sources.** Investigate proposals, announcements,
+  denials, agreements and later official confirmation. Attribution, modality,
+  event lifecycle and temporal precision remain visible beside the evidence.
 - **Understand what changed, and when.** Bitemporal assertions distinguish when a
   claim was valid from when it was recorded. Conflicting claims are preserved,
   keeping disagreement and evolving knowledge available for analysis.
 - **Keep the evidence within reach.** Provenance connects claims to their
-  sources, and a content-addressed archive remains the system of record.
+  immutable dispatch versions, text spans or coded export rows. Corrections and
+  syndication retain their lineage; copied reports do not become independent
+  corroboration. A content-addressed archive remains the system of record.
   Hop-level coverage and diagnosis accompany empty results, helping researchers
   assess where evidence may be missing.
 - **Operate through a consistent interface.** Authenticated HTTP connects the
@@ -71,32 +77,26 @@ LIMES is a personal research artifact. Source coverage is uneven and extracted
 claims can be wrong; inspect provenance and hop-level coverage when interpreting
 results. Public-person data has no automatic retention policy.
 
-## Planned: integrated news intelligence
-
-Agency dispatches and news reports will enrich the same LIMES graph as official
-registries, with source evidence, attributed claims and proposed versus completed
-events visible in research views. Extraction belongs inside the existing worker;
-there is no standalone utility or event-ledger application, additional service or
-separate vector database.
-
-This is planned work. Curated RSS/Atom ingestion and shared text extraction exist,
-but dedicated agency integration and qualified claim/event semantics are pending.
-Investigation confirmed defects in GDELT's export format, mixed-record routing and
-source granularity; the documented backfill command is not evidence of working
-live GDELT ingestion. Repair comes first. See the [roadmap](docs/ROADMAP.md),
-[target architecture](docs/NEWS_ARCHITECTURE.md) and
-[review findings](docs/NEWS_REVIEW.md) for acceptance, evidence and open blockers.
+The design, specifications and [two delivery sequences](docs/ROADMAP.md) describe
+one integrated product. Read this page as the complete product overview; consult
+the [documentation map](docs/INDEX.md), backend/desktop package registers and
+[verification status](docs/TESTING_PHASE.md) for implementation and acceptance
+status. Those records distinguish current artifacts, evidence gaps and open repairs.
 
 ## Architecture and runtime
 
 {snapshot}
 
 {table}
-The current design is in [ARCHITECTURE](docs/ARCHITECTURE.md), configuration and
-remote usage in [OPERATIONS](docs/OPERATIONS.md), and verification/requirement
-status in [TESTING_PHASE](docs/TESTING_PHASE.md). These generated documents are
-authoritative for runtime, access and deployment. Original large specifications
-remain historical design references for unchanged graph contracts.
+The [core design](docs/LIMES_Design_Document_v2.0.0.md) and
+[technical specification](docs/LIMES_Technical_Specification_v2.1.0.md) define the
+system, including integrated agency/news intelligence.
+[Desktop architecture](docs/LIMES_Desktop_Client_Architecture_v1.0.0.md) defines
+its API consumer. Shared adapters, archive, extraction, entity/event
+resolution and ontology validation feed one Neo4j graph with native vectors.
+The worker owns processing; the desktop owns visual investigation through the API.
+[Runtime architecture](docs/ARCHITECTURE.md), [operations](docs/OPERATIONS.md) and
+[verification](docs/TESTING_PHASE.md) document the current executable contract.
 
 Stack administration and ordinary use are separate. Administrators build/start
 containers; consumers need only an API credential and HTTP client. Operators use a
@@ -164,7 +164,8 @@ QT_QPA_PLATFORM=offscreen venv/bin/python -m pytest desktop/tests/integration -q
 
 Graph tests own disposable databases and clean them up. Acceptance runs separately
 because of its nested plugin. GitHub Actions runs these suites and retains JUnit
-results. Read AGENTS.md, the newest five DECISIONS entries, and OPEN_ISSUES.md on
+results. Read AGENTS.md, the documentation index, both package registers, the newest five
+DECISIONS entries, and OPEN_ISSUES.md on
 re-entry. Never treat cached remote refs as a live Git baseline.
 """
     architecture = f"""# LIMES current architecture
@@ -247,16 +248,18 @@ plain-CSV URL/parser and 55-column map do not match the published 61-column zipp
 TSV export, and document routing ignores its normalized structured assertions.
 Per-file synthetic summaries also lose report-level lineage. Treat GDELT ingestion
 as requiring repair, not as live-validated coverage. See OI-19..OI-22 in
-[NEWS_REVIEW](NEWS_REVIEW.md) and OPEN_ISSUES.md.
+[NEWS_REVIEW](NEWS_REVIEW.md) and [OPEN_ISSUES](../OPEN_ISSUES.md).
 
 The accepted target is integrated news intelligence inside the existing worker,
 archive, resolver, ontology, loader, API and desktop. Preserve independent coded
 observations and source documents, dispatch versions and evidence spans, attributed
 claims versus facts, non-destructive event matching and source dependence. No
 standalone extractor/utility, event-ledger application, extra service or vector
-store is planned. [NEWS_ARCHITECTURE](NEWS_ARCHITECTURE.md) defines the target
+store is planned. [core design](LIMES_Design_Document_v2.0.0.md) defines the target
 contracts; [ROADMAP](ROADMAP.md) orders complete repair, extraction and analysis
-packages with prerequisites and acceptance. These planned contracts do not alter
+packages with prerequisites and acceptance. BE-42 repairs ingestion next;
+BE-43/DC-15 delivers qualified news, followed by BE-44/DC-16 cross-source analysis.
+BE-41 reconciles the documentation baseline. These target contracts do not alter
 the shipped runtime table or relax current extraction safeguards.
 """
     operations = f"""# LIMES configuration, access and releases
@@ -379,8 +382,9 @@ future requirements in [ROADMAP](ROADMAP.md).
 {table}
 The attached redesign brief supplies requirements, not permission for a deployment
 or paid data run. Runtime/access/operations are regenerated in ARCHITECTURE.md and
-OPERATIONS.md. Original specifications remain historical references for the
-surviving ontology, bitemporal, coverage, archive and query-validation contracts.
+OPERATIONS.md. The core design and technical specification are maintained product contracts;
+backend/desktop roadmaps distinguish current implementation from target behavior.
+Archived plans are historical records, not execution instructions.
 
 ## Requirement disposition
 
@@ -409,6 +413,9 @@ OPEN_ISSUES retains append-only history and rerunnable closure evidence.
 
 ## Verification
 
+[Current baseline evidence](VERIFICATION.md) records the precise runs, limits and
+open qualification obligations. Historical counts below are not current passes.
+
 Canonical environment: `UV_PROJECT_ENVIRONMENT=venv uv sync --frozen --all-packages`.
 The full candidate inventory is ruff, mypy, docs checks, root unit, desktop
 unit/contract, integration, acceptance (separately), and desktop integration.
@@ -436,7 +443,7 @@ open as OI-19..OI-22. Existing comma-CSV fixtures and implementation-derived URL
 do not prove external-format compatibility; no source-to-graph ingestion or paid
 extraction result is claimed by that investigation.
 
-[NEWS_ARCHITECTURE](NEWS_ARCHITECTURE.md) is the accepted integrated target;
+[core design](LIMES_Design_Document_v2.0.0.md) is the accepted integrated target;
 [ROADMAP](ROADMAP.md) defines complete packages and acceptance. Representative
 agency access and an independently annotated DE/EN corpus precede claim-schema
 implementation. Future verification must distinguish extraction fidelity, source

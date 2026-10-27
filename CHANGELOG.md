@@ -1,3 +1,19 @@
+## 2026-10-27 — BE-41: repository specification and status reconciliation (D-79)
+
+- Establish separate BE/DC sequences with every historical package, evidence,
+  superseded behavior, current gaps and next action. Recover the deleted backend
+  roadmap and preserve original desktop tasks as clearly inactive archives.
+- Integrate news into core design, module/data/API contracts and desktop surfaces;
+  remove the separate target architecture and place new work after actual dependencies.
+- Reconcile active authentication, passive accounting, split configuration, non-root
+  three-service runtime, HTTP backup and operational job contracts. README describes
+  the whole intended product; status/evidence lives in dedicated registers.
+- Add documentation authority/navigation, current issue disposition and explicit
+  verification limits. OI-16 archival ambiguity is closed; OI-19..22 remain open;
+  OI-23/24 track workflow configuration and unmeasured acceptance obligations.
+- Documentation/renderer/guard changes only; no runtime code, fixtures, production
+  data or paid calls. Exact verification and remaining blockers: docs/VERIFICATION.md.
+
 ## 2026-10-27 — WP-NEWS-DESIGN: integrated news design and issue investigation (D-78)
 
 - Evaluate the supplied review; plan agency/news extraction inside LIMES with

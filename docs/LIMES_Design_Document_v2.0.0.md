@@ -1,16 +1,12 @@
-> Historical design reference. Current runtime, access, operations and deployment
-> are regenerated in [ARCHITECTURE](ARCHITECTURE.md), [OPERATIONS](OPERATIONS.md)
-> and [TESTING_PHASE](TESTING_PHASE.md). Unchanged graph/type/coverage contracts
-> remain applicable; old runtime restrictions and backup shell flows are superseded.
+> Core product specification, including integrated news intelligence (D-79).
+> This document specifies the complete intended product; implementation status,
+> completed packages and remaining dependencies are recorded in [ROADMAP](ROADMAP.md).
+> [ARCHITECTURE](ARCHITECTURE.md), [OPERATIONS](OPERATIONS.md) and
+> [TESTING_PHASE](TESTING_PHASE.md) describe the shipped runtime and supersede
+> legacy runtime/configuration examples. [NEWS_REVIEW](NEWS_REVIEW.md) retains
+> investigation evidence; open defects remain in [OPEN_ISSUES](../OPEN_ISSUES.md).
 
-> Initial implementation baseline. Changed runtime, access, configuration,
-> inference and governance behavior is superseded by [TESTING_PHASE.md](TESTING_PHASE.md).
-> Current pending work is tracked in [OPEN_ISSUES](../OPEN_ISSUES.md) and the
-> [roadmap](ROADMAP.md). [NEWS_ARCHITECTURE](NEWS_ARCHITECTURE.md) extends the
-> planned news design under D-78; [NEWS_REVIEW](NEWS_REVIEW.md) records confirmed
-> GDELT defects. The standalone extractor/utility iteration is excluded.
-
-<!-- LIMES — Design Document | v2.0.0 | 2026-07-28 | Status: Draft -->
+<!-- LIMES — Design Document | v2.0.0 | 2026-07-28 | Status: Maintained -->
 
 # LIMES — Design Document
 
@@ -18,8 +14,8 @@
 |---|---|
 | Document | LIMES — Design Document (Document 1 of 3) |
 | Version | 2.0.0 |
-| Date | 2026-07-28 |
-| Status | Draft |
+| Date | 2026-07-28; reconciled 2026-10-27 |
+| Status | Maintained core specification; implementation status in ROADMAP.md |
 | Ontology version | 1.0.0 |
 | Supersedes | v1.0.0 (2026-07-23), withdrawn |
 | Companion documents | Technical Specification v2.1.0; Desktop Client Requirements v1.0.0 and Desktop Client Architecture v1.0.0 |
@@ -54,7 +50,7 @@ Design decisions in §10 carry a reversibility tag:
 
 ### 1.1 What LIMES Is
 
-LIMES is a local, single-operator, ontology-driven knowledge graph for German and European policy and geostrategic analysis. It ingests structured registries and unstructured German- and English-language text, maps both onto a fixed ontology of real-world entities and relationships, and provides network, geographic, and temporal views over the result.
+LIMES is a single-operator, ontology-driven research platform for German and European policy and geostrategic analysis. Official registries, agency dispatches, curated German- and English-language reporting and GDELT coded observations feed one evidence-backed world model. Shared entity and event resolution connects institutional relationships with proposals, announcements, denials and later documented outcomes. A native desktop workspace provides network, geographic and temporal investigation through the authenticated API.
 
 It follows the data-fusion and link-analysis paradigm, not the business-intelligence one. It does not count transactions. It records that a specific corporation was a subsidiary of a specific parent during a specific interval, according to a specific source, with a specific confidence — and lets the operator traverse outward from there.
 
@@ -66,7 +62,7 @@ It follows the data-fusion and link-analysis paradigm, not the business-intellig
 | G-02 | Confront and solve, at proof-of-concept scale, the three engineering problems characteristic of this system class: ontology design, entity resolution, temporal provenance. |
 | G-03 | Support open-ended, unanticipated exploration. The operator's questions are not known in advance and will change. |
 | G-04 | Make every displayed claim traceable to its source, its extraction provenance, and where applicable the exact sentence that produced it. |
-| G-05 | Operate within a hard ceiling of EUR 10 per month for paid inference at steady state. |
+| G-05 | Measure inference usage and cost; bound ingestion work explicitly without a monetary governor. |
 | G-06 | Run entirely on local Docker Compose while remaining deployable to a 12 GB host without architectural change. |
 | G-07 | Serve, secondarily, as a demonstrable artifact. Explicitly lower priority; constrains no decision in this document. |
 
@@ -75,7 +71,8 @@ It follows the data-fusion and link-analysis paradigm, not the business-intellig
 1. The operator can pose a multi-hop question in natural language, receive executable Cypher, inspect it, run it, and receive either results or a diagnosis of which hop the data could not satisfy.
 2. Every edge carries source, temporal validity, and confidence; the UI can display the originating sentence for any news-extracted assertion.
 3. A model or prompt version change is a versioned, re-runnable, costed event with a measurable effect on extraction quality.
-4. The graph contains all thirteen configured sources, and steady-state operation stays under the budget ceiling.
+4. Registry records, coded observations and individual news dispatches can be compared with their evidence, source dependence, temporal precision and coverage gaps visible.
+5. A proposal, denial or announcement remains distinguishable from a completed event; a corrected dispatch preserves what was known before its correction.
 
 ---
 
@@ -86,11 +83,11 @@ It follows the data-fusion and link-analysis paradigm, not the business-intellig
 | ID | Requirement | Trace |
 |---|---|---|
 | FR-01 | Ingest structured data from official registries via deterministic parsers, with no paid inference. | CA |
-| FR-02 | Ingest unstructured German- and English-language text and extract typed entities and relations. | OR |
+| FR-02 | Ingest agency dispatches and curated DE/EN reporting; extract typed entities, events and qualified claims through the shared pipeline. | OR |
 | FR-03 | Map all ingested data onto a declarative, versioned ontology; reject any assertion violating it. | CA |
 | FR-04 | Resolve entity mentions across sources and languages to canonical entities, non-destructively and reversibly. | OR |
 | FR-05 | Record every assertion bitemporally: validity interval and belief interval, independently queryable. | CA |
-| FR-06 | Record provenance on every assertion: source, confidence, extractor model, prompt version, schema version, ontology version, evidence span where derived from text. | CA |
+| FR-06 | Preserve source/version lineage, extraction provenance, exact text spans or coded row locators, attribution, modality, assessment and temporal precision on assertions. | CA |
 | FR-07 | Retain contradictory assertions from different sources; expose a query-time trust ranking. | CA |
 | FR-08 | Natural-language querying that generates Cypher, validates it against the ontology deterministically, plans it, then executes it read-only. | CA |
 | FR-09 | A query builder generated from the ontology, offering only relations valid for the selected domain and range. No hand-authored templates. | CA |
@@ -99,10 +96,10 @@ It follows the data-fusion and link-analysis paradigm, not the business-intellig
 | FR-12 | Three synchronized views over query results: network graph, map, timeline. | OR |
 | FR-13 | Display the generated Cypher for every query; permit editing and re-execution. | PDD |
 | FR-14 | Persist every executed query with its natural-language form, generated Cypher, ontology version, result count. | CA |
-| FR-15 | Meter and ledger every paid API call; refuse calls exceeding the configured monthly ceiling. | CA |
+| FR-15 | Meter and ledger every paid API call; expose explicit work limits and deferred work. | CA |
 | FR-16 | Gate paid extraction behind deterministic filters: content-hash deduplication, local NER pre-filter, passage selection. | CA |
 | FR-17 | Cache extraction results keyed by content hash, prompt version, schema version, model identifier. | CA |
-| FR-18 | Trigger all ingestion manually. No scheduler. | OR |
+| FR-18 | Submit ingestion through authenticated operator jobs; external timers may submit the same bounded jobs. No internal scheduler service. | OR |
 | FR-19 | Evaluate extraction quality against a hand-labeled gold set; gate version changes on non-regression. | CA |
 
 ### 2.2 Non-Functional Requirements
@@ -111,10 +108,10 @@ It follows the data-fusion and link-analysis paradigm, not the business-intellig
 |---|---|
 | NFR-01 | Total resident memory of all services must not exceed 11 GB, targeting a 12 GB host. |
 | NFR-02 | Total storage footprint under 100 GB including the raw document archive. |
-| NFR-03 | Steady-state paid inference under EUR 10 per calendar month. |
+| NFR-03 | Record inference usage, latency and cost; use cheap filters and explicit workload limits. |
 | NFR-04 | No component may depend on a GPU. |
 | NFR-05 | All ingestion must be idempotent. Re-running over the same input must not duplicate entities or edges. |
-| NFR-06 | All configuration supplied by environment variables. No host paths, no hardcoded credentials. |
+| NFR-06 | Typed environment/split-file configuration with declared bind paths and named mutable volumes; no hardcoded credentials. |
 | NFR-07 | UI language is English. Source text displayed verbatim in its original language. |
 | NFR-08 | Deliverable documents, the ontology, and the gold set carry independent semantic version lines. |
 | NFR-09 | Every specified module, function, and type has at least one specified caller or constructor. Verified by Technical Specification §15. |
@@ -127,7 +124,7 @@ It follows the data-fusion and link-analysis paradigm, not the business-intellig
 | C-02 | Paid inference routed exclusively through OpenRouter. | §4.5 |
 | C-03 | Runtime is Docker Compose on a single host. No orchestrator, no cloud services. | §8.1 |
 | C-04 | Backfill of unstructured sources reaches 90 days. Structured sources backfill fully. | §9.2 |
-| C-05 | Local Ollama and large spaCy models are laptop-only, excluded from the portable resource contract. | §8.2 |
+| C-05 | Optional local Ollama/large-model paths are development-only; portable extraction uses worker-local spaCy and remote inference. | §8.2 |
 | C-06 | Neo4j spatial supports points, distances, bounding boxes only. No polygon operations. | §5.7 |
 | C-07 | **Every CLI invocation is a fresh operating-system process.** No module-level state survives between commands. | §4.14, §5.9 |
 
@@ -137,10 +134,10 @@ C-01 and C-07 are the two constraints the v1.x set violated after stating them. 
 
 | ID | Non-Goal |
 |---|---|
-| NG-01 | Multi-user access, authentication, authorization, session management. |
-| NG-02 | Automated or scheduled ingestion. |
+| NG-01 | Multi-user account management; consumer/operator bearer authentication remains required. |
+| NG-02 | An internal scheduling service, standalone news utility or separate event-ledger application. |
 | NG-03 | Personal-data scoping, retention policy, pseudonymization. |
-| NG-04 | Paid data sources, OpenCorporates, X/Twitter, paywalled press, satellite imagery. |
+| NG-04 | Unlicensed paywalled acquisition, OpenCorporates, X/Twitter and satellite imagery. Agency access requires selected provider terms and credentials. |
 | NG-05 | Quantitative economic time series. |
 | NG-06 | PostGIS or any polygon-capable spatial engine. |
 | NG-07 | Production deployment, high availability, distribution of the artifact. |
@@ -152,81 +149,56 @@ C-01 and C-07 are the two constraints the v1.x set violated after stating them. 
 
 ### 3.1 Style
 
-Four layers with strict downward dependency, plus one composition root that sits outside the layering and constructs everything. No layer calls upward. The query API is the only path to the graph for any user-facing component.
+Four layers with downward dependencies and a composition root construct one
+integrated system. Adapters acquire registry data, agency dispatches, RSS entries
+and coded GDELT exports. The worker archives originals, normalizes independent
+structured/document channels, filters and extracts qualified claims, resolves
+entities/events, validates the ontology and loads Neo4j. Neo4j-native vectors
+supply identity candidates; no separate vector store is required. User-facing
+components access the graph only through the authenticated API.
 
 ```mermaid
 flowchart TD
-    CR[Composition Root<br/>builds every component]
-
-    subgraph Sources
-        S1[Structured registries — 11]
-        S2[Unstructured feeds — 2]
-    end
-
-    subgraph Ingestion
-        A[Source Adapters]
-        R[Raw Archive]
-        N[Normalizer]
-        G[Gate]
-        X[Extractor]
-        E[Entity Resolver]
-        L[Graph Loader<br/>sole writer of nodes + edges]
-    end
-
-    DB[(Neo4j 2026.x CE<br/>graph · vector · fulltext · point)]
-
-    subgraph Service
-        API[FastAPI Query API]
-        NLQ[NL to Cypher]
-        COV[Coverage & Diagnosis]
-        LED[Cost Ledger & Governor]
-        ONT[Ontology Registry]
-    end
-
-    UI[Dash UI<br/>network · map · timeline]
-
-    CR -.constructs.-> A
-    CR -.constructs.-> L
-    CR -.constructs.-> X
-    CR -.constructs.-> LED
-
-    S1 --> A
-    S2 --> A
-    A --> R
-    A --> N
-    N --> G
-    G --> X
-    G -->|structured path<br/>no inference| E
-    X --> E
+    S[Registries / agency dispatches / RSS / GDELT] --> A[Source adapters]
+    A --> R[Content-addressed archive]
+    R --> N[Normalization with source and version identity]
+    N --> C[Structured and coded observations]
+    N --> G[Document filters and extraction cache]
+    G --> X[Shared qualified claim extraction]
+    X --> E[Entity and event resolution]
+    C --> L[Ontology validation and graph loader]
     E --> L
-    L --> DB
-    ONT --> L
-    ONT --> NLQ
-    LED --> X
-    DB --> API
-    NLQ --> API
-    COV --> API
-    API --> UI
+    L --> DB[Neo4j graph and native vectors]
+    DB --> API[Authenticated API and coverage diagnosis]
+    API --> UI[Desktop network / map / timeline / evidence]
 ```
 
 ### 3.2 Two Asymmetric Ingestion Paths
 
-The single most important structural property.
+Structured registries supply deterministic observations about ownership,
+sanctions, contracts and office-holding. News reporting supplies attributed claims
+and developments registries do not publish. GDELT supplies machine-coded secondary
+observations, with different provenance and error characteristics from article
+text. These are core inputs to the same world model.
 
-**The structured path carries no inference cost.** Eleven of thirteen sources are deterministic parsers over official registries. They produce the highest-trust and most analytically valuable edges — ownership, sanctions, contracts, office-holding, legal citation. They cost nothing per record and cannot hallucinate.
-
-**The unstructured path is a supplement.** It captures events and relationships no registry publishes. It is gated, cached, metered, and lower-trust. An architecture inverting this ratio is unaffordable at the stated budget and untrustworthy at any budget.
+A normalized record may carry both deterministic assertions and documents. Process
+both channels explicitly: gate rejection, cache hits or empty document extraction
+must never discard structured evidence. Define independent checkpoints, counters,
+retry and reextract ownership; partial failure must neither hide a channel nor
+retract the other's assertions. Parsing confidence does not establish factual
+truth. Source dependence and disagreement remain available to queries.
 
 ### 3.3 Container Topology
 
-| Service | Purpose | Credentials held | Published |
-|---|---|---|---|
-| `neo4j` | Storage engine | — | never |
-| `api` | Query service | DB credentials; OpenRouter key | internal only |
-| `ui` | Dash application | none | localhost only |
-| `worker` | Ingestion, CLI | DB credentials; OpenRouter key | never |
+| Service | Purpose | Publication |
+|---|---|---|
+| `neo4j` | Graph, native vectors and private backup supervisor | No host publication |
+| `api` | Authenticated queries and durable operator-job submission | Loopback HTTP, HTTPS or SSH tunnel remotely |
+| `worker` | Adapters, extraction, resolution, loading and bounded jobs | No host publication |
 
-The `api` service holds the OpenRouter key and database write access. This differs from the v1.x design, which withheld both and thereby made three specified endpoints unimplementable — natural-language generation is paid inference, and query persistence and cost ledgering are writes. §7 specifies what constrains the API instead.
+All services run unprivileged. The native PySide6 desktop is an API consumer,
+not a fourth service. Consumer and operator tokens are separate; physical backup
+uses private authenticated HTTP. ARCHITECTURE and OPERATIONS give current settings.
 
 ### 3.4 Data Flow: Structured Source
 
@@ -236,7 +208,7 @@ No paid call at any stage. Identity comes from deterministic keys computed by th
 
 ### 3.5 Data Flow: Unstructured Source
 
-Adapter fetches → document archived → normalizer extracts text, timestamp, language → gate discards documents already extracted under the current version triple, runs local spaCy NER, discards passages below the mention threshold → surviving passages batched into schema-constrained extraction calls through the budget governor → extractor returns **pre-resolution assertions carrying mentions, not identified entities** → resolver converts mentions to identified endpoints, minting new identities where none match → loader validates, materializes, merges.
+Adapter fetches → document archived → normalizer preserves dispatch/version identity, text, language, publication/update time and source lineage → gate discards documents already extracted under the current version triple, runs local spaCy NER, discards passages below the mention threshold → surviving passages batched into schema-constrained extraction calls with usage accounting and explicit workload limits → extractor returns **pre-resolution assertions carrying mentions, not identified entities** → resolver converts mentions to identified endpoints, minting new identities where none match → loader validates, materializes, merges.
 
 The distinction between pre-resolution and resolved assertions is load-bearing and is why §5.5 defines two types. The extractor cannot assign identity; resolution is what does.
 
@@ -261,11 +233,11 @@ The distinction between pre-resolution and resolved assertions is load-bearing a
 **Does not own:** relation extraction.
 
 ### 4.5 Extractor
-**Owns:** producing typed pre-resolution assertions from passages via a schema-constrained OpenRouter call; attaching model, prompt version, schema version, confidence, evidence span; writing every call to the cost ledger.
+**Owns:** producing qualified pre-resolution claims and events from passages via a schema-constrained OpenRouter call; distinguishing reported propositions, denials, proposals and completed outcomes; attaching model, prompt version, schema version, confidence, evidence span; writing every call to the cost ledger.
 **Does not own:** entity identity, resolution, any graph write.
 
 ### 4.6 Entity Resolver
-**Owns:** converting mentions to identified endpoints. Deterministic identifiers take absolute precedence and short-circuit everything. Otherwise: embed, retrieve candidates by vector similarity, adjudicate where ambiguous, mint a new identity where nothing matches.
+**Owns:** converting mentions to identified endpoints; matching event candidates using source namespace, actors/roles, type, time precision and location. Labels or dates alone never justify a merge; unresolved alternatives remain visible. Deterministic identifiers take absolute precedence and short-circuit everything. Otherwise: embed, retrieve candidates by vector similarity, adjudicate where ambiguous, mint a new identity where nothing matches.
 **Does not own:** destructive merging. No node is ever absorbed or deleted. A merge is a link; unmerging is retracting it. **The resolver mints identities but does not write entity nodes** — it returns identified endpoints and the loader materializes them, so a new entity is created in the same transaction as the assertion justifying it.
 
 ### 4.7 Graph Loader
@@ -276,9 +248,12 @@ The distinction between pre-resolution and resolved assertions is load-bearing a
 **Owns:** loading and self-validating the declarative ontology; exposing types, relations, and domain/range constraints to the loader, the Cypher validator, the builder projection, and the API.
 **Does not own:** migration execution.
 
-### 4.9 Cost Ledger and Budget Governor
-**Owns:** recording tokens and cost for every paid call; enforcing the monthly ceiling by refusing further calls and queueing affected documents; maintaining separate authorized envelopes for backfill and re-extraction.
-**Does not own:** prioritizing which documents are worth extracting. It refuses; it does not choose.
+### 4.9 Usage and Cost Accounting
+
+**Owns:** passive durable recording of provider tokens, model, purpose and cost
+through CostRecorder and the ledger. There is no monetary governor. Workload
+limits, prioritization and deferred-item accounting belong to ingestion orchestration;
+their remaining implementation is BE-43. Legacy budget arguments are ignored.
 
 ### 4.10 Query API
 **Owns:** being the only path to the graph for user-facing components; validating all operator-supplied Cypher before execution; serving ontology metadata; assembling coverage reports; persisting executed queries.
@@ -292,15 +267,18 @@ The distinction between pre-resolution and resolved assertions is load-bearing a
 **Owns:** computing contributing sources, graph-wide relation counts, and source refresh timestamps for any query; decomposing empty queries to identify the clause that emptied the set.
 **Does not own:** rewriting queries to produce results.
 
-### 4.13 Dash User Interface
-**Owns:** three synchronized views with shared selection state; the ontology-generated builder; natural-language input and editable Cypher console; coverage and provenance panels.
-**Does not own:** **any database access.** It calls the API exclusively and holds no credentials.
+### 4.13 Desktop Workspace
 
-A native PySide6 desktop client (`desktop/src/limes_desktop/`) is a second user-facing API consumer under the same rule: it holds no database access and no ontology literals, fetching every graph fact over the HTTP API.
+**Owns:** the native PySide6 desktop workspace, synchronized selection and
+network/map/timeline views, ontology-generated builder, editable Cypher, coverage
+and versioned provenance. Every query and operation uses authenticated HTTP.
+Session credentials never enter profiles. The desktop has no graph driver or
+extraction code. Dash code remains for compatibility but is not shipped as a
+service. The desktop architecture and DC roadmap specify its implementation.
 
 ### 4.14 Composition Root
 
-**Owns:** constructing every component the system needs, in dependency order, once per process. It is the only module that instantiates a driver, a registry, an archive, a governor, an extractor, or a gate.
+**Owns:** constructing every component the system needs, in dependency order, once per process. With the documented API startup exception, it is the only module that instantiates a driver, a registry, an archive, a cost recorder, an extractor, or a gate.
 
 **Does not own:** any business logic. It builds and hands off.
 
@@ -378,6 +356,35 @@ Every relationship, and every node property not derived from a deterministic key
 
 Nothing is deleted. A sanction being lifted sets `valid_to`. An extraction error being corrected sets `retracted_at`. The two are independent, which makes both "who controlled this company in March 2025" and "what did the graph believe in March 2025" answerable. The second is how extraction quality is measured over time.
 
+Text evidence identifies an immutable dispatch version and exact span; coded
+evidence identifies the archived export, row/event and report URL. One dispatch
+may support multiple assertions and several dispatches may support one event.
+Retain provider/external ID, canonical URL, original-agency/syndication lineage,
+publication/update times and correction links. Syndicated copies are not
+independent corroboration. SOURCEURL alone is not archived article content;
+synthetic actor/code summaries must not masquerade as source prose.
+
+Qualified assertions preserve these independent dimensions:
+
+| Dimension | Required semantics |
+|---|---|
+| Statement kind | Observation, attributed claim, announcement or denial, with its proposition retained |
+| Modality | Actual, proposed, planned or conditional |
+| Attribution | Report author/agency separate from named or unnamed speaker; unknown stays unknown |
+| Assessment | Unassessed, supported or disputed, with supporting evidence and assessment rule/version |
+| Event type and lifecycle | Proposal, negotiation, agreement, completion or cancellation; distinguish transitions from different events |
+| Temporal precision | Instant, day, approximate interval or unknown, independently of validity and recorded time |
+
+A faithfully extracted denial can have high extraction confidence without proving
+or disproving its proposition. Announcing a proposed merger does not establish a
+completed merger. Event identity is namespaced; source IDs are not global event
+identities. Ontology evolution supplies these semantics alongside existing Event
+keys, not a competing ontology or assertion store. Publication, retrieval,
+occurrence and `recorded_at` remain distinct; unknown occurrence time is not
+silently replaced by publication/fetch time. Corrections preserve prior versions
+and contradictions. Extraction confidence, source trust and corroboration must
+remain independently inspectable.
+
 ### 5.7 Bitemporal and Node Semantics
 
 Node materialization precedes relationship merge in the same transaction. A partial batch can leave neither an edge without endpoints nor an endpoint without its justifying edge. Node merge is non-destructive: an existing label, deterministic key, and original ontology version are never overwritten, so a lower-trust source cannot degrade an entity a higher-trust source established.
@@ -400,11 +407,16 @@ Geography is stored as points. Region membership is assigned at ingest through t
 
 OffeneRegister sits at the bottom deliberately. Its data is materially stale, and it records the dataset's own publication date as `recorded_at`, not the ingestion timestamp. With honest vintage, low trust, and reversible merges, stale data is safely representable; no free current alternative exists for German directorships.
 
-The effective trust of an extracted assertion is the product of the document's source trust and the extraction confidence.
+The existing ranking heuristic multiplies source trust and extraction confidence for ordering only. Both components remain inspectable; that score does not establish truth, independence or corroboration. Qualified assessment carries its own evidence and rule/version.
 
 ### 5.9 Cross-Process State
 
-C-07 governs. Any value one command produces and another consumes lives in the graph as a system node with its own provenance and refresh timestamp — never a module global, never a derived cache file, never a re-download. The postal-code correspondence is the first instance; the rule is general.
+C-07 prohibits depending on globals between commands. Domain reference lookups,
+assertions, caches and ledger entries live in Neo4j; originals live in the archive.
+The operational queue explicitly uses local SQLite, model pins use locked atomic
+files on their named volume, and desktop profiles use XDG config without tokens.
+Each has one declared owner and durable lifecycle; no implicit process state
+becomes a second source of entity identity.
 
 ---
 
@@ -438,11 +450,23 @@ No query templates exist anywhere in this system (NG-08). Templates encode antic
 
 ### 6.5 UI Structure
 
-One exploration screen, three synchronized panes over a shared selection: network with node-click expansion, map, timeline with a brush that triggers re-query rather than client-side filtering. Supporting elements: natural-language input, editable Cypher console, generated builder, coverage panel, provenance panel showing the originating sentence, saved-query list, budget indicator. A native PySide6 desktop client (`make desktop-run`) presents these same surfaces and is likewise a pure API consumer, holding no database access and no ontology literals.
+A native PySide6 exploration workspace synchronizes network, map and timeline
+views over a shared selection, with NL questions, editable Cypher, generated
+builder, coverage, provenance and saved queries. Views expose attributed versus
+documented claims, proposed versus completed developments, speaker/source,
+disputes, time precision and dispatch versions. Follow a proposal through denial,
+agreement and later registry/award confirmation, inspecting evidence at each
+step. Switch validity and recorded time without turning chronology into causality
+or evidence of coordination. The desktop owns neither database access nor
+ontology literals; response schemas come from the API.
 
 ### 6.6 Command Line
 
-Ingestion is manual. `make up`, `down`, `bootstrap-db`, `ingest`, `ingest-all`, `backfill`, `reextract`, `select-models`, `evaluate`, `migrate`, `backup`, `stamp-embeddings`. `backfill` and `reextract` require an explicit budget argument and cannot draw on the steady-state envelope.
+Operator jobs expose ingest, backfill, reextract, model selection, evaluation,
+migration, backup and embedding maintenance through authenticated HTTP. Stack
+administration is separate. External timers submit the same bounded jobs and
+observe completion, preserving request UUIDs after uncertain responses. No
+standalone extractor is installed. Legacy budget flags are ignored.
 
 ---
 
@@ -460,7 +484,7 @@ What is actually available, in order of strength:
 
 1. **Parse-level rejection.** All operator-supplied and generated Cypher is refused if it contains a write clause, a side-effecting procedure, or an unallowlisted procedure call. Detection is by inspection of the parsed statement, not substring search. This is the primary defense and the only one that inspects intent.
 2. **Driver access mode.** Query-path sessions are opened with read access mode, so the driver refuses writes client-side. Weaker than a server privilege — code in the API process can open a write session — but it is a real second barrier against a validator defect, which is the actual failure mode of concern.
-3. **Enumerated write surface.** The API performs exactly three writes, all parameterized, all system nodes, none constructed from operator input: a cost ledger entry per paid call, a saved query per execution, and a saved-query create or delete. That list is complete and is an acceptance criterion — no other write path may exist in the API package.
+3. **Bounded writes.** Query paths write usage records and saved queries through parameterized code. Dedicated operator endpoints additionally write the local durable job queue; authenticated allowlisted commands run in the worker. Query input cannot select arbitrary commands or bypass validation. The old exact-three-writes count does not constrain this separate operational surface.
 
 **Residual risk, stated plainly:** a defect in the Cypher validator combined with a defect in session-mode selection can write to the graph. On Community Edition this cannot be prevented by the database. For a single-operator local system with no untrusted input path other than ingested documents, this is accepted. It is recorded here rather than concealed behind a privilege claim the engine cannot honor.
 
@@ -472,11 +496,17 @@ Injection cannot be prevented at the model layer. It can be made validated, attr
 
 ### 7.4 Secrets and Exposure
 
-The OpenRouter key is supplied by environment variable, never committed, and held by the `api` and `worker` services — both make paid calls. The `ui` service holds no credentials of any kind. The Neo4j port is never published. The UI port is published to loopback only, in the local override file.
+All API surfaces, including docs, health and revision, require bearer credentials.
+Separate operator credentials authorize job submission/status/output. Desktop
+credentials are session-only; remote transport is HTTPS or loopback SSH forwarding.
+The API publishes only `127.0.0.1:8000:8000`; database and backup control stay
+private. API and worker hold the inference key. Split configuration separates
+secrets, tuning and atomic model pins; existing secrets are never printed or
+committed. See OPERATIONS for the current configuration and initialization.
 
 ### 7.5 Personal Data
 
-Out of scope (NG-03), by operator decision. LIMES stores named natural persons in public roles with inferred relationships between them, and implements no scoping, retention, or pseudonymization. The repository carries a disclaimer stating it is a personal research artifact, not operated as a service, not distributed. Insertion points are reserved — a person-scope predicate in the loader, a display-name indirection in the API response layer — so a later version adds rather than retrofits.
+Out of scope (NG-03), by operator decision. LIMES stores named natural persons in public roles with inferred relationships between them, and implements no scoping, retention, or pseudonymization. The repository carries a disclaimer stating it is a personal research artifact, with uneven source coverage and no automatic public-person retention policy. Insertion points are reserved — a person-scope predicate in the loader, a display-name indirection in the API response layer — so a later version adds rather than retrofits.
 
 ---
 
@@ -484,22 +514,24 @@ Out of scope (NG-03), by operator decision. LIMES stores named natural persons i
 
 ### 8.1 Compose Topology
 
-One base file defining four services, one internal network, named volumes, and no published ports. One override file carrying local-only concerns: loopback publication, source mounts, debug logging. Promotion to a server is removal of the override, not a rewrite.
+The base Compose file ships api, neo4j and worker with loopback API publication,
+private database/backup ports and named mutable volumes. The development override
+mounts source and enables reload; it is never a release recipe. Every service runs
+as UID/GID 7474, drops capabilities and disallows new privileges. No Docker socket,
+host-control CLI or arbitrary command execution is mounted in services. The API
+queues bounded jobs on local SQLite storage; a single worker holds a lifetime lock.
+Publication is unchanged by using a remote client. Deploy clean committed source
+as recorded immutable image IDs; do not remove the override as a promotion step.
 
 ### 8.2 Resource Contract
 
-Targeting the 12 GB ceiling (NFR-01), not the development machine.
-
-| Component | Resident |
-|---|---|
-| Neo4j — heap 2 GB, page cache 2 GB | ~4.5 GB |
-| spaCy German and English models, one worker | ~1.5 GB |
-| Ingestion workers, two | ~2.0 GB |
-| FastAPI and Dash | ~0.7 GB |
-| OS and Docker overhead | ~1.5 GB |
-| **Total** | **~10.2 GB** |
-
-A locally hosted model useful for German relation extraction needs 6–8 GB resident and does not fit. Ollama is a laptop-only, manually invoked overflow path (C-05). Large spaCy models are likewise laptop-only.
+A 12 GB host and an 11 GB service-resident target remain sizing requirements,
+not current measurements. Neo4j heap/page cache and worker-only spaCy must fit the
+single-host topology. Only one worker executes jobs; no second worker or Dash
+service is part of the resource budget. Ollama/local large models are optional
+development paths outside the portable contract (C-05); no GPU is required.
+BE-45 must measure full-workload memory, storage and validation latency. Existing
+Compose memory settings or mocked tests alone do not satisfy NFR-01/NFR-02.
 
 ### 8.3 Storage
 
@@ -507,11 +539,23 @@ Neo4j data 5–20 GB at proof-of-concept scale; the compressed content-addressed
 
 ### 8.4 Configuration
 
-All by environment variable with a committed example enumerating every key. No host paths. Named volumes only. Pinned model identifiers, prompt and schema versions, budget ceiling, and Neo4j memory sizing are all configuration.
+`config/secrets.env`, `config/settings.env` and `config/models.env` separate
+credentials, tuning and tool-written pins. Owner-controlled host binds are
+read-only; mutable pins live on a named volume and override seeded pins. Empty
+environment values are unset. Pin writes validate a model-only allowlist and use
+locked atomic replacement; the API refreshes them before its next NL query.
+Legacy `.env` loading remains compatibility behavior. No secret content is printed.
 
 ### 8.5 Backup
 
-Community has no online backup (C-01). The procedure stops the database, dumps offline, restarts. Acceptable because the graph is derivable: the archive is the system of record, and rebuild costs no paid inference while the version triple is unchanged.
+The private Neo4j supervisor serializes authenticated backup requests. It
+requires clean shutdown within the 180-second grace, dumps offline, rejects an
+empty dump, restarts in a finally block and verifies readiness before success.
+The worker requests backup through private HTTP; the desktop submits an operator
+job through the API and never invokes Docker or a shell. Graph access is unavailable
+during the dump; API and queue remain up. A graph dump does not replace backups
+of source archive, models, queue and configuration. Restore validation uses an
+isolated stopped database; no automatic production restore is authorized.
 
 ---
 
@@ -519,25 +563,44 @@ Community has no online backup (C-01). The procedure stops the database, dumps o
 
 ### 9.1 Ingestion
 
-Manual. Every run records source, window, counts, errors, and cost. Idempotent by content-derived identity (NFR-05). The ingestion window for an incremental source is resolved from that source's last successful run; static sources load fully.
+Each operator job records source, window, counts, errors, usage, latency and cost.
+Agency acquisition requires selected access, retention and display terms. External
+timers may submit authenticated jobs only with bounded work, durable per-channel
+checkpoints and non-overlapping windows; failed paid work is not replayed
+automatically. One dispatch/version remains an archived source document. GDELT
+exports retain row identity and report links; optional Mentions associations
+expand coverage without fabricating missing article text.
 
 ### 9.2 Backfill
 
-Structured sources fully, at no inference cost. Unstructured sources 90 days (C-04), under an explicit budget argument that cannot draw on the steady-state envelope. This separation exists because the budget does not break on steady state — it breaks on backfill and re-extraction.
+Structured sources backfill fully without inference. Text backfill targets the
+configured window, subject to provider availability/rights and explicit document,
+byte and window limits. Deferred work and reasons remain visible. A timeout is
+not a spending cap. GDELT decoding uses the published ZIP/TSV format and complete
+column map; geography codes require explicit conversion.
 
 ### 9.3 Cost Control
 
-Every paid call writes a ledger entry. The governor refuses calls past the ceiling and queues affected documents rather than failing the run. Order-of-magnitude sizing is pinned by measurement, not asserted: one passage-level extraction call runs roughly 1,200 input and 350 output tokens; twenty exploratory natural-language queries per day cost on the order of USD 0.35 per month.
+The passive ledger records every paid call. Language/topic filtering, duplicate
+detection, prioritization and passage selection precede inference. Explicit work
+limits bound a job and retain deferred items; no monetary governor is imposed.
+Measure actual workload costs instead of assuming a monthly ceiling.
 
 ### 9.4 Re-extraction
 
-A prompt, schema, or model version change invalidates nothing automatically — the cache key includes all three, so the next ingest re-extracts only new content. Deliberate re-extraction is an explicit command with a version and a budget. Superseded assertions are retracted, never deleted, so the graph records what it believed before and after.
+A prompt, schema, or model version change invalidates nothing automatically — the cache key includes all three, so the next ingest re-extracts only new content. Deliberate re-extraction is an explicit operator job with a version and bounded work. Superseded assertions are retracted, never deleted, so the graph records what it believed before and after.
 
 ### 9.5 Quality Gate
 
-Two hundred hand-labeled sentences, one hundred German and one hundred English, drawn from the operator's own archive. Precision and recall measured per relation type. A model, prompt, or schema version ships only if it does not regress the gold set. The baseline is stored machine-readably; the changelog carries the human record.
-
-This is the only mechanism preventing silent degradation. Without it, a model substitution can quietly halve recall on German extraction and the graph simply contains fewer edges, which looks identical to a quiet news week.
+Use a representative, independently annotated DE/EN corpus of entities, events,
+claims and evidence. Evaluate extraction fidelity, attribution, modality, temporal
+precision, correction/syndication handling and false event merges separately from
+truth assessment. Compare value against existing feeds/GDELT on overlapping
+coverage. Set justified thresholds before implementation; no fixed test quotas.
+Version schema, prompt, ontology, caches, resolver/loader and API/desktop mirrors
+together, preserving historical meaning. Keep the existing reported-speech
+safeguard until every consumer supports qualified claims. Automated tests mock
+paid calls; paid corpus measurement remains an explicit operator run.
 
 ### 9.6 Ontology Change
 
@@ -557,22 +620,22 @@ No monitoring stack. The observable surfaces are the run log, the cost ledger, p
 | DD-02 | Bitemporal assertions with mandatory provenance | Distinguishes what was true from what was believed; makes extraction quality measurable and corrections non-destructive | Single-timestamp model — cannot express "held office when the act was adopted" | R3 |
 | DD-03 | Contradictions retained, resolved at query time | Two sources disagreeing is frequently the signal | Silent write-time resolution | R2 |
 | DD-04 | Non-destructive reversible entity merges | Entity resolution is the acknowledged hard problem; a wrong merge must be undoable | Destructive absorption | R3 |
-| DD-05 | Structured backbone carries no paid inference | Eleven of thirteen sources are deterministic parsers producing the highest-value edges; makes the ceiling achievable and the core graph non-hallucinable | LLM-first ingestion | R2 |
-| DD-06 | Deterministic gating before every paid call | Removes 60–80% of volume at zero cost | Document-level extraction of everything | R1 |
-| DD-07 | Hard budget governor with cost ledger | A defective loop would otherwise consume the annual budget overnight | Monitoring and discipline — not a control | R1 |
+| DD-05 | Structured backbone carries no paid inference | Eleven of thirteen sources are deterministic parsers producing the highest-value edges; avoids model extraction error for deterministic registry parsing | LLM-first ingestion | R2 |
+| DD-06 | Deterministic gating before every paid call | Filters cheaply before inference; actual reduction is measured | Document-level extraction of everything | R1 |
+| DD-07 | Passive accounting; explicit workload controls | D-75 removed monetary enforcement; usage remains measurable | Implied protection from ignored budget flags | R1 |
 | DD-08 | Cache keyed by content, prompt, schema, model | Makes re-extraction explicit, scoped, and costed | Time-based invalidation | R2 |
 | DD-09 | NL querying with deterministic validation, plus ontology-generated builder | The operator explores unanticipated questions; the ontology is small and closed, which is why generation is tractable | Template library at any count; unvalidated generation | R1 |
 | DD-10 | Automatic empty-result diagnosis | Absence of evidence reading as evidence of absence is the characteristic failure of this system class | Returning an empty set | R1 |
 | DD-11 | Mandatory coverage report on every result | Makes data limits visible at the point of use | Documenting them separately | R1 |
 | DD-12 | Region membership assigned at ingest via lookup | Avoids the only geospatial operation Neo4j cannot perform, keeping a second engine out of scope | PostGIS sidecar | R2 |
 | DD-13 | `Office` reified as a first-class node | Interval-joined questions are otherwise inexpressible | Office as a relationship property | R2 |
-| DD-14 | FastAPI query API regardless of UI; Dash first | Makes the UI disposable and migration mechanical; Dash has a real event model, which Streamlit's script-rerun and iframe isolation cannot provide | Streamlit; direct SPA | R1 |
+| DD-14 | Authenticated FastAPI and native desktop; Dash retired | Keeps all analyst surfaces behind one API contract with shared selection and typed responses | Streamlit; direct SPA | R1 |
 | DD-15 | OffeneRegister at lowest trust with honest vintage | Stale data is safely representable given provenance; no free current alternative for German directorships | Permanent exclusion | R1 |
 | DD-16 | Ontology as declarative versioned artifact consumed by four components | One definition rather than four drifting copies | Conventions in code | R3 |
-| DD-17 | Manual ingestion only | Operator requirement; nothing spends money without deliberate initiation | Scheduled ingestion | R1 |
+| DD-17 | Bounded operator jobs; external timer submission | One execution path with request identity and manual replay; unattended news waits for work limits | Internal scheduler or separate utility | R1 |
 | DD-18 | **Single composition root** | Every CLI invocation is a fresh process (C-07); a single named construction site makes "who builds this" answerable by reading one file. Its absence stalled the v1.x implementation three times | Per-module construction; import-time side effects | R2 |
 | DD-19 | **Loader is sole writer of ontology-typed nodes and relationships** | Node identity, labeling, and key stamping in one place, transactionally bound to the assertions that justify them; a new entity cannot exist without its evidence | Adapter-side writes; resolver-side writes | R3 |
-| DD-20 | **Cross-process state lives in the graph** | C-07 makes module state unreachable across commands; the graph already carries provenance and refresh timestamps for everything else | Derived cache file; re-download; config key | R2 |
+| DD-20 | **Domain cross-process reference data lives in the graph** | C-07 makes module state unreachable across commands; the graph already carries provenance and refresh timestamps for everything else | Derived cache file; re-download; config key | R2 |
 | DD-21 | **API holds write credentials and the inference key, constrained by an enumerated write surface** | Query generation is paid inference and query persistence is a write; C-01 makes database-enforced separation unavailable, so the enforceable property is that the API's write surface is a fixed, checkable list | Withholding both — makes three specified endpoints unimplementable; claiming database enforcement the engine cannot provide | R2 |
 
 ---
@@ -584,12 +647,12 @@ No monitoring stack. The observable surfaces are the run log, the cost ledger, p
 | ID | Assumption | If wrong |
 |---|---|---|
 | A-01 | Point-level geography suffices; no polygon operations | A PostGIS sidecar keyed by node ID; additive |
-| A-02 | Cheap-tier pricing is within an order of magnitude of §9.3 | Gating thresholds tighten |
+| A-02 | Selected provider pricing and volume fit the intended workload | Measure usage and adjust workload limits/prioritization before unattended acquisition |
 | A-03 | The gate removes 60–80% of raw volume | Below 40%, the feed set narrows |
 | A-04 | Serialized ontology stays near 1,500 tokens | Past ~4,000, generation degrades and argues for retrieval over the ontology |
 | A-05 | OSM tagging is adequate for KRITIS categories in Germany | Asset coverage sparse; the coverage report makes it visible |
 | A-06 | No GPU available or required | Local model paths unavailable, as already assumed |
-| A-07 | Unstructured volume stays at 100–200 items/day | The governor throttles; queue depth grows |
+| A-07 | Unstructured volume stays at 100–200 items/day | Measure filtering and bound work; expose deferred items |
 
 ### 11.2 Open Questions for Document 2
 
@@ -606,10 +669,10 @@ No monitoring stack. The observable surfaces are the run log, the cost ledger, p
 
 Properties of available data, not defects. The coverage report exists to surface them at the point of use.
 
-1. **Supplier relationships have no structured source.** GLEIF gives ownership, TED gives buyer-to-prime-contractor; neither gives supply chains. `SUPPLIES` edges come from news extraction only — sparse, low-confidence, biased toward what was reported.
+1. **Supplier relationships have no structured source.** GLEIF gives ownership, TED gives buyer-to-prime-contractor; neither gives supply chains. Relevant supplier assertions come from news extraction only — sparse, low-confidence, biased toward what was reported.
 2. **Current German directorships are structurally weak.** OffeneRegister is stale, Bundesanzeiger is awkward at scale, Wikidata covers only notable executives.
 3. **OpenStreetMap infrastructure coverage is uneven** in completeness and tagging discipline.
 
 ### 11.4 Deferred
 
-Person-scope predicates and pseudonymization; scheduled ingestion; a polygon-capable spatial engine; multi-user access. Each has a reserved insertion point.
+Person-scope predicates and pseudonymization, polygon-capable geography and multi-user accounts remain deferred. External timer submission is in core news scope; an internal scheduler is not. Provider/corpus selection and schema migration are explicit BE-43 prerequisites, not a post-project addendum.

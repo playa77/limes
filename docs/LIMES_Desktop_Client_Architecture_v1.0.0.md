@@ -1,13 +1,4 @@
-> Historical design reference. Current runtime, access, operations and deployment
-> are regenerated in [ARCHITECTURE](ARCHITECTURE.md), [OPERATIONS](OPERATIONS.md)
-> and [TESTING_PHASE](TESTING_PHASE.md). Unchanged graph/type/coverage contracts
-> remain applicable; old runtime restrictions and backup shell flows are superseded.
-
-> Initial implementation baseline. Changed runtime, access, configuration,
-> inference and governance behavior is superseded by [TESTING_PHASE.md](TESTING_PHASE.md).
-> Its remaining-work section identifies runtime requirements still pending.
-
-<!-- LIMES — Desktop Client Architecture | v1.0.0 | 2026-09-08 | Status: Draft -->
+<!-- LIMES — Desktop Client Architecture | v1.0.0 | 2026-09-08 | Status: Maintained -->
 
 # LIMES — Desktop Client Architecture
 
@@ -15,38 +6,35 @@
 |---|---|
 | Document | LIMES — Desktop Client Architecture |
 | Version | 1.0.0 |
-| Date | 2026-09-08 |
-| Status | Draft |
-| Depends on | LIMES — Desktop Client Requirements v1.0.0 (all); LIMES — Technical Specification v2.1.0 (§9, §13.2, §15) |
+| Date | 2026-09-08; reconciled 2026-10-27 |
+| Status | Maintained architecture; current evidence in DESKTOP_ROADMAP.md |
+| Depends on | LIMES — Desktop Client Requirements v1.0.0 (all); LIMES — Technical Specification v2.1.0 (§6, §13.2, §15) |
 | Supersedes | none (initial) |
 
 ## 1. Overview
 
-The desktop client is a PySide6 application in a new `desktop/` workspace
-member. It is a strict API consumer: every graph fact it displays comes from
-the FastAPI service over HTTP; the single exception is backup orchestration,
-which shells out to `limes backup` inside the worker container (FR-DC-060).
-The client holds no Neo4j driver, no ontology file, and no extraction code.
+The PySide6 desktop in `desktop/` is a strict authenticated API consumer.
+Every graph fact and backup status comes through typed HTTP. SessionState carries
+selection/history/results; view controllers call ApiClient and publish signals.
+Qt widgets and QWebEngine pages render those results; no view opens a database or
+extracts text. Credentials exist only in session memory. The complete product
+includes qualified news/event investigation within these existing surfaces.
 
+```mermaid
+flowchart TD
+    U[Desktop views and controllers] --> C[Typed ApiClient with session bearer]
+    C --> API[Authenticated query and operator API]
+    C --> S[SessionState signals and results]
+    S --> V[Entity / coverage / network / map / timeline]
+    B[Backup dialog confirmation] --> R[Asynchronous HTTP BackupRunner]
+    R --> API
+    V --> Q[QWebChannel selection and temporal signals]
+    Q --> S
 ```
-┌────────────────────────── limes_desktop (Qt) ──────────────────────────┐
-│  MainWindow                                                            │
-│   ├── SearchBar ─────────────┐                                         │
-│   ├── EntityView             │                                         │
-│   ├── QueryViews             ├── SessionState ◄── ApiClient (typed,   │
-│   │    NLQ / Builder / Cypher│      (selection,          httpx)       │
-│   ├── VizViews               │       history,     ► ApiModels (mirror   │
-│   │    Network/Map/Timeline   │       connection)     of api/models.py)  │
-│   ├── OpsViews               │                                         │
-│   │    Ingest / Ledger / Refs│                                         │
-│   └── BackupDialog ──────────┴── BackupRunner (subprocess)             │
-│        (each VizView wraps a QWebEngineView page)                      │
-└────────────────────────────────────────────────────────────────────────┘
-            │ HTTP (read endpoints + 3 saved-query/cost writes)      │ subprocess
-            ▼                                                        ▼
-     FastAPI (§9)                                    docker compose exec worker
-     Neo4j stack                                     limes backup
-```
+
+[DESKTOP_ROADMAP](DESKTOP_ROADMAP.md) distinguishes implementation, acceptance,
+known defects and next work; the core specification defines shared claim/evidence
+semantics. BE-43/DC-15 and BE-44/DC-16 are coordinated deliveries, not afterthoughts.
 
 ## 2. Layout and components
 
@@ -61,7 +49,7 @@ desktop/
     app.py                  # single-instance guard (QLocalServer, NFR-DC-070)
     config.py               # connection profiles in ~/.config/limes-desktop/
     state.py                # SessionState: Qt signals for selection/history
-    backup_runner.py        # subprocess orchestration (FR-DC-060..063)
+    backup_runner.py        # asynchronous API job orchestration (FR-DC-060..063)
     api/
       client.py             # ApiClient: httpx-based, one method per endpoint
       models.py             # mirrors src/limes/api/models.py (AC-DC-7)
@@ -110,8 +98,7 @@ packages (`pyproject.toml`: `files = ["src/limes", "desktop/src/limes_desktop"]`
   `Diagnosis`, `NlqOutcome`, `BuilderHop`, `BuilderSpec`, `HealthInfo`,
   `SearchHit`, `EntityDetail`, `NeighborRow`, `GraphNeighbors`, `SavedQuery`,
   `SourceInfo`, `CostEntry`, `CostLedger`, `IngestRun` — plus the composite
-  `QueryOutcome` that fuses results with their coverage/diagnosis. Timestamps
-  stay the strings the JSON carries, so the client needs no Pydantic.
+  `QueryOutcome` that fuses results with their coverage/diagnosis. Timestamps in response mirrors stay the strings JSON carries. ConnectionProfile uses Pydantic; response mirrors are dataclasses.
   `contract/` tests import the live `limes.api.models` and the router view
   models and assert field parity, so an API model change without a client
   update fails CI (AC-DC-7). Import direction: contract tests may import
@@ -125,13 +112,13 @@ packages (`pyproject.toml`: `files = ["src/limes", "desktop/src/limes_desktop"]`
 - **Views**: Qt widgets for chrome (lists, forms, tables, provenance panel).
   The three viz views each embed a QWebEngineView loading a bundled offline
   page from `resources/web/`; a `bridge.py` QWebChannel adapter is the only
-  Qt↔JS seam (push results in, selection changes out). No view fetches data.
-- **BackupRunner**: not an API consumer. Runs
-  `docker compose exec worker limes backup` with `cwd=<compose root from the
-  profile>`, streams stdout/stderr into the dialog, and verifies recovery with
-  `GET /health` afterward (FR-DC-062). It deliberately duplicates nothing from
-  `src/limes/cli/backup.py` — the worker-side command remains the single
-  implementation of the backup procedure.
+  Qt↔JS seam (push results in, selection changes out). View controllers invoke ApiClient; visualization pages never issue graph queries. Current map tiles are an explicit exception/violation under OI-11, not an accepted API-only guarantee.
+- **BackupRunner**: owns an asynchronous QThread task that submits an idempotent
+  backup job with the operator credential, polls status and bounded output, extracts
+  the dump name and checks API health after success. Closing interrupts observation
+  but does not cancel/replay the server job. Prerequisites are a reachable API and
+  operator capability, never a local compose root or Docker CLI. The supervisor
+  owns physical shutdown/dump/recovery, not desktop code.
 
 ### 2.3 Ontology handling
 
@@ -156,9 +143,7 @@ Bitemporal display: results carry both validity and belief timestamps; the
 timeline view's belief-time discriminator sets a SessionState filter that all
 views honor (FR-DC-043, FR-DC-042).
 
-Backup: dialog (consequence confirmation) → BackupRunner subprocess → output
-stream → `/health` verification → result banner with dump filename parsed from
-command output when present.
+Backup: consequence confirmation → asynchronous operator job submission → status/output polling → health verification → dump/result banner. No shell subprocess or implicit retry.
 
 ## 4. Error handling
 
@@ -167,23 +152,22 @@ command output when present.
 | API unreachable (any view) | Banner + per-view degraded state within one refresh cycle; no traceback dialog (AC-DC-6). Auto-refreshing views pause. |
 | API 4xx/5xx | API error body shown verbatim (esp. Cypher write-clause rejection and validation errors — the wording is diagnostic signal). |
 | Schema mismatch | Typed as a client bug; dialog offers "copy details" and points at the contract test. |
-| Backup prerequisites missing (no compose root / no docker CLI) | Backup action disabled with the reason inline (FR-DC-063). |
-| Backup command failure | Output verbatim, exit code shown; client makes no retry — the underlying command owns the procedure. |
-| Subprocess/QWebEngine crash | View resets to a recoverable state; session state preserved. |
+| Backup prerequisites missing (API/operator capability) | Backup action disabled with the reason inline (FR-DC-063). |
+| Backup job failure | Bounded credential-safe output/status; retain job ID; no automatic replay. |
+| QWebEngine failure | View resets to a recoverable state; session state preserved. |
 
 ## 5. Testing strategy
 
 - Unit (offline, `pytest-qt`, `desktop/tests/unit/`): SessionState signal flow,
   config/profile handling, search debounce, coverage panel, entity/query/ops
-  views, viz payload shaping and Qt↔JS bridge, BackupRunner argument
-  construction and output parsing (subprocess mocked, health stubbed).
+  views, viz payload shaping and Qt↔JS bridge, BackupRunner authenticated job submission, polling, output and health (HTTP mocked).
 - Contract (`desktop/tests/contract/`): `test_model_parity.py` imports the live
   `limes.api.models` and the router view models and asserts field-level parity
   with `limes_desktop.api.models` (AC-DC-7); `test_no_ontology_literals.py` is
   the ontology-literal guard over `desktop/src/limes_desktop/` (AC-DC-4).
 - Integration (needs the shared test Neo4j container, like the existing
   suites; `desktop/tests/integration/`): ApiClient against the real API app
-  mounted in-process (`httpx.ASGITransport`); the full search → entity →
+  mounted in-process (FastAPI TestClient with lifespan management); the full search → entity →
   neighbors → NLQ → builder → Cypher → save/delete flow, plus the empty-result
   diagnosis case.
 - AC-DC-1's live Compose walk-through and AC-DC-5's dump/`/health` acceptance
@@ -193,24 +177,33 @@ command output when present.
 
 ## 6. Security and privacy
 
-No authentication in v1 — the API is unauthenticated by design for a
-single-operator loopback deployment (Requirements §1). The client therefore
-adds no credential storage; connection profiles contain only names and URLs.
-Remote-connection use is over the operator's own tunnel; the client performs
-no TLS handling beyond what httpx defaults provide. No telemetry; the only
-network traffic is the configured API (NFR-DC-072).
+All API routes including health/docs/version require a bearer token. Connection
+profiles store names/URLs, never credentials; legacy compose_root is ignored.
+HTTPS or loopback HTTP/SSH forwarding is required. Operator credentials authorize
+backup and job status; consumer credentials cannot. No telemetry or direct graph
+access. API-only networking remains NFR-DC-072; the current OSM tile fetch violates
+it and DC-14 must settle the policy and install its guard. Do not advertise offline
+maps or “only API network traffic” as already enforced.
 
-## 7. Non-goals and deferred decisions
+## 7. Qualified evidence and coordinated evolution
 
-- No ingest/backfill orchestration UI: budget-governed paid operations stay
-  CLI-only with explicit `BUDGET=` envelopes (AGENTS.md money rules).
-- No cost-ledger writes from the client in v1 (FR-DC-051).
-- No API changes required by this architecture: §9's existing surface plus the
-  three enumerated writes are sufficient. Any future API addition is a
-  Technical Specification amendment with its own seam-register entry (§15),
-  not a client-side workaround.
-- Deferred: `.deb` packaging, Wayland-specific polish beyond baseline,
-  credentials/auth when the API gains them.
+ApiClient/models carry the backend's source-version, evidence, attribution,
+modality, event lifecycle, assessment and time-precision contract. The entity and
+provenance panels separate these from confidence and source trust; network and
+timeline expose validity/recorded time, corrections, dependent reporting and gaps.
+No standalone event ledger or extractor is added. BE-43/DC-15 changes backend
+serialization, desktop mirrors and consumer views together; parity guards protect
+field shape while semantic end-to-end checks prove the full workflow. BE-44/DC-16
+adds cross-source developments without causal or misconduct inferences from timing.
+
+Unknown speakers/times remain unknown. A report URL without archived text is
+shown as a link/coverage gap, not fabricated evidence. Matching preserves unresolved
+alternatives. The core design/specification owns these meanings; desktop consumes
+them without a second ontology or inference engine.
+
+Deferred: .deb packaging, multi-user accounts and ledger write UI. Existing
+bearer authentication and HTTP backup are current behavior. Reference-platform,
+startup latency and manual workflow acceptance remain in DESKTOP_ROADMAP.
 
 ## 8. Changelog
 
@@ -220,3 +213,10 @@ network traffic is the configured API (NFR-DC-072).
   backup via subprocess to `limes backup` (no duplicated backup logic);
   ontology-literal-free invariant enforced by guard test; contract tests
   pinning client models to `src/limes/api/models.py`.
+
+### Reconciliation — 2026-10-27
+
+Replace superseded unauthenticated/Docker-backup instructions with current API
+contracts, retain known map-policy and acceptance gaps, and integrate qualified
+news presentation into existing component/data-flow ownership. Version filename
+is retained for existing links; package status is maintained separately.
