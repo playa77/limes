@@ -4,20 +4,20 @@ Reviewed 2026-10-27 against `5295cab` on branch `work`. Input: user-supplied
 `gpt.md`, “LIMES: Architecture review and fit for the proposed news-intelligence
 module”. Its recommendations are review material, not instructions. The user's
 decision overrides the attachment's independent-extractor proposal: all planned
-news functionality belongs inside LIMES. Scope here is investigation and design;
+news functionality belongs inside LIMES. Current sequence/status is maintained in BACKEND_ROADMAP.md and DESKTOP_ROADMAP.md. Scope of this recorded review was investigation and design;
 no runtime repair, production ingestion or paid evaluation is claimed.
 
 ## Suggestion disposition
 
 | Suggestion | Evaluation and disposition |
 |---|---|
-| Reuse ingestion, archive, resolver, ontology, loader and API | Adopt. These exist; source-specific adapters should share worker extraction. See [target architecture](NEWS_ARCHITECTURE.md). |
+| Reuse ingestion, archive, resolver, ontology, loader and API | Adopt. These exist; source-specific adapters should share worker extraction. See [core design](LIMES_Design_Document_v2.0.0.md). |
 | Standalone extractor and first-iteration event ledger | Reject per user decision. No standalone product, separate runtime or later import bridge is planned. |
-| Expand events and distinguish claims, modality and attribution | Adopt the semantic requirements; defer exact ontology/schema until representative corpus review within WP-NEWS-EXTRACT. Current strict schema cannot carry them. |
-| Repair GDELT format and mixed-record loss first | Adopt; confirmed below. WP-NEWS-INGEST delivers the complete repair. |
+| Expand events and distinguish claims, modality and attribution | Adopt the semantic requirements; defer exact ontology/schema until representative corpus review within BE-43/DC-15. Current strict schema cannot carry them. |
+| Repair GDELT format and mixed-record loss first | Adopt; confirmed below. BE-42 delivers the complete repair. |
 | One dispatch as one source, many sources per event | Adopt; retain export/row lineage as well as original dispatch versions. Mentions-table support depends on selected coverage. |
 | Reuse Neo4j vector indexing | Adopt. Existing entity vectors support candidates, not automatically document search or event matching. No new vector store is justified. |
-| Cross-source corroboration and change analysis | Adopt as WP-NEWS-ANALYSIS after trustworthy ingestion and qualified claims. Syndication is not independent corroboration; chronology is not causality. |
+| Cross-source corroboration and change analysis | Adopt as BE-44/DC-16 after trustworthy ingestion and qualified claims. Syndication is not independent corroboration; chronology is not causality. |
 | External scheduling | Adopt as future job submission to LIMES, with bounded work/checkpoints first. No internal scheduler or standalone extractor. |
 | Cheap filtering, prioritization and explicit run limits | Adopt as future workload controls. Current no-governor contract remains; ignored legacy budget flags offer no limit. |
 | Demonstrate extraction quality before speculative expansion | Adopt as an annotated-corpus prerequisite and evaluation gate inside the integrated implementation package, without a standalone iteration. |
@@ -53,7 +53,7 @@ the same implementation constant; passing them cannot establish upstream fit.
 
 Repair: complete transport/format map with independently derived fixture coverage,
 bounded archive handling, malformed/schema-drift diagnostics and a pipeline-to-graph
-regression. Keep this open until WP-NEWS-INGEST acceptance is evidenced.
+regression. Keep this open until BE-42 acceptance is evidenced.
 
 ### OI-20 — structured GDELT assertions never enter the structured handler
 

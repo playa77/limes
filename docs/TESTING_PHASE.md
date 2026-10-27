@@ -20,8 +20,9 @@
 
 The attached redesign brief supplies requirements, not permission for a deployment
 or paid data run. Runtime/access/operations are regenerated in ARCHITECTURE.md and
-OPERATIONS.md. Original specifications remain historical references for the
-surviving ontology, bitemporal, coverage, archive and query-validation contracts.
+OPERATIONS.md. The core design and technical specification are maintained product contracts;
+backend/desktop roadmaps distinguish current implementation from target behavior.
+Archived plans are historical records, not execution instructions.
 
 ## Requirement disposition
 
@@ -50,6 +51,9 @@ OPEN_ISSUES retains append-only history and rerunnable closure evidence.
 
 ## Verification
 
+[Current baseline evidence](VERIFICATION.md) records the precise runs, limits and
+open qualification obligations. Historical counts below are not current passes.
+
 Canonical environment: `UV_PROJECT_ENVIRONMENT=venv uv sync --frozen --all-packages`.
 The full candidate inventory is ruff, mypy, docs checks, root unit, desktop
 unit/contract, integration, acceptance (separately), and desktop integration.
@@ -77,7 +81,7 @@ open as OI-19..OI-22. Existing comma-CSV fixtures and implementation-derived URL
 do not prove external-format compatibility; no source-to-graph ingestion or paid
 extraction result is claimed by that investigation.
 
-[NEWS_ARCHITECTURE](NEWS_ARCHITECTURE.md) is the accepted integrated target;
+[core design](LIMES_Design_Document_v2.0.0.md) is the accepted integrated target;
 [ROADMAP](ROADMAP.md) defines complete packages and acceptance. Representative
 agency access and an independently annotated DE/EN corpus precede claim-schema
 implementation. Future verification must distinguish extraction fidelity, source

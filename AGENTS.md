@@ -1,11 +1,20 @@
 # AGENTS.md — LIMES testing phase
 
-Read the newest five entries in `DECISIONS.md`, generated current design in
-`docs/ARCHITECTURE.md` and `docs/OPERATIONS.md`, `docs/TESTING_PHASE.md`, and
-`OPEN_ISSUES.md` on re-entry. Regenerate current runtime docs with
-`python3 tools/generate_runtime_docs.py`; the docs checker rejects drift. Older design/specification
-files describe the initial implementation; the testing-phase contract supersedes
-changed behavior. Runtime currently has three services: Neo4j, API and worker.
+Read docs/INDEX.md, both docs/BACKEND_ROADMAP.md and docs/DESKTOP_ROADMAP.md,
+docs/VERIFICATION.md, the current disposition index in OPEN_ISSUES.md and the
+newest five DECISIONS.md entries on re-entry. Core design/technical specification
+and desktop requirements/architecture are maintained product contracts; generated
+docs/ARCHITECTURE.md, OPERATIONS.md and TESTING_PHASE.md describe the shipped
+runtime. Historical plans in docs/archive are inactive. Runtime has three services:
+Neo4j, API and worker. Edit tools/generate_runtime_docs.py and regenerate rather
+than changing generated documents alone; the checker rejects drift.
+
+Use BE-NN for backend and DC-NN for desktop. Bare historical WP numbers are
+ambiguous and require a track qualifier. The package registers distinguish
+implementation, acceptance evidence, current defects and superseded requirements;
+never equate a merged commit with completed acceptance. BE-41 documentation
+acceptance gates further runtime coding. Known implementation/measurement/operator
+gaps retain their assigned packages and closure conditions after that gate passes.
 
 ## Delivery contract for LIMES
 

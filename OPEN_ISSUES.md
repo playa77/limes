@@ -13,6 +13,46 @@ merges or deployment without explicit instruction. Production/co-tenant operatio
 are outside implementation scope. Snapshot and issue rows below are historical
 records; subsequent evidence/closures are appended without erasing them.
 
+## Current disposition — 2026-10-27 (BE-41)
+
+This index supersedes the status wording in the historical inventory below, without
+erasing its evidence. Package placement: [backend](docs/BACKEND_ROADMAP.md),
+[desktop](docs/DESKTOP_ROADMAP.md). “Closed” requires the evidence in the dated
+closure sections; “open” is not a statement that every old symptom still exists.
+
+| Issue | Current state | Owner/package | Remaining obligation or closure evidence |
+|---|---|---|---|
+| OI-01 | Open evidence gap; current topology docs corrected | Operator + BE-45 | Observe actual deployed revision/configuration; do not infer it from new deployment tooling |
+| OI-02 | Closed | DC-12 | 2026-10-07 Closed with evidence: 2 integration cases; no new deployed smoke claim |
+| OI-03 | Open production-smoke evidence | Operator + BE-45 | Actual deployed-candidate smoke and record; old idle-worker implementation has been replaced |
+| OI-04 | Closed | BE-37/38 superseding runtime | 2026-10-07 Closed with evidence; loopback/HTTPS/tunnel docs and drift checks |
+| OI-05 | Open missing original review trail | Agent + BE-45/DC-13 | Recover source or explicit bounded re-review; do not invent closure of unknown 18 findings |
+| OI-06 | Closed | DC-03 | 2026-10-07 contract-suite evidence: keyword typo corrected |
+| OI-07 | Closed | DC-02 | 2026-10-07 unit evidence: dead timeout removed |
+| OI-08 | Closed | DC-06/09 | 2026-10-07 unit evidence: unused expansion bookkeeping removed |
+| OI-09 | Open deployed-revision evidence | Operator + BE-45 | Real revision/image record and observation; zero tags is not itself an implementation defect |
+| OI-10 | Open semantic decision/repair | Agent + DC-14 | Verify and document direction/refill policy with behavior coverage, not a closure by prose alone |
+| OI-11 | Open requirement/policy conflict | Operator decision + agent DC-14 | API-only requirement conflicts with external OSM tiles; select policy/conforming map behavior explicitly |
+| OI-12 | Closed | DC-02 | 2026-10-07 parity evidence; current test covers top-level query/neighbors |
+| OI-13 | Closed | DC-12 | 2026-10-07 integration evidence: dynamic sys import corrected |
+| OI-14 | Closed implementation; hosted status separate | BE-37/39, BE-45 | CI workflow exists; historical no-CI statement is obsolete, configured required-status evidence remains OI-23 |
+| OI-15 | Closed | BE-01 | Canonical venv documented and commands executed; 2026-10-07 closure |
+| OI-16 | Closed in BE-41 | Agent/documentation | Original desktop plan archived, old path becomes a pointer, desktop roadmap is authoritative; source preserved |
+| OI-17 | Closed | BE-37/38 | C8/runtime-doc guards reject publication/auth/configuration drift; 2026-10-07 evidence |
+| OI-18 | Open missing network guard | Agent + DC-14 | Guard and deliberate forbidden-URL failure tied to OI-11's decided policy |
+| OI-19 | Open runtime defect | Agent + BE-42 | GDELT ZIP/TSV URL/61-column map and bounded upstream fixture verification |
+| OI-20 | Open runtime defect | Agent + BE-42 | Mixed-channel routing/load/retry/reextract semantics with graph evidence |
+| OI-21 | Open runtime defect | Agent + BE-42 | Row/report/dispatch lineage and honest date/evidence semantics |
+| OI-22 | Open runtime defect | Agent + BE-42 | FIPS mapping, geography types, fractional slots and misleading legacy budget claim |
+| OI-23 | Open workflow/configuration gap | Agent + BE-45 | Full suites currently run on main pushes as well as PRs; document/configure bounded main smoke and authoritative candidate status; hosted required-check configuration unverified |
+| OI-24 | Open measurement/acceptance gaps | Agent/operator + DC-14/BE-45 | Reference-platform startup/visual time-sync/manual workflows, representative memory/storage and current live/model/recovery evidence lack current qualification |
+
+The documentation reconciliation can close while these implementation/operator
+obligations remain open. It cannot close them by changing labels or accepting
+unmeasured goals. Actual coding remains gated by BE-41's documentation acceptance.
+
+## Historical inventory and evidence
+
 Snapshot (every row from the command that produced it; run 2026-09-16):
 
 | Fact | Command | Value |
@@ -404,3 +444,24 @@ the current normalizer rejected the ZIP with `SourceParseError`. The routing pro
 mocked handlers, not the routing decision. Existing unit suites describe current
 behavior, not upstream compatibility. [ROADMAP](docs/ROADMAP.md) defines complete
 repair acceptance and the source/corpus prerequisites for integrated extraction.
+
+## 2026-10-27 — BE-41 documentation reconciliation evidence and new dispositions
+
+OI-16 is closed as a documentation organization decision explicitly authorized by
+the user's request to repair the complete repo documentation. The historical
+source is preserved in docs/archive/desktop-plan-2026-09-09.md; the original
+superpowers path is a compatibility pointer. Current status/sequence belongs to
+DESKTOP_ROADMAP.md. Verification: file-preservation comparison against base main,
+relative-link checks and the C9 documentation organization guard.
+
+OI-23 is **open**. .github/workflows/ci.yml has offline and graph lanes on separate
+runners and triggers both push and pull_request. Full suite commands therefore run
+for routine main pushes too. No aggregate candidate gate is defined in that file;
+GitHub branch protection/required-check configuration was not inspected. This is
+not a claim that remote checks are absent or green. BE-45 must reconcile it with
+the delivery contract before its next implementation candidate is accepted.
+
+OI-24 is **open**. Test presence, Compose limits and historical pass counts do not
+satisfy measured resource/latency/platform or live deployment/model requirements.
+The desktop acceptance matrix and VERIFICATION.md list the exact unclaimed areas.
+No code repair, map-policy decision, production operation or paid call occurred.

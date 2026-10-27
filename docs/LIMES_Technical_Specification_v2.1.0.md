@@ -1,17 +1,12 @@
-> Historical design reference. Current runtime, access, operations and deployment
-> are regenerated in [ARCHITECTURE](ARCHITECTURE.md), [OPERATIONS](OPERATIONS.md)
-> and [TESTING_PHASE](TESTING_PHASE.md). Unchanged graph/type/coverage contracts
-> remain applicable; old runtime restrictions and backup shell flows are superseded.
+> Core product specification, including integrated news intelligence (D-79).
+> This document specifies the complete intended product; implementation status,
+> completed packages and remaining dependencies are recorded in [ROADMAP](ROADMAP.md).
+> [ARCHITECTURE](ARCHITECTURE.md), [OPERATIONS](OPERATIONS.md) and
+> [TESTING_PHASE](TESTING_PHASE.md) describe the shipped runtime and supersede
+> legacy runtime/configuration examples. [NEWS_REVIEW](NEWS_REVIEW.md) retains
+> investigation evidence; open defects remain in [OPEN_ISSUES](../OPEN_ISSUES.md).
 
-> Initial implementation baseline. Changed runtime, access, configuration,
-> inference and governance behavior is superseded by [TESTING_PHASE.md](TESTING_PHASE.md).
-> Current pending work is tracked in [OPEN_ISSUES](../OPEN_ISSUES.md) and the
-> [roadmap](ROADMAP.md). [NEWS_ARCHITECTURE](NEWS_ARCHITECTURE.md) extends the
-> planned news design under D-78; [NEWS_REVIEW](NEWS_REVIEW.md) records confirmed
-> GDELT transport, column-map, mixed-record and evidence defects affecting §8.5.2
-> and §8.6.1. Those older contracts do not prove live-source compatibility.
-
-<!-- LIMES — Technical Specification | v2.1.0 | 2026-08-01 | Status: Draft -->
+<!-- LIMES — Technical Specification | v2.1.0 | 2026-08-01 | Status: Maintained -->
 
 # LIMES — Technical Specification
 
@@ -19,8 +14,8 @@
 |---|---|
 | Document | LIMES — Technical Specification (Document 2 of 3) |
 | Version | 2.1.0 |
-| Date | 2026-08-01 |
-| Status | Draft |
+| Date | 2026-08-01; reconciled 2026-10-27 |
+| Status | Maintained implementation contract; acceptance status in both roadmaps |
 | Depends on | LIMES — Design Document v2.0.0 (all sections) |
 | Supersedes | v2.0.0 (amended in §5.2, §5.3, §5.6, §8.3, §13.3, §15.2); v1.0.0 – v1.3.0, all withdrawn |
 
@@ -76,19 +71,19 @@ Recorded so the same ground is not re-covered. Each is resolved in the section n
 | S-04 | Raw archive store, content addressing, compression |
 | S-05 | `SourceAdapter` protocol, source registry, registry population |
 | S-06 | Structured adapters: GISCO/NUTS, GLEIF, EUR-Lex, FSD, TED, Transparency Register, Bundestag DIP, Gesetze im Internet, Wikidata, OSM, OffeneRegister |
-| S-07 | Unstructured adapters: GDELT, curated DE/EN feeds |
-| S-08 | Normalizer: record mapping, language detection, timestamp normalization |
+| S-07 | Integrated inputs: GDELT coded observations, curated DE/EN feeds and agency dispatches |
+| S-08 | Normalizer: independent structured/document channels, source/version lineage, language and precise times |
 | S-09 | Gate: hash deduplication, spaCy NER, passage selection |
-| S-10 | Extractor protocol, OpenRouter and Ollama implementations, output schema, prompts |
+| S-10 | Shared extractor protocol, model implementations, qualified claim/event schema, attribution and evidence |
 | S-11 | Extraction cache |
-| S-12 | Cost ledger and budget governor |
-| S-13 | Entity resolution: keys, blocking, adjudication, minting, reversible linking |
+| S-12 | Passive usage/cost ledger and explicit workload limits |
+| S-13 | Entity/event resolution: keys, candidate blocking, adjudication, minting, reversible linking |
 | S-14 | Graph loader: validation, node materialization, bitemporal merge, lookup rows |
 | S-15 | Query API |
 | S-16 | NL-to-Cypher: generate, validate, plan, execute |
 | S-17 | Coverage report and empty-result diagnosis |
 | S-18 | Builder schema projection |
-| S-19 | Dash UI: three panes, console, builder, coverage, provenance, budget |
+| S-19 | Native desktop: network/map/timeline, console, builder, coverage, qualified claims and versioned evidence |
 | S-20 | Saved-query persistence |
 | S-21 | CLI and make targets |
 | S-22 | Gold set, calibration set, evaluation harness |
@@ -99,7 +94,7 @@ Recorded so the same ground is not re-covered. Each is resolved in the section n
 | S-27 | Composition root and run-context construction |
 | S-28 | Cross-process reference data |
 
-**Out of scope:** everything in Design Document §2.4, plus packaging for distribution, CI pipelines, and UI theming beyond legibility.
+**Out of scope:** Design Document §2.4 applies. CI already exists. Agency/news processing is core scope; no separate extractor product, event-ledger application or second vector database is included.
 
 ---
 
@@ -115,11 +110,13 @@ limes/
 ├── Makefile
 ├── pyproject.toml
 ├── uv.lock
-├── .env.example
+├── .env.example                 # legacy compatibility example
+├── config/{secrets,settings,models}.env.example
 ├── docker-compose.yml
 ├── docker-compose.override.yml
-├── docker/{api,ui,worker}.Dockerfile
-├── docs/                        # the four specification documents
+├── docker/{api,neo4j,worker}.Dockerfile
+├── docker/neo4j_control.py      # private lifecycle supervisor
+├── docs/                        # INDEX, core/desktop specs, BE/DC roadmaps, evidence, archive
 ├── ontology/
 │   ├── ontology.yaml
 │   ├── ontology.schema.json
@@ -133,7 +130,7 @@ limes/
 │   ├── baseline.json            # machine-readable regression baseline
 │   └── CHANGELOG.md
 ├── reference_questions/questions.yaml
-├── tools/check_docs.py          # specification consistency validator
+├── tools/{check_docs,generate_runtime_docs,check_git_baseline,deploy,init_config}.py
 ├── desktop/                     # uv workspace member: PySide6 desktop client
 │   ├── pyproject.toml
 │   ├── src/limes_desktop/**     # api/, views/, resources/web/
@@ -152,15 +149,17 @@ limes/
 │   ├── extraction/{base,openrouter_client,openrouter,ollama,schema,cache}.py
 │   ├── extraction/prompts/{extraction,adjudication,nl2cypher}_v1.0.0.md
 │   ├── resolution/{keys,blocking,adjudicate,link,resolve}.py
-│   ├── cost/{ledger,governor}.py
+│   ├── cost/{ledger,recorder}.py
 │   ├── nlq/{generate,validate,plan,service}.py
 │   ├── coverage/{report,diagnose}.py
 │   ├── api/{main,deps,models,builder}.py
 │   ├── api/routers/{health,ontology,query,entity,search,coverage,
-│   │                saved_queries,sources,cost,ingest_status}.py
-│   ├── ui/{app,layout,api_client}.py
+│   │                saved_queries,sources,cost,ingest_status,operations}.py
+│   ├── api/auth.py
+│   ├── operations/{models,store,worker,client}.py
+│   ├── ui/{app,layout,api_client}.py   # retained Dash compatibility, not shipped
 │   ├── ui/components/*.py   ui/callbacks/*.py
-│   └── cli/{main,ingest,backfill,reextract,select_models,evaluate,migrate,backup}.py
+│   └── cli/{main,ingest,backfill,reextract,select_models,evaluate,migrate,backup,remote}.py
 └── tests/{conftest.py,fixtures/,unit/,integration/,acceptance/}
 ```
 
@@ -211,85 +210,18 @@ Host tooling installs into `./venv/`. `--break-system-packages` is prohibited. C
 
 ### 4.1 Principles
 
-All configuration by environment variable, loaded and validated once at startup. A missing or invalid required key is a startup failure naming the key. No host paths in committed files.
+All configuration by environment variable, loaded and validated once at startup. A missing or invalid required key is a startup failure naming the key. Host bind paths are declared deployment/configuration inputs; credentials are never committed.
 
-### 4.2 `.env.example`
+### 4.2 Split configuration and compatibility
 
-```dotenv
-# ---------- Neo4j ----------
-# C-01: Community Edition has no RBAC. Both users have identical privileges.
-# Separation is for credential hygiene and log legibility, NOT enforcement.
-# Read-only is enforced by parse-level validation and driver session mode. See §7.
-LIMES_NEO4J_URI=bolt://neo4j:7687
-LIMES_NEO4J_USER=limes
-LIMES_NEO4J_PASSWORD=change-me
-LIMES_NEO4J_DATABASE=neo4j
-NEO4J_server_memory_heap_initial__size=2G
-NEO4J_server_memory_heap_max__size=2G
-NEO4J_server_memory_pagecache_size=2G
-NEO4J_db_memory_transaction_total_max=512m
-NEO4J_db_transaction_timeout=120s
-
-# ---------- OpenRouter ----------
-# Held by BOTH api and worker: query generation is paid inference (§7.4).
-LIMES_OPENROUTER_API_KEY=
-LIMES_OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
-LIMES_EXTRACTION_MODEL=
-LIMES_ADJUDICATION_MODEL=
-LIMES_EMBEDDING_MODEL=
-LIMES_NL2CYPHER_MODEL=
-LIMES_EMBEDDING_DIMENSIONS=1024
-LIMES_MODEL_PIN_STAGE=provisional
-LIMES_MODEL_PIN_DATE=
-
-# ---------- Versioned artifacts ----------
-LIMES_ONTOLOGY_PATH=/app/ontology/ontology.yaml
-LIMES_FEEDS_CONFIG_PATH=/app/ontology/feeds.yaml
-LIMES_GOLD_SET_PATH=/app/gold_set/gold_set.jsonl
-LIMES_BASELINE_PATH=/app/gold_set/baseline.json
-LIMES_EXTRACTION_PROMPT_VERSION=1.0.0
-LIMES_ADJUDICATION_PROMPT_VERSION=1.0.0
-LIMES_NL2CYPHER_PROMPT_VERSION=1.0.0
-LIMES_EXTRACTION_SCHEMA_VERSION=1.0.0
-
-# ---------- Budget ----------
-LIMES_MONTHLY_BUDGET_EUR=10.00
-LIMES_USD_EUR_RATE=0.92
-LIMES_BUDGET_SOFT_STOP_FRACTION=0.95
-
-# ---------- Gate and extraction ----------
-LIMES_GATE_MIN_ENTITY_MENTIONS=2
-LIMES_GATE_SPACY_MODEL_DE=de_core_news_md
-LIMES_GATE_SPACY_MODEL_EN=en_core_web_md
-LIMES_EXTRACTION_MAX_PASSAGES_PER_CALL=8
-LIMES_EXTRACTION_MAX_INPUT_TOKENS=6000
-LIMES_EXTRACTION_PASSAGE_WINDOW_SENTENCES=3
-
-# ---------- Entity resolution (§8.8.3) ----------
-LIMES_ER_AUTOLINK_COSINE=0.93
-LIMES_ER_AUTOLINK_MARGIN=0.05
-LIMES_ER_ADJUDICATE_COSINE=0.82
-LIMES_ER_CANDIDATE_LIMIT=10
-
-# ---------- Query planning (§8.10.4) ----------
-LIMES_QUERY_DEFAULT_LIMIT=500
-LIMES_QUERY_MAX_LIMIT=5000
-LIMES_QUERY_MAX_VARLENGTH_HOPS=4
-LIMES_QUERY_MAX_ESTIMATED_ROWS_OPERATOR=5000000
-LIMES_QUERY_MAX_ESTIMATED_ROWS_TOTAL=20000000
-LIMES_QUERY_TIMEOUT_SECONDS=120
-
-# ---------- Ingestion ----------
-LIMES_BACKFILL_DAYS_UNSTRUCTURED=90
-LIMES_ARCHIVE_PATH=/data/archive
-LIMES_HTTP_TIMEOUT_SECONDS=60
-LIMES_HTTP_MAX_RETRIES=4
-
-# ---------- Service ----------
-LIMES_API_BASE_URL=http://api:8000
-LIMES_LOG_LEVEL=INFO
-LIMES_LOG_FORMAT=json
-```
+Canonical examples are `config/secrets.env.example`, `config/settings.env.example`
+and `config/models.env.example`; config.py is the typed key authority. Initialize
+missing private files with tools/init_config.py (host ACL utility required), then
+set secrets privately. Configuration binds are read-only in services. Tool-written
+model pins and evaluation reports use the models volume; model-only pin validation,
+file locking and atomic replacement apply. Empty values are unset; explicit env
+values override file pins. Legacy `.env` remains supported for migration only.
+No monthly ceiling/envelope is enforced. See OPERATIONS for exact commands.
 
 ### 4.3 Startup Validation
 
@@ -420,24 +352,51 @@ Relationship property indexes on `valid_from`, `valid_to`, `recorded_at` are gen
 
 Defined once here; every signature in §8 uses these names.
 
+The type listings below describe the implemented baseline. The normative
+qualified-claim and source-version fields in this section must be delivered with
+BE-43/DC-15, including migrations and every API/desktop consumer. They are part
+of the product specification, not optional post-project extensions.
+
+| Payload | Required fields and semantics beyond the baseline listing |
+|---|---|
+| DocumentPayload | Provider/external dispatch ID, canonical URL, immutable version hash, publication/update time with precision/fallback markers, correction and syndication lineage |
+| Provenance | Text version/span or coded export/row locator; report URL, original agency and attribution, distinct from extraction confidence/source trust |
+| ExtractedAssertion and Assertion | Statement kind, modality, attributed speaker/proposition, assessment with evidence/rule version and temporal precision; qualifiers survive resolution and persistence |
+| Event endpoints | Namespaced source identity, event type/lifecycle and occurrence precision; old Event keys remain compatible |
+| NormalizedRecord | Independent structured payload and document payload processing; kind is a routing hint and cannot suppress a populated channel |
+
+Exact enum serialization and graph property/reification choices are selected from
+the annotated corpus before implementation, with a versioned migration. Denials
+and conditional propositions must not create unqualified factual edges. Missing
+historical qualifiers remain unknown, not retroactively inferred. Publication and
+fetch timestamps cannot silently substitute for unknown occurrence times.
+
+
+
 ```python
 class Mention(BaseModel):
     """An entity as named in text, before identity is assigned."""
+
     surface: str
-    type: str                                   # inferred concrete ontology type
+    type: str  # inferred concrete ontology type
     deterministic_key: tuple[str, str] | None = None
+
 
 class EntityEndpoint(BaseModel):
     """An entity with identity assigned. Everything the loader needs to
     materialize its node. Built by adapters (structured) or the resolver
     (extracted). Never inferred by the loader."""
+
     entity_id: str
     type: str
     label: str
     deterministic_key: tuple[str, str] | None = None
     aliases: list[str] = []
 
+
 class Provenance(BaseModel):
+    """Where an assertion came from and how much it is trusted."""
+
     source_id: str
     source_trust: float
     confidence: float
@@ -449,14 +408,20 @@ class Provenance(BaseModel):
     evidence_start: int | None = None
     evidence_end: int | None = None
 
+
 class Validity(BaseModel):
+    """Bitemporal interval: validity time and belief time, independently
+    queryable (Doc 1 §5.6)."""
+
     valid_from: datetime
     valid_to: datetime | None = None
     recorded_at: datetime
     retracted_at: datetime | None = None
 
+
 class ExtractedAssertion(BaseModel):
     """Pre-resolution. What the extractor returns. Endpoints are mentions."""
+
     passage_index: int
     subject: Mention
     relation: str
@@ -467,8 +432,10 @@ class ExtractedAssertion(BaseModel):
     evidence_start: int
     evidence_end: int
 
+
 class Assertion(BaseModel):
     """Resolved. What the loader accepts. Endpoints are identified."""
+
     assertion_id: str
     subject: EntityEndpoint
     relation: str
@@ -476,74 +443,110 @@ class Assertion(BaseModel):
     validity: Validity
     provenance: Provenance
 
+
 class LookupRow(BaseModel):
-    """Reference data materialized as system nodes. Cross-process state
-    per C-07; never module state, never a derived file."""
+    """Reference data materialized as system nodes. Cross-process state per
+    C-07; never module state, never a derived file."""
+
     kind: Literal["postal_code"]
     key: dict[str, str]
     value: dict[str, str]
 
+
 class DocumentPayload(BaseModel):
+    """A normalized document ready for gating and extraction."""
+
     content_hash: str
     title: str
     body: str
     language: str
     published_at: datetime
-    url: str | None
+    url: str | None = None
+
 
 class Passage(BaseModel):
+    """A selected passage within a document, with offsets into the original
+    document text."""
+
     index: int
     text: str
-    doc_start: int          # offset in the source document
+    doc_start: int  # offset in the source document
     doc_end: int
 
+
 class RawRecord(BaseModel):
+    """A raw payload as fetched from a source."""
+
     payload: bytes
     content_type: str
-    source_url: str | None
+    source_url: str | None = None
     fetched_at: datetime
 
+
 class NormalizedRecord(BaseModel):
+    """The adapter's normalized output: assertions plus entities that are
+    named but appear in no relationship, plus reference data and optionally a
+    document payload."""
+
     content_hash: str
     kind: Literal["structured", "document"]
     assertions: list[Assertion] = []
-    entities: list[EntityEndpoint] = []    # named but in no relationship
+    entities: list[EntityEndpoint] = []  # named but in no relationship
     lookup_rows: list[LookupRow] = []
     document: DocumentPayload | None = None
 
+
 class NerSpan(BaseModel):
+    """A named-entity recognition span."""
+
     text: str
     label: str
     start: int
     end: int
 
+
 class GateDecision(BaseModel):
+    """The gate's verdict on a document."""
+
     passed: bool
     reason: str
     passages: list[Passage]
 
+
 class ValidationError(BaseModel):
+    """One rejected assertion: its index in the input, the reason, and any
+    detail the validator can provide."""
+
     assertion_index: int
     reason: str
-    detail: dict
+    detail: dict[str, object]
+
 
 class WriteResult(BaseModel):
+    """Outcome counters for a batch of graph writes."""
+
     statements_executed: int
     nodes_created: int
     relationships_created: int
     properties_set: int
 
+
 class PlanSummary(BaseModel):
+    """A parsed query plan from `EXPLAIN`, used by the plan gate."""
+
     operators: list[str]
     max_estimated_rows: int
     total_estimated_rows: int
     has_cartesian_product: bool
     max_varlength_hops: int | None
 
+
 class CostLedgerEntry(BaseModel):
+    """One paid API call, recorded as a `:CostLedgerEntry` node."""
+
     ledger_id: str
-    period: str                    # YYYY-MM
-    run_id: str | None
+    period: str  # YYYY-MM
+    run_id: str | None = None
     purpose: Literal["extraction", "adjudication", "embedding", "nl2cypher"]
     model_id: str
     input_tokens: int
@@ -552,32 +555,37 @@ class CostLedgerEntry(BaseModel):
     cost_eur: Decimal
     created_at: datetime
 
+
 class SourceRecord(BaseModel):
-    """In-memory view of a :Source node, read by window resolution."""
+    """In-memory view of a `:Source` node, read by window resolution."""
+
     source_id: str
     name: str
     kind: Literal["structured", "unstructured"]
     trust_rank: float
-    last_success_at: datetime | None
-    last_run_id: str | None
+    last_success_at: datetime | None = None
+    last_run_id: str | None = None
+
 
 class IngestionRunRecord(BaseModel):
+    """The durable record of one ingestion run (`:IngestionRun` node)."""
+
     run_id: str
     source_id: str
     mode: Literal["ingest", "backfill", "reextract"]
     started_at: datetime
-    finished_at: datetime | None
-    window_from: datetime | None
-    window_to: datetime | None
-    records_fetched: int
-    nodes_created: int
-    nodes_matched: int
-    assertions_written: int
-    assertions_skipped: int
-    assertions_rejected: int
-    documents_gated_out: int
-    errors: int
-    cost_eur: Decimal
+    finished_at: datetime | None = None
+    window_from: datetime | None = None
+    window_to: datetime | None = None
+    records_fetched: int = 0
+    nodes_created: int = 0
+    nodes_matched: int = 0
+    assertions_written: int = 0
+    assertions_skipped: int = 0
+    assertions_rejected: int = 0
+    documents_gated_out: int = 0
+    errors: int = 0
+    cost_eur: Decimal = Decimal("0")
 ```
 
 Three further types are defined at their owning module rather than here, because their construction is inseparable from it: `ArchiveStore` (§8.4), `SourceRegistry` (§8.5.1), and `OpenRouterClient` (§8.7.6). Each carries a `class` definition in its section.
@@ -619,9 +627,14 @@ Steps 1 and 2 run for non-temporal relations and for standalone entities with no
 
 ### 5.9 Cross-Process State
 
-C-07: every CLI invocation is a fresh process. Any value one command produces and another consumes lives in the graph as a system node with provenance and refresh timestamp. Never a module global. Never a derived cache file. Never a re-download.
-
-The postal-code correspondence is the first instance: written as `:PostalCode` from `LookupRow` records by the GISCO adapter's records, read through `graph/lookups.py` by the GLEIF, TED, and OSM adapters. The rule is general and governs any future reference data.
+C-07 prohibits relying on module globals between commands. Domain reference
+lookups and graph provenance are stored as system nodes. The source archive is
+content-addressed filesystem state; extraction caches and usage records are graph
+state. Operational jobs use a bounded local SQLite queue on a named volume;
+model pins/reports use locked atomic files on a separate models volume. Desktop
+profiles use XDG configuration and contain no credentials. These are explicit
+state owners, not competing entity stores. No network filesystem/multi-host queue
+or in-memory-only checkpoint is assumed.
 
 ---
 
@@ -635,12 +648,16 @@ All responses carry `X-LIMES-Ontology-Version`. Error envelope:
 
 | Method | Path | Purpose | Errors |
 |---|---|---|---|
-| GET | `/health` | Liveness, Neo4j reachability, ontology version | 503 |
+| GET | `/health` | Authenticated liveness, Neo4j reachability, ontology version | 503 |
+| GET | `/version` | Authenticated image revision, independent of graph availability | — |
+| POST | `/operations/jobs` | Operator-only validated idempotent job submission | 403, 409, 429 |
+| GET | `/operations/jobs/{job_id}` | Operator-only status and bounded output | 403, 404 |
+| GET | `/operations/capabilities` | Operator job/backup capability | 403 |
 | GET | `/ontology` | Full serialized ontology | — |
 | GET | `/ontology/versions` | Versions present in the graph with counts | — |
 | GET | `/builder/schema` | Ontology projection for UI builder generation | — |
 | POST | `/query/cypher` | Execute operator-supplied Cypher after validation | 400, 422, 504 |
-| POST | `/query/nl` | Generate, validate, plan, execute from a question | 402 |
+| POST | `/query/nl` | Generate, validate, plan, execute from a question | 400, 422, 503, 504 |
 | POST | `/query/builder` | Execute a structured builder specification | 400 |
 | GET | `/entity/{id}` | Entity with properties, provenance, edge summary | 404 |
 | GET | `/entity/{id}/neighbors` | One-hop expansion, relation and temporal filters | 404 |
@@ -648,7 +665,7 @@ All responses carry `X-LIMES-Ontology-Version`. Error envelope:
 | POST | `/coverage` | Coverage report for a query or relation set | 400 |
 | GET/POST/DELETE | `/saved-queries` | Self-accreting query library | 409, 404 |
 | GET | `/sources` | Registry with trust rank and last refresh | — |
-| GET | `/cost/ledger` | Period spend, remaining budget, entries | — |
+| GET | `/cost/ledger` | Passive period usage/spend entries; no remaining-budget field | — |
 | GET | `/ingest/status` | Last run per source, counts, errors | — |
 
 Response models `GraphResult`, `CoverageReport`, `Diagnosis`, `EntityRef`, `EdgeRef`, `NlqOutcome`, `BuilderSpec` are defined in `api/models.py` and compose the §5.5 core types.
@@ -657,9 +674,17 @@ Response models `GraphResult`, `CoverageReport`, `Diagnosis`, `EntityRef`, `Edge
 
 ---
 
+Query, entity, neighbor, search and evidence responses expose qualified claims,
+source/version locators, correction/syndication lineage and temporal precision.
+Builder/NL queries support reported/documented and lifecycle filters plus validity
+versus recorded time. Desktop response mirrors and provenance/network/timeline
+views consume the same contract; no direct database access. Read a proposal,
+denial, agreement and later registry confirmation without treating chronology as
+causation. Missing evidence and dependent sources remain visible.
+
 ## 7. Authentication, Authorization, and Write Control
 
-No user authentication, no authorization model, no sessions (NG-01). What exists is write control.
+Every API route, docs and health requires a bearer token. Consumer/operator tokens must differ; operator tokens can query and submit/read operational jobs. This is a single-operator credential model, not multi-user account management (NG-01).
 
 ### 7.1 What C-01 Removes
 
@@ -673,21 +698,18 @@ Neo4j Community Edition has no role-based access control. Additional users can b
 
 ### 7.3 The API's Complete Write Surface
 
-Exactly three writes. All parameterized. All system nodes. None constructed from operator input.
-
-| Write | Trigger |
-|---|---|
-| `:CostLedgerEntry` | Every paid call on the query path |
-| `:SavedQuery` create | Every executed query (FR-14) |
-| `:SavedQuery` create or delete | `POST` / `DELETE /saved-queries` |
-
-This list is complete and checkable. **No other write path may exist in `src/limes/api/`** — an acceptance criterion (AC-18) with a grep-based test. Because C-01 removed the database's ability to enforce, the enforceable property becomes the shape of the code, and that property is verified mechanically.
-
-**Residual risk, stated plainly:** a defect in the Cypher validator combined with a defect in session-mode selection can write to the graph. On Community Edition this cannot be prevented by the database. For a single-operator local system this is accepted and recorded rather than concealed.
+Query paths write parameterized usage entries and saved queries. Query Cypher
+is validated and executed in read-mode sessions. Operator-only `/operations/jobs`
+additionally persists validated commands to the local SQLite queue, with request
+UUID idempotency, bounded arguments/output/capacity and no shell. Worker execution
+owns ingestion graph changes and physical backup orchestration. The historical
+exact-three graph-write count does not prohibit the dedicated operator queue.
+No user query can become an arbitrary graph write or host command (AC-18).
+Community Edition's lack of RBAC remains a stated residual risk (C-01).
 
 ### 7.4 Secrets
 
-`LIMES_OPENROUTER_API_KEY` is held by `api` and `worker`. Both make paid calls — the worker for extraction and resolution, the API for query generation. The `ui` service holds no credentials. `logging_setup.py` redacts configured secret keys before emission.
+`LIMES_OPENROUTER_API_KEY` is held by `api` and `worker`. Both make paid calls — the worker for extraction and resolution, the API for query generation. No UI service is shipped. Desktop credentials are session-only; HTTPS or loopback transport is required. `logging_setup.py` redacts configured secret keys before emission.
 
 ### 7.5 Untrusted Ingested Content
 
@@ -698,7 +720,7 @@ Document text is supplied to the model as explicitly delimited data, never conca
 ## 8. Module Specifications
 
 ### 8.1 `config.py`
-`Settings` with one typed field per §4.2 key; `load_settings() -> Settings`. Loaded once per process by the composition root (§8.15) or the API startup handler. No module-level singleton read from business logic.
+`Settings` with one typed field per §4.2 key; `load_settings() -> Settings`. Loaded once per process by the composition root (§8.15) or the API startup handler. No module-level singleton read from business logic. Versioned qualified-claim fields remain target requirements; see backend/desktop roadmap dependencies.
 
 ### 8.2 Ontology
 ```python
@@ -803,14 +825,26 @@ Adapters emit records and **write nothing to the graph**.
 | `wikidata` | SPARQL, read-only enrichment | aliases and QIDs; never bulk-loaded | n/a | 0.90 |
 | `osm` | Overpass, DE bbox | `Asset`, `LOCATED_IN`, `OPERATES`, KRITIS `Topic` | no | 0.75 |
 | `offeneregister` | Bulk JSON | `Corporation`, `DIRECTOR_OF`, `OWNS_STAKE_IN` | no | 0.30 |
-| `gdelt` | 15-min CSV | `Event`, `ACTOR_IN`, `TARGET_OF`, `OCCURRED_IN`, `Document` | yes | 0.50 |
-| `feeds` | RSS/Atom per `feeds.yaml` | `Document` only | yes | 0.60–0.70 |
+| `gdelt` | 15-min ZIP containing 61-column TSV | Coded `Event` observations, role/location edges, export/row/report provenance; original report documents only when separately acquired | yes | 0.50 |
+| `feeds` | RSS/Atom per `feeds.yaml` | One source-versioned document per entry | yes | 0.60–0.70 |
+| Provider adapter selected in BE-43/DC-15 | Authorized agency feed/API | One archived dispatch version, correction/syndication lineage and source metadata | Provider-dependent | Explicit provider rank |
 
 Verified source specifics, adopted from live checks rather than assumed: the NUTS hierarchy file carries no level column, so level derives from `NUTS_ID` length and parent by prefix; the postcode correspondence is at `/v2/pcode/csv/`, not `/postalcodes/`; that file uses mixed single and double quoting requiring explicit quote handling.
 
 `offeneregister` sets `recorded_at` to the **dataset's publication date**, never the ingestion timestamp. Setting it to ingestion time makes multi-year-stale directorships look current and defeats the trust ranking entirely.
 
 `wikidata` does not ingest. It exposes `enrich(entity_type, label) -> WikidataMatch | None` for the resolver, returning `None` on ambiguity rather than guessing.
+
+GDELT acquisition uses `/gdeltv2/YYYYMMDDHHMMSS.export.CSV.zip`, bounded ZIP
+inspection/decompression, tab parsing and the complete 61-column map including
+ADM2Code/FeatureID for all three geography groups. Decode FIPS10-4 explicitly into
+ontology country keys; handle geographic types 1–5 or count unsupported cases.
+SQLDATE, DATEADDED, fetch time and report publication are distinct. First slot is
+the first boundary at or after `since`, including seconds/microseconds correctly.
+SOURCEURL and optional Mentions rows link coded observations to reports; neither
+proves availability of article text. No extraction over fabricated summaries.
+Malformed archives/schema drift fail or produce explicit counted rejections.
+OI-19..OI-22 record current implementation gaps and closure evidence requirements.
 
 ### 8.6 Pipeline
 
@@ -821,13 +855,20 @@ class RunSpec(BaseModel):
     mode: Literal["ingest", "backfill", "reextract"]
     since: datetime | None = None
     until: datetime | None = None
-    budget_eur: Decimal | None = None      # required for backfill and reextract
+    budget_eur: Decimal | None = None      # legacy compatibility; ignored
 
 def execute_run(spec: RunSpec, ctx: RunContext) -> IngestionRunRecord: ...
 ```
-`execute_run` constructs nothing (§8.15). It proceeds: resolve adapter from `ctx.registry` → merge `:Source` → resolve window (§8.6.2) → open `:IngestionRun` → fetch → archive → normalize → **stamp `source_id` and `source_trust` on every assertion from the registry** → structured records go to validate and load; document records go to gate, extract, resolve, load → close the run record with all counts.
+`execute_run` constructs nothing (§8.15). It proceeds: resolve adapter from `ctx.registry` → merge `:Source` → resolve window (§8.6.2) → open `:IngestionRun` → fetch → archive → normalize → **stamp `source_id` and `source_trust` on every assertion from the registry** → process each populated structured payload through validation/loading and each document payload through gate, extract, resolve and load; never choose one channel exclusively → close the run record with all counts.
 
-Record-level failures are counted and skipped. Fetch and configuration failures abort the run. `BudgetExhausted` closes the run cleanly with remaining documents marked queued.
+Record-level failures are counted and skipped. Fetch and configuration failures
+abort the run. Structured writes must survive document cache hits, gating and
+empty extraction. Checkpoints and counters identify each channel; advance a source
+checkpoint only after its required channels complete. Retry uses idempotent writes;
+cache publication follows successful document loading. Reextract retracts only
+superseded assertions owned by that document/channel, never independent coded
+observations. Work limits stop at durable boundaries with explicit deferred counts;
+legacy budget flags cannot terminate or protect a run.
 
 #### 8.6.2 Window Resolution
 ```python
@@ -878,6 +919,14 @@ No identifier is asserted here. Two stages, because gold-set evaluation needs a 
 #### 8.7.3 Output Schema
 Versioned JSON Schema, `additionalProperties: false` throughout, requiring `passage_index`, `subject`, `relation`, `object`, `confidence`, `evidence_start`, `evidence_end`; mentions require `surface` and `type`. `relation` and mention `type` are validated against the ontology after parsing, so an out-of-ontology value yields a precise rejection rather than a generic schema error.
 
+The schema additionally requires the qualified-claim fields specified in §5.5.
+Validate proposition scope and attribution so an announcement, denial or proposal
+cannot become an unqualified completed relationship. Preserve unknown speakers,
+dates and assessment. Extraction confidence measures text fidelity; source trust
+and corroboration remain separate. Version schema/prompt, cache, ontology and
+consumer serialization together. Do not loosen the old prompt's reported-speech
+rule before the complete qualified path and migration work.
+
 #### 8.7.4 Batching and Evidence Spans
 One call per document carrying up to `LIMES_EXTRACTION_MAX_PASSAGES_PER_CALL` passages, capped at `LIMES_EXTRACTION_MAX_INPUT_TOKENS`; documents exceeding either bound split into multiple calls with independent cache entries.
 
@@ -889,13 +938,13 @@ Returned offsets are passage-local and are mapped to document offsets using each
 #### 8.7.6 OpenRouter Client
 ```python
 class OpenRouterClient:
-    def __init__(self, settings: Settings, governor: Governor) -> None: ...
+    def __init__(self, settings: Settings, recorder: CostRecorder) -> None: ...
     def complete(self, messages: list[dict], model_id: str,
                  purpose: str, json_schema: dict | None = None) -> tuple[str, int, int]: ...
     def embed(self, texts: list[str], model_id: str) -> list[list[float]]: ...
     def catalogue(self) -> list[dict]: ...
 ```
-One client for all OpenRouter interaction: chat completions, embeddings, and the model catalogue. It calls `governor.check` before every request and `governor.commit` after, using reported token usage, and is therefore the only module that writes `:CostLedgerEntry`. Retry policy per §11. Ledger entries are written only for attempts that returned token usage. The API key never reaches a log line.
+One client for all OpenRouter interaction: chat completions, embeddings, and the model catalogue. It records reported token usage and cost through `CostRecorder.commit` and the ledger. No pre-call spend check exists. Retry policy per §11. Ledger entries are written only for attempts that returned token usage. The API key never reaches a log line.
 
 ### 8.8 Resolution
 
@@ -930,17 +979,27 @@ def resolve_assertions(extracted: list[ExtractedAssertion], ctx: RunContext,
 ```
 The named converter from pre-resolution to resolved assertions. It creates `:Mention` nodes, resolves each to an `EntityEndpoint`, links them, and assembles `Assertion` objects with full provenance. Its absence in v1.x meant no module owned the step §3.5 described in prose.
 
+Event matching uses source namespace, type/lifecycle, actors/roles, location and
+time precision. Candidate retrieval may use existing Neo4j vectors; label/date
+similarity alone cannot merge events. Return evidence-backed non-destructive
+matches or unresolved alternatives to the loader. Source event and dispatch IDs
+are not global event identities. Preserve qualifiers unchanged through conversion.
+
 #### 8.8.5 Mention Policy
 **A `:Mention` node is created for every extracted endpoint**, including deterministic-key hits. Without it, an unlink has nothing to detach and an extracted assertion has no traceable surface form. `link` creates a scored `SAME_AS` with method, score, and decision timestamp; `unlink` retracts it. No node is ever deleted or absorbed.
 
 ### 8.9 Cost
+
 ```python
-class Governor:
-    def check(self, estimated_cost_eur: Decimal) -> None: ...   # raises BudgetExhausted
+class CostRecorder:
+    def __init__(self, driver: GraphDriver) -> None: ...
     def commit(self, actual: CostLedgerEntry) -> None: ...
-    def remaining(self) -> Decimal: ...
 ```
-Every paid call passes `check` before issue and `commit` after. `check` raises when projected spend exceeds the soft-stop fraction of the ceiling. When an envelope is set, the governor meters against it and does not draw on the monthly ceiling.
+The recorder writes the durable ledger before incrementing its process total.
+Ledger failures cannot falsely increase recorded spend. There is no check,
+remaining-budget calculation or refusal based on spend. Legacy budget parameters
+are accepted/ignored; they do not bound acquisition. BE-43 adds explicit work
+limits, filtering and deferred-item accounting without a monetary governor.
 
 ### 8.10 NL-to-Cypher
 
@@ -959,22 +1018,24 @@ The generation prompt carries the serialized ontology, the temporal helpers, and
 `api/main.py` loads settings and ontology once at startup, verifies Neo4j reachability, and registers routers. `api/deps.py` injects driver, ontology, settings, and the `NlqContext`. Routers contain no business logic.
 
 ### 8.13 UI
+
+The shipped client is PySide6, specified by the desktop architecture/requirements
+and DC sequence. src/limes/ui is retained Dash compatibility code, not a service.
 `ui/api_client.py` is the only module performing HTTP; one function per endpoint. No UI module holds ontology knowledge, a type name, or a Cypher fragment — the builder is generated entirely from `/builder/schema`. State lives in `dcc.Store`: `current-result`, `selection`, `temporal-filter`, `builder-spec`. The timeline brush triggers a re-query rather than client-side filtering, so no pane shows a subset the graph cannot reproduce.
 
 The desktop client (`desktop/src/limes_desktop/`) is a second API consumer with the same invariants: `api/client.py` is its only module performing HTTP, and `desktop/tests/contract/test_no_ontology_literals.py` enforces that no client module carries an ontology type name, relation name, or Cypher fragment.
 
 ### 8.14 CLI
-```
-limes ingest      --source <id> [--since <iso>] [--until <iso>]
-limes ingest-all
-limes backfill    --source <id> --days <n> --budget <eur>
-limes reextract   --prompt-version <v> [--source <id>] --budget <eur>
-limes select-models (--provisional | --measured)
-limes evaluate    [--resolution] [--nl2cypher]
-limes migrate     --ontology-version <v>
-limes backup
-```
-`backfill` and `reextract` refuse to run without `--budget`. `cli/main.py` acquires and releases the advisory lock, reclaiming a stale lock older than the run timeout with a warning.
+
+Canonical remote invocation is `limes remote run COMMAND OPTIONS`; remote mode
+loads no server secrets/Neo4j credentials. Commands and bounded parameters are
+listed in OPERATIONS: ingest, ingest-all, backfill, reextract, select-models,
+evaluate, migrate, backup and stamp-embeddings. Save the printed request UUID,
+reuse it with identical payload after an uncertain response, and use remote
+status UUID --wait to observe. No automatic replay. Ingest/backfill remain real
+operator data runs, not implementation verification. Deprecated budget arguments
+are ignored. Local CLI commands acquire/release a source advisory lock with stale
+lock handling. Operational Make targets use the same authenticated HTTP path.
 
 ### 8.15 Composition Root
 
@@ -986,7 +1047,7 @@ class RunContext:
     driver: GraphDriver
     registry: SourceRegistry
     archive: ArchiveStore
-    governor: Governor | None = None
+    recorder: CostRecorder | None = None
     client: OpenRouterClient | None = None
     extractor: Extractor | None = None
     gate: GateContext | None = None
@@ -1004,7 +1065,7 @@ class NlqContext:
     ontology: Ontology
     driver: GraphDriver
     client: OpenRouterClient
-    governor: Governor
+    recorder: CostRecorder
 
 def build_run_context(settings: Settings, *, needs_inference: bool,
                       budget_eur: Decimal | None = None) -> RunContext: ...
@@ -1012,11 +1073,11 @@ def build_nlq_context(settings: Settings, ontology: Ontology,
                       driver: GraphDriver) -> NlqContext: ...
 ```
 
-`composition.py` is the only module that instantiates infrastructure. Nothing below the CLI or the API startup handler constructs a driver, registry, archive, governor, client, extractor, or gate.
+`composition.py` is the only module that instantiates infrastructure. Nothing below the CLI or the API startup handler constructs a driver, registry, archive, recorder, client, extractor, or gate.
 
 `needs_inference` governs spaCy model loading and extractor construction: a structured-only run loads no models and constructs no extractor, which is what keeps it inside the resource contract.
 
-`build_run_context` calls `provision()` on every construction — idempotent, one round trip — and applies the ontology downgrade guard of §4.3. `make evaluate` uses `build_run_context(needs_inference=True, budget_eur=<envelope>)` and ignores the unused slots; there is one construction path.
+`build_run_context` calls `provision()` on every construction — idempotent, one round trip — and applies the ontology downgrade guard of §4.3. `make evaluate` uses `build_run_context(needs_inference=True)` and ignores the unused slots; there is one construction path.
 
 ### 8.16 Lookups
 ```python
@@ -1029,15 +1090,20 @@ Graph query with an in-process LRU cache. A miss returns `None`; the caller leav
 
 ## 9. Background Jobs
 
-None. No scheduler, no queue (NG-02). Every long operation is a foreground CLI invocation. Safety comes from: durable progress through the archive and extraction cache; content-derived idempotency; a single writer holding an advisory lock per source; and clean budget termination that closes the run record with remaining work marked queued.
-
-The insertion point for a future scheduler is `execute_run`, which takes a fully specified `RunSpec` and a `RunContext` and needs no interactive context.
+Use the existing API's operator-only durable SQLite job queue and worker.
+Acquisition, filtering, extraction and loading execute inside LIMES. The queue
+allowlist accepts bounded parameters; external timers submit authenticated jobs,
+reuse request UUIDs after uncertain responses, observe status and avoid overlapping
+windows. Interrupted paid work is never automatically replayed. Provider access,
+retention/display terms, document/byte/window limits and per-channel checkpoints
+are prerequisites to unattended acquisition. No internal scheduler or fourth
+service is introduced. Usage/cost accounting is passive; timeout is not a spend cap.
 
 ---
 
 ## 10. Observability
 
-`structlog` JSON with `run_id`, `source_id`, `module`, `event` on every line, and a redaction processor masking secrets. Mandatory events: run started and finished with counts; adapter fetch completed; document gated out with reason; extraction call issued with tokens and cost; cache hit; assertion rejected with reason; adjudication issued; budget refusal; query validated; plan rejected; query executed with duration.
+`structlog` JSON with `run_id`, `source_id`, `module`, `event` on every line, and a redaction processor masking secrets. Mandatory events: run started and finished with counts; adapter fetch completed; document gated out with reason; extraction call issued with tokens and cost; cache hit; assertion rejected with reason; adjudication issued; work deferred and job failure; query validated; plan rejected; query executed with duration.
 
 Durable surfaces: `:IngestionRun` records, the cost ledger, per-source refresh timestamps, and the coverage report on every query. No monitoring stack.
 
@@ -1053,7 +1119,7 @@ class SourceFetchError(LimesError): ...          # retryable
 class SourceParseError(LimesError): ...          # record-level
 class ExtractionError(LimesError): ...           # retryable
 class ExtractionSchemaError(LimesError): ...     # record-level
-class BudgetExhausted(LimesError): ...           # run-level, clean termination
+class BudgetExhausted(LimesError): ...           # legacy compatibility; not a spend gate
 class ValidationRejected(LimesError): ...        # assertion-level
 class EndpointUnidentified(LimesError): ...      # assertion-level
 class GraphWriteError(LimesError): ...           # transaction-level
@@ -1065,14 +1131,14 @@ class QueryPlanRejected(LimesError): ...         # request-level, 422
 
 Retry policy applies to HTTP fetches and inference calls only: exponential backoff from 2 s, factor 2, jittered, maximum 4 attempts, on connection errors, timeouts, 429, and 5xx. Never on other 4xx. Never more than once for a graph write.
 
-HTTP mapping: `CypherValidationFailed` 400, `QueryPlanRejected` 422, `BudgetExhausted` 402, not found 404, Neo4j timeout 504, unreachable 503, unhandled 500.
+HTTP mapping: `CypherValidationFailed` 400, `QueryPlanRejected` 422, legacy `BudgetExhausted` compatibility 402 (no current spend refusal), not found 404, Neo4j timeout 504, unreachable 503, unhandled 500.
 
 ---
 
 ## 12. Testing Strategy
 
 ### 12.1 Unit
-Ontology loading and every rejection case; `permits` supertype resolution; assertion validation partitioning; hash stability across processes; passage offsets; evidence-span mapping and mismatch rejection; every validation code; every plan-gate rejection; governor arithmetic including envelopes; window resolution for both incremental branches; retry policy.
+Ontology loading and every rejection case; `permits` supertype resolution; assertion validation partitioning; hash stability across processes; passage offsets; evidence-span mapping and mismatch rejection; every validation code; every plan-gate rejection; passive accounting and failed-ledger-write behavior; window resolution for both incremental branches; retry policy.
 
 ### 12.2 Integration
 Against a disposable Neo4j container. Schema provisioning idempotency; node materialization from assertion endpoints and standalone lists; non-destructive re-merge; supertype labeling; lookup-row materialization; bitemporal merge with within-source closure and cross-source non-closure; idempotent re-ingest with zero new nodes and edges; resolution linking and unlinking; cache-hit path costing nothing; coverage accuracy; empty-result diagnosis naming the correct clause; composition-root construction; cross-process lookup.
@@ -1098,6 +1164,15 @@ Every adapter tested against recorded fixtures with `respx`. No test performs li
 
 The worker container mounts the repository's `gold_set/` directory read-write; this is declared in the Compose file.
 
+The corpus must cover dispatch versions/corrections, syndication, denials,
+proposals, unknown attribution/time, and false cross-source event matches. Report
+quality by distinct behavior, evidence fidelity and failure mode, separately from
+truth assessment and source trust. Compare news value beyond feeds/GDELT on
+matched coverage. Independently sourced ZIP/TSV fixtures validate real field order;
+implementation-generated URLs and synthetic CSV cannot be the oracle. A disposable
+source-to-graph-to-API/desktop scenario proves both channels and evidence survive.
+Automated tests mock paid transports; paid evaluation is an explicit operator run.
+
 ### 12.6 Reference Questions
 
 `reference_questions/questions.yaml` holds the five operator questions. They are not templates and not a specification of intended use (NG-08). Two roles:
@@ -1107,51 +1182,64 @@ The worker container mounts the repository's `gold_set/` directory read-write; t
 **Generation quality, measured not gated.** `make evaluate --nl2cypher` reports validation-pass rate and structural agreement with the reference query.
 
 ### 12.7 Coverage Target
-Line coverage is not a target. The required condition is that every error path in §11 and every rejection code in §8.10 is triggered by at least one test.
+Add coverage for distinct behaviors, regressions and failure modes, sharing invariant checks. The historical BE-40 exercise is not a current 100% target or quota. Preserve independently derived numerical expectations and avoid copied pair suites.
 
 ---
 
 ## 13. Build, Run, Deploy
 
 ### 13.1 Images
-Three Dockerfiles over a shared dependency layer. Only the worker image installs spaCy models. No virtual environment inside images.
+
+The api/worker images use allowlisted build contexts, packaged ontology/prompts/
+reference material and non-root UID/GID 7474. spaCy is worker-only. The Neo4j image
+includes the private lifecycle supervisor. No image has Docker host-control tools.
 
 ### 13.2 Compose
-Base file: four services, one internal network, volumes `neo4j_data`, `neo4j_logs`, `archive`, no published ports. Override file: `127.0.0.1:8050` for the UI, source mounts, `gold_set/` read-write mount, debug logging.
 
-`api` and `worker` receive database credentials and the OpenRouter key. `ui` receives neither.
+Base topology: api, neo4j, worker, local named mutable volumes, loopback API port
+8000 only; internal database/backup endpoints. The development override mounts
+source/reload and is excluded from releases. Drop all capabilities and prohibit
+new privileges. Exact contract is docs/runtime-contract.json and OPERATIONS.
 
 ### 13.3 Bootstrap
 
-```
-1.  cp .env.example .env && populate secrets
-2.  make up
-3.  make select-models -- --provisional
-4.  make ingest SOURCE=gisco_nuts        # geography + postal correspondence
-5.  make ingest SOURCE=gleif             # legal-entity backbone
-6.  make ingest-all                      # remaining structured sources
-    make stamp-embeddings                # one-shot embedding backfill (§8.3)
-7.  make backfill SOURCE=feeds DAYS=90 BUDGET=<eur>
-8.  make backfill SOURCE=gdelt DAYS=90 BUDGET=<eur>
-9.  build gold set and calibration set from the archive
-10. make select-models -- --measured
-11. make evaluate                        # records the baseline
-```
-
-Steps 4–6 must precede 7–8: extraction against an empty backbone produces mentions with nothing to resolve against, and the work is paid for twice. After step 6 and before step 7, run the one-shot embedding backfill (`stamp_missing_embeddings`, §8.3) once, so the structured backbone is fully indexed before the first unstructured backfill — a partially populated index silently under-recalls. Step 9 precedes 10 precedes 11 — a measurement taken before the corpus exists is not a measurement. There is no separate `bootstrap-db` step; C-01 offers no roles to create, and provisioning happens on every context build.
+Initialize split configuration and secrets privately; build/start via administrator
+commands in OPERATIONS. An operator first ingests the structured geography/entity
+backbone, then stamps missing embeddings before unstructured extraction. Select
+provisional model pins, build independently annotated corpus and calibration data,
+then run measured selection/evaluation explicitly. A submitted GDELT command is
+not a successful source run: OI-19..OI-22 must be repaired before it is treated as
+working coverage. Agency feed/corpus terms and bounded work precede unattended
+news. None of these production/data steps is run by documentation verification.
 
 ### 13.4 Neo4j Runtime
 Heap 2 GB initial and max, page cache 2 GB, transaction memory cap 512 MB, transaction timeout 120 s. Total resident near 4.5 GB, consistent with Design Document §8.2.
 
 ### 13.5 Promotion
-Remove the override, publish the UI port behind host-provided access control, verify the resource contract. No code, image, or base compose change.
+
+Deploy only clean committed source using tools/deploy.py, recording revision,
+OCI labels and immutable image IDs. Base API publication remains loopback; remote
+clients use HTTPS termination or an SSH tunnel. GET /version is authenticated and
+works while Neo4j is unavailable. Existing production revision/smoke evidence is
+still missing; a clean-source tool is not a deployed-state claim.
 
 ### 13.6 Backup
-`make backup` stops Neo4j, dumps offline to the archive volume with a timestamped filename, restarts. Restore is the inverse. Recovery without a dump is a full re-ingest from the archive, costing no paid inference while the version triple is unchanged.
+
+Operator API job → worker → private supervisor POST /backup. Clean stop must
+complete within 180 seconds before offline dump; empty dump or failed recovery
+fails the job. Restart/readiness occurs even after dump failure. Dumps and source
+archive share a volume but a dump does not back up archive/model/queue/config.
+Restore on an isolated stopped database and validate recovery before replacing
+operator data. Desktop backup is HTTP only.
 
 ---
 
 ## 14. Acceptance Criteria
+
+These are current requirements, not a declaration that every criterion passes.
+D-75/D-77 supersede old monetary, publication and host-backup semantics without
+erasing their historical tests/decisions. BE-42/43 and DC-14/15 assign missing
+behavior; BE-45 assigns unmeasured release conditions.
 
 | ID | Criterion |
 |---|---|
@@ -1168,11 +1256,11 @@ Remove the override, publish the UI port behind host-provided access control, ve
 | AC-11 | The gate rejects documents below the mention threshold and records the reason; counts appear in `/ingest/status`. |
 | AC-12 | A cache hit on the current version triple issues no paid call and is recorded as cached. |
 | AC-13 | An assertion whose evidence span does not contain its subject or object surface is rejected as `EVIDENCE_SPAN_MISMATCH`. |
-| AC-14 | The governor refuses a call that would breach the ceiling and terminates the run cleanly with queued work recorded. |
-| AC-15 | Backfill and reextract meter against their explicit envelope and leave monthly spend unchanged. |
+| AC-14 | Every inference call records usage/cost without monetary enforcement; zero legacy budget does not suppress calls. |
+| AC-15 | Backfill/reextract accept legacy budget arguments without enforcing them; usage/run accounting remains durable. |
 | AC-16 | Deterministic keys short-circuit resolution with no embedding and no vector query issued. |
 | AC-17 | Resolution routes correctly across all four bands in §8.8.3; the mint branch writes no node directly. |
-| AC-18 | **`src/limes/api/` contains exactly the three writes enumerated in §7.3 and no other write path.** Grep-based test plus a write-attempt corpus including obfuscated forms. |
+| AC-18 | Read-only validation and query session mode remain independent; dedicated bounded operator jobs require separate authentication and cannot execute arbitrary commands. |
 | AC-19 | `unlink` retracts a `SAME_AS` without deleting any node; prior assertions remain attributed. |
 | AC-20 | Every validation code in §8.10 is produced by a crafted query and blocks execution. |
 | AC-21 | Every plan-gate rejection in §8.10 is produced by a crafted query and blocks execution. |
@@ -1188,13 +1276,13 @@ Remove the override, publish the UI port behind host-provided access control, ve
 | AC-31 | `make evaluate` produces per-relation-type precision, recall, F1, writes `baseline.json`, and exits non-zero on a regression beyond 0.05 read from that file. |
 | AC-32 | Total resident memory of all services under a full backfill stays below 11 GB. |
 | AC-33 | A full rebuild from the archive with an unchanged version triple issues zero paid calls. |
-| AC-34 | The base Compose file publishes no ports; the database port is unpublished in both files. |
+| AC-34 | Base Compose publishes only loopback API port 8000; database and backup-control ports are never host-published, including development override. |
 | AC-35 | The repository contains the personal-artifact disclaimer required by Design Document §7.5. |
-| AC-36 | `make select-models --provisional` writes a complete pin set without reading the gold set, requiring operator confirmation. |
+| AC-36 | Provisional selection validates catalogue IDs and writes a complete dated pin set without gold-set scoring; confirmation is opt-in. |
 | AC-37 | `make select-models --measured` refuses without a gold set, and on re-pinning reports affected counts and cost without re-extracting. |
 | AC-38 | `build_default_registry()` returns every delivered adapter; an unknown source fails naming both the unknown and the registered ones. No production module constructs an empty `SourceRegistry`. |
 | AC-39 | A value written as a `LookupRow` by one CLI invocation is readable by `postal_code_to_nuts` in a **separate operating-system process**; a miss returns `None` without raising. |
-| AC-40 | `composition.py` is the only constructor of driver, registry, archive, governor, client, extractor, and gate. Grep-verified. |
+| AC-40 | Composition owns resource construction with the documented API startup exception; pipeline consumers construct no infrastructure. |
 | AC-41 | A structured-only run loads no spaCy model and constructs no extractor. |
 | AC-42 | Window resolution returns a full load for a non-incremental adapter and a `last_success_at`-anchored window for an incremental one that has run before. |
 | AC-43 | `resolve_assertions` converts `ExtractedAssertion` to `Assertion`, creates a `:Mention` per endpoint, and returns stats matching the four resolution bands. |
@@ -1224,8 +1312,8 @@ Every context type used in a signature anywhere in §8 is defined in §8.15: `Ru
 | `SourceRegistry` population | `build_default_registry()` |
 | `ArchiveStore` | `build_run_context` |
 | `OpenRouterClient` | `build_run_context`; `build_nlq_context` |
-| `Governor` (monthly) | `build_run_context`, `build_nlq_context` |
-| `Governor` (envelope) | `build_run_context` from `budget_eur` |
+| `CostRecorder` | `build_run_context`, `build_nlq_context`; client records usage |
+| Operator queue | API operations router persists; operations worker claims/runs; source locks remain |
 | `Extractor` | `build_run_context` when `needs_inference` |
 | `GateContext` and spaCy models | `build_run_context` when `needs_inference` |
 | `NlqContext` | `build_nlq_context`, called by `api/deps.py` |
@@ -1255,17 +1343,36 @@ Every context type used in a signature anywhere in §8 is defined in §8.15: `Ru
 | `load` | `pipeline/run.py::execute_run` |
 | `nlq/service.py::answer` | `api/routers/query.py` |
 | `coverage/report.py`, `coverage/diagnose.py` | `api/routers/query.py` |
-| FastAPI application | `api/main.py`, entry point; constructs settings, ontology, driver |
+| FastAPI application | `api/main.py`, documented composition exception; constructs settings, ontology, driver |
 
 The `label_embedding` property is part of the merge choke point's stamp (§5.6): every entity creation — structured loads and resolver-approved mints alike — passes through `graph/loader.py::load`, so the property is attributed to the shared routine through which all writers create entities, not to an eighth writer. Its null-filling path is the one-shot backfill `stamp_missing_embeddings`, also in `graph/loader.py`; the resolver only reads the index.
 
+The integrated news path adds these obligations to the existing owners:
+
+| Handoff | Owner/invoker and required behavior |
+|---|---|
+| Dispatch versions and coded-row evidence | Source adapters normalize; execute_run archives and stamps authoritative provenance |
+| Mixed structured/document output | execute_run processes both channels, independently of document gate/cache outcomes |
+| Qualified claims | Extractor.extract produces; resolve_assertions preserves; graph loader validates/persists |
+| Event candidates | Resolution returns matched or unresolved endpoints with evidence; loader alone writes |
+| Analyst evidence and temporal views | API query/entity serializers project; desktop API models and views consume |
+| Schema evolution | Migration and versioned replay update storage, caches and API/desktop together |
+
 ### 15.3 Call Traces
+
+**Integrated agency/coded-source trace:** operator HTTP job → existing worker
+CLI/run context → adapter fetch → archive → normalize → deterministic payload
+validation/load independently of document gate/cache → qualified extraction →
+entity/event resolution → ontology validation/load → durable channel completion
+and counters → API query/evidence projection → desktop network/timeline evidence.
+Corrections preserve old versions; retry/reextract cannot suppress the other
+channel. BE-42 and BE-43/DC-15 must demonstrate this trace.
 
 Each primary path, entry point to committed state. Every callee named here has an owning module in §8 and an invoker in §15.2.
 
 **Trace 1 — `make ingest SOURCE=gisco_nuts`**
 ```
-Makefile → worker container → cli/main.py → cli/ingest.py::ingest_source
+Makefile → authenticated remote CLI → operator API/queue → worker → cli/main.py → cli/ingest.py::ingest_source
   composition.build_run_context(settings, needs_inference=False)
     load_settings · load_ontology · GraphDriver · build_default_registry
     ArchiveStore · provision(+ downgrade guard)
@@ -1280,17 +1387,17 @@ Makefile → worker container → cli/main.py → cli/ingest.py::ingest_source
     close :IngestionRun → release lock
 ```
 
-**Trace 2 — `make backfill SOURCE=feeds DAYS=90 BUDGET=3.00`**
+**Trace 2 — `make backfill SOURCE=feeds DAYS=90`**
 ```
 cli/backfill.py
-  composition.build_run_context(needs_inference=True, budget_eur=3.00)
-    + Governor(envelope) + OpenRouterClient + OpenRouterExtractor + GateContext
+  composition.build_run_context(needs_inference=True)
+    + CostRecorder + OpenRouterClient + OpenRouterExtractor + GateContext
   execute_run
     adapter.fetch → archive → normalize → DocumentPayload
     pipeline/gate.py::gate_document(doc, ctx.gate)
       cache.get → spaCy NER → select_passages
     extractor.extract → ExtractionResult(list[ExtractedAssertion])
-      OpenRouterClient: governor.check → call → ledger.record → governor.commit
+      OpenRouterClient: call → CostRecorder.commit → durable ledger → process total
       map passage offsets → document offsets; reject EVIDENCE_SPAN_MISMATCH
     resolution/resolve.py::resolve_assertions(extracted, ctx, doc)
       create :Mention per endpoint
@@ -1306,7 +1413,7 @@ api/deps.py: GraphDriver(read mode) · build_nlq_context
 routers/query.py::query_nl
   nlq/service.py::answer(question, NlqContext, execute)
     generate → OpenRouterClient.complete
-      governor.check → call → ledger.record (:CostLedgerEntry write, §7.3) → commit
+      call → CostRecorder.commit → ledger (:CostLedgerEntry write, §7.3)
     validate.validate(cypher, ontology, settings)   [+1 regeneration on failure]
     plan.explain_gate(driver, cypher)
     driver.read(cypher)                              [read session mode]
@@ -1318,7 +1425,7 @@ routers/query.py::query_nl
 **Trace 4 — `make evaluate`**
 ```
 cli/evaluate.py
-  composition.build_run_context(needs_inference=True, budget_eur=<envelope>)
+  composition.build_run_context(needs_inference=True)
   load gold_set.jsonl → validate against gold_set.schema.json
   for each item: extractor.extract → list[ExtractedAssertion]
   compare on (subject.surface_normalized, relation, object.surface_normalized)
@@ -1337,11 +1444,11 @@ cli/evaluate.py
 | Requirement | Scope items | Verified by |
 |---|---|---|
 | FR-01 structured ingestion, no inference | S-05, S-06 | AC-04 |
-| FR-02 DE/EN unstructured extraction | S-07, S-09, S-10 | AC-04, AC-13 |
+| FR-02 DE/EN agency/news extraction | S-07, S-09, S-10 | AC-04, AC-13; BE-43/DC-15 acceptance |
 | FR-03 ontology mapping and rejection | S-02, S-14 | AC-02, AC-07 |
 | FR-04 entity resolution, reversible | S-13 | AC-16, AC-17, AC-19 |
 | FR-05 bitemporal assertions | S-14 | AC-06, AC-07 |
-| FR-06 provenance on every assertion | S-14 | AC-07 |
+| FR-06 qualified claims and versioned evidence | S-07, S-10, S-13, S-14, S-19 | AC-07; BE-42/EXTRACT acceptance |
 | FR-07 contradictions retained | S-14 | AC-06 |
 | FR-08 NL querying with validation | S-16 | AC-20, AC-21 |
 | FR-09 ontology-generated builder | S-18 | AC-24 |
@@ -1350,30 +1457,23 @@ cli/evaluate.py
 | FR-12 three synchronized views | S-19 | AC-29 |
 | FR-13 editable generated Cypher | S-19 | AC-26 |
 | FR-14 query persistence | S-20 | AC-30 |
-| FR-15 metering and ceiling | S-12 | AC-14, AC-15 |
+| FR-15 usage accounting and workload limits | S-12, S-21 | TESTING_PHASE; BE-43/DC-15 acceptance |
 | FR-16 deterministic gating | S-09 | AC-11, AC-12 |
 | FR-17 extraction cache | S-11 | AC-12, AC-33 |
-| FR-18 manual ingestion | S-21 | AC-05 |
+| FR-18 bounded operator jobs, external scheduling | S-21, S-24 | TESTING_PHASE; BE-43/DC-15 acceptance |
 | FR-19 gold-set gate | S-22 | AC-31 |
 
-### 16.2 Checklist
+### 16.2 Status and acceptance boundaries
 
-| Check | Status |
-|---|---|
-| Every FR-01…FR-19 realized by ≥1 scope item | Confirmed by §16.1 |
-| Every NFR-01…NFR-09 addressed | Confirmed; NFR-09 by §15 |
-| Every constraint C-01…C-07 honored, with no later section assuming an excluded capability | Confirmed. C-01 → §7.1–7.3, §4.3, §13.3; C-07 → §5.9, §8.15 |
-| Every non-goal NG-01…NG-08 respected | Confirmed |
-| Every design decision DD-01…DD-21 reflected in a module or configuration | Confirmed |
-| All six §11.2 open questions resolved | Confirmed |
-| **Every cross-module seam has a named constructor or invoker** | Confirmed by §15.2, derived from §15.3 |
-| **Every type named in a signature is defined** | Confirmed; §5.5 and §8.15. Verified by `tools/check_docs.py` |
-| **Every specified module has ≥1 specified caller** | Confirmed by §15.3 |
-| **Cross-process state has a specified residence** | Confirmed; §5.9 |
-| No placeholders or TBDs | Confirmed. Model identifiers are the only absent values; their absence is a specified two-stage procedure |
-| No invented third-party services | Confirmed |
-| No production implementation code | Confirmed |
+Requirements FR-01–FR-19 and constraints C-01–C-07 remain traceable above.
+AC-01–AC-44 are requirements, not a current blanket pass claim. Retired monetary,
+Dash and publication semantics have been reconciled under D-75/D-77. The package
+matrices in BACKEND_ROADMAP.md and DESKTOP_ROADMAP.md distinguish merged artifacts,
+historical evidence, open repairs and unmeasured obligations. API/desktop qualified
+claim responses, event matching, per-channel checkpoints and work limits remain
+unimplemented, with the next packages and acceptance specified there.
 
----
-
-Review this technical specification. I will revise on request.
+NFR memory/storage/latency goals, provider access, live ingestion, paid-model
+quality and production revision/recovery are not certified by mocked tests or
+this document check. No current 100% coverage claim is made. New behavior must
+satisfy the integrated traces and acceptance gates before its package is closed.

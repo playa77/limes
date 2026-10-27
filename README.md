@@ -4,8 +4,9 @@
 
 **An evidence-backed world model for German and European policy research.**
 
-LIMES connects official registries and extracted text in a shared, queryable model
-of entities, relationships and change. It brings AI-assisted extraction,
+LIMES connects official registries, agency dispatches, curated reporting and coded
+event observations in a shared, queryable model of entities, relationships and
+change. It brings AI-assisted extraction,
 ontology-driven knowledge representation and visual investigation into one
 research platform, turning fragmented public information into a connected view
 that analysts can explore and inspect.
@@ -17,17 +18,22 @@ path into the graph through validated, read-only queries.
 
 ## From public information to connected intelligence
 
-- **Build a shared model.** Official registries and text extraction feed an
+- **Build a shared model.** Registry records and source-attributed news claims feed an
   ontology-driven Neo4j knowledge graph. Entity resolution links records across
   sources so research can follow relationships beyond individual documents.
 - **Investigate in context.** Explore connections through the desktop's network,
   map and timeline views. Use natural language, a visual query builder or Cypher
   to approach the same graph from different research questions.
+- **Follow developments across sources.** Investigate proposals, announcements,
+  denials, agreements and later official confirmation. Attribution, modality,
+  event lifecycle and temporal precision remain visible beside the evidence.
 - **Understand what changed, and when.** Bitemporal assertions distinguish when a
   claim was valid from when it was recorded. Conflicting claims are preserved,
   keeping disagreement and evolving knowledge available for analysis.
 - **Keep the evidence within reach.** Provenance connects claims to their
-  sources, and a content-addressed archive remains the system of record.
+  immutable dispatch versions, text spans or coded export rows. Corrections and
+  syndication retain their lineage; copied reports do not become independent
+  corroboration. A content-addressed archive remains the system of record.
   Hop-level coverage and diagnosis accompany empty results, helping researchers
   assess where evidence may be missing.
 - **Operate through a consistent interface.** Authenticated HTTP connects the
@@ -43,21 +49,11 @@ LIMES is a personal research artifact. Source coverage is uneven and extracted
 claims can be wrong; inspect provenance and hop-level coverage when interpreting
 results. Public-person data has no automatic retention policy.
 
-## Planned: integrated news intelligence
-
-Agency dispatches and news reports will enrich the same LIMES graph as official
-registries, with source evidence, attributed claims and proposed versus completed
-events visible in research views. Extraction belongs inside the existing worker;
-there is no standalone utility or event-ledger application, additional service or
-separate vector database.
-
-This is planned work. Curated RSS/Atom ingestion and shared text extraction exist,
-but dedicated agency integration and qualified claim/event semantics are pending.
-Investigation confirmed defects in GDELT's export format, mixed-record routing and
-source granularity; the documented backfill command is not evidence of working
-live GDELT ingestion. Repair comes first. See the [roadmap](docs/ROADMAP.md),
-[target architecture](docs/NEWS_ARCHITECTURE.md) and
-[review findings](docs/NEWS_REVIEW.md) for acceptance, evidence and open blockers.
+The design, specifications and [two delivery sequences](docs/ROADMAP.md) describe
+one integrated product. Read this page as the complete product overview; consult
+the [documentation map](docs/INDEX.md), backend/desktop package registers and
+[verification status](docs/TESTING_PHASE.md) for implementation and acceptance
+status. Those records distinguish current artifacts, evidence gaps and open repairs.
 
 ## Architecture and runtime
 
@@ -77,11 +73,15 @@ live GDELT ingestion. Repair comes first. See the [roadmap](docs/ROADMAP.md),
 | Backup control | Private authenticated HTTP |
 | Deployment | Recorded immutable image IDs |
 
-The current design is in [ARCHITECTURE](docs/ARCHITECTURE.md), configuration and
-remote usage in [OPERATIONS](docs/OPERATIONS.md), and verification/requirement
-status in [TESTING_PHASE](docs/TESTING_PHASE.md). These generated documents are
-authoritative for runtime, access and deployment. Original large specifications
-remain historical design references for unchanged graph contracts.
+The [core design](docs/LIMES_Design_Document_v2.0.0.md) and
+[technical specification](docs/LIMES_Technical_Specification_v2.1.0.md) define the
+system, including integrated agency/news intelligence.
+[Desktop architecture](docs/LIMES_Desktop_Client_Architecture_v1.0.0.md) defines
+its API consumer. Shared adapters, archive, extraction, entity/event
+resolution and ontology validation feed one Neo4j graph with native vectors.
+The worker owns processing; the desktop owns visual investigation through the API.
+[Runtime architecture](docs/ARCHITECTURE.md), [operations](docs/OPERATIONS.md) and
+[verification](docs/TESTING_PHASE.md) document the current executable contract.
 
 Stack administration and ordinary use are separate. Administrators build/start
 containers; consumers need only an API credential and HTTP client. Operators use a
@@ -149,5 +149,6 @@ QT_QPA_PLATFORM=offscreen venv/bin/python -m pytest desktop/tests/integration -q
 
 Graph tests own disposable databases and clean them up. Acceptance runs separately
 because of its nested plugin. GitHub Actions runs these suites and retains JUnit
-results. Read AGENTS.md, the newest five DECISIONS entries, and OPEN_ISSUES.md on
+results. Read AGENTS.md, the documentation index, both package registers, the newest five
+DECISIONS entries, and OPEN_ISSUES.md on
 re-entry. Never treat cached remote refs as a live Git baseline.

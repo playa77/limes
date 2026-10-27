@@ -5,6 +5,37 @@ reversibility: **R1** reversible in under an hour, **R2** bounded recoverable
 cost, **R3** one-way door. Written when each decision is made, latest first.
 Nothing here is a status report; unlogged decisions are unmade decisions.
 
+## 2026-10-27 — D-79 (R2) — Reconcile the repository around two explicit sequences
+
+The user rejected news as a post-project addendum, required the finished-product
+README, challenged blanket package completion, and made full documentation/status
+repair the top priority before further runtime implementation. BE-41 is the
+complete parent delivery on codex/core-news-design, based on main 3f1effd.
+
+Backend IDs use BE-01–40 with the historical inserted BE-25a; desktop uses DC-01–13.
+Namespaced IDs preserve the two actual histories without pretending the desktop
+was part of the original backend sequence. New work extends each track's sequence.
+BACKEND_ROADMAP.md and DESKTOP_ROADMAP.md are the only authoritative registers;
+ROADMAP.md coordinates paired deliveries and the active acceptance checklist.
+Original roadmap/desktop plan are archived and clearly inactive. One merged commit
+is evidence of implementation, not proof that all acceptance obligations are met.
+
+Core design and technical specification incorporate agency/news/coded observations,
+qualified claims and evidence directly in their existing component/data-flow/model/
+API/test sections. Desktop requirements/architecture consume the same semantics.
+NEWS_ARCHITECTURE.md is removed after consolidation; NEWS_REVIEW.md remains an
+investigation record. BE-42 repairs ingestion next; BE-43/DC-15 and BE-44/DC-16
+are integrated parent deliveries after real dependencies, not after unrelated
+backlogs. Provider/corpus and map-policy decisions remain explicit obligations.
+
+Current auth/accounting/config/backup/topology facts replace retired unauthenticated,
+Docker-backup, monetary-governor and Dash-service instructions throughout active
+specifications. README presents the intended complete product; runtime/readiness
+status belongs in the registers, VERIFICATION and OPEN_ISSUES current index.
+OI-16 archival organization is decided; runtime defects, external evidence and
+OI-23/24 process/measurement gaps are not closed by documentation. Runtime coding
+is paused until BE-41 acceptance. No deployment, paid run or publication is implied.
+
 ## 2026-10-27 — D-78 (R2) — Integrate news intelligence within LIMES
 
 The user requested evaluation of the attached ChatGPT suggestions, investigation
