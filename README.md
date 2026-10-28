@@ -4,9 +4,10 @@
 
 **An evidence-backed world model for German and European policy research.**
 
-LIMES connects official registries, agency dispatches, curated reporting and coded
-event observations in a shared, queryable model of entities, relationships and
-change. It brings AI-assisted extraction,
+LIMES connects official registries, Wikipedia entity context, Yahoo Finance company
+and shareholder information, agency dispatches, curated reporting and coded event
+observations in a shared, queryable model of entities, relationships and change.
+It brings AI-assisted extraction,
 ontology-driven knowledge representation and visual investigation into one
 research platform, turning fragmented public information into a connected view
 that analysts can explore and inspect.
@@ -54,6 +55,11 @@ one integrated product. Read this page as the complete product overview; consult
 the [documentation map](docs/INDEX.md), backend/desktop package registers and
 [verification status](docs/TESTING_PHASE.md) for implementation and acceptance
 status. Those records distinguish current artifacts, evidence gaps and open repairs.
+
+Wikipedia context and Yahoo Finance governance, shareholder structure and
+financial-report metadata are planned in BE-46, including their supporting data
+model and API changes. Scope remains German and European policy; comprehensive
+EU-27 coverage is deferred to a possible later version.
 
 ## Architecture and runtime
 

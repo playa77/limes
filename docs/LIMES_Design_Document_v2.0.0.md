@@ -14,7 +14,7 @@
 |---|---|
 | Document | LIMES — Design Document (Document 1 of 3) |
 | Version | 2.0.0 |
-| Date | 2026-07-28; reconciled 2026-10-27 |
+| Date | 2026-07-28; reconciled 2026-10-28 |
 | Status | Maintained core specification; implementation status in ROADMAP.md |
 | Ontology version | 1.0.0 |
 | Supersedes | v1.0.0 (2026-07-23), withdrawn |
@@ -53,6 +53,13 @@ Design decisions in §10 carry a reversibility tag:
 LIMES is a single-operator, ontology-driven research platform for German and European policy and geostrategic analysis. Official registries, agency dispatches, curated German- and English-language reporting and GDELT coded observations feed one evidence-backed world model. Shared entity and event resolution connects institutional relationships with proposals, announcements, denials and later documented outcomes. A native desktop workspace provides network, geographic and temporal investigation through the authenticated API.
 
 It follows the data-fusion and link-analysis paradigm, not the business-intelligence one. It does not count transactions. It records that a specific corporation was a subsidiary of a specific parent during a specific interval, according to a specific source, with a specific confidence — and lets the operator traverse outward from there.
+
+The scope remains **German and European policy**, including relevant companies
+and people outside Germany. Comprehensive, comparable coverage of all 27 member
+states is deferred to a possible later version. EU-level sources do not establish
+complete national coverage; Germany-specific acquisition and DE/EN language limits
+remain explicit. Wikipedia context and Yahoo Finance enrichment are accepted
+planned inputs (BE-46), not currently shipped adapters.
 
 ### 1.2 Goals
 
@@ -101,6 +108,8 @@ It follows the data-fusion and link-analysis paradigm, not the business-intellig
 | FR-17 | Cache extraction results keyed by content hash, prompt version, schema version, model identifier. | CA |
 | FR-18 | Submit ingestion through authenticated operator jobs; external timers may submit the same bounded jobs. No internal scheduler service. | OR |
 | FR-19 | Evaluate extraction quality against a hand-labeled gold set; gate version changes on non-regression. | CA |
+| FR-20 | Acquire revision-linked DE/EN Wikipedia entity context through the existing archive and document pipeline (BE-46). | OR |
+| FR-21 | Enrich relevant listed companies from Yahoo Finance with available governance, shareholder structure and financial-report metadata, preserving dates, identity and missing-data semantics (BE-46). | OR |
 
 ### 2.2 Non-Functional Requirements
 
@@ -159,7 +168,7 @@ components access the graph only through the authenticated API.
 
 ```mermaid
 flowchart TD
-    S[Registries / agency dispatches / RSS / GDELT] --> A[Source adapters]
+    S[Registries / agency dispatches / RSS / GDELT / Wikipedia / Yahoo Finance] --> A[Source adapters]
     A --> R[Content-addressed archive]
     R --> N[Normalization with source and version identity]
     N --> C[Structured and coded observations]
@@ -188,6 +197,11 @@ retry and reextract ownership; partial failure must neither hide a channel nor
 retract the other's assertions. Parsing confidence does not establish factual
 truth. Source dependence and disagreement remain available to queries.
 
+Wikipedia supplies secondary reference context, with article revision identity.
+Yahoo Finance supplies secondary company observations. Neither is an official
+registry or independent corroboration of underlying reused reports. Their planned
+integration is specified in §3.6; BE-46 owns implementation and acceptance.
+
 ### 3.3 Container Topology
 
 | Service | Purpose | Publication |
@@ -204,13 +218,80 @@ uses private authenticated HTTP. ARCHITECTURE and OPERATIONS give current settin
 
 Composition root builds the run context → adapter fetches → raw payload archived under its content hash → normalizer maps records to ontology-typed assertions carrying fully-identified endpoints → loader validates against the ontology, materializes entity nodes, merges relationships bitemporally.
 
-No paid call at any stage. Identity comes from deterministic keys computed by the adapter; no resolution is required.
+For fully identified registry records, no paid call or entity resolution is
+required: identity comes from deterministic keys computed by the adapter. BE-46
+company observations carrying only holder/officer names require the resolver
+before loading; deterministic parsing itself never needs paid inference.
 
 ### 3.5 Data Flow: Unstructured Source
 
 Adapter fetches → document archived → normalizer preserves dispatch/version identity, text, language, publication/update time and source lineage → gate discards documents already extracted under the current version triple, runs local spaCy NER, discards passages below the mention threshold → surviving passages batched into schema-constrained extraction calls with usage accounting and explicit workload limits → extractor returns **pre-resolution assertions carrying mentions, not identified entities** → resolver converts mentions to identified endpoints, minting new identities where none match → loader validates, materializes, merges.
 
 The distinction between pre-resolution and resolved assertions is load-bearing and is why §5.5 defines two types. The extractor cannot assign identity; resolution is what does.
+
+---
+
+### 3.6 Entity context and company enrichment — BE-46 target
+
+Two adapters join the existing worker, registry, archive, resolver, ontology,
+loader and authenticated API. They introduce no service or separate data store.
+Acquisition is bounded by explicit entity/company selections, page sizes and
+request limits, with retry/backoff and manual replay of failed jobs. Fetches run
+as operator jobs, never as hidden network work in a read-only entity query.
+
+**Wikipedia (`wikipedia`).** Resolve a selected entity through a verified Wikidata
+QID and language sitelink where available; ambiguous names, missing pages and
+missing sitelinks remain explicit misses. Extend the existing Wikidata identity
+contract where needed, including Corporation QIDs, through a reviewed ontology
+migration; a ticker or article title alone cannot merge entities. Retrieve DE/EN
+article text through MediaWiki, retaining page ID, revision ID/time, language,
+canonical and revision URLs, attribution/license and retrieval time. Archive the
+payload and bind each text version to its revision. Article context remains
+available even when the extraction gate emits no relationships. Any extracted
+claims use shared extraction, resolution and provenance with exact revision/span
+evidence; article text is never promoted directly into authoritative facts.
+
+**Yahoo Finance (`yahoo_finance`).** Use Yahoo Finance as the selected provider,
+with a pinned, replaceable `yfinance` transport inside the adapter. Map the company
+separately from its securities/listings: exchange-qualified ticker, provider
+identifier, ISIN/LEI where supplied and verified links to canonical entities.
+Multiple listings must not create duplicate companies or conflate share classes.
+Unresolved company, holder and person matches remain candidates rather than
+forced merges. Deterministic parsing is free of paid inference; unresolved names
+use the existing resolver before the loader writes observations.
+
+Retrieve available company profile, officers and board membership/structure,
+major/institutional/fund holdings, ownership summaries, earnings dates and report
+metadata. Preserve executive versus director/supervisory roles as supplied; an
+executive roster cannot establish a complete board or inferred committee structure.
+Financial-report metadata includes fiscal period, report kind, publication date
+and source link when supplied; an estimated earnings-calendar date is not an
+actual report publication. This does not expand into economic time-series analysis.
+
+**Shareholder structure** includes named holder-to-issuer holdings with shares,
+percentage, value/currency, security/share class and provider reporting/as-of date
+where supplied. Aggregate insider/institutional/free-float figures are separate
+observations, not named-holder edges. Retain percentage basis (shares, float or
+voting rights) and units; unknown basis stays unknown. Do not sum overlapping fund
+and institutional lists, assume the displayed holders exhaust ownership, infer
+ultimate beneficial ownership or control, or confuse a fund manager with a fund.
+Preserve direct versus indirect interests only when the source distinguishes them.
+
+Version the ontology, assertion/property model, loader, resolver keys and API
+contracts together: today's coarse DIRECTOR_OF and OWNS_STAKE_IN edges cannot
+alone retain these roles, quantities and dates. Validate available upstream fields
+before freezing exact schema names. Distinguish source publication, reporting/as-of,
+retrieval and graph recording times; unknown role start dates stay unknown. Snapshot
+disappearance, a failed request or a partial response never proves a resignation,
+sale or zero holding. Reconcile snapshots only under an explicit same-source,
+same-section completeness rule, preserving prior evidence and contradictions.
+
+Both adapters retain source-specific trust and provenance; they do not inherit
+Wikidata's or official registries' trust ranks. Choose and document their ranks
+before implementation acceptance. API evidence/coverage responses expose available,
+missing, unsupported, stale and failed sections plus scope and dates; graph-wide
+counts are not measures of country or shareholder completeness. Existing desktop
+access remains through the API; parity/consumer compatibility is part of BE-46.
 
 ---
 
@@ -667,12 +748,16 @@ No monitoring stack. The observable surfaces are the run log, the cost ledger, p
 
 ### 11.3 Known Coverage Limitations
 
-Properties of available data, not defects. The coverage report exists to surface them at the point of use.
+These are source and acquisition limits. The existing coverage report exposes
+sources, counts and refresh times, not EU-27 completeness. BE-46 adds explicit
+section availability for its new inputs; it does not certify geographic completeness.
 
 1. **Supplier relationships have no structured source.** GLEIF gives ownership, TED gives buyer-to-prime-contractor; neither gives supply chains. Relevant supplier assertions come from news extraction only — sparse, low-confidence, biased toward what was reported.
 2. **Current German directorships are structurally weak.** OffeneRegister is stale, Bundesanzeiger is awkward at scale, Wikidata covers only notable executives.
-3. **OpenStreetMap infrastructure coverage is uneven** in completeness and tagging discipline.
+3. **OpenStreetMap acquisition is restricted to the German bounding box**, with uneven completeness and tagging discipline inside it.
+4. **National acquisition is Germany-centred.** Other member states do not have equivalent parliamentary, legislation and officer adapters. This is within the confirmed current scope, not complete EU coverage.
+5. **Wikipedia and Yahoo Finance are secondary and incomplete.** Wikipedia is limited to available DE/EN articles; Yahoo Finance principally covers listed companies and may omit board roles, holders and report metadata. BE-46 must expose those gaps, including unlisted/unsupported companies, instead of interpreting them as negative facts.
 
 ### 11.4 Deferred
 
-Person-scope predicates and pseudonymization, polygon-capable geography and multi-user accounts remain deferred. External timer submission is in core news scope; an internal scheduler is not. Provider/corpus selection and schema migration are explicit BE-43 prerequisites, not a post-project addendum.
+Comprehensive EU-27 national and multilingual coverage is deferred to a possible later version. Person-scope predicates and pseudonymization, polygon-capable geography and multi-user accounts remain deferred. External timer submission is in core news scope; an internal scheduler is not. Provider/corpus selection and schema migration are explicit BE-43 prerequisites, not a post-project addendum.

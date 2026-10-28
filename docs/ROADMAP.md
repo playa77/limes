@@ -7,7 +7,30 @@ The [documentation index](INDEX.md) identifies each document's authority; the
 Historical bare WP numbers must be qualified as backend or desktop. Old counts,
 unticked archived plans and merged commits are never substituted for acceptance.
 
-## Active delivery: BE-41 — repository specification and status reconciliation
+## Current documentation delivery — BE-46 planning (2026-10-28)
+
+Selected scope: document Wikipedia entity context and Yahoo Finance company,
+governance, shareholder structure and earnings/report metadata. PR branch `codex/entity-enrichment-design`;
+base `b9d940a`, verified by the live-fetch baseline checker before publication.
+The user subsequently requested a PR for this documentation delivery; runtime
+implementation remains unstarted. Prerequisites are the user's approved scope/provider,
+current source inspection and existing architecture/package contracts.
+
+Documentation acceptance:
+
+- [x] Preserve German and European policy scope; defer comprehensive EU-27 coverage.
+- [x] Integrate both adapters and shareholder semantics into core design and
+  technical specification, including identity, provenance, persistence and API.
+- [x] Define BE-46 dependencies, prerequisites and full implementation acceptance;
+  mark both adapters planned, with source availability and completeness limits.
+- [x] Keep generated runtime architecture, overview and document navigation aligned;
+  record D-80 and validate documentation links, generation and existing guards.
+
+This is the requested planning/documentation step, not BE-46 implementation
+acceptance. The full implementation checklist remains unchecked in the backend
+register. BE-41 was merged in PR #7; BE-42 remains the next runtime repair.
+
+## Historical delivery: BE-41 — repository specification and status reconciliation
 
 Selected 2026-10-27 on `codex/core-news-design`, based on live main `3f1effd`.
 This supersedes WP-CORE-DESIGN and the earlier documentation-only framing.
@@ -36,7 +59,7 @@ Acceptance checklist:
 
 | Track | Implemented history | Current position | Next runtime delivery |
 |---|---|---|---|
-| Backend | BE-01–40 plus BE-25a have implementation commits in main; changes/defects/qualification differ per row | BE-41 documentation acceptance passed; PR candidate prepared; merge pending; no all-packages-complete claim | BE-42 repairs GDELT/mixed evidence, then BE-43 agency/qualified claims |
+| Backend | BE-01–40 plus BE-25a have implementation commits in main; changes/defects/qualification differ per row | BE-41 merged in PR #7 (`b9d940a`); BE-46 enrichment planned; no all-packages-complete claim | BE-42 repairs GDELT/mixed evidence, then BE-43 agency/qualified claims |
 | Desktop | DC-01–13 merged; later auth/backup/lifecycle changes supersede old behavior | Acceptance gaps OI-05/10/11/18 and manual/performance evidence remain | DC-14 correctness/qualification; DC-15 qualified evidence with BE-43 |
 
 No further runtime coding begins before BE-41's documentation acceptance passes.
@@ -50,16 +73,23 @@ flowchart LR
     B[Existing backend implementations with explicit gaps] --> R[BE-42 ingestion repair]
     A[BE-41 documentation reconciliation] --> R
     A --> D[DC-14 desktop correctness and qualification]
+    R --> E[BE-46 Wikipedia and Yahoo Finance enrichment]
     R --> N[BE-43 + DC-15 integrated news]
     N --> X[BE-44 + DC-16 cross-source investigation]
     X --> Q[BE-45 candidate and operator qualification]
     D --> Q
+    E --> Q
 ```
 
 Provider/corpus and map-policy decisions are named blockers in their own packages,
 not reasons to pretend earlier packages were accepted or defer news to an
 unspecified after-project phase. Release evidence BE-45 can be collected for a
 specific candidate earlier; it is not a prerequisite to starting BE-42.
+
+BE-46 adds both enrichment adapters and the supporting company/shareholder model
+as defined in the backend register. It can follow BE-42 independently of agency
+access and BE-43/44, with schema compatibility reconciled against whichever lands
+first. BE-45 qualifies the selected release candidate, including BE-46 if present.
 
 ## Review and handoff rules
 

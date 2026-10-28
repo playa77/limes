@@ -86,3 +86,24 @@ They are line additions/deletions, not engineering effort or acceptance metrics.
 | Generated documents | 38 | 31 | 7 |
 | Handwritten documentation | 1394 | 1283 | 111 |
 | Archived original plans with notices | 3445 | 0 | 3445 |
+
+
+## 2026-10-28 — BE-46 planning documentation verification
+
+Documentation-only update prepared on `work`, published for review from
+`codex/entity-enrichment-design` at base `b9d940a`. GitHub main was first confirmed
+through the connector. The initial sandboxed baseline fetch could not reach the
+proxy; the network-enabled `python3 tools/check_git_baseline.py` passed against
+`b9d940a` before publication. The user subsequently authorized a PR. No runtime
+implementation occurred. D-80 records the approved scope/provider;
+ROADMAP records the documentation checklist, while BE-46 implementation acceptance
+remains planned and unchecked in BACKEND_ROADMAP.
+
+Validation for this update: `python3 tools/check_docs.py docs/` (C1–C9),
+`python3 tools/generate_runtime_docs.py --check`, the existing
+`tests/unit/test_document_organization.py` and `tests/unit/test_runtime_docs.py`
+suites (8 passed), renderer lint and `git diff --check`. No new tests, runtime
+adapters, ontology migration, provider data fixtures or live ingestion were added.
+These checks establish document consistency, not Yahoo Finance or Wikipedia live
+availability, completeness or adapter acceptance. Existing release/operator gaps
+above remain open.

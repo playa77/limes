@@ -5,6 +5,35 @@ reversibility: **R1** reversible in under an hour, **R2** bounded recoverable
 cost, **R3** one-way door. Written when each decision is made, latest first.
 Nothing here is a status report; unlogged decisions are unmade decisions.
 
+## 2026-10-28 — D-80 (R2) — Wikipedia and Yahoo Finance enrichment within current scope
+
+The user confirmed German and European policy as the current scope, deferred
+comprehensive EU coverage to a possible later version, selected Yahoo Finance and
+requested architecture/backend-roadmap integration of both proposed adapters,
+including shareholder structure. This turn authorizes documentation changes.
+
+Plan one full backend package BE-46: Wikipedia revision-linked DE/EN entity
+context, Yahoo Finance available company/governance/shareholder/earnings-report
+metadata and supporting identity, ontology, persistence and API migrations.
+Reuse the existing worker, archive, resolver, loader, graph and authenticated API.
+Extend Wikidata identity safely rather than treating the existing QID/alias lookup
+as Wikipedia content. Keep company, security and listing identities distinct.
+
+Preserve named holdings separately from aggregate ratios, share quantities and
+percentage basis, class/currency and as-of dates where supplied. Overlapping holder
+lists cannot be added into a complete cap table. Officers are not a complete board;
+missing rows do not establish zero holdings, disposal or resignation. Secondary
+source provenance and uncertain identity remain visible alongside registry data.
+
+BE-46 follows BE-42's mixed-channel repair without making agency procurement,
+BE-43/44 or production qualification prerequisites. Its schema changes must remain
+compatible with whichever news changes land first. No comprehensive EU-27 promise,
+new service or standalone finance application is added. Full implementation
+acceptance remains planned in BACKEND_ROADMAP; runtime, production data and provider
+access are unchanged by this documentation delivery. The user subsequently
+requested PR publication of this session's documentation work; implementation and
+deployment remain outside that request.
+
 ## 2026-10-27 — D-79 (R2) — Reconcile the repository around two explicit sequences
 
 The user rejected news as a post-project addendum, required the finished-product

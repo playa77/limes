@@ -105,3 +105,25 @@ packages with prerequisites and acceptance. BE-42 repairs ingestion next;
 BE-43/DC-15 delivers qualified news, followed by BE-44/DC-16 cross-source analysis.
 BE-41 reconciles the documentation baseline. These target contracts do not alter
 the shipped runtime table or relax current extraction safeguards.
+
+## Entity and company enrichment: planned BE-46
+
+The current registry includes Wikidata identity enrichment, GLEIF corporate
+relationships and stale German OffeneRegister officers. It has no Wikipedia or
+Yahoo Finance adapter. Current ownership edges do not retain holding quantities,
+and executive/director roles are coarse.
+
+The accepted target adds revision-linked DE/EN Wikipedia context and Yahoo Finance
+company governance, shareholder structure and earnings/report metadata through the
+existing worker/archive/resolver/loader/API. Named holdings and aggregate ownership
+ratios remain distinct; quantities, percentage basis, share classes, roles and
+as-of dates require versioned ontology/persistence/API changes. Missing provider
+sections are explicit gaps, never zero holdings or a complete board. Consumer reads
+do not trigger upstream fetches. Yahoo Finance is the selected provider; exact
+available fields, trust ranks and access terms are qualified during implementation.
+
+[Core design §3.6](LIMES_Design_Document_v2.0.0.md),
+[technical specification §8.5.3](LIMES_Technical_Specification_v2.1.0.md) and
+[BE-46](BACKEND_ROADMAP.md) define semantics and acceptance. German and European
+policy remains the scope; comprehensive EU-27 coverage is deferred. These are
+planned capabilities, not additions to the shipped runtime or live data coverage.
