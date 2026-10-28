@@ -1,6 +1,6 @@
 # Backend work-package roadmap
 
-Reviewed 2026-10-27 against live main `3f1effd`. Canonical prefix **BE-**;
+Updated 2026-10-28 against live GitHub main `b9d940a` (connector-verified). Canonical prefix **BE-**;
 historical backend `WP-NN` maps to `BE-NN`, including the inserted BE-25a.
 The original roadmap defined WP-01–39 plus WP-25a (40 packages); WP-40 was a
 later coverage exercise. The separate desktop sequence is [DC](DESKTOP_ROADMAP.md).
@@ -9,8 +9,7 @@ later coverage exercise. The separate desktop sequence is [DC](DESKTOP_ROADMAP.m
 ## Exact position and status vocabulary
 
 Implementation commits exist in main for **BE-01–40 and BE-25a**. This is not a
-claim that all original acceptance conditions are currently met. BE-41 documentation acceptance has passed for the PR candidate; merge is
-pending; **BE-42 is the next runtime repair**, with
+claim that all original acceptance conditions are currently met. BE-41 documentation was merged in PR #7 (`b9d940a`); **BE-42 is the next runtime repair**, with
 BE-43 news acquisition/qualified claims following its real data-path dependencies.
 News is core scope immediately after the existing implementation, not a phase
 waiting for unrelated historical cleanups to finish.
@@ -91,7 +90,7 @@ ledger entries. Current code, tests and explicit issues govern status.
 
 ### BE-41 — reconcile repository architecture, status and documentation
 
-Documentation acceptance passed; prepared for PR review, merge pending. The checklist and handoff are in ROADMAP. Prerequisites: recovered history,
+Documentation acceptance passed; merged in PR #7 (`b9d940a`). The checklist and handoff are in ROADMAP. Prerequisites: recovered history,
 current source and issue evidence. Delivers both authoritative sequences, reconciled
 core/desktop specifications and a finished-product README. No runtime coding.
 
@@ -166,7 +165,69 @@ evidence gaps; OI-05's missing review trail stays unresolved unless recovered or
 explicitly replaced by an authorized review with bounded claims. No deployment,
 paid run or historical closure is inferred from this documentation repair.
 
+### BE-46 — Wikipedia context and Yahoo Finance company/shareholder enrichment
+
+Status P; provider and scope approved in D-80. Deliver both adapters and supporting
+identity/model/persistence/API changes as one complete backend package. Depends on
+BE-09/18/25–27 and BE-31–35 implementations and BE-42's reliable mixed-channel path.
+It does not require unrelated desktop polish, agency procurement, production
+qualification BE-45 or comprehensive EU-27 coverage. Preserve BE-42 as the next
+runtime repair; BE-46 can follow it without waiting for BE-43/44. If qualified news
+schema changes have landed, integrate with them; otherwise preserve compatibility
+and the existing extraction safeguard without assuming future BE-43 fields.
+
+Prerequisites before coding: representative DE/EN Wikipedia revisions and Yahoo
+Finance payloads for relevant German/European issuers, dual listings/share classes,
+non-German holders and unsupported/unlisted cases; provider field/access/retention
+review; explicit trust ranks and identity mapping; versioned ontology/assertion/
+loader/API migration and source-section completeness rules. Yahoo Finance is the
+selected provider, not an open provider-selection question. Freeze exact model
+names only after checking supplied fields; never invent missing board/holder data.
+
+Acceptance checklist:
+
+- [ ] Register `wikipedia` and `yahoo_finance` through composition and bounded
+  operator jobs; retain all original payloads, idempotent replay, checkpoints,
+  backoff/rate limits and visible partial failures. Consumer reads do not fetch.
+- [ ] Wikipedia retrieves verified DE/EN page revisions with IDs, URLs, dates and
+  attribution/license. Missing/ambiguous pages and redirects are handled explicitly;
+  context remains retrievable without extraction output. Extracted claims use the
+  shared cache/resolver/loader with exact revision/span evidence.
+- [ ] Verified QID/company/security/listing mappings link existing corporations
+  without conflating tickers, share classes or multiple listings. Ambiguous person
+  and holder matches stay unresolved; existing registry identity is preserved.
+- [ ] Yahoo Finance preserves available company profile, executive versus board/
+  supervisory roles and membership/structure without representing executives as a
+  complete board. Source dates and unknown term dates remain distinguishable.
+- [ ] Shareholder structure retains named major/institutional/fund holdings and
+  separate aggregate ownership ratios, with shares, percentages/basis, value/
+  currency, security/share class and as-of dates where supplied. No overlapping-list
+  double counting, inferred control/beneficial ownership or assumed completeness.
+- [ ] Earnings calendars and actual report metadata retain supplied fiscal periods,
+  report kinds, dates, status and URLs. Estimated dates are not published reports;
+  missing/stale/unsupported sections are not zero holdings or evidence of disposal.
+- [ ] Version and migrate ontology, assertion/property persistence, loader and API
+  together. Quantities, roles and field/row provenance survive archive→graph→API,
+  replay and update with both time axes; partial snapshots cannot retract evidence
+  from another section/source. Existing GLEIF/OffeneRegister history remains intact.
+- [ ] Expose source/section availability, freshness, unresolved identity and evidence
+  through authenticated APIs and ontology-generated queries; update desktop mirrors
+  and verify existing evidence views can consume them. No dedicated new desktop
+  dashboard or direct desktop provider access is implied.
+- [ ] Use independently checkable revision/holdings fixtures, missing-field and
+  failure cases plus disposable graph/API round trips. Mock paid calls and providers
+  in automated checks; separately record any bounded live source qualification.
+  No production ingestion, paid evaluation or deployment is authorized by planning.
+
+Core design §3.6 and technical specification §8.5.3 are the authoritative target.
+Package completion includes both adapters and these supporting changes; parser-only
+or one-adapter delivery is not full acceptance. BE-45 qualifies any release
+candidate containing BE-46; it is not a prerequisite for developing this package.
+
 ## Deferred work and revisit triggers
+
+Comprehensive EU-27 national and multilingual coverage is deferred to a possible
+later version. Current scope remains German and European policy.
 
 Multi-user accounts, retention/pseudonymization, polygon processing, internal
 scheduler, alerts and additional vector stores need a measured need and explicit

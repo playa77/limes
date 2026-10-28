@@ -1,3 +1,13 @@
+## 2026-10-28 — Wikipedia and Yahoo Finance enrichment planning (D-80)
+
+- Integrate planned Wikipedia revision-linked entity context and Yahoo Finance
+  company governance, shareholder structure and earnings/report metadata into the
+  core architecture and technical specification.
+- Define BE-46 as one full backend delivery with identity, ontology, loader and API
+  migrations, dated holdings and role semantics, provenance and availability checks.
+- Preserve German and European policy scope; comprehensive EU-27 coverage remains
+  deferred. Both adapters remain unimplemented; no ingestion or deployment occurs.
+
 ## 2026-10-27 — BE-41: repository specification and status reconciliation (D-79)
 
 - Establish separate BE/DC sequences with every historical package, evidence,

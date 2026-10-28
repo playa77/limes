@@ -14,7 +14,7 @@
 |---|---|
 | Document | LIMES — Technical Specification (Document 2 of 3) |
 | Version | 2.1.0 |
-| Date | 2026-08-01; reconciled 2026-10-27 |
+| Date | 2026-08-01; reconciled 2026-10-28 |
 | Status | Maintained implementation contract; acceptance status in both roadmaps |
 | Depends on | LIMES — Design Document v2.0.0 (all sections) |
 | Supersedes | v2.0.0 (amended in §5.2, §5.3, §5.6, §8.3, §13.3, §15.2); v1.0.0 – v1.3.0, all withdrawn |
@@ -93,6 +93,8 @@ Recorded so the same ground is not re-covered. Each is resolved in the section n
 | S-26 | Two-stage model selection |
 | S-27 | Composition root and run-context construction |
 | S-28 | Cross-process reference data |
+| S-29 | Wikipedia revision-linked entity context, DE/EN, shared document processing (planned BE-46) |
+| S-30 | Yahoo Finance governance, shareholder structure and earnings/report metadata; identity, schema/loader/API migration and availability semantics (planned BE-46) |
 
 **Out of scope:** Design Document §2.4 applies. CI already exists. Agency/news processing is core scope; no separate extractor product, event-ledger application or second vector database is included.
 
@@ -827,7 +829,55 @@ Adapters emit records and **write nothing to the graph**.
 | `offeneregister` | Bulk JSON | `Corporation`, `DIRECTOR_OF`, `OWNS_STAKE_IN` | no | 0.30 |
 | `gdelt` | 15-min ZIP containing 61-column TSV | Coded `Event` observations, role/location edges, export/row/report provenance; original report documents only when separately acquired | yes | 0.50 |
 | `feeds` | RSS/Atom per `feeds.yaml` | One source-versioned document per entry | yes | 0.60–0.70 |
+| `wikipedia` (planned BE-46) | MediaWiki API, verified Wikidata sitelinks | Revision-linked entity context and optional evidence-linked extracted claims | Revision-aware refresh, not full history | Source-specific rank set in BE-46 |
+| `yahoo_finance` (planned BE-46) | Yahoo Finance through pinned `yfinance` transport | Company/security identity, available officers/board roles, shareholder structure, earnings/report metadata | Dated snapshots, not reconstructed history | Source-specific rank set in BE-46 |
 | Provider adapter selected in BE-43/DC-15 | Authorized agency feed/API | One archived dispatch version, correction/syndication lineage and source metadata | Provider-dependent | Explicit provider rank |
+
+The two BE-46 rows are target contracts, absent from the current registry.
+Wikipedia must not be confused with the existing enrichment-only Wikidata adapter.
+German and European policy remains the scope; neither new adapter promises
+comprehensive EU-27 coverage. Core design §3.6 defines the enrichment semantics.
+
+#### 8.5.3 BE-46 adapter, identity and persistence contract (planned)
+
+- `wikipedia`: acquire selected DE/EN article revisions through verified entity/page
+  associations. Archive original responses and retain QID, page/revision IDs,
+  language, revision timestamp, retrieval time, URLs and attribution/license.
+  Deduplicate by source/page/language/revision and content; redirect, disambiguation,
+  ambiguous match and missing page cases cannot silently select another entity.
+  Context retrieval survives empty extraction. Shared extraction/cache versions and
+  exact text spans bind claims to the archived revision, not the latest live page.
+- `yahoo_finance`: selected provider is Yahoo Finance. Encapsulate a pinned
+  `yfinance` client; register fetch/normalize with existing composition and jobs.
+  Preserve company versus exchange-qualified listing/security identity. Link LEI,
+  ISIN, QID or provider IDs only when verified and declared in the ontology; names
+  and bare tickers alone cannot force a cross-source merge. Resolve unidentified
+  officers/holders through the existing resolver before loading.
+- Governance observations retain supplied role titles and board/body distinctions,
+  with as-of and term dates independently nullable. Shareholding observations retain
+  holder and issuer, security/share class, shares, percentage and its denominator,
+  value/currency, reporting/as-of date and field/row evidence locator when supplied.
+  Model aggregate ownership ratios separately from named holdings; overlapping
+  institutional/fund lists and multiple listings cannot be summed as independent
+  stakes. Unknown or absent values are not zero; holdings do not establish control.
+- Earnings calendars retain estimated/confirmed status where supplied. Report
+  metadata retains report kind, fiscal period, publication date and URL when
+  available. Never synthesize a published report from a calendar entry, or a
+  resignation/disposal from missing snapshot rows. No historical backfill beyond
+  the provider's actually available observations is promised.
+- Before coding, inspect representative payloads and define versioned ontology,
+  migration, assertion/property, loader, cache and API schemas together. Current
+  EntityEndpoint/Assertion and label/key-only property stamping cannot preserve
+  the proposed enrichment simply by adding a parser. Preserve bitemporal history,
+  source-section identity, field units and unknown dates without overwriting
+  registry evidence. Numeric fields must remain queryable and source-attributed.
+- Operator jobs use bounded selections/pagination, retry/backoff, checkpoints and
+  explicit partial results; no fetch on consumer reads. Review applicable provider
+  access/retention terms and Wikipedia attribution before live qualification.
+  API contracts expose section status, source scope, timestamps, evidence locators
+  and unresolved identity. Keep ontology-generated queries and desktop API mirrors
+  compatible. Tests mock providers and inference; live upstream availability and
+  production ingestion are separate evidence, never inferred from fixtures.
 
 Verified source specifics, adopted from live checks rather than assumed: the NUTS hierarchy file carries no level column, so level derives from `NUTS_ID` length and parent by prefix; the postcode correspondence is at `/v2/pcode/csv/`, not `/postalcodes/`; that file uses mixed single and double quoting requiring explicit quote handling.
 
@@ -1462,10 +1512,12 @@ cli/evaluate.py
 | FR-17 extraction cache | S-11 | AC-12, AC-33 |
 | FR-18 bounded operator jobs, external scheduling | S-21, S-24 | TESTING_PHASE; BE-43/DC-15 acceptance |
 | FR-19 gold-set gate | S-22 | AC-31 |
+| FR-20 Wikipedia entity context | S-29 | §8.5.3; BE-46 revision/evidence acceptance (planned) |
+| FR-21 Yahoo Finance company/shareholder enrichment | S-30 | §8.5.3; BE-46 identity/holdings/API acceptance (planned) |
 
 ### 16.2 Status and acceptance boundaries
 
-Requirements FR-01–FR-19 and constraints C-01–C-07 remain traceable above.
+Requirements FR-01–FR-21 and constraints C-01–C-07 remain traceable above.
 AC-01–AC-44 are requirements, not a current blanket pass claim. Retired monetary,
 Dash and publication semantics have been reconciled under D-75/D-77. The package
 matrices in BACKEND_ROADMAP.md and DESKTOP_ROADMAP.md distinguish merged artifacts,
