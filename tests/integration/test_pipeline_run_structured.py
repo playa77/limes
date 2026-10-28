@@ -227,7 +227,7 @@ def test_source_and_run_nodes_are_durable(ctx, fixture_fetch):
     assert rows[0]["name"] == "GISCO/NUTS"
     assert rows[0]["kind"] == "structured"
     assert rows[0]["run_id"] == record.run_id
-    assert rows[0]["at"] == record.finished_at
+    assert rows[0]["at"] == record.started_at
 
     rows = ctx.driver.read(
         "MATCH (r:IngestionRun {run_id: $run_id}) "

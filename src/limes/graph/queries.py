@@ -83,6 +83,7 @@ def close_interval(relation: str) -> str:
 MATCH (s:Entity {{entity_id: $subject_id}})-[r:{relation}]->(o:Entity {{entity_id: $object_id}})
 WHERE r.valid_to IS NULL
   AND r.source_id = $source_id
+  AND coalesce(r.evidence_channel, 'legacy') = coalesce($evidence_channel, 'legacy')
   AND r.valid_from < $valid_from
 SET r.valid_to = $valid_from
 RETURN count(r) AS closed

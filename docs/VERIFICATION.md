@@ -82,9 +82,9 @@ They are line additions/deletions, not engineering effort or acceptance metrics.
 | Handwritten product implementation | 0 | 0 | 0 |
 | Documentation renderer/checker | 103 | 33 | 70 |
 | Tests/helpers (2 new regression tests) | 33 | 0 | 33 |
-| Fixture data | 0 | 0 | 0 |
-| Generated documents | 38 | 31 | 7 |
-| Handwritten documentation | 1394 | 1283 | 111 |
+| Fixture data | 6 | 3 | 3 |
+| Generated documents | 24 | 16 | 8 |
+| Handwritten documentation | 273 | 20 | 253 |
 | Archived original plans with notices | 3445 | 0 | 3445 |
 
 
@@ -107,3 +107,74 @@ adapters, ontology migration, provider data fixtures or live ingestion were adde
 These checks establish document consistency, not Yahoo Finance or Wikipedia live
 availability, completeness or adapter acceptance. Existing release/operator gaps
 above remain open.
+
+## 2026-10-28 — BE-42 candidate acceptance
+
+Selected package/branch/prerequisites and completed checklist: ROADMAP. Base main
+`b093599d3667` was fetched, fast-forwarded and rechecked before implementation.
+Validation preceded publication; the source/test/tool manifest SHA-256 is
+`b1ae0e751124f1a606a2959bb577b6ed75cb04840d2ce6b55672126e87ebd1d5`.
+It hashes sorted unique repository-relative paths plus NUL, bytes plus NUL for
+existing files returned by `git ls-files -co --exclude-standard src desktop/src
+tests desktop/tests tools ontology docker pyproject.toml uv.lock`. The digest and
+JUnit/logs are retained in ignored work/be42/candidate. Documentation-only status
+updates follow runtime verification; no runtime changes follow the final run.
+
+| Check | Final result |
+|---|---|
+| `unit-final` pytest suite | 808 passed, 136.33s; JUnit `unit-final.xml` |
+| `desktop` pytest suite | 132 passed, 3.60s; JUnit `desktop.xml` |
+| `integration-final` pytest suite | 169 passed, 273.75s; JUnit `integration-final.xml` |
+| `acceptance` pytest suite | 85 passed, 32.10s; JUnit `acceptance.xml` |
+| `desktop-integration` pytest suite | 2 passed, 26.88s; JUnit `desktop-integration.xml` |
+| Ruff over src/tests/desktop and renderer | Passed |
+| mypy | Passed, 148 source files |
+| Documentation C1–C9, generation drift, whitespace | Passed |
+
+The original full graph run had 166 passes plus one invalid-fixture failure and
+two Docker build metadata failures. Corrected GISCO input and workspace
+BUILDX_CONFIG resolved those causes; four focused checks passed (221.27s), then
+the entire graph suite passed. Backend units were repeated after distinct
+row-limit/report-identity and UTC-offset regression cases were added; this is the final suite count, not a quota.
+Other complete suites passed without changes requiring repetition. Timings are
+validation latency, not implementation effort; no merge/hosted CI latency exists.
+
+Direct evidence mapping: OI-19 official URL/map/ZIP bounds and upstream-to-graph;
+OI-20 mixed gate/cache/empty/load failure/retry/reextract ownership; OI-21 exact
+archive/member/row/report/time metadata through authenticated API; OI-22 independent
+country/geography/fractional-slot expectations and explicit work bounds. The source
+fixture README identifies the upstream URL/hash and GeoNames attribution. Paid
+transports are mocked; all graphs/volumes belong to disposable test fixtures.
+
+BE-42 implementation/local acceptance is complete. Mentions coverage is explicitly
+not required; only export SOURCEURL associations are claimed. Article text remains
+unavailable, never synthesized. Caps are safety bounds, not measured performance.
+No production acquisition, deployment, paid quality, hosted required-check status,
+review-trail recovery or other BE-43/45 evidence is inferred. Implementation verification did not stage, commit, push or open a PR. The user
+subsequently requested PR publication; merge and deployment remain outside scope.
+
+### BE-42 change accounting
+
+Line changes include untracked delivery files and compare with origin/main.
+They distinguish additions/deletions from net growth, not engineering effort.
+The generated country crosswalk is source data, separate from handwritten logic;
+fixture metadata/attribution is documentation. The new tests add 32 parameterized
+cases (25 upstream/format/geography/window, two checkpoints, four mixed-channel
+and one upstream graph/API scenario); suite totals above include pre-existing tests.
+
+| Category | Added | Deleted | Net |
+|---|---:|---:|---:|
+| Handwritten documentation | 273 | 20 | 253 |
+| Handwritten implementation | 259 | 148 | 111 |
+| Generated documents | 24 | 16 | 8 |
+| Tests/helpers | 449 | 33 | 416 |
+| Fixture data | 6 | 3 | 3 |
+| Documentation renderer | 24 | 16 | 8 |
+| Generated country crosswalk | 258 | 0 | 258 |
+
+Publication preparation rechecked live main, documentation guards and staged
+whitespace. The synthetic TSV fixture now has explicit DATEADDED and example.org
+report URLs instead of empty trailing columns, preserving all 61 fields without
+whitespace exceptions. Affected adapter/upstream unit checks and the complete
+AC-04 adapter acceptance file passed again; runtime and the independent upstream
+fixture are unchanged. The source manifest above includes this fixture update.

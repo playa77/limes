@@ -409,6 +409,14 @@ class Provenance(BaseModel):
     evidence_document_id: str | None = None
     evidence_start: int | None = None
     evidence_end: int | None = None
+    evidence_channel: str | None = None
+    evidence_member: str | None = None
+    evidence_row: int | None = None
+    source_event_id: str | None = None
+    source_url: str | None = None
+    report_url: str | None = None
+    source_recorded_at: datetime | None = None
+    article_text_available: bool | None = None
 
 
 class Validity(BaseModel):
@@ -496,6 +504,7 @@ class NormalizedRecord(BaseModel):
     entities: list[EntityEndpoint] = []  # named but in no relationship
     lookup_rows: list[LookupRow] = []
     document: DocumentPayload | None = None
+    errors: int = 0  # partial normalization failures block checkpoint advancement
 
 
 class NerSpan(BaseModel):
@@ -894,7 +903,22 @@ the first boundary at or after `since`, including seconds/microseconds correctly
 SOURCEURL and optional Mentions rows link coded observations to reports; neither
 proves availability of article text. No extraction over fabricated summaries.
 Malformed archives/schema drift fail or produce explicit counted rejections.
-OI-19..OI-22 record current implementation gaps and closure evidence requirements.
+BE-42 implements this export contract. Only export SOURCEURL coverage is claimed;
+Mentions ingestion and independent article retrieval remain BE-43 obligations.
+The adapter is structured-only because exports contain no article text. Maximum
+request: 96 slots, 16 MiB compressed, 128 MiB expanded and 250,000 rows per export.
+Oversized windows fail before acquisition; submit consecutive explicit windows.
+Provenance adds nullable `evidence_channel`, `evidence_member`, `evidence_row`,
+`source_event_id`, `source_url`, `report_url`, `source_recorded_at` and
+`article_text_available` across loader/API/desktop mirrors. Old absent fields stay
+unknown. Row-scoped coded IDs retain separate export/report observations; generic
+mixed structured payload has a separate identity from extracted assertions.
+Document cache never suppresses structured output; partial normalization/extraction
+or validation errors prevent checkpoint advancement and document success caching.
+Successful checkpoints use `until` or the run start (not completion), never regress,
+and reextract cannot retract coded/structured evidence. Retraction follows successful
+replacement loading; a successful empty extraction can retract prior extracted
+assertions. Reextract bypasses document cache hits, including retries.
 
 ### 8.6 Pipeline
 

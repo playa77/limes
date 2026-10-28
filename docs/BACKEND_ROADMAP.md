@@ -1,6 +1,6 @@
 # Backend work-package roadmap
 
-Updated 2026-10-28 against live GitHub main `b9d940a` (connector-verified). Canonical prefix **BE-**;
+Updated 2026-10-28 on candidate based on live-fetched main `b093599d3667`. Canonical prefix **BE-**;
 historical backend `WP-NN` maps to `BE-NN`, including the inserted BE-25a.
 The original roadmap defined WP-01–39 plus WP-25a (40 packages); WP-40 was a
 later coverage exercise. The separate desktop sequence is [DC](DESKTOP_ROADMAP.md).
@@ -9,7 +9,7 @@ later coverage exercise. The separate desktop sequence is [DC](DESKTOP_ROADMAP.m
 ## Exact position and status vocabulary
 
 Implementation commits exist in main for **BE-01–40 and BE-25a**. This is not a
-claim that all original acceptance conditions are currently met. BE-41 documentation was merged in PR #7 (`b9d940a`); **BE-42 is the next runtime repair**, with
+claim that all original acceptance conditions are currently met. BE-41 documentation was merged in PR #7 (`b9d940a`); **BE-42 is implemented and locally verified in the current candidate**, with
 BE-43 news acquisition/qualified claims following its real data-path dependencies.
 News is core scope immediately after the existing implementation, not a phase
 waiting for unrelated historical cleanups to finish.
@@ -53,14 +53,14 @@ ledger entries. Current code, tests and explicit issues govern status.
 | BE-18 | WP-18: Wikidata | `6cf853c` | [wikidata.py](../src/limes/sources/wikidata.py) | [verification source](../tests/unit/test_wikidata_adapter.py) | H — implementation and relevant tests present; no specific open defect found in this audit; full current acceptance remains unclaimed (BE-45).  |
 | BE-19 | WP-19: OSM | `6cf853c` | [osm.py](../src/limes/sources/osm.py) | [verification source](../tests/unit/test_osm_adapter.py) | H — implementation and relevant tests present; no specific open defect found in this audit; full current acceptance remains unclaimed (BE-45).  |
 | BE-20 | WP-20: OffeneRegister | `085e43c` | [offeneregister.py](../src/limes/sources/offeneregister.py) | [verification source](../tests/unit/test_offeneregister_adapter.py) | H — implementation and relevant tests present; no specific open defect found in this audit; full current acceptance remains unclaimed (BE-45).  |
-| BE-21 | WP-21: GDELT/feeds | `cfe157a` | [gdelt.py](../src/limes/sources/gdelt.py) | [verification source](../tests/unit/test_gdelt_adapter.py) | R — OI-19/21/22 format, evidence, geography/window defects; repair in BE-42. |
+| BE-21 | WP-21: GDELT/feeds | `cfe157a` | [gdelt.py](../src/limes/sources/gdelt.py) | [verification source](../tests/unit/test_gdelt_adapter.py) | BE-42 candidate — OI-19/21/22 repaired with upstream/disposable evidence; no production qualification. |
 | BE-22 | WP-22: Extraction | `40d968e` | [schema.py](../src/limes/extraction/schema.py) | [verification source](../tests/unit/test_extraction_schema.py) | H — strict text schema exists; qualified claims absent, BE-43 extends it. |
 | BE-23 | WP-23: Extraction cache | `031c0a0` | [cache.py](../src/limes/extraction/cache.py) | [verification source](../tests/unit/test_extraction_cache.py) | H — implementation and relevant tests present; no specific open defect found in this audit; full current acceptance remains unclaimed (BE-45).  |
 | BE-24 | WP-24: Gate/passages | `73a9a49` | [gate.py](../src/limes/pipeline/gate.py) | [verification source](../tests/unit/test_gate.py) | H — implementation and relevant tests present; no specific open defect found in this audit; full current acceptance remains unclaimed (BE-45).  |
 | BE-25 | WP-25: Entity resolution | `d51f01a` | [resolve.py](../src/limes/resolution/resolve.py) | [verification source](../tests/unit/test_resolution_resolve.py) | H — entity resolution exists; cross-source event matching remains BE-43/44. |
 | BE-25a | WP-25a: Embedding stamp/backfill | `10ef4b6` | [embeddings.py](../src/limes/graph/embeddings.py) | [verification source](../tests/unit/test_graph_embeddings.py) | H — implementation and relevant tests present; no specific open defect found in this audit; full current acceptance remains unclaimed (BE-45).  |
 | BE-26 | WP-26: Composition | `cce322d` | [composition.py](../src/limes/composition.py) | [verification source](../tests/unit/test_composition.py) | H — implementation and relevant tests present; no specific open defect found in this audit; full current acceptance remains unclaimed (BE-45).  |
-| BE-27 | WP-27: Pipeline/window | `cce322d` | [run.py](../src/limes/pipeline/run.py) | [verification source](../tests/unit/test_pipeline_run.py) | R — OI-20 mixed-channel loss; BE-42 must prove both channels survive gating/retry. |
+| BE-27 | WP-27: Pipeline/window | `cce322d` | [run.py](../src/limes/pipeline/run.py) | [verification source](../tests/unit/test_pipeline_run.py) | BE-42 candidate — OI-20 repaired; graph tests prove both channels survive gate/cache/empty/failure/retry and reextract. |
 | BE-28 | WP-28: CLI core | `d8e6370` | [ingest.py](../src/limes/cli/ingest.py) | [verification source](../tests/unit/test_cli_commands.py) | S — operator HTTP jobs/remote CLI replace host-controlled operations (9436372); BE-45 live qualification. |
 | BE-29 | WP-29: Model selection | `d8e6370` | [select_models.py](../src/limes/cli/select_models.py) | [verification source](../tests/unit/test_select_models.py) | H — catalogue/pin/report flow; mocked evaluation exists, live measured models remain BE-45 operator evidence. |
 | BE-30 | WP-30: Evaluation | `d8e6370` | [evaluate.py](../src/limes/cli/evaluate.py) | [verification source](../tests/unit/test_evaluate.py) | H — evaluation harness exists; representative agency corpus and paid quality evidence absent (BE-43/45). |
@@ -72,7 +72,7 @@ ledger entries. Current code, tests and explicit issues govern status.
 | BE-36 | WP-36: Dash UI (superseded as shipped UI) | `48556d3` | [app.py](../src/limes/ui/app.py) | [verification source](../tests/unit/test_ui_components.py) | S — Dash compatibility code retained; native desktop is shipped, not a UI container. |
 | BE-37 | WP-37: Images/Compose | `b38a5df` | [docker-compose.yml](../docker-compose.yml) | [verification source](../tests/integration/test_runtime_stack.py) | S — three non-root services replace old topology (9436372); OI-01/03/09 production evidence missing. |
 | BE-38 | WP-38: Make/bootstrap | `b38a5df` | [Makefile](../Makefile) | [verification source](../tests/unit/test_deployment.py) | S — HTTP operational Make targets and immutable deployment replace bootstrap/shell backup; BE-45 qualification. |
-| BE-39 | WP-39: Acceptance suite | `228d913` | [conftest.py](../tests/acceptance/conftest.py) | [verification source](../tests/acceptance) | H — acceptance suite exists; historical tests are not proof of every current requirement; GDELT escapes fixture coverage. |
+| BE-39 | WP-39: Acceptance suite | `228d913` | [conftest.py](../tests/acceptance/conftest.py) | [verification source](../tests/acceptance) | H — acceptance suite exists; historical tests are not proof of every requirement; BE-42 adds independent GDELT format and graph/API coverage. |
 | BE-40 | WP-40: Later coverage exercise | `d22f486` | [test_loader_logic.py](../tests/unit/test_loader_logic.py) | [verification source](../tests/unit) | H — historical coverage exercise; no current 100% coverage or quota target; no replay required. |
 
 ## Subsequent changes already merged (not a second backend sequence)
@@ -96,7 +96,7 @@ core/desktop specifications and a finished-product README. No runtime coding.
 
 ### BE-42 — correct coded-source ingestion and mixed-channel evidence
 
-Status P. Depends on BE-09/21–27 implementations; specifically repairs their
+Implementation and local acceptance pass in this PR candidate. Depends on BE-09/21–27 implementations; specifically repairs their
 open gaps OI-19..OI-22. No unrelated desktop issue or live production deployment
 is a prerequisite. Deliver the full transport/routing/evidence repair together.
 
@@ -112,6 +112,14 @@ Use independently derived upstream fixtures and a real pipeline-to-disposable-gr
 scenario; run affected/shared checks and one full pre-merge candidate. Close each
 OI only with direct evidence for its defect, not cumulative passes. Prerequisites:
 pinned upstream reference/fixture and mixed-output interface decision before coding.
+
+All BE-42 checklist items in ROADMAP are satisfied. VERIFICATION records the exact
+source fingerprint, full suites, correction and evidence boundaries; OPEN_ISSUES
+closes OI-19..22 directly. Official exports yield coded observations only; article
+text is visibly missing and only SOURCEURL associations are covered. Mentions is
+not required for this repair and remains future acquisition scope. Requests are
+bounded to 96 slots; larger windows must be split. Hosted checks, paid quality and
+production qualification remain BE-45. No publication or deployment is implied.
 
 ### BE-43 — agency acquisition and qualified claim/event pipeline
 
@@ -171,8 +179,8 @@ Status P; provider and scope approved in D-80. Deliver both adapters and support
 identity/model/persistence/API changes as one complete backend package. Depends on
 BE-09/18/25–27 and BE-31–35 implementations and BE-42's reliable mixed-channel path.
 It does not require unrelated desktop polish, agency procurement, production
-qualification BE-45 or comprehensive EU-27 coverage. Preserve BE-42 as the next
-runtime repair; BE-46 can follow it without waiting for BE-43/44. If qualified news
+qualification BE-45 or comprehensive EU-27 coverage. BE-42 is verified in the current candidate; BE-46 can follow it without
+waiting for BE-43/44. If qualified news
 schema changes have landed, integrate with them; otherwise preserve compatibility
 and the existing extraction safeguard without assuming future BE-43 fields.
 

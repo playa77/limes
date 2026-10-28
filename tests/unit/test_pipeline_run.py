@@ -358,10 +358,10 @@ def test_document_record_without_inference_aborts_the_run(tmp_path):
         execute_run(RunSpec(source_id="test", mode="ingest"), ctx)
 
 
-def test_document_with_rejected_extraction_is_cached_and_counted(tmp_path):
+def test_document_with_rejected_extraction_is_retryable_and_counted(tmp_path):
     # A document that passes the gate but yields only parse errors: nothing
-    # reaches the graph, the extraction is cached so the paid call is not
-    # repeated, and the count lands in documents_gated_out.
+    # reaches the graph. The partial failure stays retryable and cannot
+    # advance the checkpoint or create a success cache marker.
     extractor = FakeExtractor(parse_errors=["SCHEMA: item 0: nope"])
     adapter = FakeAdapter(records=[_raw_record()], normalize=lambda record: _document_record())
     driver = FakeDriver()
@@ -376,7 +376,7 @@ def test_document_with_rejected_extraction_is_cached_and_counted(tmp_path):
     record = execute_run(RunSpec(source_id="test", mode="ingest"), ctx)
     assert record.assertions_rejected == 1
     assert record.documents_gated_out == 1
-    assert any("ExtractionCacheEntry" in cypher for cypher, _ in driver.writes)
+    assert not any("ExtractionCacheEntry" in cypher for cypher, _ in driver.writes)
     assert extractor.calls == 1
 
 
@@ -397,8 +397,8 @@ def test_document_validation_rejection_is_counted(tmp_path):
     record = execute_run(RunSpec(source_id="test", mode="ingest"), ctx)
     assert record.assertions_rejected == 1
     assert record.assertions_written == 0
-    # The document was still cached — the failure was validation, not fetch.
-    assert any("ExtractionCacheEntry" in cypher for cypher, _ in driver.writes)
+    # A validation failure must stay retryable rather than poisoning the cache.
+    assert not any("ExtractionCacheEntry" in cypher for cypher, _ in driver.writes)
 
 
 def test_reextract_with_nothing_superseded_retracts_nothing(tmp_path):
@@ -469,3 +469,26 @@ def test_unexpected_datetime_from_the_driver_fails_loudly(tmp_path):
     ctx = _ctx(tmp_path, driver, adapter)
     with pytest.raises(TypeError, match="unexpected datetime value"):
         execute_run(RunSpec(source_id="test", mode="ingest"), ctx)
+
+
+def test_partial_normalization_does_not_advance_source_checkpoint(tmp_path):
+    normalized = _structured_record()
+    normalized.errors = 1
+    adapter = FakeAdapter(records=[_raw_record()], normalize=lambda raw: normalized)
+    driver = FakeDriver()
+    record = execute_run(RunSpec(source_id="test", mode="ingest"), _ctx(tmp_path, driver, adapter))
+    assert record.errors == 1
+    assert not any("last_success_at" in params for _, params in driver.writes)
+
+
+def test_explicit_historical_window_checkpoint_uses_until(tmp_path):
+    adapter = FakeAdapter(records=[_raw_record()], normalize=lambda raw: _structured_record())
+    driver = FakeDriver()
+    until = datetime(2026, 1, 2, tzinfo=UTC)
+    execute_run(
+        RunSpec(
+            source_id="test", mode="backfill", since=datetime(2026, 1, 1, tzinfo=UTC), until=until
+        ),
+        _ctx(tmp_path, driver, adapter),
+    )
+    assert [p["last_success_at"] for _, p in driver.writes if "last_success_at" in p] == [until]

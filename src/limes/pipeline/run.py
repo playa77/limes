@@ -56,7 +56,7 @@ from limes.ontology.validator import validate_assertions
 from limes.pipeline import window as window_module
 from limes.pipeline.gate import gate_document
 from limes.resolution.resolve import resolve_assertions
-from limes.sources.base import SourceAdapter, deterministic_assertion_id
+from limes.sources.base import SourceAdapter, deterministic_assertion_id, hash_entity_id
 from limes.types import (
     Assertion,
     IngestionRunRecord,
@@ -118,7 +118,9 @@ SET r.finished_at = $finished_at,
 
 _SOURCE_SUCCESS = """
 MATCH (s:Source {source_id: $source_id})
-SET s.last_success_at = $last_success_at,
+SET s.last_success_at = CASE
+    WHEN s.last_success_at > $last_success_at THEN s.last_success_at
+    ELSE $last_success_at END,
     s.last_run_id = $last_run_id
 """
 
@@ -127,6 +129,8 @@ MATCH ()-[r]->()
 WHERE r.evidence_document_id = $content_hash
   AND r.source_id = $source_id
   AND r.retracted_at IS NULL
+  AND (r.evidence_channel = 'extracted'
+       OR (r.evidence_channel IS NULL AND r.extractor_model IS NOT NULL))
 RETURN r.assertion_id AS assertion_id
 """
 
@@ -206,13 +210,17 @@ def execute_run(spec: RunSpec, ctx: RunContext) -> IngestionRunRecord:
         raise
 
     _close_run(ctx, record, cost_before)
+    # A partial parse must be replayable. Never skip an unprocessed record or
+    # the interval between an explicit historical until and run completion.
+    if record.errors:
+        return record
     ctx.driver.write_batch(
         [
             (
                 _SOURCE_SUCCESS,
                 {
                     "source_id": spec.source_id,
-                    "last_success_at": record.finished_at,
+                    "last_success_at": until or record.started_at,
                     "last_run_id": record.run_id,
                 },
             )
@@ -257,15 +265,25 @@ def _process_record(
         )
         return
     normalized.content_hash = content_hash
-    if normalized.kind == "structured":
+    record.errors += normalized.errors
+    # Both channels are independent: document cache/gating cannot suppress
+    # deterministic payload, and a failed document can replay the structured
+    # half idempotently. No cache marker is written before successful loading.
+    if normalized.assertions or normalized.entities or normalized.lookup_rows:
+        for assertion in normalized.assertions:
+            assertion.provenance.evidence_document_id = content_hash
+            if normalized.document is not None and assertion.provenance.evidence_channel is None:
+                assertion.provenance.evidence_channel = "structured"
+                assertion.assertion_id = hash_entity_id(
+                    "structured", spec.source_id, assertion.assertion_id, content_hash
+                )
         _process_structured(spec, ctx, normalized, record)
-        return
     if normalized.document is None:
-        record.errors += 1
-        logger.warning(
-            "record skipped: document kind without payload",
-            source_id=spec.source_id,
-        )
+        if normalized.kind == "document":
+            record.errors += 1
+            logger.warning(
+                "record skipped: document kind without payload", source_id=spec.source_id
+            )
         return
     normalized.document.content_hash = content_hash
     _process_document(spec, ctx, adapter, raw, normalized, record)
@@ -284,6 +302,8 @@ def _process_structured(
     trust = ctx.registry.trust_rank(spec.source_id)
     for assertion in normalized.assertions:
         _stamp_pipeline_provenance(assertion, spec.source_id, trust, ctx, None)
+        if assertion.provenance.evidence_channel in ("coded", "structured"):
+            continue
         assertion.assertion_id = deterministic_assertion_id(
             spec.source_id,
             assertion.relation,
@@ -352,7 +372,11 @@ def _process_document(
             f"document record for source '{spec.source_id}' on a context without inference; "
             "rebuild with needs_inference=True"
         )
-    decision = gate_document(doc, ctx.gate)
+    decision = (
+        gate_document(doc, ctx.gate, skip_cache=True)
+        if spec.mode == "reextract"
+        else gate_document(doc, ctx.gate)
+    )
     if not decision.passed:
         record.documents_gated_out += 1
         logger.info(
@@ -371,6 +395,7 @@ def _process_document(
         settings.extraction_schema_version,
     )
     record.assertions_rejected += len(result.parse_errors)
+    record.errors += len(result.parse_errors)
     for error in result.parse_errors:
         logger.warning(
             "extraction item rejected",
@@ -388,10 +413,14 @@ def _process_document(
         output_tokens=result.output_tokens,
     )
     if not result.assertions:
+        if spec.mode == "reextract" and not result.parse_errors:
+            _retract_superseded(ctx, doc.content_hash, spec.source_id, set())
         # A document that passed the gate but yielded no assertions still
         # contributes nothing to the graph — counted as gated out, and its
         # extraction cached so the paid call is not repeated on every run.
         record.documents_gated_out += 1
+        if result.parse_errors:
+            return
         cache_put(
             ctx.driver,
             doc.content_hash,
@@ -428,20 +457,13 @@ def _process_document(
 
     accepted, rejected = validate_assertions(assertions, ctx.ontology)
     record.assertions_rejected += len(rejected)
+    record.errors += len(rejected)
     for validation_error in rejected:
         logger.warning(
             "assertion rejected",
             reason=validation_error.reason,
             assertion_index=validation_error.assertion_index,
             detail=validation_error.detail,
-        )
-
-    if spec.mode == "reextract":
-        _retract_superseded(
-            ctx,
-            doc.content_hash,
-            spec.source_id,
-            {a.assertion_id for a in accepted},
         )
 
     load_result = load(
@@ -455,6 +477,15 @@ def _process_document(
     record.assertions_written += load_result.written
     record.assertions_skipped += load_result.skipped
     record.assertions_rejected += load_result.rejected
+
+    if rejected or result.parse_errors or load_result.rejected:
+        record.errors += load_result.rejected
+        return
+
+    if spec.mode == "reextract":
+        _retract_superseded(
+            ctx, doc.content_hash, spec.source_id, {a.assertion_id for a in accepted}
+        )
 
     cache_put(
         ctx.driver,
@@ -542,6 +573,8 @@ def _stamp_pipeline_provenance(
     assertion.provenance.source_id = source_id
     assertion.provenance.source_trust = trust
     assertion.provenance.extractor_model = extractor_model
+    if extractor_model is not None:
+        assertion.provenance.evidence_channel = "extracted"
     if extractor_model is not None:
         assertion.provenance.prompt_version = ctx.settings.extraction_prompt_version
         assertion.provenance.schema_version = ctx.settings.extraction_schema_version

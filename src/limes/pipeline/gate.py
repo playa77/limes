@@ -57,13 +57,15 @@ class GateContext:
     nlp_en: Language
 
 
-def gate_document(doc: DocumentPayload, ctx: GateContext) -> GateDecision:
+def gate_document(
+    doc: DocumentPayload, ctx: GateContext, *, skip_cache: bool = False
+) -> GateDecision:
     """The gate: cache check, NER, passage selection. Returns the decision;
     every rejection carries its reason (AC-11) and is logged — the pipeline
     run counts `documents_gated_out` from the decisions, never from silence.
     """
     settings = ctx.settings
-    if idempotency.is_already_extracted(
+    if not skip_cache and idempotency.is_already_extracted(
         ctx.driver,
         doc.content_hash,
         settings.extraction_prompt_version,

@@ -4,11 +4,13 @@
 The acceptance: GDELT event rows become `Event` nodes with `ACTOR_IN`,
 `TARGET_OF`, and `OCCURRED_IN` edges carrying the directional asymmetry
 (Doc 1 §5.4 — Actor1 is the actor, Actor2 the target, the action geography
-the location), plus one `DocumentPayload` per file. The ontology gap —
+the location), with row-scoped evidence and no synthetic document. The ontology gap —
 sovereign states have no Agent type — is exercised by counting untyped actors
 instead of inventing a type.
 """
 
+import io
+import zipfile
 from datetime import UTC, datetime, timedelta
 
 import pytest
@@ -33,11 +35,18 @@ def _csv_row(**fields: str) -> list[str]:
     return row
 
 
+def _zip(payload: bytes, name: str = "20260801154500.export.CSV") -> bytes:
+    stream = io.BytesIO()
+    with zipfile.ZipFile(stream, "w", zipfile.ZIP_DEFLATED) as z:
+        z.writestr(name, payload)
+    return stream.getvalue()
+
+
 def _record(payload: bytes | None = None) -> RawRecord:
     return RawRecord(
-        payload=(FIXTURES / "events.csv").read_bytes() if payload is None else payload,
-        content_type="text/csv",
-        source_url="https://data.gdeltproject.org/gdelt2/20260801154500.events.csv",
+        payload=_zip((FIXTURES / "events.tsv").read_bytes()) if payload is None else payload,
+        content_type="application/zip",
+        source_url="https://data.gdeltproject.org/gdeltv2/20260801154500.export.CSV.zip",
         fetched_at=FETCHED_AT,
     )
 
@@ -54,7 +63,7 @@ def test_fetch_yields_one_record_per_15_minute_slot_in_window():
             respx.get(url).mock(return_value=Response(200, content=b"x"))
         records = list(GdeltAdapter().fetch(since, until))
     assert [r.source_url for r in records] == slot_urls
-    assert [r.content_type for r in records] == ["text/csv", "text/csv"]
+    assert [r.content_type for r in records] == ["application/zip", "application/zip"]
 
 
 def test_fetch_window_rounds_up_to_next_slot_boundary():
@@ -80,7 +89,7 @@ def test_fetch_empty_window_yields_nothing():
 
 def test_normalize_emits_event_with_actor_target_and_location_edges():
     normalized = GdeltAdapter().normalize(_record())
-    assert normalized.kind == "document"
+    assert normalized.kind == "structured"
     assertions = normalized.assertions
 
     by_relation: dict[str, list] = {}
@@ -148,24 +157,15 @@ def test_occurred_in_city_uses_coordinate_hash_location():
     assert location.label == "Berlin"
 
 
-def test_document_payload_fields():
-    document = GdeltAdapter().normalize(_record()).document
-    assert document is not None
-    assert (
-        document.content_hash
-        == __import__("hashlib").sha256((FIXTURES / "events.csv").read_bytes()).hexdigest()
-    )
-    assert document.title == "GDELT events 20260801154500.events.csv"
-    assert "UNITED STATES" in document.body
-    assert document.language == "en"
-    assert document.published_at == datetime(2026, 8, 1, tzinfo=UTC)
-    assert document.url == _record().source_url
+def test_export_has_no_synthetic_document():
+    assert GdeltAdapter().normalize(_record()).document is None
 
 
 def test_assertion_ids_are_deterministic_across_calls():
     adapter = GdeltAdapter()
-    first = [a.assertion_id for a in adapter.normalize(_record()).assertions]
-    second = [a.assertion_id for a in adapter.normalize(_record()).assertions]
+    raw = _record()
+    first = [a.assertion_id for a in adapter.normalize(raw).assertions]
+    second = [a.assertion_id for a in adapter.normalize(raw).assertions]
     assert first == second
 
 
@@ -179,7 +179,7 @@ def test_provenance_is_deterministic_with_source_trust():
 
 
 def _csv_payload(rows: list[list[str]]) -> bytes:
-    return "\n".join(",".join(row) for row in rows).encode("utf-8")
+    return _zip("\n".join("\t".join(row) for row in rows).encode("utf-8"))
 
 
 def test_rows_without_event_id_or_valid_date_are_skipped_and_counted():
@@ -194,7 +194,7 @@ def test_rows_without_event_id_or_valid_date_are_skipped_and_counted():
             Actor1Type1Code="MIL",
             ActionGeo_Type="1",
             ActionGeo_FullName="Germany",
-            ActionGeo_CountryCode="DE",
+            ActionGeo_CountryCode="GM",
         ),
     ]
     with structlog.testing.capture_logs() as captured:

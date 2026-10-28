@@ -13,7 +13,7 @@ merges or deployment without explicit instruction. Production/co-tenant operatio
 are outside implementation scope. Snapshot and issue rows below are historical
 records; subsequent evidence/closures are appended without erasing them.
 
-## Current disposition — 2026-10-27 (BE-41)
+## Current disposition — 2026-10-28 (BE-42 candidate)
 
 This index supersedes the status wording in the historical inventory below, without
 erasing its evidence. Package placement: [backend](docs/BACKEND_ROADMAP.md),
@@ -40,10 +40,10 @@ closure sections; “open” is not a statement that every old symptom still exi
 | OI-16 | Closed in BE-41 | Agent/documentation | Original desktop plan archived, old path becomes a pointer, desktop roadmap is authoritative; source preserved |
 | OI-17 | Closed | BE-37/38 | C8/runtime-doc guards reject publication/auth/configuration drift; 2026-10-07 evidence |
 | OI-18 | Open missing network guard | Agent + DC-14 | Guard and deliberate forbidden-URL failure tied to OI-11's decided policy |
-| OI-19 | Open runtime defect | Agent + BE-42 | GDELT ZIP/TSV URL/61-column map and bounded upstream fixture verification |
-| OI-20 | Open runtime defect | Agent + BE-42 | Mixed-channel routing/load/retry/reextract semantics with graph evidence |
-| OI-21 | Open runtime defect | Agent + BE-42 | Row/report/dispatch lineage and honest date/evidence semantics |
-| OI-22 | Open runtime defect | Agent + BE-42 | FIPS mapping, geography types, fractional slots and misleading legacy budget claim |
+| OI-19 | Closed in BE-42 candidate | Agent + BE-42 | 2026-10-28 direct closure below: Official URL/ZIP/61-column TSV with compressed/expanded/member/row bounds; upstream fixture and real graph/API test |
+| OI-20 | Closed in BE-42 candidate | Agent + BE-42 | 2026-10-28 direct closure below: Independent channels, collision-free identity, gate/cache/empty/failure/retry/reextract graph scenarios |
+| OI-21 | Closed in BE-42 candidate | Agent + BE-42 | 2026-10-28 direct closure below: Archive/member/row/event/export/report/time provenance survives graph/API; no synthetic document; text explicitly unavailable |
+| OI-22 | Closed in BE-42 candidate | Agent + BE-42 | 2026-10-28 direct closure below: GeoNames FIPS conversion, types 1–5, finite coordinate bounds, fractional slot ceiling and explicit workload limits |
 | OI-23 | Open workflow/configuration gap | Agent + BE-45 | Full suites currently run on main pushes as well as PRs; document/configure bounded main smoke and authoritative candidate status; hosted required-check configuration unverified |
 | OI-24 | Open measurement/acceptance gaps | Agent/operator + DC-14/BE-45 | Reference-platform startup/visual time-sync/manual workflows, representative memory/storage and current live/model/recovery evidence lack current qualification |
 
@@ -465,3 +465,44 @@ OI-24 is **open**. Test presence, Compose limits and historical pass counts do n
 satisfy measured resource/latency/platform or live deployment/model requirements.
 The desktop acceptance matrix and VERIFICATION.md list the exact unclaimed areas.
 No code repair, map-policy decision, production operation or paid call occurred.
+
+## 2026-10-28 — BE-42 Closed with direct evidence (OI-19..OI-22)
+
+These are local implementation/acceptance closures on codex/be-42-ingestion-repair,
+base live main b093599d3667. The user subsequently requested PR publication; historical rows
+remain intact. VERIFICATION records candidate identity, full suites and limits.
+
+- **OI-19 closed:** `tests/unit/test_gdelt_upstream.py` checks a literal official
+  URL and unchanged upstream 61-field rows plus corrupt/unsafe/multiple-member,
+  compressed/expanded/row limits and schema drift. `test_gdelt_pipeline.py` proves
+  production fetch→archive→normalize→loader→authenticated API with a disposable graph.
+- **OI-20 closed:** `test_pipeline_run_unstructured.py::test_mixed_channels_survive_document_gate_empty_and_cache`
+  proves both deterministic and extracted evidence survive independently, including
+  identical relation semantics. `test_mixed_failure_retry_and_reextract_ownership`
+  injects initial/replacement load failures, proves replay and no premature cache,
+  checkpoint or retraction, then proves empty reextract retracts extracted only.
+  Interval closure respects channel; legacy extracted ownership uses extractor_model.
+- **OI-21 closed:** independent upstream field positions 0/1/59/60 and row ordinal
+  check event/SQLDATE/DATEADDED/SOURCEURL. The graph/API test retrieves exact archived
+  bytes by hash and row/member locator and checks missing-text metadata. A separate
+  report test proves distinct reports do not collapse. GDELT emits no document;
+  no synthetic summaries or assumed article publication time remain.
+- **OI-22 closed:** independent country expectations GM→DE, UK→GB, CH→CN, SZ→CH;
+  all coordinate geography types, invalid coordinates and exact/second/microsecond
+  slot boundaries are checked. A literal endpoint test and bounded-window failure
+  prove slot requests/limits. Budget flags remain ignored; no budget-limit claim.
+
+Re-run `venv/bin/python -m pytest tests/unit/test_gdelt_adapter.py tests/unit/test_gdelt_upstream.py tests/unit/test_pipeline_run.py -q`
+and `venv/bin/python -m pytest tests/integration/test_gdelt_pipeline.py tests/integration/test_pipeline_run_unstructured.py -q`
+with disposable Docker access. Full inventory/results are in VERIFICATION.
+
+The first full integration run exposed an invalid GISCO fixture that previously
+advanced last_success_at despite a parse error. It now uses the existing valid
+GISCO fixture, preserving the stricter no-error checkpoint rule. Docker buildx
+metadata initially hit read-only ~/.docker; setting BUILDX_CONFIG to ignored
+workspace work/be42/buildx fixed the environment without changing credentials.
+The four affected checks and the final full graph suite passed. No guard was skipped.
+
+Mentions, article acquisition, paid agency quality, representative resource
+measurement, hosted required statuses and production deployment remain unclaimed
+under BE-43/45; unrelated OI-01/03/05/09/10/11/18/23/24 stay open.

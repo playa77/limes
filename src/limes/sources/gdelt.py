@@ -1,54 +1,21 @@
 # src/limes/sources/gdelt.py | v1.0.0 | introduced by WP-21
-"""GDELT adapter per Technical Specification §8.5.2 (WP-21).
+"""GDELT 2.0 coded observations, not article text.
 
-Loads events from the GDELT 2.0 event export (15-minute CSV files) into
-`Event` nodes with `ACTOR_IN`, `TARGET_OF`, and `OCCURRED_IN` edges, plus one
-`DocumentPayload` per file for passage extraction. Trust rank 0.50 (Doc 1
-§5.8); the deterministic event facts carry confidence 1.0 (D-15 — they are
-parsed data, not model output), and trust differentiation happens through the
-source rank alone.
-
-Non-obvious choices, each load-bearing:
-
-- **One RawRecord per 15-minute file** (the roadmap's letter), and one
-  `NormalizedRecord` per file: the event assertions for every row plus one
-  document whose body is the joined per-row summaries. The window bounds the
-  *file set*; within a file every row is normalized.
-- **Actor typing is the ontology gap.** `ACTOR_IN`/`TARGET_OF` take an
-  `Agent` domain and the ontology has no Agent type for a sovereign state
-  (`Country` is a `Place`), so a bare-country actor code (e.g. "USA", "RUS")
-  cannot be represented and the edge is skipped — with a count, never
-  silently. What *is* representable: GDELT's own actor type codes (the
-  `Actor1Type1Code` column): `GOV`/`MIL`/`COP`/`JUD` become `PublicBody`
-  (state organs), `BUS` becomes `Corporation`. The type table is the refresh
-  point if the CAMEO taxonomy evolves. Actor identity is the name digest —
-  GDELT assigns no stable identifier to an actor.
-- **Event identity** follows the multi-key convention (D-10): the stampable
-  single declared key is `("source_event_id", GLOBALEVENTID)`, and the
-  `entity_id` encodes the full identity (source event id + `occurred_at`).
-- **The action geography** (where the event occurred) drives `OCCURRED_IN`:
-  Geo_Type 1 (country) becomes a `Country` keyed on its ISO2 code; Geo_Type 2
-  (ADM1) and 3 (city) become `Location` nodes whose identity is the rounded
-  coordinate digest (the D-13 convention, as in the OSM adapter). A row
-  without usable geography gets no `OCCURRED_IN` — counted.
-- **`published_at` is the file's latest SQLDATE**, the events' vintage, never
-  the fetch instant. The SQLDATE column is the event date at UTC midnight.
-- **Window semantics:** `supports_incremental = True`, so window resolution
-  anchors at `Source.last_success_at`; fetch iterates the 15-minute slots in
-  the window, one GET per slot, sequentially and without concurrency (the
-  GDELT service is not consulted more than once per slot). A 90-day backfill
-  is ~8 640 files — that is the source's own granularity, and the run's
-  explicit budget is what bounds it in practice.
-
-The CSV column order follows the documented GDELT 2.0 event header, kept here
-as the single refresh point (D-17: unverified endpoints and formats are
-declared, never assumed).
+Official 15-minute exports are single-member ZIPs of 61-column UTF-8 TSV.
+SQLDATE is event validity; DATEADDED is the coding timestamp, not publication.
+Each row retains archive/member/row/report identity. Missing article text and
+export-only report coverage are explicit; Mentions acquisition belongs to BE-43.
+Actor typing remains bounded by the ontology; unsupported actors are counted.
 """
 
 from __future__ import annotations
 
 import csv
 import io
+import math
+import re
+import zipfile
+import zlib
 from collections.abc import Iterator
 from datetime import UTC, datetime, timedelta
 from typing import Literal
@@ -56,7 +23,6 @@ from typing import Literal
 import structlog
 
 from limes.errors import SourceParseError
-from limes.pipeline.normalize import detect_language
 from limes.sources.base import (
     coordinate_location,
     fetch_bytes,
@@ -66,9 +32,9 @@ from limes.sources.base import (
     now_utc,
     payload_hash,
 )
+from limes.sources.gdelt_countries import FIPS_TO_ISO2
 from limes.types import (
     Assertion,
-    DocumentPayload,
     EntityEndpoint,
     NormalizedRecord,
     RawRecord,
@@ -79,10 +45,14 @@ logger = structlog.get_logger(__name__)
 # The GDELT 2.0 events export. The file name is the 15-minute slot's end
 # instant as UTC YYYYMMDDHHMMSS (seconds always 00); the URL constant is the
 # single refresh point (D-17).
-GDELT_BASE_URL = "https://data.gdeltproject.org/gdelt2"
-FILE_URL_TEMPLATE = f"{GDELT_BASE_URL}/{{slot:%Y%m%d%H%M%S}}00.events.csv"
+GDELT_BASE_URL = "https://data.gdeltproject.org/gdeltv2"
+FILE_URL_TEMPLATE = f"{GDELT_BASE_URL}/{{slot:%Y%m%d%H%M%S}}.export.CSV.zip"
 
-EVENTS_CONTENT_TYPE = "text/csv"
+EVENTS_CONTENT_TYPE = "application/zip"
+MAX_COMPRESSED_BYTES = 16 * 1024 * 1024
+MAX_EXPANDED_BYTES = 128 * 1024 * 1024
+MAX_ROWS = 250_000
+MAX_SLOTS = 96
 
 # The GDELT 2.0 event CSV column order, from the documented header. The
 # adapter reads positionally through these names; this list is the single
@@ -127,20 +97,26 @@ _GDELT_FIELDS = [
     "Actor1Geo_FullName",
     "Actor1Geo_CountryCode",
     "Actor1Geo_ADM1Code",
+    "Actor1Geo_ADM2Code",
     "Actor1Geo_Lat",
     "Actor1Geo_Long",
+    "Actor1Geo_FeatureID",
     "Actor2Geo_Type",
     "Actor2Geo_FullName",
     "Actor2Geo_CountryCode",
     "Actor2Geo_ADM1Code",
+    "Actor2Geo_ADM2Code",
     "Actor2Geo_Lat",
     "Actor2Geo_Long",
+    "Actor2Geo_FeatureID",
     "ActionGeo_Type",
     "ActionGeo_FullName",
     "ActionGeo_CountryCode",
     "ActionGeo_ADM1Code",
+    "ActionGeo_ADM2Code",
     "ActionGeo_Lat",
     "ActionGeo_Long",
+    "ActionGeo_FeatureID",
     "DATEADDED",
     "SOURCEURL",
 ]
@@ -160,39 +136,40 @@ _ACTOR_TYPE_TO_ONTOLOGY = {
 }
 
 # GDELT action geography types: 1 = country, 2 = first-order division (ADM1),
-# 3 = city. 1 becomes a Country (ISO2 key), 2/3 become coordinate-hash
-# Locations; anything else gets no OCCURRED_IN edge.
+# 3 = US city, 4 = world city, 5 = world ADM1. Country FIPS codes are
+# explicitly converted; coordinate types become coordinate-hash Locations.
 _GEO_TYPE_COUNTRY = "1"
 
 
 class GdeltAdapter:
-    """GDELT 2.0 events — deterministic event facts plus per-file documents."""
+    """GDELT 2.0 deterministic coded observations with row-scoped provenance."""
 
     source_id: str = "gdelt"
     name: str = "GDELT"
-    kind: Literal["structured", "unstructured"] = "unstructured"
+    kind: Literal["structured", "unstructured"] = "structured"
     trust_rank: float = 0.50
     supports_backfill: bool = True
     supports_incremental: bool = True
 
     def fetch(self, since: datetime | None, until: datetime | None) -> Iterator[RawRecord]:
-        """Fetch one 15-minute event file per slot in the window.
+        """Fetch at most one day (96 slots); larger windows fail before I/O.
 
-        The slot list is the 15-minute boundaries from `since` (rounded up to
-        the next boundary) through `until` — or the current time when `until`
-        is None. Each file is one GET, sequential, no concurrency. A missing
-        slot surfaces as `SourceFetchError` (the shared retry policy applies
-        to transient failures only); the run's budget is what bounds a long
-        window in practice.
+        Callers can submit consecutive bounded windows. Legacy budgets do not
+        limit work. Missing slots abort without advancing the checkpoint.
         """
         start = _first_slot(since, until)
         end = until if until is not None else now_utc()
+        end = end.replace(tzinfo=UTC) if end.tzinfo is None else end.astimezone(UTC)
         if end < start:
             return
+        if (end - start) // _SLOT + 1 > MAX_SLOTS:
+            from limes.errors import SourceFetchError
+
+            raise SourceFetchError("gdelt: window exceeds 96 slots; submit bounded windows")
         slot = start
         while slot <= end:
             url = FILE_URL_TEMPLATE.format(slot=slot)
-            payload = fetch_bytes(url)
+            payload = fetch_bytes(url, max_bytes=MAX_COMPRESSED_BYTES)
             fetched_at = now_utc()
             logger.info(
                 "gdelt: event file fetched",
@@ -209,16 +186,14 @@ class GdeltAdapter:
             slot += _SLOT
 
     def normalize(self, record: RawRecord) -> NormalizedRecord:
-        """Parse one event CSV file into Event assertions plus a document.
+        """Parse an official export; retain original row locators and report links.
 
-        Pure — never touches the network. Every row becomes an Event; actor
-        edges are emitted only where the actor type is representable in the
-        ontology (see the module docstring), and every skip is counted in the
-        summary log.
+        Pure: no graph/network access and no fabricated article/extraction input.
+        Malformed event identities are counted and block checkpoint advancement.
         """
-        rows = _parse_csv(record.payload)
+        member, rows = _parse_export(record.payload)
         assertions: list[Assertion] = []
-        summaries: list[str] = []
+        entities: list[EntityEndpoint] = []
         counts = {
             "rows": len(rows),
             "events": 0,
@@ -229,8 +204,7 @@ class GdeltAdapter:
             "location_skipped": 0,
             "malformed_skipped": 0,
         }
-        latest_date: datetime | None = None
-        for row in rows:
+        for row_number, row in enumerate(rows, 1):
             event_id = (row.get("GLOBALEVENTID") or "").strip()
             occurred_at = _parse_sqldate(row.get("SQLDATE"))
             if not event_id or occurred_at is None:
@@ -238,10 +212,10 @@ class GdeltAdapter:
                 logger.warning("gdelt: row without event id or date skipped")
                 continue
             counts["events"] += 1
-            if latest_date is None or occurred_at > latest_date:
-                latest_date = occurred_at
 
             event = _event(event_id, occurred_at)
+            entities.append(event)
+            first_assertion = len(assertions)
             actor1 = _actor(row, "1")
             actor2 = _actor(row, "2")
             if actor1 is not None:
@@ -289,24 +263,22 @@ class GdeltAdapter:
             else:
                 counts["location_skipped"] += 1
 
-            code = (row.get("EventCode") or "").strip()
-            summary_parts = [row.get("Actor1Name")]
-            if code:
-                summary_parts.append(f"[{code}]")
-            summary_parts.append(row.get("Actor2Name"))
-            summaries.append(" — ".join(part for part in summary_parts if part))
+            for assertion in assertions[first_assertion:]:
+                provenance = assertion.provenance
+                provenance.evidence_document_id = payload_hash(record.payload)
+                provenance.evidence_channel = "coded"
+                provenance.evidence_member = member
+                provenance.evidence_row = row_number
+                provenance.source_event_id = event_id
+                provenance.source_url = record.source_url
+                provenance.report_url = row.get("SOURCEURL") or None
+                provenance.source_recorded_at = _parse_dateadded(row.get("DATEADDED"))
+                provenance.article_text_available = False
+                # Preserve separate observations even when facts match across exports.
+                assertion.assertion_id = hash_entity_id(
+                    "coded", assertion.assertion_id, payload_hash(record.payload), str(row_number)
+                )
 
-        published_at = latest_date if latest_date is not None else record.fetched_at
-        file_name = record.source_url.rsplit("/", 1)[-1] if record.source_url else "GDELT events"
-        body = "\n".join(summaries).strip()
-        document = DocumentPayload(
-            content_hash=payload_hash(record.payload),
-            title=f"GDELT events {file_name}",
-            body=body,
-            language=detect_language(body) if body else "en",
-            published_at=published_at,
-            url=record.source_url,
-        )
         logger.info(
             "gdelt: event file normalized",
             source_id=self.source_id,
@@ -314,30 +286,59 @@ class GdeltAdapter:
         )
         return NormalizedRecord(
             content_hash=payload_hash(record.payload),
-            kind="document",
+            kind="structured",
             assertions=assertions,
-            document=document,
+            entities=entities,
+            errors=counts["malformed_skipped"],
         )
 
 
-def _parse_csv(payload: bytes) -> list[dict[str, str]]:
-    """Decode a GDELT events CSV into row dicts.
+def _parse_export(payload: bytes) -> tuple[str, list[dict[str, str]]]:
+    """Bound compressed input, member count/name, expansion, fields and rows.
 
-    The files carry no header row; the documented column order is applied via
-    `_GDELT_FIELDS`. A payload that is not decodable UTF-8 or not parseable as
-    CSV is a `SourceParseError` — a counted record-level skip, never a silent
-    empty.
+    No filesystem extraction. Reject schema drift rather than shifting columns.
     """
+    if len(payload) > MAX_COMPRESSED_BYTES:
+        raise SourceParseError("gdelt: compressed export exceeds limit")
     try:
-        text = payload.decode("utf-8")
-    except UnicodeDecodeError as exc:
-        raise SourceParseError(f"gdelt: payload is not UTF-8: {exc}") from exc
-    reader = csv.DictReader(io.StringIO(text), fieldnames=_GDELT_FIELDS, restkey="_extra")
+        with zipfile.ZipFile(io.BytesIO(payload)) as archive:
+            members = archive.infolist()
+            if len(members) != 1:
+                raise SourceParseError("gdelt: expected exactly one ZIP member")
+            info = members[0]
+            if not re.fullmatch(r"[0-9]{14}\.export\.CSV", info.filename):
+                raise SourceParseError("gdelt: invalid export member name")
+            if info.file_size > MAX_EXPANDED_BYTES:
+                raise SourceParseError("gdelt: expanded export exceeds limit")
+            with archive.open(info) as stream:
+                data = stream.read(MAX_EXPANDED_BYTES + 1)
+            if len(data) > MAX_EXPANDED_BYTES:
+                raise SourceParseError("gdelt: expanded export exceeds limit")
+        reader = csv.reader(io.StringIO(data.decode("utf-8")), delimiter="\t", strict=True)
+        rows = []
+        for number, fields in enumerate(reader, 1):
+            if number > MAX_ROWS or len(fields) != 61:
+                raise SourceParseError(f"gdelt: invalid row {number}: expected 61 fields")
+            rows.append(dict(zip(_GDELT_FIELDS, fields, strict=True)))
+        return info.filename, rows
+    except (
+        zipfile.BadZipFile,
+        UnicodeError,
+        csv.Error,
+        RuntimeError,
+        OSError,
+        EOFError,
+        NotImplementedError,
+        zlib.error,
+    ) as exc:
+        raise SourceParseError("gdelt: invalid ZIP/TSV export") from exc
+
+
+def _parse_dateadded(raw: str | None) -> datetime | None:
     try:
-        rows = [row for row in reader if any(row.values())]
-    except csv.Error as exc:
-        raise SourceParseError(f"gdelt: unparseable CSV: {exc}") from exc
-    return rows
+        return datetime.strptime(raw or "", "%Y%m%d%H%M%S").replace(tzinfo=UTC)
+    except ValueError:
+        return None
 
 
 def _first_slot(since: datetime | None, until: datetime | None) -> datetime:
@@ -345,10 +346,11 @@ def _first_slot(since: datetime | None, until: datetime | None) -> datetime:
     when `since` is None (a run without an explicit window fetches nothing
     until the next slot boundary — the window always has a start)."""
     anchor = since if since is not None else now_utc()
-    anchor = anchor if anchor.tzinfo is not None else anchor.replace(tzinfo=UTC)
+    anchor = anchor.replace(tzinfo=UTC) if anchor.tzinfo is None else anchor.astimezone(UTC)
     slot = anchor.replace(second=0, microsecond=0)
-    if slot.minute % 15:
-        slot += timedelta(minutes=15 - slot.minute % 15)
+    slot -= timedelta(minutes=slot.minute % 15)
+    if slot < anchor:
+        slot += _SLOT
     return slot
 
 
@@ -405,7 +407,8 @@ def _action_location(row: dict[str, str]) -> EntityEndpoint | None:
     full_name = (row.get("ActionGeo_FullName") or "").strip()
     if geo_type == _GEO_TYPE_COUNTRY:
         country_code = (row.get("ActionGeo_CountryCode") or "").strip().upper()
-        if _is_iso2(country_code):
+        country_code = FIPS_TO_ISO2.get(country_code, "")
+        if country_code:
             label = full_name or country_code
             return EntityEndpoint(
                 entity_id=key_entity_id(("iso2", country_code)),
@@ -414,26 +417,26 @@ def _action_location(row: dict[str, str]) -> EntityEndpoint | None:
                 deterministic_key=("iso2", country_code),
             )
         return None
-    if geo_type in ("2", "3"):
+    if geo_type in ("2", "3", "4", "5"):
         lat = _parse_float(row.get("ActionGeo_Lat"))
         lon = _parse_float(row.get("ActionGeo_Long"))
-        if lat is not None and lon is not None and full_name:
+        if (
+            lat is not None
+            and lon is not None
+            and full_name
+            and -90 <= lat <= 90
+            and -180 <= lon <= 180
+        ):
             return coordinate_location(lat, lon, label=full_name)
         return None
     return None
-
-
-def _is_iso2(code: str) -> bool:
-    """A plausible ISO 3166-1 alpha-2 code: exactly two ASCII letters. GDELT's
-    country codes are ISO2; the 2-letter shape is the sanity bound — the
-    loader's unique constraint on `iso2` is the dedup."""
-    return len(code) == 2 and code.isalpha()
 
 
 def _parse_float(raw: object) -> float | None:
     if not isinstance(raw, str):
         return None
     try:
-        return float(raw)
+        value = float(raw)
+        return value if math.isfinite(value) else None
     except ValueError:
         return None

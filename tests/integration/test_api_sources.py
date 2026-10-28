@@ -69,7 +69,7 @@ def test_sources_reports_last_refresh_from_graph(
     from tests.fixtures.graph_data import api_settings
 
     fixture = RawRecord(
-        payload=b"nuts_code,label\nDE1,Stuttgart\n",
+        payload=(Path(__file__).parents[1] / "fixtures/gisco_nuts/nuts_hierarchy.csv").read_bytes(),
         content_type="text/csv",
         source_url=None,
         fetched_at=datetime(2026, 8, 1, 10, 0, tzinfo=UTC),

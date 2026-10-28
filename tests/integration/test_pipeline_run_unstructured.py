@@ -350,7 +350,7 @@ def test_trace2_document_run_end_to_end(ctx, fixture_fetch):
         30,
     )
     assert rows[0]["run_id"] == record.run_id
-    assert rows[0]["at"] == record.finished_at
+    assert rows[0]["at"] == record.started_at
 
 
 def test_documents_gated_out_are_counted(ctx, fixture_fetch):
@@ -577,3 +577,122 @@ def test_reingest_hits_cache_and_writes_nothing_new(ctx, fixture_fetch):
         30,
     )
     assert rows[0]["c"] == 1
+
+
+@pytest.fixture
+def mixed_fetch(ctx, fixture_fetch, monkeypatch):
+    """A real text envelope also carrying the same deterministic relation.
+
+    Identical semantics deliberately exercise channel identity collisions.
+    """
+    from limes.sources.base import make_assertion
+    from limes.types import EntityEndpoint
+
+    adapter = ctx.registry.get("feeds")
+    normalize = adapter.normalize
+
+    def mixed(raw):
+        result = normalize(raw)
+        result.assertions = [
+            make_assertion(
+                adapter,
+                raw,
+                EntityEndpoint(
+                    entity_id=f"lei:{SUBJECT_LEI}", type="Corporation", label=SUBJECT_LEI
+                ),
+                "SUBSIDIARY_OF",
+                EntityEndpoint(entity_id=f"lei:{OBJECT_LEI}", type="Corporation", label=OBJECT_LEI),
+                valid_from=datetime(2026, 7, 1, tzinfo=UTC),
+            )
+        ]
+        return result
+
+    monkeypatch.setattr(adapter, "normalize", mixed)
+
+
+def _channel_rows(ctx):
+    return ctx.driver.read(
+        "MATCH ()-[r:SUBSIDIARY_OF]->() RETURN r.evidence_channel AS channel, "
+        "r.retracted_at AS retracted, r.assertion_id AS id",
+        {},
+        30,
+    )
+
+
+@pytest.mark.parametrize("document_outcome", ["success", "gate", "empty"])
+def test_mixed_channels_survive_document_gate_empty_and_cache(ctx, mixed_fetch, document_outcome):
+    if document_outcome == "gate":
+        ctx.gate.nlp_en._enabled = False
+    with respx.mock:
+        _mock_transport(extraction_items=[] if document_outcome == "empty" else None)
+        first = execute_run(RunSpec(source_id="feeds", mode="ingest"), ctx)
+        second = execute_run(RunSpec(source_id="feeds", mode="ingest"), ctx)
+    rows = _channel_rows(ctx)
+    assert {r["channel"] for r in rows} == (
+        {"structured", "extracted"} if document_outcome == "success" else {"structured"}
+    )
+    assert all(r["retracted"] is None for r in rows)
+    assert first.assertions_written == len(rows)
+    assert second.assertions_written == 0
+    assert second.assertions_skipped == 1  # deterministic half still runs on a cache hit
+
+
+def test_mixed_failure_retry_and_reextract_ownership(ctx, mixed_fetch, monkeypatch):
+    from limes.errors import GraphWriteError
+    from limes.pipeline import run as pipeline
+
+    real_load = pipeline.load
+
+    def fail_document(driver, assertions, *args, **kwargs):
+        if any(a.provenance.evidence_channel == "extracted" for a in assertions):
+            raise GraphWriteError("injected document load failure")
+        return real_load(driver, assertions, *args, **kwargs)
+
+    monkeypatch.setattr(pipeline, "load", fail_document)
+    with respx.mock:
+        _mock_transport()
+        with pytest.raises(GraphWriteError):
+            execute_run(RunSpec(source_id="feeds", mode="ingest"), ctx)
+    assert {r["channel"] for r in _channel_rows(ctx)} == {"structured"}
+    assert (
+        ctx.driver.read("MATCH (e:ExtractionCacheEntry) RETURN count(e) AS c", {}, 30)[0]["c"] == 0
+    )
+    assert (
+        ctx.driver.read("MATCH (s:Source) RETURN s.last_success_at AS at", {}, 30)[0]["at"] is None
+    )
+    monkeypatch.setattr(pipeline, "load", real_load)
+    with respx.mock:
+        _mock_transport()
+        execute_run(RunSpec(source_id="feeds", mode="ingest"), ctx)
+    assert {r["channel"] for r in _channel_rows(ctx)} == {"structured", "extracted"}
+
+    # Failure after resolving a replacement must not retract the old extracted
+    # assertion. Reextract bypasses the prior cache entry on this retry.
+    monkeypatch.setattr(pipeline, "load", fail_document)
+    replacement = [
+        {
+            "passage_index": 0,
+            "subject": {"surface": SUBJECT_LEI, "type": "Corporation"},
+            "relation": "SUBSIDIARY_OF",
+            "object": {"surface": OBJECT_LEI, "type": "Corporation"},
+            "valid_from": "2026-07-02",
+            "confidence": 0.95,
+            "evidence_start": 0,
+            "evidence_end": len(f"{TITLE}\n\n{BODY}"),
+        }
+    ]
+    with respx.mock:
+        _mock_transport(extraction_items=replacement)
+        with pytest.raises(GraphWriteError):
+            execute_run(RunSpec(source_id="feeds", mode="reextract"), ctx)
+    assert all(r["retracted"] is None for r in _channel_rows(ctx))
+    monkeypatch.setattr(pipeline, "load", real_load)
+
+    # A successful empty re-extraction retracts only the
+    # extracted channel is retracted; the deterministic fact remains active.
+    with respx.mock:
+        _mock_transport(extraction_items=[])
+        execute_run(RunSpec(source_id="feeds", mode="reextract"), ctx)
+    by_channel = {r["channel"]: r for r in _channel_rows(ctx)}
+    assert by_channel["structured"]["retracted"] is None
+    assert by_channel["extracted"]["retracted"] is not None
