@@ -87,12 +87,14 @@ and Neo4j-native entity vectors. Assertions preserve bitemporal provenance.
 Current extraction cannot explicitly represent attribution, denial, modality or
 event lifecycle; Event declares only label, source_event_id and occurred_at.
 
-GDELT is registered but has confirmed format/routing/evidence defects: its local
-plain-CSV URL/parser and 55-column map do not match the published 61-column zipped
-TSV export, and document routing ignores its normalized structured assertions.
-Per-file synthetic summaries also lose report-level lineage. Treat GDELT ingestion
-as requiring repair, not as live-validated coverage. See OI-19..OI-22 in
-[NEWS_REVIEW](NEWS_REVIEW.md) and [OPEN_ISSUES](../OPEN_ISSUES.md).
+BE-42 decodes bounded official 61-column ZIP/TSV exports and loads coded
+observations independently of document gating/cache. Row-scoped provenance
+retains archive hash, ZIP member, row, event ID, export/report URLs and DATEADDED;
+SQLDATE remains event validity, fetch time remains recorded time. FIPS country
+codes are converted explicitly. The API exposes missing article text; exports
+are never fabricated into documents. Only SOURCEURL report associations are
+covered; Mentions and article retrieval remain future acquisition work.
+See [VERIFICATION](VERIFICATION.md) for candidate evidence and its limits.
 
 The accepted target is integrated news intelligence inside the existing worker,
 archive, resolver, ontology, loader, API and desktop. Preserve independent coded

@@ -272,6 +272,14 @@ def _relationship_properties(assertion: Assertion, temporal: bool) -> dict[str, 
         "evidence_document_id": provenance.evidence_document_id,
         "evidence_start": provenance.evidence_start,
         "evidence_end": provenance.evidence_end,
+        "evidence_channel": provenance.evidence_channel,
+        "evidence_member": provenance.evidence_member,
+        "evidence_row": provenance.evidence_row,
+        "source_event_id": provenance.source_event_id,
+        "source_url": provenance.source_url,
+        "report_url": provenance.report_url,
+        "source_recorded_at": provenance.source_recorded_at,
+        "article_text_available": provenance.article_text_available,
     }
     if temporal and validity.valid_to is not None:
         props["valid_to"] = validity.valid_to
@@ -353,6 +361,7 @@ def _load_batch(
                         "subject_id": assertion.subject.entity_id,
                         "object_id": assertion.object.entity_id,
                         "source_id": assertion.provenance.source_id,
+                        "evidence_channel": assertion.provenance.evidence_channel,
                         "valid_from": assertion.validity.valid_from,
                     },
                 )

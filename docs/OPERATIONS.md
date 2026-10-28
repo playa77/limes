@@ -97,9 +97,14 @@ actual authorized deployment. CI records JUnit results for every required suite.
 
 ## News acquisition and scheduling (planned)
 
-GDELT backfill is exposed by the CLI, but source format, routing and provenance
-defects OI-19..OI-22 remain open. Do not treat job submission or mocked adapter
-tests as proof of successful live ingestion. See [NEWS_REVIEW](NEWS_REVIEW.md).
+GDELT backfill accepts explicit windows of at most 96 fifteen-minute slots
+(one day); larger requests fail before network access and must be split into
+consecutive jobs. Compressed responses are capped at 16 MiB, decompressed exports
+at 128 MiB and rows at 250,000. Malformed/partial records block checkpoint
+advancement; successful checkpoints use the covered window endpoint and never
+move backward. Failed document loads remain replayable; reextract bypasses the
+cache and retracts only extracted evidence after replacement loading succeeds.
+No production ingestion is implied by the disposable fixture scenario.
 
 Agency acquisition remains within the existing worker's operator jobs; no
 standalone utility or additional service is planned. Provider access/retention

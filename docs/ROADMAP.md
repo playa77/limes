@@ -7,6 +7,42 @@ The [documentation index](INDEX.md) identifies each document's authority; the
 Historical bare WP numbers must be qualified as backend or desktop. Old counts,
 unticked archived plans and merged commits are never substituted for acceptance.
 
+## Active runtime delivery — BE-42 (2026-10-28)
+
+Branch `codex/be-42-ingestion-repair`, live main `b093599d3667`; clean
+fast-forward reconciled before implementation. BE-41 and BE-46 planning are
+merged. Prerequisites: upstream export pinned by NEWS_REVIEW (SHA-256 verified),
+official 61-column codebook, GeoNames FIPS/ISO crosswalk, and the channel decision
+below. No agency access, production data or paid calls are needed.
+
+Acceptance checklist:
+
+- [x] Official ZIP/61-column TSV transport, filename and bounded parsing.
+- [x] FIPS conversion, all documented geography types and fractional slot ceiling.
+- [x] Export hash/member/row/event/report/DATEADDED evidence persists to graph/API;
+  SQLDATE remains event time, missing article text is visible.
+- [x] Structured and document output load independently across gate/cache/empty
+  extraction, partial failure and retry; checkpoint/reextract ownership prevents loss.
+- [x] Independent upstream fixture and disposable pipeline/graph scenario plus
+  affected/shared checks and full candidate verification; direct OI-19..22 evidence.
+
+Channel decision: a normalized record may contain both structured payload and a
+real document. Process structured content first, then document independently;
+GDELT exports supply coded observations only, never synthetic article text.
+Keep report links and a missing-text marker. Mentions ingestion is not required
+for this repair: only the export's SOURCEURL association is claimed; full mention
+coverage and article acquisition remain explicit gaps for BE-43. Cache entries
+belong only to document extraction. Coded evidence gets its own row-scoped identity;
+reextract touches extracted assertions only after successful replacement load.
+No checkpoint advances after record errors or beyond the fetched window.
+
+BE-42 implementation and local acceptance pass; the user requested PR publication after verification;
+merge remains pending. Direct closure evidence and full candidate results are recorded in
+VERIFICATION and OPEN_ISSUES. No production ingestion, paid calls, deployment or
+hosted required-status qualification is claimed. BE-43 is next in the numbered
+backend sequence with its provider/corpus/schema prerequisites still unresolved;
+BE-46 can follow BE-42 independently at its documented prerequisites.
+
 ## Current documentation delivery — BE-46 planning (2026-10-28)
 
 Selected scope: document Wikipedia entity context and Yahoo Finance company,
@@ -27,8 +63,9 @@ Documentation acceptance:
   record D-80 and validate documentation links, generation and existing guards.
 
 This is the requested planning/documentation step, not BE-46 implementation
-acceptance. The full implementation checklist remains unchecked in the backend
-register. BE-41 was merged in PR #7; BE-42 remains the next runtime repair.
+acceptance. The full BE-46 implementation checklist remains unchecked in the backend
+register. BE-41 was merged in PR #7; BE-42 was the next runtime repair at this
+planning handoff and is now verified in the active delivery above.
 
 ## Historical delivery: BE-41 — repository specification and status reconciliation
 
@@ -59,7 +96,7 @@ Acceptance checklist:
 
 | Track | Implemented history | Current position | Next runtime delivery |
 |---|---|---|---|
-| Backend | BE-01–40 plus BE-25a have implementation commits in main; changes/defects/qualification differ per row | BE-41 merged in PR #7 (`b9d940a`); BE-46 enrichment planned; no all-packages-complete claim | BE-42 repairs GDELT/mixed evidence, then BE-43 agency/qualified claims |
+| Backend | BE-01–40 plus BE-25a have implementation commits in main; changes/defects/qualification differ per row | BE-42 implemented and locally verified in this candidate; BE-46 enrichment planned; no production claim | BE-43 agency/qualified claims at its prerequisites; BE-46 may follow BE-42 independently |
 | Desktop | DC-01–13 merged; later auth/backup/lifecycle changes supersede old behavior | Acceptance gaps OI-05/10/11/18 and manual/performance evidence remain | DC-14 correctness/qualification; DC-15 qualified evidence with BE-43 |
 
 No further runtime coding begins before BE-41's documentation acceptance passes.

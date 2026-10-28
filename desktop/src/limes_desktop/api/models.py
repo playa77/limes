@@ -52,6 +52,14 @@ class EdgeRef:
     evidence_document_id: str | None = None
     evidence_start: int | None = None
     evidence_end: int | None = None
+    evidence_channel: str | None = None
+    evidence_member: str | None = None
+    evidence_row: int | None = None
+    source_event_id: str | None = None
+    source_url: str | None = None
+    report_url: str | None = None
+    source_recorded_at: str | None = None
+    article_text_available: bool | None = None
 
     @classmethod
     def from_api(cls, d: dict[str, Any]) -> Self:
@@ -74,6 +82,14 @@ class EdgeRef:
             evidence_document_id=d.get("evidence_document_id"),
             evidence_start=d.get("evidence_start"),
             evidence_end=d.get("evidence_end"),
+            evidence_channel=d.get("evidence_channel"),
+            evidence_member=d.get("evidence_member"),
+            evidence_row=d.get("evidence_row"),
+            source_event_id=d.get("source_event_id"),
+            source_url=d.get("source_url"),
+            report_url=d.get("report_url"),
+            source_recorded_at=d.get("source_recorded_at"),
+            article_text_available=d.get("article_text_available"),
         )
 
 

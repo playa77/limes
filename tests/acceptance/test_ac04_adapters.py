@@ -201,8 +201,8 @@ def _records_for(source_id: str) -> list[RawRecord]:
     if source_id == "gdelt":
         return [
             RawRecord(
-                payload=(FIXTURES / "gdelt" / "events.csv").read_bytes(),
-                content_type="text/csv",
+                payload=_gdelt_zip(),
+                content_type="application/zip",
                 source_url=gdelt.FILE_URL_TEMPLATE.format(
                     slot=datetime(2026, 8, 1, 15, 45, tzinfo=UTC)
                 ),
@@ -311,3 +311,10 @@ def test_ac04_wikidata_is_enrichment_only():
     adapter = wikidata.WikidataAdapter()
     with pytest.raises(NotImplementedError):
         list(adapter.fetch(None, None))
+
+
+def _gdelt_zip() -> bytes:
+    stream = io.BytesIO()
+    with zipfile.ZipFile(stream, "w") as archive:
+        archive.writestr("20260801154500.export.CSV", (FIXTURES / "gdelt/events.tsv").read_bytes())
+    return stream.getvalue()

@@ -50,6 +50,14 @@ class Provenance(BaseModel):
     evidence_document_id: str | None = None
     evidence_start: int | None = None
     evidence_end: int | None = None
+    evidence_channel: str | None = None
+    evidence_member: str | None = None
+    evidence_row: int | None = None
+    source_event_id: str | None = None
+    source_url: str | None = None
+    report_url: str | None = None
+    source_recorded_at: datetime | None = None
+    article_text_available: bool | None = None
 
 
 class Validity(BaseModel):
@@ -137,6 +145,7 @@ class NormalizedRecord(BaseModel):
     entities: list[EntityEndpoint] = []  # named but in no relationship
     lookup_rows: list[LookupRow] = []
     document: DocumentPayload | None = None
+    errors: int = 0  # counted partial normalization failures; checkpoint cannot advance
 
 
 class NerSpan(BaseModel):

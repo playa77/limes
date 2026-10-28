@@ -84,6 +84,14 @@ class EdgeRef(BaseModel):
     evidence_document_id: str | None = None
     evidence_start: int | None = None
     evidence_end: int | None = None
+    evidence_channel: str | None = None
+    evidence_member: str | None = None
+    evidence_row: int | None = None
+    source_event_id: str | None = None
+    source_url: str | None = None
+    report_url: str | None = None
+    source_recorded_at: datetime | None = None
+    article_text_available: bool | None = None
 
 
 class GraphResult(BaseModel):
@@ -310,6 +318,16 @@ def edge_ref(rel: Relationship) -> EdgeRef:
         evidence_document_id=_str_or_none(props.get("evidence_document_id")),
         evidence_start=_int_or_none(props.get("evidence_start")),
         evidence_end=_int_or_none(props.get("evidence_end")),
+        evidence_channel=_str_or_none(props.get("evidence_channel")),
+        evidence_member=_str_or_none(props.get("evidence_member")),
+        evidence_row=_int_or_none(props.get("evidence_row")),
+        source_event_id=_str_or_none(props.get("source_event_id")),
+        source_url=_str_or_none(props.get("source_url")),
+        report_url=_str_or_none(props.get("report_url")),
+        source_recorded_at=native_datetime(props.get("source_recorded_at")),
+        article_text_available=props.get("article_text_available")
+        if isinstance(props.get("article_text_available"), bool)
+        else None,
     )
 
 

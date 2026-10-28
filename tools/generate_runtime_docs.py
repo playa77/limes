@@ -249,12 +249,14 @@ and Neo4j-native entity vectors. Assertions preserve bitemporal provenance.
 Current extraction cannot explicitly represent attribution, denial, modality or
 event lifecycle; Event declares only label, source_event_id and occurred_at.
 
-GDELT is registered but has confirmed format/routing/evidence defects: its local
-plain-CSV URL/parser and 55-column map do not match the published 61-column zipped
-TSV export, and document routing ignores its normalized structured assertions.
-Per-file synthetic summaries also lose report-level lineage. Treat GDELT ingestion
-as requiring repair, not as live-validated coverage. See OI-19..OI-22 in
-[NEWS_REVIEW](NEWS_REVIEW.md) and [OPEN_ISSUES](../OPEN_ISSUES.md).
+BE-42 decodes bounded official 61-column ZIP/TSV exports and loads coded
+observations independently of document gating/cache. Row-scoped provenance
+retains archive hash, ZIP member, row, event ID, export/report URLs and DATEADDED;
+SQLDATE remains event validity, fetch time remains recorded time. FIPS country
+codes are converted explicitly. The API exposes missing article text; exports
+are never fabricated into documents. Only SOURCEURL report associations are
+covered; Mentions and article retrieval remain future acquisition work.
+See [VERIFICATION](VERIFICATION.md) for candidate evidence and its limits.
 
 The accepted target is integrated news intelligence inside the existing worker,
 archive, resolver, ontology, loader, API and desktop. Preserve independent coded
@@ -388,9 +390,14 @@ actual authorized deployment. CI records JUnit results for every required suite.
 
 ## News acquisition and scheduling (planned)
 
-GDELT backfill is exposed by the CLI, but source format, routing and provenance
-defects OI-19..OI-22 remain open. Do not treat job submission or mocked adapter
-tests as proof of successful live ingestion. See [NEWS_REVIEW](NEWS_REVIEW.md).
+GDELT backfill accepts explicit windows of at most 96 fifteen-minute slots
+(one day); larger requests fail before network access and must be split into
+consecutive jobs. Compressed responses are capped at 16 MiB, decompressed exports
+at 128 MiB and rows at 250,000. Malformed/partial records block checkpoint
+advancement; successful checkpoints use the covered window endpoint and never
+move backward. Failed document loads remain replayable; reextract bypasses the
+cache and retracts only extracted evidence after replacement loading succeeds.
+No production ingestion is implied by the disposable fixture scenario.
 
 Agency acquisition remains within the existing worker's operator jobs; no
 standalone utility or additional service is planned. Provider access/retention
@@ -462,14 +469,15 @@ parameter rejection and failed process exit codes. Runtime tests reject privileg
 port, source and documentation drift. Production smoke is a separate administrator
 action; integration smoke uses only disposable configuration and mocked paid paths.
 
-## News design and verification status — 2026-10-27
+## News design and verification status — 2026-10-28
 
-[NEWS_REVIEW](NEWS_REVIEW.md) evaluates the supplied ChatGPT suggestions and
-records a bounded public-export check plus a mocked routing probe. GDELT format,
-mixed-payload loss, report granularity, geography and slot rounding defects remain
-open as OI-19..OI-22. Existing comma-CSV fixtures and implementation-derived URLs
-do not prove external-format compatibility; no source-to-graph ingestion or paid
-extraction result is claimed by that investigation.
+[NEWS_REVIEW](NEWS_REVIEW.md) records the original GDELT investigation.
+BE-42 repairs its format, mixed-channel loss, row/report provenance, geography
+and slot rounding defects; [VERIFICATION](VERIFICATION.md) records exact candidate
+results. Tests include unchanged upstream TSV rows, explicit format/size failures,
+real pipeline-to-disposable-graph/API evidence and mixed-channel retry/reextract
+scenarios with mocked providers. Live article acquisition, Mentions coverage,
+paid extraction quality and production readiness remain unclaimed.
 
 [core design](LIMES_Design_Document_v2.0.0.md) is the accepted integrated target;
 [ROADMAP](ROADMAP.md) defines complete packages and acceptance. Representative

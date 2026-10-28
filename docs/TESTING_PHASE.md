@@ -72,14 +72,15 @@ parameter rejection and failed process exit codes. Runtime tests reject privileg
 port, source and documentation drift. Production smoke is a separate administrator
 action; integration smoke uses only disposable configuration and mocked paid paths.
 
-## News design and verification status — 2026-10-27
+## News design and verification status — 2026-10-28
 
-[NEWS_REVIEW](NEWS_REVIEW.md) evaluates the supplied ChatGPT suggestions and
-records a bounded public-export check plus a mocked routing probe. GDELT format,
-mixed-payload loss, report granularity, geography and slot rounding defects remain
-open as OI-19..OI-22. Existing comma-CSV fixtures and implementation-derived URLs
-do not prove external-format compatibility; no source-to-graph ingestion or paid
-extraction result is claimed by that investigation.
+[NEWS_REVIEW](NEWS_REVIEW.md) records the original GDELT investigation.
+BE-42 repairs its format, mixed-channel loss, row/report provenance, geography
+and slot rounding defects; [VERIFICATION](VERIFICATION.md) records exact candidate
+results. Tests include unchanged upstream TSV rows, explicit format/size failures,
+real pipeline-to-disposable-graph/API evidence and mixed-channel retry/reextract
+scenarios with mocked providers. Live article acquisition, Mentions coverage,
+paid extraction quality and production readiness remain unclaimed.
 
 [core design](LIMES_Design_Document_v2.0.0.md) is the accepted integrated target;
 [ROADMAP](ROADMAP.md) defines complete packages and acceptance. Representative

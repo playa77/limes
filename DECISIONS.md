@@ -5,6 +5,44 @@ reversibility: **R1** reversible in under an hour, **R2** bounded recoverable
 cost, **R3** one-way door. Written when each decision is made, latest first.
 Nothing here is a status report; unlogged decisions are unmade decisions.
 
+## 2026-10-28 — D-81 (R2) — BE-42 coded evidence and channel ownership
+
+The user requested finishing the latest unfinished backend package, otherwise
+implementing the next one. Live main b093599 includes merged BE-41 and BE-46
+planning; the roadmap explicitly selects BE-42 as the next runtime repair.
+Delivery is on codex/be-42-ingestion-repair; no commit/publication or data run is
+requested by the implementation instruction. After local acceptance, the user
+explicitly requested preparing and opening a PR, authorizing its commit and push.
+The official export pinned by NEWS_REVIEW was fetched read-only and
+its SHA-256 verified before coding. Three unchanged rows are the independent
+format fixture; the FIPS/ISO crosswalk is attributed to GeoNames with source hash.
+
+GDELT exports supply coded observations, not synthetic document prose. Preserve
+archive/member/row/event/export/report identity and DATEADDED separately from
+SQLDATE and ingestion recorded time. Nullable additive provenance fields pass
+through the loader, authenticated API and desktop mirror; absent old fields
+remain unknown. Multiple reports/export versions retain distinct assertion IDs.
+Only SOURCEURL association is covered; Mentions ingestion is explicitly outside
+this repair. Article text is unavailable, not silently synthesized or fetched.
+No claim of independent corroboration follows from two observations.
+
+Normalized output may carry both channels regardless of kind. Structured content
+loads before document gating/cache/extraction. Mixed structured assertion identity
+is separate from extracted identity, and interval closure respects channel.
+Reextract bypasses cache, loads replacement first, then retracts only extracted
+assertions (including legacy edges with extractor_model). Successful empty output
+can retract old extracted evidence; partial extraction/validation is retryable,
+not success-cached, and cannot advance the source checkpoint. Record errors also
+block advancement. Checkpoints use covered until/run start and never regress.
+
+GDELT window instants are normalized to UTC before slot rounding/URL formatting.
+GDELT work bounds are explicit: 96 slots per request, 16 MiB compressed response,
+128 MiB expanded export and 250,000 rows. Larger windows fail before network I/O;
+operators submit consecutive bounded windows. Budget compatibility flags remain
+ignored. These caps are defensive bounds, not measured resource qualification.
+Fixtures/mock providers and disposable graph/API tests do not establish live
+article coverage, paid extraction quality, representative memory or deployment.
+
 ## 2026-10-28 — D-80 (R2) — Wikipedia and Yahoo Finance enrichment within current scope
 
 The user confirmed German and European policy as the current scope, deferred

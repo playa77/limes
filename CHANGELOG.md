@@ -8,6 +8,18 @@
 - Preserve German and European policy scope; comprehensive EU-27 coverage remains
   deferred. Both adapters remain unimplemented; no ingestion or deployment occurs.
 
+## 2026-10-28 — BE-42 coded-source ingestion repair
+
+- Decode bounded official GDELT ZIP/61-column TSV exports with correct filenames,
+  FIPS country conversion, geographic types 1–5 and inclusive fractional slots.
+- Preserve coded export/member/row/event/report/time evidence through graph/API;
+  remove fabricated article summaries and expose missing text explicitly.
+- Process structured and document channels independently; preserve retry/cache and
+  reextract ownership, load replacements before retraction, and keep checkpoints
+  within covered windows without advancing on partial record errors.
+- Add upstream-derived format and disposable graph/API/channel regressions.
+  Mentions/article acquisition and production qualification remain separate work.
+
 ## 2026-10-27 — BE-41: repository specification and status reconciliation (D-79)
 
 - Establish separate BE/DC sequences with every historical package, evidence,

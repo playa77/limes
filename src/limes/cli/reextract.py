@@ -32,9 +32,8 @@ def reextract_source(
     settings = load_settings()
     configure_logging(settings)
     envelope = Decimal(str(budget)) if budget is not None else None
-    # The deliberate version: the cache key includes the prompt version, so
-    # reextract under the pinned version would hit every cache entry and be
-    # a no-op (D-39). The copy keeps the rest of the configuration intact.
+    # Record the requested prompt version; reextract bypasses document cache
+    # hits so a retry can finish replacement/retraction before caching.
     settings = settings.model_copy(update={"extraction_prompt_version": prompt_version})
     for source_id in _reextract_sources(source):
         _reextract_one(settings, source_id, envelope)

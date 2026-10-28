@@ -314,6 +314,7 @@ def request_with_retry(
     timeout_s: float = HTTP_TIMEOUT_SECONDS,
     follow_redirects: bool = True,
     log: Any = logger,
+    max_bytes: int | None = None,
 ) -> httpx.Response:
     """The one §11 retry transport: exponential backoff from 2 s, factor 2,
     jittered, at most `HTTP_MAX_ATTEMPTS` attempts, on connection errors,
@@ -345,7 +346,23 @@ def request_with_retry(
             headers=headers,
         ) as client:
             try:
-                response = client.post(url, json=json_body) if method == "POST" else client.get(url)
+                if max_bytes is None:
+                    response = (
+                        client.post(url, json=json_body) if method == "POST" else client.get(url)
+                    )
+                else:
+                    with client.stream(method, url, json=json_body) as streamed:
+                        chunks = bytearray()
+                        for chunk in streamed.iter_bytes():
+                            if len(chunks) + len(chunk) > max_bytes:
+                                raise SourceFetchError("source response exceeds byte limit")
+                            chunks.extend(chunk)
+                        response = httpx.Response(
+                            streamed.status_code,
+                            headers=streamed.headers,
+                            content=bytes(chunks),
+                            request=streamed.request,
+                        )
             except (httpx.ConnectError, httpx.ConnectTimeout, httpx.ReadTimeout) as exc:
                 raise TransientFailure(str(exc)) from exc
             if response.status_code in RETRYABLE_STATUSES:
@@ -360,7 +377,9 @@ def request_with_retry(
         raise RetryExhausted(attempts, url, str(exc)) from exc
 
 
-def fetch_bytes(url: str, *, timeout_s: int = HTTP_TIMEOUT_SECONDS) -> bytes:
+def fetch_bytes(
+    url: str, *, timeout_s: int = HTTP_TIMEOUT_SECONDS, max_bytes: int | None = None
+) -> bytes:
     """GET a URL with the §11 retry policy: exponential backoff from 2 s,
     factor 2, jittered, at most 4 attempts, on connection errors, timeouts,
     429, and 5xx — never on other 4xx.
@@ -369,7 +388,7 @@ def fetch_bytes(url: str, *, timeout_s: int = HTTP_TIMEOUT_SECONDS) -> bytes:
     final status or reason. HTTP 404 is a permanent miss (the URL constant is
     wrong or the resource moved) and is reported as such without retries.
     """
-    return _fetch("GET", url, timeout_s=timeout_s)
+    return _fetch("GET", url, timeout_s=timeout_s, max_bytes=max_bytes)
 
 
 def fetch_bytes_post(
@@ -390,6 +409,7 @@ def _fetch(
     *,
     json_body: dict[str, object] | None = None,
     timeout_s: int = HTTP_TIMEOUT_SECONDS,
+    max_bytes: int | None = None,
 ) -> bytes:
     try:
         response = request_with_retry(
@@ -399,6 +419,7 @@ def _fetch(
             headers={"User-Agent": USER_AGENT, "Accept": "*/*"},
             timeout_s=timeout_s,
             log=logger,
+            max_bytes=max_bytes,
         )
     except PermanentStatus as exc:
         raise SourceFetchError(f"fetch failed: {exc.url} returned HTTP {exc.status_code}") from exc
