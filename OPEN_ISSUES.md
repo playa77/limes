@@ -13,7 +13,7 @@ merges or deployment without explicit instruction. Production/co-tenant operatio
 are outside implementation scope. Snapshot and issue rows below are historical
 records; subsequent evidence/closures are appended without erasing them.
 
-## Current disposition — 2026-10-29 (BE-46 candidate; BE-45 waiver retained)
+## Current disposition — 2026-10-29 (DC-14 candidate; BE-45 waiver retained)
 
 This index supersedes the status wording in the historical inventory below, without
 erasing its evidence. Package placement: [backend](docs/BACKEND_ROADMAP.md),
@@ -26,26 +26,26 @@ closure sections; “open” is not a statement that every old symptom still exi
 | OI-02 | Closed | DC-12 | 2026-10-07 Closed with evidence: 2 integration cases; no new deployed smoke claim |
 | OI-03 | BE-45 operator-evidence gate waived (D-84); unmeasured | Operator | Actual production smoke remains unobserved; disposable qualification is separate |
 | OI-04 | Closed | BE-37/38 superseding runtime | 2026-10-07 Closed with evidence; loopback/HTTPS/tunnel docs and drift checks |
-| OI-05 | Open missing original review trail | Agent + BE-45/DC-13 | Recover source or explicit bounded re-review; do not invent closure of unknown 18 findings |
+| OI-05 | Open missing original review trail (HIST-DC-1) | Original record owner + DC-13/14 | Current bounded re-review in DESKTOP_QUALIFICATION; original still absent; unknown 18 findings are not declared closed |
 | OI-06 | Closed | DC-03 | 2026-10-07 contract-suite evidence: keyword typo corrected |
 | OI-07 | Closed | DC-02 | 2026-10-07 unit evidence: dead timeout removed |
 | OI-08 | Closed | DC-06/09 | 2026-10-07 unit evidence: unused expansion bookkeeping removed |
 | OI-09 | BE-45 operator-evidence gate waived (D-84); unmeasured | Operator | No production revision/image observation is claimed; zero tags is not itself a defect |
-| OI-10 | Open semantic decision/repair | Agent + DC-14 | Verify and document direction/refill policy with behavior coverage, not a closure by prose alone |
-| OI-11 | Open requirement/policy conflict | Operator decision + agent DC-14 | API-only requirement conflicts with external OSM tiles; select policy/conforming map behavior explicitly |
+| OI-10 | Closed in DC-14 candidate | Agent + DC-14 | D-86 and dated closure below; self-both direction retention, full suffix refill and submitted-chain validation |
+| OI-11 | Closed in DC-14 candidate | Agent + DC-14 | D-86 selects a conforming coordinate-only map; no external tiles, requirement unchanged; actual render/request evidence below |
 | OI-12 | Closed | DC-02 | 2026-10-07 parity evidence; current test covers top-level query/neighbors |
 | OI-13 | Closed | DC-12 | 2026-10-07 integration evidence: dynamic sys import corrected |
 | OI-14 | Closed implementation; hosted status separate | BE-37/39, BE-45 | CI workflow exists; historical no-CI statement is obsolete, configured required-status evidence remains OI-23 |
 | OI-15 | Closed | BE-01 | Canonical venv documented and commands executed; 2026-10-07 closure |
 | OI-16 | Closed in BE-41 | Agent/documentation | Original desktop plan archived, old path becomes a pointer, desktop roadmap is authoritative; source preserved |
 | OI-17 | Closed | BE-37/38 | C8/runtime-doc guards reject publication/auth/configuration drift; 2026-10-07 evidence |
-| OI-18 | Open missing network guard | Agent + DC-14 | Guard and deliberate forbidden-URL failure tied to OI-11's decided policy |
+| OI-18 | Closed in DC-14 candidate | Agent + DC-14 | Bundled-resource WebEngine guard plus API origin boundary; deliberate forbidden resources rejected on all three actual pages |
 | OI-19 | Closed in BE-42 candidate | Agent + BE-42 | 2026-10-28 direct closure below: Official URL/ZIP/61-column TSV with compressed/expanded/member/row bounds; upstream fixture and real graph/API test |
 | OI-20 | Closed in BE-42 candidate | Agent + BE-42 | 2026-10-28 direct closure below: Independent channels, collision-free identity, gate/cache/empty/failure/retry/reextract graph scenarios |
 | OI-21 | Closed in BE-42 candidate | Agent + BE-42 | 2026-10-28 direct closure below: Archive/member/row/event/export/report/time provenance survives graph/API; no synthetic document; text explicitly unavailable |
 | OI-22 | Closed in BE-42 candidate | Agent + BE-42 | 2026-10-28 direct closure below: GeoNames FIPS conversion, types 1–5, finite coordinate bounds, fractional slot ceiling and explicit workload limits |
 | OI-23 | Repository and hosted execution verified; protection evidence waived/unverified | BE-45 | PR run 40824901246 and main smoke 40827109504 pass; protection API returns 403; D-84 waives operator-evidence gate, not a claim that protection is configured |
-| OI-24 | Bounded candidate recovery/resources verified; DC-14 gaps open; external evidence waived | Agent/operator + DC-14 | BE-45 integration JUnit records actual dump restoration and synthetic fixture measurements; production/model/reference-platform claims remain unmeasured (D-84), desktop correctness remains open |
+| OI-24 | Bounded candidate evidence; external reference/deployment evidence remains | Agent/operator + DC-14 | BE-45 recovery observations retained; DC-14 direct matrix in DESKTOP_QUALIFICATION; REF-DC-1/DEP-DC-1 unavailable, production/model/reference claims remain unmeasured |
 
 The documentation reconciliation can close while these implementation/operator
 obligations remain open. It cannot close them by changing labels or accepting
@@ -609,3 +609,45 @@ suites, exact source identity and zero failures/errors/skips. VERIFICATION maps
 all nine backend acceptance items to direct source/graph/API/desktop evidence.
 Earlier failed/interrupted candidates are retained, not counted as acceptance.
 No existing issue is closed by assertion or cumulative pass counts.
+
+
+## 2026-10-29 — DC-14 correctness closures and external evidence disposition
+
+D-86 preserves the API-only contract with a conforming coordinate-only map.
+Live-fetched base `a434adc0fe4b`, branch `codex/dc-14-desktop-qualification`.
+Candidate source manifest is retained in `work/dc14/final-2/source.json`;
+VERIFICATION records the passing full candidate and failed prior run.
+
+- **OI-10 closed locally:** `test_builder_self_both_and_entire_suffix_refill` and
+  existing schema-driven builder tests prove retained admissible direction/target
+  choices, invalidation through all later hops and exact submitted-chain admission.
+  This is a behavior repair with D-86 policy, not closure by documentation alone.
+- **OI-11 closed locally:** `map.html` no longer registers a tile provider. Its
+  visible coordinate-only notice, bounded finite LatLng geometry and selected
+  relation are checked by actual Leaflet rendering. No requirement exception or
+  tile-service access is inferred. Reference desktop evidence remains separate.
+- **OI-18 closed locally:** every WebEngine profile installs LocalResourcesOnly
+  before its first local page load. The policy denies HTTP(S)/WebSocket/data and
+  arbitrary local files; allowed resources stay in the resolved bundle directory
+  or the exact Qt WebChannel URL. `test_actual_web_pages_selection_render_and_forbidden_request`
+  renders all three shipped HTML pages and proves each real interceptor rejects
+  an attempted external image, even with Qt's independent remote-access setting
+  relaxed. The API client separately forbids cross-origin redirects before sending
+  the next request; existing same-origin redirect compatibility remains covered.
+
+Re-run: `QT_QPA_PLATFORM=offscreen QTWEBENGINE_CHROMIUM_FLAGS='--no-sandbox --disable-gpu'
+venv/bin/python -m pytest desktop/tests/unit desktop/tests/contract -q`.
+The final candidate's desktop lane passes **147** cumulative cases with zero
+failures/errors/skips. The new startup JUnit observation is 0.8070263199997498 seconds
+from cold shell imports to typed search on Debian 13/offscreen, with WebEngine
+core/widgets absent. This is not the Ubuntu reference-machine ≤3s certification.
+
+[DESKTOP_QUALIFICATION](docs/DESKTOP_QUALIFICATION.md) is an explicit current
+re-review and maps every grouped FR, NFR and AC to bounded evidence or a named
+external obligation. **HIST-DC-1/OI-05 remains open:** the original ignored review
+log is absent, and its unknown 18 findings are not reconstructed or waived.
+**REF-DC-1** is unavailable Ubuntu X11/Wayland reference hardware/session and human
+cross-view qualification. **DEP-DC-1** is an unspecified current administrator
+Compose deployment for manual workflow/backup observation. BE-45's waiver does not
+supply these facts. No production data, paid model, deployment or historical
+review closure is inferred from candidate fixtures.

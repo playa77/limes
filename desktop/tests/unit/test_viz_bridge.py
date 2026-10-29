@@ -34,7 +34,7 @@ def test_push_result_serializes_exact_contract() -> None:
     assert payload["nodes"][0]["type"] == "Organization"
     assert payload["nodes"][1]["geometry"] is None  # geometry is map-payload-only
     # the map payload (FR-DC-041) carries point geometry in Leaflet order
-    assert json.loads(map_payload(bundle))["nodes"][0]["geometry"] == [13.4, 52.5]
+    assert json.loads(map_payload(bundle))["nodes"][0]["geometry"] == [52.5, 13.4]
     assert payload["edges"][0]["relation"] == "located_in"
     assert payload["edges"][0]["source"] == "e-1"
     assert payload["edges"][0]["target"] == "e-2"

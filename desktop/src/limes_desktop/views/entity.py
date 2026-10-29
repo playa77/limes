@@ -158,6 +158,7 @@ class EntityView(QWidget):
     def set_ontology(self, ontology: dict[str, Any]) -> None:
         """Accept the `GET /ontology` payload; populates the filter combo."""
         self._ontology = ontology
+        previous = self.relation_filter.currentText()
         self.relation_filter.blockSignals(True)
         self.relation_filter.clear()
         self.relation_filter.addItem("(all relations)")
@@ -165,6 +166,9 @@ class EntityView(QWidget):
             name = relation.get("name") if isinstance(relation, dict) else relation
             if name:
                 self.relation_filter.addItem(str(name))
+        index = self.relation_filter.findText(previous)
+        if index >= 0:
+            self.relation_filter.setCurrentIndex(index)
         self.relation_filter.blockSignals(False)
 
     # -- entity rendering (FR-DC-020 / AC-DC-2) ----------------------------------
@@ -231,7 +235,11 @@ class EntityView(QWidget):
             document = self._client_factory().entity(str(document_id))
         except Exception:
             return None
-        body = (document.get("entity") or {}).get("properties", {}).get("body")
+        body = (
+            document.entity.properties.get("body")
+            if isinstance(document, EntityDetail)
+            else (document.get("entity") or {}).get("properties", {}).get("body")
+        )
         if not body or not isinstance(body, str):
             return None
         return body[start:end]

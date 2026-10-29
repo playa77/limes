@@ -16,6 +16,7 @@ from limes_desktop.config import ConnectionProfile
 class _BackupTask(QThread):
     output_line = Signal(str)
     completed = Signal(int, object, object)
+    job_started = Signal(str)
 
     def __init__(self, factory: Callable[[], Any], parent: QObject) -> None:
         super().__init__(parent)
@@ -26,6 +27,7 @@ class _BackupTask(QThread):
         try:
             client = self.factory()
             job = client.submit_backup(str(uuid4()))
+            self.job_started.emit(job.job_id)
             self.output_line.emit(f"Backup job: {job.job_id}")
             previous = ""
             while True:
@@ -44,8 +46,8 @@ class _BackupTask(QThread):
                     return
                 if job.status == "succeeded":
                     try:
-                        client.health()
-                        healthy = True
+                        info = client.health()
+                        healthy = info.status == "ok" and info.neo4j
                     except Exception:
                         healthy = False
                     self.completed.emit(0, healthy, dump)
@@ -74,13 +76,24 @@ class BackupRunner(QObject):
         self._task: _BackupTask | None = None
         self.health_ok: bool | None = None
         self.dump_path: str | None = None
+        self.job_id: str | None = None
 
     def prerequisites(self, profile: ConnectionProfile) -> list[str]:
+        from limes_desktop.api.errors import ApiError, ApiUnreachable
+
         try:
-            self._client_factory().operation_capabilities()
+            allowed = self._client_factory().operation_capabilities()
+        except ApiUnreachable:
+            return ["Backup unavailable: API unreachable."]
+        except ApiError as exc:
+            return [
+                "Backup requires an operator credential."
+                if exc.status in (401, 403)
+                else "Backup capabilities unavailable from API."
+            ]
         except Exception:
             return ["Backup requires a reachable API and an operator credential."]
-        return []
+        return [] if allowed.get("backup") else ["API does not offer backup capability."]
 
     def run(self, profile: ConnectionProfile) -> None:
         if self._task is not None:
@@ -89,10 +102,14 @@ class BackupRunner(QObject):
         self.dump_path = None
         task = _BackupTask(self._client_factory, self)
         self._task = task
+        task.job_started.connect(self._remember_job)
         task.output_line.connect(self.output_line)
         task.completed.connect(self._complete)
         task.finished.connect(self._cleanup)
         task.start()
+
+    def _remember_job(self, job_id: str) -> None:
+        self.job_id = job_id
 
     def _complete(self, code: int, health: bool | None, dump: str | None) -> None:
         self.health_ok, self.dump_path = health, dump

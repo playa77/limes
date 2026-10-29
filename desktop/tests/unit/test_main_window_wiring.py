@@ -15,6 +15,7 @@ def _window(qtbot: Any, client: FakeClient) -> MainWindow:
     state = SessionState()
     win = MainWindow(state, ProfileStore(), lambda: client)  # type: ignore[arg-type]
     qtbot.addWidget(win)
+    qtbot.waitUntil(lambda: client.health_calls == 1 and not win.banner._tasks)
     return win
 
 
@@ -71,6 +72,7 @@ def test_ontology_refetched_on_profile_change(qtbot: Any) -> None:
     assert client.ontology_calls == 1
 
     win._state.set_connection(None)  # triggers connection_changed wiring
+    qtbot.waitUntil(lambda: client.ontology_calls == 2 and not win.banner._tasks)
     assert client.ontology_calls == 2
 
 

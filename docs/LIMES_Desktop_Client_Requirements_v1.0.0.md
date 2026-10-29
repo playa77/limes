@@ -155,7 +155,7 @@ the API is unreachable: connection state is visible at all times (FR-DC-002).
 - NFR-DC-071: Startup to interactive search in ≤ 3 s on the reference machine;
   the QWebEngineView runtime is lazy-loaded on first visualization use.
 - NFR-DC-072: No telemetry, no network calls beyond the configured API and
-  operator job API — local-first defaults. Current external OSM tiles violate this requirement; OI-11/DC-14 requires an explicit policy or conforming map repair, not a silent exception.
+  operator job API — local-first defaults. DC-14 uses a conforming coordinate-only map without external tiles and enforces bundled-resource requests; see D-86 and DESKTOP_QUALIFICATION.
 - NFR-DC-073: Offline unit test suites for all client logic; API interactions
   mocked; no test makes real inference calls (repo invariant).
 - NFR-DC-074: The client is replaceable against the API contract: it must work
@@ -201,8 +201,10 @@ the API is unreachable: connection state is visible at all times (FR-DC-002).
 
 ## 6. Open acceptance and deferred scope
 
-DESKTOP_ROADMAP has a disposition for every AC and NFR, current defects and next
-packages. OI-10 builder semantics, OI-11/18 map network policy/guard, missing original
-review evidence and reference-platform/performance/manual qualification remain open.
+DESKTOP_ROADMAP and DESKTOP_QUALIFICATION retain a disposition for every AC/NFR
+and grouped functional requirements. DC-14 repairs OI-10 builder semantics and
+OI-11/18 map networking/guard without weakening API-only operation. Missing original
+review evidence and reference-platform/performance/manual deployment qualification
+remain named external evidence obligations.
 Authentication and API backup are implemented current requirements, not deferred.
 Distribution packaging and ledger write UI have no implementation commitment.

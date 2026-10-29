@@ -378,7 +378,8 @@ def test_redirect_to_another_host_does_not_receive_token():
     )
     client = ApiClient("https://api.test", token="session-secret")
     try:
-        client.health()
+        with pytest.raises(ApiError, match="outside the configured origin"):
+            client.health()
     finally:
         client.close()
-    assert "Authorization" not in destination.calls[0].request.headers
+    assert not destination.called

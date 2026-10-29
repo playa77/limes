@@ -40,29 +40,35 @@
         text: (events || []).map((e) => e.relation),
         mode: 'markers',
         name: name,
+        customdata: (events || []).map((e) => e.source),
         marker: { color: color },
       };
     }
 
+    let attached = false;
     function render(payload) {
-      Plotly.react('tl', [
+      const traces = [
         trace(payload.validity, 'validity time', '#2e7d32'),
         trace(payload.belief, 'belief time (recorded_at)', '#f9a825'),
-      ], layout);
-    }
-
-    // Plotly relayout publishes drag-zoom ranges as the temporal filter
-    const gd = document.getElementById('tl');
-    const attach = () => {
-      gd.on('plotly_relayout', (evt) => {
-        if (evt['xaxis.range'] && bridge) {
-          bridge.on_temporal_range(evt['xaxis.range'][0].slice(0, 10),
-                                   evt['xaxis.range'][1].slice(0, 10));
-        }
+      ];
+      traces.forEach((t) => {
+        t.marker.size = t.customdata.map(id => id === payload.selected_id ? 14 : 7);
       });
-    };
-    if (gd.on) attach(); else setTimeout(attach, 500);
-
+      Plotly.react('tl', traces, layout).then(() => {
+        if (attached) return;
+        attached = true;
+        const gd = document.getElementById('tl');
+        gd.on('plotly_click', evt => {
+          if (bridge && evt.points.length && evt.points[0].customdata) bridge.on_node_clicked(evt.points[0].customdata);
+        });
+        gd.on('plotly_relayout', evt => {
+          const range = evt['xaxis.range'] ||
+            [evt['xaxis.range[0]'], evt['xaxis.range[1]']];
+          if (bridge && range[0] && range[1])
+            bridge.on_temporal_range(range[0], range[1]);
+        });
+      });
+    }
     window.pushResult = render;
   </script>
 </body>

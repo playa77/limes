@@ -197,3 +197,76 @@ def test_full_flow_empty_result_carries_diagnosis(client_factory: Any) -> None:
     assert outcome.results.counts["rows"] == 0
     assert outcome.diagnosis is not None
     assert outcome.coverage is not None
+
+
+def test_real_widgets_complete_api_workflow(
+    qtbot: Any, client_factory: Any, ids: dict[str, str], tmp_path: Path
+) -> None:
+    """DC-14: drive actual controls through the API and disposable graph."""
+    from limes_desktop.config import ProfileStore
+    from limes_desktop.state import SessionState
+    from limes_desktop.views.main_window import MainWindow
+
+    stub = StubClient()
+    stub.replies = ["MATCH (a:Corporation {lei: 'LEI-ALPHA'})-[:SUBSIDIARY_OF]->(b) RETURN a, b"]
+    client = client_factory(stub)
+    stub.replies = stub.replies * 2
+    state = SessionState()
+    win = MainWindow(state, ProfileStore(tmp_path / "profiles"), lambda: client)
+    qtbot.addWidget(win)
+    win.show()
+    qtbot.waitUntil(lambda: win.banner.status_text() == "ok")
+    win._run_search("alpha")
+    assert any(hit.id == ids["alpha"] for hit in win.search_bar._hits)
+    state.set_selection(ids["alpha"])
+    assert win.entity_view.assertion_model.rowCount() >= 1
+    win.entity_view._on_assertion_clicked(win.entity_view.assertion_model.index(0, 0))
+    assert "validity:" in win.entity_view.provenance_text()
+    assert "belief (recorded at):" in win.entity_view.provenance_text()
+    win._expand_neighbors(ids["alpha"])
+    assert win.network_view._last_graph().nodes
+    win.nlq_view.question_edit.setText("DC-14 workflow: What does Alpha own?")
+    win.nlq_view.submit_button.click()
+    win.nlq_view.submit_button.click()  # repeated execution must not fail automatic history
+    assert (
+        len(
+            [
+                row
+                for row in client.saved_queries()
+                if row.question == "DC-14 workflow: What does Alpha own?"
+            ]
+        )
+        == 2
+    )
+    assert stub.calls == 2
+    assert win.nlq_view.cypher_edit.toPlainText()
+    win.nlq_view.run_button.click()
+    assert state.history()[-1].coverage is not None
+    win.builder_view.reload_schema()
+    win.builder_view.start_type_combo.setCurrentText("Corporation")
+    row = win.builder_view.hop_rows[0]
+    row.relation_combo.setCurrentText("SUBSIDIARY_OF")
+    row.direction_combo.setCurrentIndex(row.direction_combo.findData("out"))
+    row.target_combo.setCurrentText("Corporation")
+    win.builder_view.submit_button.click()
+    assert state.history()[-1].source == "builder"
+    assert state.history()[-1].coverage is not None
+    win.cypher_console.editor.setPlainText("MATCH (n:Corporation) RETURN n LIMIT 1")
+    win.cypher_console.run_button.click()
+    assert state.history()[-1].coverage is not None
+    win.stack.setCurrentWidget(win.cypher_console)
+    panel = win.saved_queries_panel
+    win.stack.setCurrentWidget(panel)
+    panel.name_edit.setText("DC-14 widget query")
+    panel.save_button.click()
+    assert any("DC-14 widget query" in row.question for row in client.saved_queries())
+    saved = next(row for row in client.saved_queries() if row.question == "DC-14 widget query")
+    panel.refresh_queries()
+    index = next(i for i, row in enumerate(panel._rows) if row[0] == saved.saved_query_id)
+    panel.list_widget.setCurrentRow(index)
+    panel.delete_button.click()
+    assert all(row.saved_query_id != saved.saved_query_id for row in client.saved_queries())
+    win.cypher_console.editor.setPlainText("MATCH (a:Corporation {lei:'absent'}) RETURN a LIMIT 1")
+    win.cypher_console.run_button.click()
+    assert win.coverage_panel.is_showing_empty_state
+    win.close()

@@ -8,17 +8,16 @@
   <script src="qrc:///qtwebchannel/qwebchannel.js"></script>
   <style>
     html, body { margin: 0; height: 100%; }
-    #map { width: 100%; height: 100%; }
+    #map { width: 100%; height: calc(100% - 32px); }
+    #notice { height: 32px; font: 13px sans-serif; }
   </style>
 </head>
 <body>
+  <div id="notice">Coordinate map · no basemap or external tiles</div>
   <div id="map"></div>
   <script>
     let bridge = null;
     const map = L.map('map').setView([51.0, 10.0], 5);
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap contributors',
-    }).addTo(map);
     const markerLayer = L.layerGroup().addTo(map);
     const lineLayer = L.layerGroup().addTo(map);
 
@@ -31,22 +30,31 @@
 
     function render(payload, selectedId) {
       if (!payload) return;
+      selectedId = payload.selected_id || selectedId;
       lastPayload = payload;
+      document.getElementById('notice').textContent =
+        'Coordinate map · no basemap or external tiles · missing geometry: ' +
+        (payload.missing_geometry || 0);
       markerLayer.clearLayers();
       lineLayer.clearLayers();
       const byId = {};
       (payload.nodes || []).forEach((n) => {
         byId[n.id] = n;
         if (n.geometry) {
-          L.marker(n.geometry)
-            .bindTooltip(n.label)
-            .addTo(markerLayer);
+          const label = document.createElement('span');
+          label.textContent = n.label;
+          L.circleMarker(n.geometry, {radius: n.id === selectedId ? 9 : 5,
+              color: n.id === selectedId ? '#c62828' : '#1565c0'})
+            .bindTooltip(label).addTo(markerLayer)
+            .on('click', () => { if (bridge) bridge.on_node_clicked(n.id); });
         }
       });
       (payload.lines || []).forEach((line) => {
         if (line.selected || line.source === selectedId || line.target === selectedId) {
+          const label = document.createElement('span');
+          label.textContent = line.relation;
           L.polyline(line.points, { color: '#c62828', weight: 3 })
-            .bindTooltip(line.relation)
+            .bindTooltip(label)
             .addTo(lineLayer);
         }
       });

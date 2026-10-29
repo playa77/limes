@@ -29,19 +29,22 @@ class NetworkView(VizPage):
         """
         from limes_desktop.api.models import GraphResult
 
-        base = bundle_graph(
-            QueryOutcomeBundle(result=self._last_graph(), coverage=None, source="expand")
-        )
+        base = bundle_graph(self._last_bundle) if self._last_bundle else self._last_graph()
         nodes = {n.entity_id: n for n in base.nodes}
         edges = list(base.edges)
         nodes[graph.entity.entity_id] = graph.entity
         for row in graph.neighbors:
             nodes[row.neighbor.entity_id] = row.neighbor
-            edges.append(row.edge)
+            if row.edge not in edges:
+                edges.append(row.edge)
         merged = GraphResult(nodes=list(nodes.values()), edges=edges)
-        return network_payload(
-            QueryOutcomeBundle(result=merged, coverage=None, source="expand")
+        bundle = QueryOutcomeBundle(
+            result=merged,
+            coverage=self._last_bundle.coverage if self._last_bundle else None,
+            source="expand",
         )
+        self._state.publish(bundle)
+        return self._last_payload or network_payload(bundle)
 
     def _last_graph(self) -> Any:
         from limes_desktop.api.models import GraphResult

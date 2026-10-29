@@ -112,7 +112,7 @@ packages (`pyproject.toml`: `files = ["src/limes", "desktop/src/limes_desktop"]`
 - **Views**: Qt widgets for chrome (lists, forms, tables, provenance panel).
   The three viz views each embed a QWebEngineView loading a bundled offline
   page from `resources/web/`; a `bridge.py` QWebChannel adapter is the only
-  Qt↔JS seam (push results in, selection changes out). View controllers invoke ApiClient; visualization pages never issue graph queries. Current map tiles are an explicit exception/violation under OI-11, not an accepted API-only guarantee.
+  Qt↔JS seam (push results in, selection changes out). View controllers invoke ApiClient; visualization pages never issue graph queries. DC-14 uses a local coordinate-only map without tiles. Each WebEngine profile enforces bundled-resource requests before loading its first page; API networking stays in the typed client.
 - **BackupRunner**: owns an asynchronous QThread task that submits an idempotent
   backup job with the operator credential, polls status and bounded output, extracts
   the dump name and checks API health after success. Closing interrupts observation
@@ -181,9 +181,11 @@ All API routes including health/docs/version require a bearer token. Connection
 profiles store names/URLs, never credentials; legacy compose_root is ignored.
 HTTPS or loopback HTTP/SSH forwarding is required. Operator credentials authorize
 backup and job status; consumer credentials cannot. No telemetry or direct graph
-access. API-only networking remains NFR-DC-072; the current OSM tile fetch violates
-it and DC-14 must settle the policy and install its guard. Do not advertise offline
-maps or “only API network traffic” as already enforced.
+access. API-only networking remains NFR-DC-072. DC-14 removes external map tiles
+and enforces a deny-by-default bundled-resource WebEngine policy plus same-origin
+API redirects. The coordinate map explicitly has no basemap; it does not supply
+an offline street/geographic tile dataset. DESKTOP_QUALIFICATION records direct
+forbidden-request evidence and separate reference-display obligations.
 
 ## 7. Qualified evidence and coordinated evolution
 
