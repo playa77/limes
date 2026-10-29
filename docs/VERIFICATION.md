@@ -110,7 +110,7 @@ net growth. No fixture-data, generated-document, dependency, ontology or CI chan
 | Category | Added | Deleted | Net |
 |---|---:|---:|---:|
 | Handwritten runtime (desktop plus supporting history fix) | 588 | 165 | 423 |
-| Tests/helpers | 742 | 45 | 387 |
+| Tests/helpers | 402 | 15 | 387 |
 | Handwritten documentation | 403 | 36 | 367 |
 
 Publication update: the user subsequently requested preparing and opening the
@@ -320,7 +320,7 @@ in place. Pass totals above are cumulative across the repository.
 | Category | Added | Deleted | Net |
 |---|---:|---:|---:|
 | Handwritten runtime | 1343 | 9 | 1334 |
-| Tests/helpers | 742 | 45 | 840 |
+| Tests/helpers | 874 | 34 | 840 |
 | Fixture data and attribution | 57 | 0 | 57 |
 | Ontology artifact | 127 | 2 | 125 |
 | Dependencies | 129 | 4 | 125 |
@@ -433,7 +433,7 @@ case extended; no standalone fixture dataset or product-runtime code added):
 | CI configuration | 1 | 1 | 0 |
 | Handwritten documentation | 245 | 16 | 229 |
 | Generated documentation | 15 | 1 | 14 |
-| Tests/helpers | 742 | 45 | 156 |
+| Tests/helpers | 157 | 1 | 156 |
 | Documentation renderer | 15 | 1 | 14 |
 | Qualification tooling | 156 | 0 | 156 |
 
@@ -545,7 +545,7 @@ for the subsequently requested PR publication; merge and deployment remain separ
 | Category | Added lines | Deleted lines | Net lines |
 |---|---:|---:|---:|
 | Handwritten implementation | 899 | 10 | 889 |
-| Tests/helpers | 742 | 45 | 493 |
+| Tests/helpers | 493 | 0 | 493 |
 | Runtime configuration | 1 | 0 | 1 |
 | Documentation renderer | 4 | 1 | 3 |
 | Generated documentation | 4 | 1 | 3 |
@@ -822,7 +822,7 @@ and one upstream graph/API scenario); suite totals above include pre-existing te
 | Handwritten documentation | 273 | 20 | 253 |
 | Handwritten implementation | 259 | 148 | 111 |
 | Generated documents | 24 | 16 | 8 |
-| Tests/helpers | 742 | 45 | 416 |
+| Tests/helpers | 449 | 33 | 416 |
 | Fixture data | 6 | 3 | 3 |
 | Documentation renderer | 24 | 16 | 8 |
 | Generated country crosswalk | 258 | 0 | 258 |
@@ -848,7 +848,7 @@ existing tests and are not a quota. Ontology/prompt/schema versions are explicit
 | Generated documents | 23 | 11 | 12 |
 | Handwritten documentation | 422 | 47 | 375 |
 | Handwritten implementation and prompts | 1488 | 31 | 1457 |
-| Tests/helpers | 742 | 45 | 652 |
+| Tests/helpers | 683 | 31 | 652 |
 | Versioned ontology | 55 | 1 | 54 |
 
 ## 2026-10-29 — BE-47 first full-ingest repair candidate
