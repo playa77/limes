@@ -7,7 +7,44 @@ The [documentation index](INDEX.md) identifies each document's authority; the
 Historical bare WP numbers must be qualified as backend or desktop. Old counts,
 unticked archived plans and merged commits are never substituted for acceptance.
 
-## Active runtime delivery — BE-43 + DC-15 (2026-10-28)
+## Active runtime delivery — BE-44 + DC-16 (2026-10-29)
+
+Branch `codex/be-44-temporal-investigation`; live-main baseline `84c832df3cd5`
+(PR #10). Prerequisites satisfied: BE-43/DC-15 merged, typed claims and
+archive/version lineage exist; cross-source overlap is exercised on a disposable
+fixture graph. Provider selection/evaluation acquisition belongs to implementation
+(D-82), never an operator-supplied procurement/corpus gate. The user subsequently
+requested PR publication after local acceptance; no production data run is requested.
+
+Acceptance checklist (one complete paired parent):
+
+- [x] Bounded investigation queries combine claims, coded observations and
+  source-stamped assertions with validity and recorded-time filters and coverage/gaps.
+- [x] Event candidates remain unresolved hypotheses; explicit operator reviews
+  preserve alternatives, rationale and append-only recorded-time history without
+  merging identities or rewriting source claims. Dependent reporting stays visible.
+- [x] Proposal → denial → agreement → later official/registry evidence survives
+  graph/API round trip, contradiction/history filtering and replay.
+- [x] Paired desktop network/timeline/evidence navigation and temporal filters
+  distinguish claims from factual edges, unknown precision and source dependence;
+  API failures and late replies cannot show stale evidence as current results.
+- [x] Affected/shared checks plus one authoritative full candidate run; record
+  exact evidence, validation measurements and remaining external qualifications.
+
+Local implementation acceptance passes for the complete BE-44/DC-16 parent.
+`news/developments.py` and news routes deliver bounded cross-source temporal reads,
+coverage and explicit event-match reviews. `views/developments.py`, API mirrors
+and the investigation tabs deliver network/map/timeline and evidence navigation.
+The disposable scenario proves proposal/denial/agreement/official-award and coded
+evidence coexistence, historical filters, review replay/history and unchanged
+factual edges. Container acceptance proves the API archive mount is read-only.
+All five final suites plus lint/type/docs/whitespace checks pass at the exact
+source fingerprint in VERIFICATION. The user subsequently requested preparing
+and opening a PR, authorizing staging, commit and push. Production operations
+remain outside this delivery. BE-45 retains live,
+manual/platform, paid quality, resource/recovery and hosted-status qualification.
+
+## Previous runtime delivery — BE-43 + DC-15 (2026-10-28)
 
 Branch `codex/be-43-dynamic-news`, live-fetched main `b1afc86ab283`.
 The user confirmed: tracked means an entity or relation belongs to an ongoing
@@ -136,8 +173,8 @@ Acceptance checklist:
 
 | Track | Implemented history | Current position | Next runtime delivery |
 |---|---|---|---|
-| Backend | BE-01–40 plus BE-25a have implementation commits in main; changes/defects/qualification differ per row | BE-42 merged; BE-43/DC-15 implementation and local acceptance pass on this branch; BE-46 planned; no production claim | BE-44/DC-16 cross-source analysis; BE-46 may proceed independently; BE-46 may follow BE-42 independently |
-| Desktop | DC-01–13 merged; later auth/backup/lifecycle changes supersede old behavior | Acceptance gaps OI-05/10/11/18 and manual/performance evidence remain | DC-14 correctness/qualification; DC-15 qualified evidence with BE-43 |
+| Backend | BE-01–40 plus BE-25a have implementation commits in main; changes/defects/qualification differ per row | BE-43/DC-15 merged; BE-44/DC-16 local implementation acceptance passes; no production claim | BE-45 qualification and independently available BE-46 enrichment |
+| Desktop | DC-01–13 and DC-15 merged; later auth/backup/lifecycle changes supersede old behavior | DC-16 candidate paired with BE-44; OI-05/10/11/18 and manual/performance evidence remain | DC-14 correctness/qualification; BE-45 reference-platform qualification |
 
 No further runtime coding begins before BE-41's documentation acceptance passes.
 BE-42 does not wait for unrelated desktop polish or production evidence. BE-43
@@ -198,3 +235,27 @@ semantic/map-policy/manual qualification obligations. Provider/corpus selection,
 measured-model and production/review evidence are still explicit future blockers,
 not hidden partial children of this completed documentation package. Current
 root-unit and desktop-unit results do not certify them or the entire product.
+
+
+## Three-delivery workflow review — 2026-10-29
+
+The first three full packages after the delivery contract are BE-41 (PR #7),
+BE-42 (PR #9) and BE-43/DC-15 (PR #10). PR #8 was the separately requested BE-46
+planning delivery, not a partial runtime implementation. Their tracked checklists
+and verification records retain full parent scope and named external boundaries;
+BE-43 includes its paired desktop obligation rather than a backend-only handoff.
+
+Comparable local validation durations in VERIFICATION: BE-42 root units 136.33s
+and graph integration 273.75s; BE-43 root units 134.45s and graph integration
+277.20s. These observations show no sustained suite-time growth over that pair;
+BE-41's documentation checks have a different scope. Implementation effort and
+PR/merge waiting were not measured independently, so no implementation/merge
+latency comparison is claimed. Hosted required-status evidence remains OI-23.
+
+BE-44 remains one full parent including DC-16. Its fixture-isolation and API
+archive-mount corrections were addressed within the package with direct regression
+checks and a newly frozen final candidate, rather than smaller delivery packages.
+Shared invariant coverage remains in the existing contracts, and new tests target
+distinct failure or behavior boundaries. Continue recording exact source/suite
+results and separate implementation, validation and merge measurements when
+available; do not invent elapsed engineering effort from test durations.

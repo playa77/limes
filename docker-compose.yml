@@ -56,6 +56,7 @@ services:
       - ./config:/app/config:ro
       - jobs:/data/jobs
       - models:/data/models:ro
+      - archive:/data/archive:ro
     depends_on:
       neo4j:
         condition: service_healthy

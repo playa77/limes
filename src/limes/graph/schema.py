@@ -58,6 +58,8 @@ _SCHEMA_STATEMENTS: list[str] = [
     "CREATE CONSTRAINT ledger_id IF NOT EXISTS FOR (n:CostLedgerEntry) REQUIRE n.ledger_id IS UNIQUE",
     "CREATE CONSTRAINT saved_query_id IF NOT EXISTS FOR (n:SavedQuery) REQUIRE n.saved_query_id IS UNIQUE",
     "CREATE CONSTRAINT lock_source IF NOT EXISTS FOR (n:AdvisoryLock) REQUIRE n.source_id IS UNIQUE",
+    "CREATE CONSTRAINT event_match_review_id IF NOT EXISTS FOR (n:EventMatchReview) REQUIRE n.request_id IS UNIQUE",
+    "CREATE INDEX event_match_case IF NOT EXISTS FOR (n:EventMatchReview) ON (n.investigation_id, n.recorded_at)",
     "CREATE INDEX news_investigation IF NOT EXISTS FOR (n:NewsClaim) ON (n.investigation_id)",
     "CREATE INDEX news_dispatch IF NOT EXISTS FOR (n:NewsDocument) ON (n.dispatch_id, n.publisher)",
     "CREATE INDEX news_subject IF NOT EXISTS FOR (n:NewsClaim) ON (n.subject_id)",

@@ -22,10 +22,11 @@ from pathlib import Path
 class ArchiveStore:
     """Durable, compressed, content-addressed storage of raw payloads."""
 
-    def __init__(self, root: Path) -> None:
+    def __init__(self, root: Path, *, create: bool = True) -> None:
         """Store the archive root, creating it if absent."""
         self._root = root
-        self._root.mkdir(parents=True, exist_ok=True)
+        if create:
+            self._root.mkdir(parents=True, exist_ok=True)
 
     def put(self, source_id: str, payload: bytes, content_type: str) -> str:
         """Store `payload` gzip-compressed under its SHA-256 content hash and
@@ -53,6 +54,16 @@ class ArchiveStore:
         Raises `FileNotFoundError` when the hash is not in the archive."""
         with gzip.open(self.path_for(content_hash), "rb") as handle:
             return handle.read()
+
+    def preview(self, content_hash: str, limit: int = 65536) -> tuple[bytes, bool]:
+        """Bound decompression for interactive evidence inspection, including old archives."""
+        import re
+
+        if not re.fullmatch(r"[0-9a-f]{64}", content_hash) or not 1 <= limit <= 65536:
+            raise ValueError("invalid archive hash or preview limit")
+        with gzip.open(self.path_for(content_hash), "rb") as handle:
+            payload = handle.read(limit + 1)
+        return payload[:limit], len(payload) > limit
 
     def exists(self, content_hash: str) -> bool:
         """Whether the archive holds `content_hash`."""

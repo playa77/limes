@@ -1,5 +1,125 @@
 # Verification and acceptance evidence
 
+## 2026-10-29 — BE-44/DC-16 candidate verification
+
+Complete parent: cross-source temporal investigation, including paired desktop
+network/map/timeline and evidence/review workflows. Branch
+`codex/be-44-temporal-investigation`; live-fetched main `84c832df3cd5`
+(PR #10). The clean supplied checkout was fast-forwarded before implementation;
+`python3 tools/check_git_baseline.py` passed with environment network access.
+The local publication hook is installed. After local acceptance, the user requested
+PR publication, authorizing staging, commit and push.
+D-83 preserves provider selection as the agent's implementation responsibility.
+
+Final source manifest SHA-256:
+`2c7fbb819c72aa525f417bc427682abcd5e80c54934643444303d4c6f109b205`.
+Uses the same sorted unique path + NUL + bytes + NUL procedure and source path
+set as BE-43 below, additionally including `docker-compose.yml` and
+`docs/runtime-contract.json`. Authoritative logs, JUnit and manifest are under
+ignored `work/be44/final/`; exploratory checks and the offscreen preview remain
+under `work/be44/candidate/`. Documentation-only acceptance/handoff updates
+follow the final source freeze. All five final suites pass.
+
+Earlier development verification found a synthetic-company identifier collision
+with a later module fixture (167 integration passes, four setup errors). The new
+scenario now uses a distinct identifier and tears down its graph. An intermediate
+graph retry was stopped while the API archive-volume mount was corrected. API
+previews now use an explicitly read-only archive mount and a storage dependency
+that never creates missing directories. The real runtime-stack test checks shared
+archive visibility and write denial in the API container. A visual inspection also
+split report/tracking and cross-source controls into tabs (minimum height reduced
+from 1,013 to 661 pixels in the offscreen preview); desktop regressions were rerun.
+Those development passes/interrupted runs are not substituted for final results.
+The final full candidate starts after these corrections; all source files are frozen.
+
+### Final results
+
+| Suite | Result | JUnit |
+|---|---|---|
+| Backend units | 831 passed; 136.53s | `work/be44/final/unit.xml` |
+| Desktop units/contracts | 140 passed; 3.59s | `work/be44/final/desktop.xml` |
+| Integration | 171 passed; 292.32s | `work/be44/final/integration.xml` |
+| Acceptance | 85 passed; 37.14s | `work/be44/final/acceptance.xml` |
+| Desktop integration | 2 passed; 22.73s | `work/be44/final/desktop-integration.xml` |
+
+Commands: `venv/bin/python -m pytest PATHS -q --tb=short --junitxml=FILE`.
+Paths are, respectively, `tests/unit`, `desktop/tests/unit desktop/tests/contract`,
+`tests/integration`, `tests/acceptance`, `desktop/tests/integration`. Qt uses
+`QT_QPA_PLATFORM=offscreen` and
+`QTWEBENGINE_CHROMIUM_FLAGS='--no-sandbox --disable-gpu'`. Runtime builds use
+`BUILDX_CONFIG=/workspace/limes/work/be44/buildx`. The runners preserve network
+proxy/CA settings and own disposable containers/volumes; production is untouched.
+Ruff (including the renderer), strict mypy (158 source files), documentation C1–C9,
+generated-document checks and whitespace pass. Validation durations above are
+pytest measurements, not implementation effort or merge wait.
+
+Acceptance mapping:
+
+- `news/developments.py` and authenticated news routes join investigation targets,
+  qualified claims, coded observations and source-stamped assertions. Shared
+  temporal fragments filter validity and recorded time independently. Target-hop
+  and per-kind coverage, result caps, truncation and missing/unknown-time/geometry
+  diagnosis stay explicit. Default results retain replaced/retracted history.
+- Directional participant/predicate matches are unresolved hypotheses. Immutable
+  operator reviews separate match, assessment and independence, retain rationale
+  and server recorded-time history, and permit explicit cross-predicate review.
+  Exact request replay is idempotent; changed reuse conflicts; known shared
+  report/dispatch/document identity cannot be labeled independent. No factual
+  edges or identity merges are created by claims, suggestions or reviews.
+- `tests/integration/test_developments.py` loads independently authored proposal,
+  denial, agreement, official award and coded-observation artifacts using the
+  production archive/document/claim/assertion writers, then verifies actual
+  authenticated API and desktop client/view round trips against disposable Neo4j.
+  It checks earlier belief/validity views, dependent reporting, review history and
+  authorization, exact archived official evidence and unchanged factual edge count.
+  Source fixtures are synthetic behavioral examples, not independent live reporting
+  or measured model/provider quality; existing BE-42/43 parser/pipeline tests retain
+  their separate format/extraction evidence obligations.
+- Desktop contract guards mirror all response fields. Network and timeline
+  selection inspect exact source spans/versions or bounded raw archive previews;
+  map markers inspect evidence for directly geolocated endpoints without tile
+  requests. Unknown event time contributes no validity point. Failed loads clear
+  old results, and request generations prevent cross-investigation stale replies.
+  Desktop regressions cover these distinct failure/semantic boundaries.
+- Archive preview tests bound decompression at 64 KiB and reject path-like hashes.
+  Additive infrastructure indexes/constraints use existing serialized provisioning;
+  ontology, prompt, extraction schema, cache and old assertion stamps are unchanged.
+
+Verification boundaries: automated suites mock paid/provider transports and use
+fixture-owned graph/runtime containers. No production acquisition, deployment,
+paid evaluation, representative resource measurement or reference-platform/manual
+acceptance is inferred. Existing DC-14/OI-11/18 map-policy and guard issues remain
+on the old map; the new coordinate-only pane requests no external tiles. BE-45
+retains operational/model/hosted required-status qualification and missing review
+trail obligations. Source corpus fixtures are test helpers, with no new standalone
+fixture dataset, ontology artifact or ontology edits. Runtime configuration adds only the read-only API archive
+mount. Generated ARCHITECTURE changes come from `tools/generate_runtime_docs.py`.
+
+### Change accounting and handoff
+
+All five ROADMAP acceptance items pass locally. New tests cover eight backend
+unit cases, three desktop cases and one graph/API/desktop scenario (12 cases);
+existing runtime-stack coverage additionally verifies archive visibility/write
+denial. Counts are distinct additions, not a delivery quota or cumulative quality
+claim. Inline behavioral fixtures are included in tests/helpers; no standalone
+fixture files or ontology artifacts are added. The accepted candidate is prepared
+for the subsequently requested PR publication; merge and deployment remain separate.
+
+| Category | Added lines | Deleted lines | Net lines |
+|---|---:|---:|---:|
+| Handwritten implementation | 899 | 10 | 889 |
+| Tests/helpers | 493 | 0 | 493 |
+| Runtime configuration | 1 | 0 | 1 |
+| Documentation renderer | 4 | 1 | 3 |
+| Generated documentation | 4 | 1 | 3 |
+| Handwritten documentation | 313 | 17 | 296 |
+
+No runtime/fixture source changed after the final fingerprint was captured.
+Ruff, mypy, documentation C1–C9, generated-document drift and whitespace were
+rechecked at handoff; final source fingerprint still matches. The three-delivery
+workflow review is recorded in ROADMAP; engineering effort and merge waiting
+remain unmeasured. No production/paid run or historical issue closure is claimed.
+
 ## 2026-10-28 — BE-43/DC-15 local implementation acceptance
 
 Complete parent: dynamic investigation-driven news acquisition and qualified

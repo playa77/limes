@@ -5,6 +5,36 @@ reversibility: **R1** reversible in under an hour, **R2** bounded recoverable
 cost, **R3** one-way door. Written when each decision is made, latest first.
 Nothing here is a status report; unlogged decisions are unmade decisions.
 
+## 2026-10-29 — D-83 (R2) — Cross-source temporal investigation and provider ownership
+
+The user reiterated that selecting a free news provider/aggregator is the agent's
+responsibility. D-82 already resolved that requirement; do not ask for provider
+selection, subscriptions or a pre-existing annotated corpus again. A live fetch
+found BE-43/DC-15 merged in PR #10 at `84c832df3cd5`; the supplied checkout was
+fast-forwarded and the required baseline passed before implementation.
+
+Deliver the next complete parent BE-44/DC-16 on
+`codex/be-44-temporal-investigation`. Combine target-scoped qualified claims,
+coded observations and existing source-stamped assertions in bounded read-only
+queries; use shared validity/belief filters and preserve historical contradictions.
+Same directed participants/predicate suggest unresolved event matches only.
+Explicit operator reviews may connect other evidence pairs. They are immutable,
+idempotent request-ID records with rationale, separate event/assessment/independence
+labels and recorded-time history. Known shared report/dispatch/document identity
+cannot be relabeled independent. Reviews never merge identities or rewrite evidence.
+
+Additive infrastructure constraints/indexes provision through the existing lock
+and one-DDL-per-transaction path; no ontology, extraction or cache change is needed.
+The paired HTTP-only desktop supports network, coordinate-only map, both timeline
+axes and exact source-span/archive-preview navigation. The new map has no tile
+requests; missing graph coordinates stay unknown. The API mounts the shared
+archive read-only and never creates storage while serving previews. Existing DC-14 map-policy and
+manual/platform gaps remain assigned there. Preview decompression and result sizes
+are bounded; partial results are explicit. No production ingestion, paid evaluation,
+commit, publication or deployment is authorized by this implementation request.
+After local acceptance, the user explicitly requested preparing and opening a PR,
+authorizing staging, commit and push. Merge and deployment remain separate.
+
 ## 2026-10-28 — D-82 (R2) — Investigation-driven dynamic news acquisition
 
 The user explicitly corrected the interpretation of BE-43 and confirmed that
