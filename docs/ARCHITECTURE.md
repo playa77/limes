@@ -41,7 +41,10 @@ All service processes run as UID/GID 7474, drop Linux capabilities, and disallow
 new privileges. Neo4j owns its data and dump processes; the worker owns archive
 content, job execution and model pins. Both share the same non-root UID to access
 archive files. Configuration binds are read-only; model pins and evaluation data
-have writable named volumes seeded by the images. The API mounts the models volume read-only.
+have writable named volumes seeded by the images. The API mounts the models and
+source archive volumes read-only. Authenticated
+assertion evidence reads decompress at most 64 KiB for previews; missing or truncated
+archives are explicit. These previews do not fetch external sources.
 The images contain their ontology, prompts, gold set and reference questions.
 
 ## Physical backup and lifecycle

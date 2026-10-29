@@ -531,3 +531,64 @@ class NewsInvestigation:
     @classmethod
     def from_api(cls, data: dict[str, Any]) -> NewsInvestigation:
         return cls(**{key: value for key, value in data.items() if key in cls.__dataclass_fields__})
+
+
+@dataclass(frozen=True, slots=True)
+class DevelopmentEvidence:
+    evidence_id: str
+    kind: str
+    subject_id: str
+    object_id: str
+    subject_label: str
+    object_label: str
+    relation: str
+    properties: dict[str, Any]
+    dependency_key: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class EventMatch:
+    candidate_id: str
+    left: str
+    right: str
+    decision: str = "unresolved"
+    assessment: str = "unassessed"
+    independence: str = "unknown"
+    rationale: str | None = None
+    review_id: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class EventMatchReview:
+    request_id: str
+    left: str
+    right: str
+    decision: str
+    rationale: str
+    investigation_id: str
+    recorded_at: str
+    assessment: str = "unassessed"
+    independence: str = "unknown"
+
+
+@dataclass(frozen=True, slots=True)
+class DevelopmentView:
+    investigation_id: str
+    evidence: list[DevelopmentEvidence]
+    candidates: list[EventMatch]
+    reviews: list[EventMatchReview]
+    coverage: dict[str, int]
+    locations: list[dict[str, Any]]
+    truncated: bool
+    diagnosis: list[str]
+
+    @classmethod
+    def from_api(cls, data: dict[str, Any]) -> DevelopmentView:
+        return cls(
+            **{
+                **data,
+                "evidence": [DevelopmentEvidence(**v) for v in data["evidence"]],
+                "candidates": [EventMatch(**v) for v in data["candidates"]],
+                "reviews": [EventMatchReview(**v) for v in data["reviews"]],
+            }
+        )

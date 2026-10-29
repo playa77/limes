@@ -164,6 +164,27 @@ def test_remote_backup_without_host_privileges(tmp_path: Path):
         )
         sizes = json.loads(dumps.stdout)
         assert len(sizes) == 1 and sizes[0] > 0
+        # The API can inspect the shared archive while its mount forbids writes.
+        api_archive = subprocess.run(
+            [
+                *compose,
+                "exec",
+                "-T",
+                "api",
+                "python",
+                "-c",
+                "import os; from pathlib import Path; "
+                "root=Path('/data/archive'); "
+                "assert any((root/'dumps').glob('*.dump')); "
+                "assert not os.access(root, os.W_OK)",
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        assert api_archive.returncode == 0
+
     except Exception:
         logs = subprocess.run(
             [*compose, "logs", "--no-color", "--tail", "100"],

@@ -16,7 +16,8 @@ from typing import cast
 
 from fastapi import Request
 
-from limes.composition import NlqContext, build_nlq_context
+from limes.archive.store import ArchiveStore
+from limes.composition import NlqContext, build_archive_store, build_nlq_context
 from limes.config import Settings, reload_model_pins
 from limes.graph.driver import GraphDriver
 from limes.ontology.model import Ontology
@@ -51,3 +52,7 @@ def get_nlq_context(request: Request) -> NlqContext:
             context = build_nlq_context(current, state.ontology, state.driver)
             state.nlq_context = context
         return cast(NlqContext, context)
+
+
+def get_archive(request: Request) -> ArchiveStore:
+    return build_archive_store(get_settings(request), create=False)

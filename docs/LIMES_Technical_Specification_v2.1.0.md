@@ -1610,3 +1610,42 @@ completion, cancellation and unknown precision. Human annotations can grow from
 actual investigations; automated extraction is not its own gold annotation.
 Representative model-quality measurement is an explicit operator run, separate
 from mocked implementation verification.
+
+
+## BE-44/DC-16 cross-source investigation contract (2026-10-29)
+
+`GET /news/investigations/{id}/developments` joins the investigation's tracked
+entity/relation endpoints and stored reporting scope. Qualified claims and
+source-stamped graph assertions remain distinct evidence objects; `coded`
+provenance is labeled coded observation. Optional timezone-aware `as_of` and
+`believed` use the shared interval semantics independently. With no instant the
+view retains historical/retracted evidence; unknown validity never becomes
+recorded time. Each channel returns at most 100 evidence rows, candidates at
+most 500 and reviews at most 1,000. Target-hop counts, per-kind result counts,
+truncation and empty/unknown-time diagnosis accompany results. Counts are not
+source completeness or corroboration scores. Endpoint coordinates are returned
+only when finite, in range and directly present on the graph entity.
+
+Candidate suggestions require the same directed participants/predicate and
+remain unresolved hypotheses, even when descriptions/dates look similar.
+`POST /news/investigations/{id}/event-match-reviews` requires the operator token,
+a UUID, two distinct in-scope evidence references and a nonblank rationale.
+Explicit reviews can connect differing predicates/participants. Match decision,
+evidence assessment and independence are separate enums. Shared report URL,
+document or syndication identity prevents an independent label. Distinct sources
+alone never establish independence. Reviews are immutable infrastructure records
+with server recorded time; a new UUID appends a revised decision, exact replay
+is idempotent, and reuse with changed content conflicts. Historical belief filters
+also filter review history. Reviews never create factual edges or merge events.
+Additive constraints/indexes use normal serialized provisioning; old assertions,
+ontology 1.1.0, prompt/schema/cache versions and unknown qualifiers are unchanged.
+
+`GET /news/assertions/{id}/evidence` exposes provenance and an archive preview:
+64 KiB maximum decompressed bytes, explicit truncation/missing status, UTF-8 with
+replacement for binary payloads. The API mounts the shared archive read-only and
+never creates missing storage on a read. It is not article-text certification. Existing
+news-document reads preserve exact source spans and version lineage. Desktop
+investigation views consume these APIs only, provide separate network/map/timeline
+panes and independent instant filters, retain unknown time/geometry and distinguish
+qualified/coded artifacts from factual assertions. The coordinate-only map makes
+no provider requests. Chronology implies neither causation nor misconduct.

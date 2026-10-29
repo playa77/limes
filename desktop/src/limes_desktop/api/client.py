@@ -19,6 +19,7 @@ from limes_desktop.api.errors import ApiError, ApiUnreachable
 from limes_desktop.api.models import (
     CostLedger,
     CoverageReport,
+    DevelopmentView,
     EntityDetail,
     GraphNeighbors,
     HealthInfo,
@@ -177,6 +178,23 @@ class ApiClient:
 
     def news_document(self, key: str) -> dict[str, Any]:
         return dict(self._request("GET", f"/news/documents/{key}"))
+
+    def news_developments(self, key: str, **filters: Any) -> DevelopmentView:
+        return DevelopmentView.from_api(
+            self._request(
+                "GET",
+                f"/news/investigations/{key}/developments",
+                params=filters,
+            )
+        )
+
+    def review_event_match(self, key: str, payload: dict[str, Any]) -> Any:
+        return self._request(
+            "POST", f"/news/investigations/{key}/event-match-reviews", json=payload
+        )
+
+    def assertion_evidence(self, assertion_id: str) -> dict[str, Any]:
+        return dict(self._request("GET", f"/news/assertions/{assertion_id}/evidence"))
 
     # -- transport ----------------------------------------------------------
 

@@ -1,6 +1,6 @@
 # Backend work-package roadmap
 
-Updated 2026-10-28 on codex/be-43-dynamic-news, based on live-fetched main `b1afc86ab283`. Canonical prefix **BE-**;
+Updated 2026-10-29 on codex/be-44-temporal-investigation, based on live-fetched main `84c832df3cd5`. Canonical prefix **BE-**;
 historical backend `WP-NN` maps to `BE-NN`, including the inserted BE-25a.
 The original roadmap defined WP-01–39 plus WP-25a (40 packages); WP-40 was a
 later coverage exercise. The separate desktop sequence is [DC](DESKTOP_ROADMAP.md).
@@ -10,9 +10,9 @@ later coverage exercise. The separate desktop sequence is [DC](DESKTOP_ROADMAP.m
 
 Implementation commits exist in main for **BE-01–40 and BE-25a**. This is not a
 claim that all original acceptance conditions are currently met. BE-41 was merged
-in PR #7 and BE-42 in PR #9 (`b1afc86`). **BE-43/DC-15 implementation and local
-acceptance pass in the current PR candidate**, under the dynamic tracking
-contract confirmed in D-82. BE-44/DC-16 follows; BE-46 is independently available.
+in PR #7 and BE-42 in PR #9 (`b1afc86`). **BE-43/DC-15 merged in PR #10** (`84c832d`), under the dynamic tracking
+contract confirmed in D-82. BE-44/DC-16 is implemented in the current candidate,
+with local implementation acceptance passed; BE-46 is independently available.
 News is core scope immediately after the existing implementation, not a phase
 waiting for unrelated historical cleanups to finish.
 
@@ -125,8 +125,8 @@ production qualification remain BE-45. No publication or deployment is implied.
 
 ### BE-43 — investigation-driven news acquisition and qualified reporting
 
-Implementation and local acceptance passed on `codex/be-43-dynamic-news`, paired
-with DC-15; prepared for PR publication. Evidence: VERIFICATION and the checked
+Merged in PR #10 (`84c832d`), paired with DC-15; local acceptance evidence
+is retained in VERIFICATION. Evidence: VERIFICATION and the checked
 ROADMAP acceptance checklist. Depends
 on merged BE-42. D-82 records the user's confirmed meaning: tracked entities and
 relations belong to an ongoing investigation that LIMES actively keeps informed
@@ -159,13 +159,25 @@ the same session/branch; BE-44 owns subsequent cross-source event matching.
 
 ### BE-44 — cross-source developments and temporal investigation
 
-Status P. Depends on BE-43/DC-15 and useful registry/news overlap, not completion
+Implemented and locally accepted in the current
+`codex/be-44-temporal-investigation` candidate. Depends on BE-43/DC-15 and useful registry/news overlap, not completion
 of every unrelated backlog item. Deliver cross-source query/evidence assessment
 and event candidate workflows. Acceptance: follow proposal→denial→agreement→later
 official award/registry evidence across validity and recorded time; preserve
 contradictions, dependent reporting and unresolved event matches. Chronology
 cannot imply causation or misconduct. Coordinated parent BE-44 includes DC-16
 network/timeline UX and end-to-end acceptance in the same session/branch/PR.
+
+Implementation: `news/developments.py`, authenticated news routes, additive
+EventMatchReview infrastructure records and `views/developments.py`. Per-channel
+bounded evidence queries use independent temporal filters, target-hop coverage and
+missing/truncated diagnosis. Directed participant/predicate matches remain
+unresolved; explicit operator reviews preserve event-match, assessment and
+independence labels separately with immutable recorded-time history. No graph
+identity or source claim is rewritten. The paired desktop offers network,
+coordinate-only map, both timeline axes and source span/archive-preview navigation.
+See the active ROADMAP checklist and VERIFICATION for final acceptance evidence.
+No production acquisition, paid quality or platform qualification is implied.
 
 ### BE-45 — current candidate and operator qualification
 

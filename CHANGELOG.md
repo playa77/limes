@@ -1,3 +1,14 @@
+## 2026-10-29 — BE-44 / DC-16 cross-source temporal investigation
+
+- Combine tracked news claims, coded observations and source-stamped assertions
+  with independent validity/recorded-time filters and bounded coverage diagnostics.
+- Suggest unresolved event matches; preserve immutable operator match/assessment/
+  independence reviews without rewriting source evidence or merging identities.
+- Add paired desktop network, coordinate-only map, timeline and evidence navigation;
+  preserve unknown dates, dependent reporting, API failures and request ownership.
+- Expose bounded archive previews through authenticated evidence reads. Additive
+  graph provisioning preserves the existing ontology/schema/prompt/cache contracts.
+
 ## 2026-10-28 — BE-43 / DC-15 dynamic investigation news
 
 - Persist investigations tracking entities/relations; automatically discover and

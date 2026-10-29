@@ -15,6 +15,7 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QListWidget,
     QPushButton,
+    QTabWidget,
     QTextEdit,
     QVBoxLayout,
     QWidget,
@@ -50,6 +51,9 @@ class NewsView(QWidget):
         self._calls: list[_Call] = []
         self._claim_request = 0
         self._evidence_request = 0
+        from limes_desktop.views.developments import DevelopmentPanel
+
+        self.developments = DevelopmentPanel(client_factory, self.call, self)
         self.title = QLineEdit(self)
         self.title.setPlaceholderText("Investigation title")
         self.selector = QComboBox(self)
@@ -69,10 +73,11 @@ class NewsView(QWidget):
             ["All claims", "asserted", "reported", "denied", "proposed", "conditional", "unknown"]
         )
         layout = QVBoxLayout(self)
+        for shared_widget in (self.title, self.selector, self.status):
+            layout.addWidget(shared_widget)
+        reports = QWidget(self)
+        report_layout = QVBoxLayout(reports)
         for widget in (
-            self.title,
-            self.selector,
-            self.status,
             self.refresh_button,
             self.track_button,
             self.relation_button,
@@ -83,7 +88,11 @@ class NewsView(QWidget):
             self.list,
             self.evidence,
         ):
-            layout.addWidget(widget)
+            report_layout.addWidget(widget)
+        self.tabs = QTabWidget(self)
+        self.tabs.addTab(reports, "Tracking and reports")
+        self.tabs.addTab(self.developments, "Cross-source developments")
+        layout.addWidget(self.tabs)
         self.refresh_button.clicked.connect(self.refresh)
         self.track_button.clicked.connect(lambda: self.track(False))
         self.relation_button.clicked.connect(lambda: self.track(True))
@@ -172,6 +181,7 @@ class NewsView(QWidget):
         self._claim_request += 1
         request_id = self._claim_request
         old = self.current()
+        self.developments.set_case(old["investigation_id"] if old else None)
         if old:
             filters: dict[str, Any] = {
                 "investigation_id": old["investigation_id"],

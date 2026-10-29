@@ -1,6 +1,6 @@
 # Desktop work-package roadmap
 
-Updated 2026-10-28 on candidate based on live main `b1afc86`. Canonical prefix **DC-**.
+Updated 2026-10-29 on candidate based on live main `84c832df3cd5`. Canonical prefix **DC-**.
 Historical desktop `wp-NN`/Task N maps to DC-NN; it never means BE-NN.
 Original tasks and acceptance are preserved in the
 [archived plan](archive/desktop-plan-2026-09-09.md); its unticked checkboxes and
@@ -12,8 +12,8 @@ this sequence with the [backend](BACKEND_ROADMAP.md).
 DC-01–13 implementations are in main, merged at `5ab2d4e` on 2026-09-10.
 Current runtime auth/backup/lifecycle changes subsequently updated them.
 **DC-14 is the next desktop repair/qualification package**; DC-15 and DC-16 are
-core news consumer work paired with BE-43 and BE-44 respectively. DC-15 now
-passes local implementation acceptance with BE-43 on the PR candidate;
+core news consumer work paired with BE-43 and BE-44 respectively. DC-15 merged
+with BE-43 in PR #10; DC-16 is implemented with BE-44 in the current candidate;
 DC-14's independent repair/platform obligations remain open. There is no
 standalone news UI or ledger iteration. No claim that every desktop acceptance
 criterion is currently satisfied is made.
@@ -76,8 +76,8 @@ must stay intact. No fixed test quotas or duplicate backend numerical suites.
 
 ### DC-15 — qualified news evidence and event presentation
 
-Local implementation acceptance passed with BE-43 on codex/be-43-dynamic-news;
-prepared for PR publication. See ROADMAP and VERIFICATION for the paired checklist,
+Merged with BE-43 in PR #10 (`84c832d`); local implementation acceptance
+evidence is retained in VERIFICATION. See ROADMAP and VERIFICATION for the paired checklist,
 source/evidence scope and final results. Consumes the versioned API contract. Coordinated delivery parent
 BE-43 includes DC-15 in one session/branch/PR; do not ship backend fields while
 silently leaving the analyst surface incomplete. Implement API mirrors, query
@@ -94,12 +94,22 @@ must be visible, with actual dependency on changed views assessed before coding.
 
 ### DC-16 — cross-source temporal investigation
 
-Status P; paired with BE-44 under parent BE-44, after BE-43/DC-15. Deliver analyst
+Implemented and locally accepted in the current BE-44 candidate.
+Paired with BE-44 under parent BE-44, after merged BE-43/DC-15. Deliver analyst
 navigation between coded observations, agency evidence and later official records
 across network/map/timeline. Preserve alternatives, disputes, gaps and both time
 axes. No causal or misconduct inference from timing alone. Acceptance is the
 complete BE-44 proposal/denial/agreement/official-record scenario, displayed
 through the actual API with evidence navigation and degraded-state handling.
+
+The investigation workspace uses the shared authenticated client and mirrored
+models. Network evidence selection and both timeline axes inspect exact source
+spans or bounded raw archive previews; independent instant filters reload from the
+API. A coordinate-only map uses finite directly supplied graph positions with no
+tile requests, preserving missing geometry explicitly. It does not change the
+existing map's DC-14/OI-11/18 policy and guard obligations. Late replies are scoped
+to the current investigation/request; failures clear result panes and remain
+visible. Explicit reviews remain operator-only hypotheses with retained history.
 
 ## Deferred
 

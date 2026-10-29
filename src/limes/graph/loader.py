@@ -564,3 +564,21 @@ def save_news_review(driver: GraphDriver, document_id: str, review_json: str) ->
             )
         ]
     )
+
+
+def save_event_match_review(
+    driver: GraphDriver, investigation_id: str, review: dict[str, object]
+) -> None:
+    """Immutable operator hypotheses; never merge events, rewrite claims or assess truth."""
+    driver.write_batch(
+        [
+            (
+                "MERGE (r:EventMatchReview {request_id:$id}) "
+                "ON CREATE SET r += $props, r.recorded_at=datetime()",
+                {
+                    "id": review["request_id"],
+                    "props": {**review, "investigation_id": investigation_id},
+                },
+            )
+        ]
+    )

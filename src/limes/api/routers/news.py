@@ -7,13 +7,23 @@ from datetime import datetime
 from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import AwareDatetime
 
-from limes.api.deps import get_driver, get_settings
+from limes.api.deps import get_archive, get_driver, get_settings
 from limes.api.models import native_datetime
 from limes.api.routers.operations import require_operator
+from limes.archive.store import ArchiveStore
 from limes.config import Settings
 from limes.graph.driver import GraphDriver
-from limes.graph.loader import save_news_review
+from limes.graph.loader import save_event_match_review, save_news_review
+from limes.news.developments import (
+    DevelopmentView,
+    MatchReview,
+    ReviewView,
+    developments,
+    known_dependent,
+    properties,
+)
 from limes.news.models import EvaluationReview, Investigation, NewsClaimView, TrackingRequest
 from limes.news.store import TrackingStore
 from limes.news.targets import queries_for
@@ -155,3 +165,87 @@ def review_document(
         raise HTTPException(404, "news document not found")
     save_news_review(driver, document_id, review.model_dump_json())
     return {"status": "reviewed"}
+
+
+@router.get("/investigations/{key}/developments", response_model=DevelopmentView)
+def investigation_developments(
+    key: str,
+    driver: Annotated[GraphDriver, Depends(get_driver)],
+    store: Annotated[TrackingStore, Depends(tracking)],
+    as_of: AwareDatetime | None = None,
+    believed: AwareDatetime | None = None,
+    limit: Annotated[int, Query(ge=1, le=100)] = 100,
+) -> DevelopmentView:
+    item = store.get_investigation(key)
+    if item is None:
+        raise HTTPException(404, "investigation not found")
+    return developments(driver, item, as_of, believed, limit)
+
+
+@router.post(
+    "/investigations/{key}/event-match-reviews",
+    response_model=ReviewView,
+    dependencies=[Depends(require_operator)],
+)
+def review_event_match(
+    key: str,
+    review: MatchReview,
+    driver: Annotated[GraphDriver, Depends(get_driver)],
+    store: Annotated[TrackingStore, Depends(tracking)],
+) -> ReviewView:
+    item = store.get_investigation(key)
+    if item is None:
+        raise HTTPException(404, "investigation not found")
+    # Validate the exact evidence against investigation targets without temporal filters.
+    view = developments(driver, item, references=[review.left, review.right])
+    evidence = {e.evidence_id: e for e in view.evidence}
+    if review.left not in evidence or review.right not in evidence:
+        raise HTTPException(422, "evidence must be present in the bounded investigation view")
+    left, right = evidence[review.left], evidence[review.right]
+    if review.independence == "independent" and known_dependent(left, right):
+        raise HTTPException(422, "known dependent reporting cannot be marked independent")
+    payload = review.model_dump(mode="json")
+    save_event_match_review(driver, key, payload)
+    rows = driver.read(
+        "MATCH (r:EventMatchReview {request_id:$id}) RETURN properties(r) AS review",
+        {"id": str(review.request_id)},
+        30,
+    )
+    saved = ReviewView.model_validate(properties(rows[0]["review"]))
+    if saved.investigation_id != key or any(
+        saved.model_dump(mode="json")[field] != value for field, value in payload.items()
+    ):
+        raise HTTPException(409, "review request ID already used; submit a new ID for a revision")
+    return saved
+
+
+@router.get("/assertions/{assertion_id}/evidence")
+def assertion_evidence(
+    assertion_id: str,
+    driver: Annotated[GraphDriver, Depends(get_driver)],
+    archive: Annotated[ArchiveStore, Depends(get_archive)],
+) -> dict[str, object]:
+    rows = driver.read(
+        "MATCH ()-[r]->() WHERE r.assertion_id=$id RETURN properties(r) AS evidence LIMIT 2",
+        {"id": assertion_id},
+        30,
+    )
+    if not rows:
+        raise HTTPException(404, "assertion not found")
+    if len(rows) != 1:
+        raise HTTPException(409, "ambiguous assertion identity")
+    data = properties(rows[0]["evidence"])
+    key = data.get("evidence_document_id")
+    result: dict[str, object] = {"provenance": data, "archive_status": "unavailable"}
+    if key:
+        try:
+            payload, truncated = archive.preview(str(key))
+        except (FileNotFoundError, ValueError):
+            return result
+        result.update(
+            archive_status="available",
+            preview=payload.decode("utf-8", errors="replace"),
+            truncated=truncated,
+            preview_encoding="utf-8 with replacement; original may be binary",
+        )
+    return result

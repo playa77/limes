@@ -13,7 +13,7 @@ merges or deployment without explicit instruction. Production/co-tenant operatio
 are outside implementation scope. Snapshot and issue rows below are historical
 records; subsequent evidence/closures are appended without erasing them.
 
-## Current disposition — 2026-10-28 (BE-43/DC-15 candidate)
+## Current disposition — 2026-10-29 (BE-44/DC-16 candidate)
 
 This index supersedes the status wording in the historical inventory below, without
 erasing its evidence. Package placement: [backend](docs/BACKEND_ROADMAP.md),
@@ -543,3 +543,16 @@ remain source-coverage limits, not inferred facts or new user-supplied prerequis
 Publication update (2026-10-29): after the local acceptance above, the user
 explicitly requested preparing and opening the BE-43/DC-15 PR, authorizing its
 commit and push. Deployment and production/model runs remain outside that request.
+
+
+## 2026-10-29 — BE-44/DC-16 candidate boundaries
+
+Cross-source implementation and final candidate verification are recorded in
+ROADMAP/VERIFICATION. Event candidates and operator reviews never close unknown
+source coverage, article availability, entity/event identity or independent
+corroboration by inference. The new coordinate-only investigation map requests no
+tiles; existing map policy/network-guard obligations OI-11/18 remain in DC-14.
+Current startup/manual/reference-platform and representative resource/recovery/
+paid-quality/deployment obligations remain OI-01/03/05/09/23/24, DC-14 and BE-45.
+No production acquisition, paid evaluation, deployment or historical issue closure
+is inferred from the disposable cross-source scenario.

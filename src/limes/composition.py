@@ -65,7 +65,7 @@ def build_run_context(
     )
     provision(driver, ontology, settings.embedding_dimensions)
     registry = build_default_registry()
-    archive = ArchiveStore(settings.archive_path)
+    archive = build_archive_store(settings)
     recorder = CostRecorder(driver)
 
     if not needs_inference:
@@ -167,3 +167,10 @@ def embedder_for(
         return [normalize_embedding(v, settings.embedding_dimensions) for v in vectors]
 
     return _embed
+
+
+def build_archive_store(settings: Settings, *, create: bool = True) -> ArchiveStore:
+    """Shared infrastructure factory for worker and authenticated evidence reads."""
+    if create:
+        return ArchiveStore(settings.archive_path)
+    return ArchiveStore(settings.archive_path, create=False)
