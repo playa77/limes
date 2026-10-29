@@ -24,7 +24,7 @@ jobs:
       - run: sudo apt-get update && sudo apt-get install -y libegl1 libopengl0 libxcb-cursor0 libxkbcommon-x11-0 libnss3 libasound2t64 libxcomposite1 libxdamage1 libxrandr2 libxtst6 libgbm1
       - run: uv sync --frozen --all-packages --python 3.12
       - run: venv/bin/ruff check src tests desktop/src desktop/tests
-      - run: venv/bin/ruff check tools/build_context.py tools/deploy.py tools/init_config.py tools/generate_runtime_docs.py tools/smoke_test.py docker/neo4j_control.py
+      - run: venv/bin/ruff check tools/build_context.py tools/deploy.py tools/init_config.py tools/generate_runtime_docs.py tools/smoke_test.py tools/qualify.py docker/neo4j_control.py
       - run: venv/bin/mypy
       - run: venv/bin/python tools/check_docs.py docs/
       - run: venv/bin/python -m pytest tests/unit -q --junitxml=test-results/unit.xml

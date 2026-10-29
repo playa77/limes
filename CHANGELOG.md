@@ -9,6 +9,17 @@
 - Expose bounded archive previews through authenticated evidence reads. Additive
   graph provisioning preserves the existing ontology/schema/prompt/cache contracts.
 
+## 2026-10-29 — BE-45 candidate qualification
+
+- Add a reproducible full-candidate runner with live baseline, source manifest,
+  exact commands/durations/logs/JUnit, fresh evidence directories and fail-closed
+  reports for failures, missing results, interruption and source drift.
+- Extend disposable backup acceptance to delete live content, restore the physical
+  dump offline and verify known marker plus 1,000 synthetic payload nodes; retain
+  restoration, dump-size, sampled memory and storage observations in JUnit.
+- Record the user's operator-evidence/authorization waiver without claiming
+  unmeasured production, paid-model quality or reference-platform acceptance.
+
 ## 2026-10-28 — BE-43 / DC-15 dynamic investigation news
 
 - Persist investigations tracking entities/relations; automatically discover and

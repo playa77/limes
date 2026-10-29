@@ -1,5 +1,110 @@
 # Verification and acceptance evidence
 
+## 2026-10-29 — BE-45 candidate qualification under D-84 waiver
+
+Complete selected delivery: reproducible candidate qualification, physical dump
+recovery and bounded fixture observations, with the user's explicit waiver of
+operator-evidence and separate production/paid-run authorization requirements.
+Branch `codex/be-45-qualification`; live-fetched base
+`44ab4eb605a26ac87fcf8f77eb60848030fb5fc3`. Verification preceded commit; the
+working source manifest, rather than the base commit alone, identifies this candidate.
+The user subsequently requested preparing and opening a PR, authorizing staging,
+commit and push. Publication checks confirm the source manifest still matches.
+No production endpoint, operator data or paid model was used.
+
+Command: `venv/bin/python tools/qualify.py --output work/be45/final`.
+One authoritative full candidate run passed in 588.812s.
+Exact commands, return codes, elapsed durations, logs, JUnit and source manifest
+are retained in ignored `work/be45/final/`. The atomic `report.json` says `passed`.
+Source manifest SHA-256: `d8739e499c3b264644b01dbd15a4b54cf813d89a0974d27a30fe1f1a949452b9`.
+The hash is SHA-256 of JSON-serialized sorted path-to-file-SHA-256 mappings;
+`source.json` retains the mappings. The allowlisted roots are defined in
+`tools/qualify.py` and include runtime, tests/fixtures, tools, ontology, Docker,
+root dependency files, CI, Compose and runtime contract. Documentation handoff
+edits follow the source freeze; no runtime/test/tool/CI source changed after it.
+
+| Suite | Result | Command elapsed | JUnit under work/be45/final |
+|---|---|---|---|
+| unit | 839 passed | 139.247s | `unit.xml` |
+| desktop | 140 passed | 5.939s | `desktop.xml` |
+| integration | 171 passed | 378.529s | `integration.xml` |
+| acceptance | 85 passed | 39.744s | `acceptance.xml` |
+| desktop-integration | 2 passed | 22.997s | `desktop-integration.xml` |
+
+Durations are command wall time including interpreter startup and teardown, not
+active implementation effort. Pytest's own suite durations were 137.30s, 4.38s,
+376.56s, 37.49s and 21.33s respectively. All suites had zero failures, errors and
+skips. Existing backend-unit warnings (3) and Starlette deprecation warnings
+(integration/acceptance/desktop integration) remain; no guard was skipped.
+Live baseline, ruff, strict mypy, C1–C9, generated-document drift, static runtime
+smoke guards and whitespace passed in the same candidate run. The canonical venv
+was synchronized with frozen all-package dependencies before verification.
+
+Acceptance mapping:
+
+- `tools/qualify.py` uses a fresh evidence directory, snapshots allowlisted
+  tracked and untracked source, writes running state before execution, rejects
+  nonzero commands and missing/empty/failed/all-skipped JUnit, and checks source
+  drift before passing. Exceptions/interruption cannot preserve a green report;
+  timed-out child process groups are terminated. It refuses external test database
+  selection, uses bounded per-check timeouts and never submits production jobs.
+- Eight new unit cases cover distinct false-green, failure reporting, evidence
+  reuse and source identity/drift boundaries. The extended recovery case is an
+  existing test, not an additional test count. All automated model/provider calls
+  remain mocked. The existing hosted offline and graph lanes remain separate;
+  only lint registration for the new qualification tool changes in CI.
+- `test_backup_stops_dumps_and_restarts` creates a unique marker and 1,000
+  synthetic 1,024-byte payload nodes, backs up through the real supervisor,
+  deletes the live marker, stops Neo4j, loads the dump offline and restarts.
+  The exact marker, node count and independently stated 1,024,000 payload bytes
+  survive. The non-root image, authentication and shutdown behavior remain covered.
+  Existing archive/pipeline/API suites retain exact content-hash evidence checks.
+- Final recovery observations in integration JUnit: dump **70,922 bytes**;
+  offline load/start/connectivity/content verification **24.193s** (excludes the
+  preceding clean stop); post-restore Docker memory sample **981.5 MiB**;
+  database storage **3,344 KiB**, transaction storage **526,348 KiB**, archive
+  storage **156 KiB**. Archive storage includes both the original dump and its
+  restore copy. The sample is neither peak memory nor a representative production
+  workload benchmark; no production resource threshold is inferred. Recovery test
+  elapsed 109.989s and packaged runtime test 156.326s, including fixture work.
+- Hosted base evidence: PR #11 run
+  [40824901246](https://github.com/playa77/limes/actions/runs/40824901246) passed
+  offline/graph/candidate-check; main run
+  [40827109504](https://github.com/playa77/limes/actions/runs/40827109504) passed
+  bounded smoke/candidate-check and skipped full lanes. These are exact prior
+  revisions, not hosted execution of this unpublished candidate. The required-status
+  protection endpoint returned HTTP 403; its configuration is unverified. Sanitized
+  API observations are retained in `work/be45/hosted/` and referenced in OPEN_ISSUES.
+
+D-84 removes the external operator-evidence gate for this delivery. OI-01/03/09
+are explicitly waived/unmeasured, not falsely closed by tests. OI-23 now has hosted
+execution evidence while required-check configuration remains waived/unverified.
+OI-24 has direct bounded recovery/resource observations; production scale, paid
+quality and reference-platform/manual evidence remain unmeasured. The missing
+OI-05 historical review trail remains missing, and DC-14/OI-10/11/18 correctness
+obligations remain open. No deployment, paid evaluation, historical review recovery
+or blanket product-release certification is claimed. BE-45 acceptance under this
+explicit waiver is satisfied; BE-46 is the next backend implementation package.
+
+Development checks: focused qualification units passed; an earlier real recovery
+probe passed in 105.99s before adding the synthetic-workload observations and
+switching JUnit metrics to suite properties. Only the final full candidate above
+is authoritative. ROADMAP records separate hosted-validation and merge intervals;
+engineering effort remains unmeasured. Handoff docs/renderer drift and source
+manifest identity are rechecked after documentation updates.
+
+Change accounting against live base (new unit cases: 8; existing integration
+case extended; no standalone fixture dataset or product-runtime code added):
+
+| Category | Added | Deleted | Net |
+|---|---:|---:|---:|
+| CI configuration | 1 | 1 | 0 |
+| Handwritten documentation | 245 | 16 | 229 |
+| Generated documentation | 15 | 1 | 14 |
+| Tests/helpers | 157 | 1 | 156 |
+| Documentation renderer | 15 | 1 | 14 |
+| Qualification tooling | 156 | 0 | 156 |
+
 ## 2026-10-29 — BE-44/DC-16 candidate verification
 
 Complete parent: cross-source temporal investigation, including paired desktop

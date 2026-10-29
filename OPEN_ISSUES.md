@@ -22,15 +22,15 @@ closure sections; “open” is not a statement that every old symptom still exi
 
 | Issue | Current state | Owner/package | Remaining obligation or closure evidence |
 |---|---|---|---|
-| OI-01 | Open evidence gap; current topology docs corrected | Operator + BE-45 | Observe actual deployed revision/configuration; do not infer it from new deployment tooling |
+| OI-01 | BE-45 operator-evidence gate waived (D-84); unmeasured | Operator | Actual deployed revision/configuration remains unknown; no inferred deployment |
 | OI-02 | Closed | DC-12 | 2026-10-07 Closed with evidence: 2 integration cases; no new deployed smoke claim |
-| OI-03 | Open production-smoke evidence | Operator + BE-45 | Actual deployed-candidate smoke and record; old idle-worker implementation has been replaced |
+| OI-03 | BE-45 operator-evidence gate waived (D-84); unmeasured | Operator | Actual production smoke remains unobserved; disposable qualification is separate |
 | OI-04 | Closed | BE-37/38 superseding runtime | 2026-10-07 Closed with evidence; loopback/HTTPS/tunnel docs and drift checks |
 | OI-05 | Open missing original review trail | Agent + BE-45/DC-13 | Recover source or explicit bounded re-review; do not invent closure of unknown 18 findings |
 | OI-06 | Closed | DC-03 | 2026-10-07 contract-suite evidence: keyword typo corrected |
 | OI-07 | Closed | DC-02 | 2026-10-07 unit evidence: dead timeout removed |
 | OI-08 | Closed | DC-06/09 | 2026-10-07 unit evidence: unused expansion bookkeeping removed |
-| OI-09 | Open deployed-revision evidence | Operator + BE-45 | Real revision/image record and observation; zero tags is not itself an implementation defect |
+| OI-09 | BE-45 operator-evidence gate waived (D-84); unmeasured | Operator | No production revision/image observation is claimed; zero tags is not itself a defect |
 | OI-10 | Open semantic decision/repair | Agent + DC-14 | Verify and document direction/refill policy with behavior coverage, not a closure by prose alone |
 | OI-11 | Open requirement/policy conflict | Operator decision + agent DC-14 | API-only requirement conflicts with external OSM tiles; select policy/conforming map behavior explicitly |
 | OI-12 | Closed | DC-02 | 2026-10-07 parity evidence; current test covers top-level query/neighbors |
@@ -44,8 +44,8 @@ closure sections; “open” is not a statement that every old symptom still exi
 | OI-20 | Closed in BE-42 candidate | Agent + BE-42 | 2026-10-28 direct closure below: Independent channels, collision-free identity, gate/cache/empty/failure/retry/reextract graph scenarios |
 | OI-21 | Closed in BE-42 candidate | Agent + BE-42 | 2026-10-28 direct closure below: Archive/member/row/event/export/report/time provenance survives graph/API; no synthetic document; text explicitly unavailable |
 | OI-22 | Closed in BE-42 candidate | Agent + BE-42 | 2026-10-28 direct closure below: GeoNames FIPS conversion, types 1–5, finite coordinate bounds, fractional slot ceiling and explicit workload limits |
-| OI-23 | Repository workflow repaired; hosted configuration evidence open | Agent + BE-45 | BE-43 separates bounded main smoke from full PR/manual lanes and adds fail-closed candidate-check; GitHub execution/required-check configuration remains unverified |
-| OI-24 | Open measurement/acceptance gaps | Agent/operator + DC-14/BE-45 | Reference-platform startup/visual time-sync/manual workflows, representative memory/storage and current live/model/recovery evidence lack current qualification |
+| OI-23 | Repository and hosted execution verified; protection evidence waived/unverified | BE-45 | PR run 40824901246 and main smoke 40827109504 pass; protection API returns 403; D-84 waives operator-evidence gate, not a claim that protection is configured |
+| OI-24 | Bounded candidate recovery/resources verified; DC-14 gaps open; external evidence waived | Agent/operator + DC-14 | BE-45 integration JUnit records actual dump restoration and synthetic fixture measurements; production/model/reference-platform claims remain unmeasured (D-84), desktop correctness remains open |
 
 The documentation reconciliation can close while these implementation/operator
 obligations remain open. It cannot close them by changing labels or accepting
@@ -556,3 +556,36 @@ Current startup/manual/reference-platform and representative resource/recovery/
 paid-quality/deployment obligations remain OI-01/03/05/09/23/24, DC-14 and BE-45.
 No production acquisition, paid evaluation, deployment or historical issue closure
 is inferred from the disposable cross-source scenario.
+
+## 2026-10-29 — BE-45 waiver and hosted evidence disposition
+
+The user selected BE-45 and explicitly waived the requirement for operator
+evidence and separately authorized production/paid runs (D-84). OI-01/03/09
+therefore cease to block this package, but their production facts remain unknown.
+These are waived acceptance gates, not evidence-based defect closures. No
+production endpoint or paid model was invoked to fabricate that evidence.
+
+OI-23 hosted execution is now directly checked: PR #11 head
+`a0232cd8dcf5055178d37e513a0ec9e8df4ea1db` passed offline, graph and candidate-check
+in [run 40824901246](https://github.com/playa77/limes/actions/runs/40824901246).
+Main `44ab4eb605a26ac87fcf8f77eb60848030fb5fc3` passed bounded smoke and
+candidate-check in [run 40827109504](https://github.com/playa77/limes/actions/runs/40827109504).
+Rerun evidence reads: `gh api repos/playa77/limes/actions/runs/RUN_ID/jobs`.
+`gh api repos/playa77/limes/branches/main/protection/required_status_checks`
+returned HTTP 403 (Resource not accessible by integration). Required-check
+configuration is unverified and remains a waived operator-evidence obligation.
+These hosted results certify their exact revisions, not this unpublished candidate.
+
+OI-05's absent original review trail remains absent. Current source, tests and
+this explicit evidence disposition cannot reconstruct it. DC-13/DC-14 historical
+review, map correctness and platform/manual obligations are preserved. OI-24's
+production/model/platform evidence remains unmeasured under D-84; candidate
+recovery and bounded resource observations are recorded separately in VERIFICATION.
+
+Final BE-45 candidate report passed all five suites and shared guards. Direct
+recovery evidence: `venv/bin/python -m pytest tests/integration/test_cli_backup.py
+-q --junitxml=work/recovery.xml` restores known marker and payload contents from
+an offline-loaded dump, recording dump size, load/start/verify duration and bounded
+memory/storage observations as suite properties. VERIFICATION retains exact final
+source fingerprint and numerical results. This is evidence for that failure mode,
+not closure of production-scale or paid-model quality evidence by proxy.
