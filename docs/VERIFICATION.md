@@ -1,5 +1,29 @@
 # Verification and acceptance evidence
 
+## 2026-10-29 — PR #13 hosted tool-lint correction
+
+Hosted OFFLINE rejected the initial BE-46 commit because the README template in
+`tools/generate_runtime_docs.py:89` exceeded Ruff's 100-character limit. The
+candidate aggregate correctly failed closed. Local qualification had checked
+runtime/tests and qualify.py but omitted the separate CI tools-lint command;
+its earlier passing report did not establish that hosted lane's tool coverage.
+
+Wrap the generator line and regenerate README. Add the complete hosted tool list
+to a separate local tools-lint check, with a regression comparing that list to the
+actual OFFLINE workflow command. CI requirements and the aggregate stay intact.
+The qualified runtime, ontology, adapters and integration fixtures are unchanged;
+only the generator, qualification tool and one new unit case differ in the source
+manifest. Generated README wraps the same text.
+
+Validation: both exact CI Ruff commands pass; qualification/runtime-doc focused
+suites pass (15 cases); docs C1–C9, generated-document drift and whitespace pass.
+The original 1,256-test full run remains evidence for its recorded parent source,
+not a fresh full run of this tool correction. Updated source manifest is retained
+in work/be46/lint-fix/source.json, SHA-256
+`9f5783b4e36c1cefc9ad3d2fc6cdfbe3f3435d9520b6fa4807072cca8e766287`.
+Hosted checks will rerun for the pushed correction; no skipped guard or weakened
+required status is used to accept it.
+
 ## 2026-10-29 — BE-46 enrichment candidate verification
 
 Complete selected parent: Wikipedia context plus Yahoo Finance enrichment and
