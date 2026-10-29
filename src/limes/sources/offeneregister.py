@@ -7,27 +7,14 @@ dataset is deliberately stale and sits at trust rank 0.30 — the lowest in the
 system (Doc 1 §5.8) — and that rank is only safe because the vintage is
 honest.
 
-**The vintage rule is the whole point of this adapter.** `recorded_at` on
-every assertion is the dataset's *publication date*, taken from the
-dataset's metadata record, never the ingestion timestamp. The loader stamps
-`recorded_at` from the assertion (D-06), so a multi-year-stale directorship
-is recorded as the multi-year-stale fact it is, instead of looking current.
-Because honest vintage is load-bearing, the adapter refuses to emit an
-assertion when no publication date is known: `normalize` on a data record
-without a prior metadata record raises `SourceParseError` rather than fall
-back to `datetime.now()`. There is no fallback.
+Current unwrapped bzip2 JSONL records include a historical `retrieved_at`
+on each company. That source observation time is the assertion's recorded_at,
+never the ingestion timestamp or HTTP Last-Modified. Wrapped gzip archives
+remain readable with an explicitly provided legacy publication metadata record.
+Missing both historical dates is a parse failure; no current-time fallback.
 
-The publication date is carried across records as an instance attribute set
-when the metadata record is normalized. That is in-process state within one
-`execute_run` (the same adapter instance serves fetch and every normalize
-call, C-07 concerns *cross-process* state, which lives in the graph); the
-alternative — re-fetching the metadata per record — would be a network call
-inside `normalize`, which the protocol forbids.
-
-The dataset's live files are documented in the project README
-(offeneregister.de/daten/): the companies JSONL (gzip) and its metadata. The
-URL constants are the single refresh point; they are documented filenames on
-the documented host.
+Fetch archives the original compressed snapshot, then bounded chunks whose
+manifests retain the original hash and row offset. Normalize never does I/O.
 
 Identity and mapping choices:
 
@@ -52,6 +39,7 @@ Identity and mapping choices:
 
 from __future__ import annotations
 
+import bz2
 import gzip
 import json
 from collections.abc import Iterator
@@ -79,11 +67,8 @@ from limes.types import (
 
 logger = structlog.get_logger(__name__)
 
-# The dataset's documented files on the documented host (offeneregister.de).
-# The publication-date metadata is fetched before the data so `recorded_at`
-# can be the dataset's vintage, never the fetch instant.
-METADATA_URL = "https://daten.offeneregister.de/meta.json"
-DATA_URL = "https://daten.offeneregister.de/de_companies_ocdata_no_dob.jsonl.gz"
+# Advertised on offeneregister.de. Legacy metadata is explicit, never guessed.
+DATA_URL = "https://daten.offeneregister.de/de_companies_ocdata.jsonl.bz2"
 
 METADATA_CONTENT_TYPE = "application/json"
 DATA_CONTENT_TYPE = "application/gzip"
@@ -109,7 +94,8 @@ class OffeneRegisterAdapter:
     supports_backfill: bool = False
     supports_incremental: bool = False
 
-    def __init__(self) -> None:
+    def __init__(self, metadata_url: str | None = None) -> None:
+        self._metadata_url = metadata_url
         # The dataset's publication date, set by the metadata record's
         # normalize and consumed by every data record's normalize. In-process
         # state within one run; never a cross-process value (C-07). Refusing
@@ -117,7 +103,7 @@ class OffeneRegisterAdapter:
         self._published_at: datetime | None = None
 
     def fetch(self, since: datetime | None, until: datetime | None) -> Iterator[RawRecord]:
-        """Fetch the metadata record, then the companies JSONL (gzip).
+        """Archive original bzip2 JSONL, then yield bounded normalization chunks.
 
         The window is ignored: the dataset is a snapshot with no delta API
         (`supports_incremental` is False). The data file is large (a
@@ -125,37 +111,32 @@ class OffeneRegisterAdapter:
         only load.
         """
         fetched_at = now_utc()
-        metadata_payload = fetch_bytes(METADATA_URL)
-        logger.info(
-            "offeneregister: metadata fetched",
-            bytes=len(metadata_payload),
-            fetched_at=fetched_at.isoformat(),
-        )
-        yield RawRecord(
-            payload=metadata_payload,
-            content_type=METADATA_CONTENT_TYPE,
-            source_url=METADATA_URL,
-            fetched_at=fetched_at,
-        )
-        data_payload = fetch_bytes(DATA_URL)
+        self._published_at = None
+        if self._metadata_url:
+            yield RawRecord(
+                payload=fetch_bytes(self._metadata_url),
+                content_type=METADATA_CONTENT_TYPE,
+                source_url=self._metadata_url,
+                fetched_at=fetched_at,
+            )
+        data_payload = fetch_bytes(DATA_URL, max_bytes=512 * 1024 * 1024)
         logger.info(
             "offeneregister: dataset fetched",
             bytes=len(data_payload),
             fetched_at=fetched_at.isoformat(),
         )
-        yield RawRecord(
-            payload=data_payload,
-            content_type=DATA_CONTENT_TYPE,
-            source_url=DATA_URL,
-            fetched_at=fetched_at,
-        )
+        from limes.sources.bulk import bz2_jsonl_records
+
+        yield from bz2_jsonl_records(data_payload, DATA_URL, fetched_at)
 
     def normalize(self, record: RawRecord) -> NormalizedRecord:
         """Route on the record's content type: metadata or data. Pure —
         never touches the network."""
+        if (record.acquisition_context or {}).get("archive_only"):
+            return NormalizedRecord(content_hash=payload_hash(record.payload), kind="structured")
         if record.content_type == METADATA_CONTENT_TYPE:
             return self._normalize_metadata(record)
-        if record.content_type == DATA_CONTENT_TYPE:
+        if record.content_type in (DATA_CONTENT_TYPE, "application/x-bzip2"):
             return self._normalize_data(record)
         raise SourceParseError(f"offeneregister: unknown content type {record.content_type!r}")
 
@@ -191,18 +172,16 @@ class OffeneRegisterAdapter:
     def _normalize_data(self, record: RawRecord) -> NormalizedRecord:
         """One JSONL (gzip) of companies → directorships."""
         published_at = self._published_at
-        if published_at is None:
-            raise SourceParseError(
-                "offeneregister: no dataset publication date known; refusing to "
-                "timestamp assertions with the wall clock (the metadata record "
-                "must be normalized first)"
-            )
         try:
-            text = gzip.decompress(record.payload).decode("utf-8", errors="replace")
-        except (gzip.BadGzipFile, OSError) as exc:
-            raise SourceParseError(f"offeneregister: payload is not valid gzip: {exc}") from exc
+            unpack = (
+                bz2.decompress if record.content_type == "application/x-bzip2" else gzip.decompress
+            )
+            text = unpack(record.payload).decode("utf-8")
+        except (ValueError, EOFError, OSError, UnicodeDecodeError) as exc:
+            raise SourceParseError("offeneregister: invalid compressed UTF-8 JSONL") from exc
 
         assertions: list[Assertion] = []
+        entities: list[EntityEndpoint] = []
         companies = 0
         malformed_lines = 0
         skipped_no_number = 0
@@ -217,11 +196,17 @@ class OffeneRegisterAdapter:
                 malformed_lines += 1
                 logger.warning("offeneregister: unparseable JSONL line; skipped")
                 continue
-            company_obj = obj.get(_COMPANY_KEY) if isinstance(obj, dict) else None
+            company_obj = obj.get(_COMPANY_KEY, obj) if isinstance(obj, dict) else None
             if not isinstance(company_obj, dict):
                 malformed_lines += 1
                 continue
             companies += 1
+            vintage = _parse_officer_date(company_obj.get("retrieved_at")) or published_at
+            if vintage is None:
+                raise SourceParseError(
+                    "offeneregister: no source retrieved_at or publication date; "
+                    "refusing a wall-clock vintage"
+                )
             number = (company_obj.get("company_number") or "").strip()
             name = (company_obj.get("name") or "").strip()
             if not number or not name:
@@ -237,6 +222,7 @@ class OffeneRegisterAdapter:
                 label=name,
                 deterministic_key=("german_register_number", number),
             )
+            entities.append(corporation)
             officers = company_obj.get("officers") or []
             if not officers:
                 skipped_no_officers += 1
@@ -261,7 +247,7 @@ class OffeneRegisterAdapter:
                     type="Person",
                     label=officer_name,
                 )
-                valid_from = _parse_officer_date(officer.get("start_date")) or published_at
+                valid_from = _parse_officer_date(officer.get("start_date")) or vintage
                 valid_to = _parse_officer_date(officer.get("end_date"))
                 assertions.append(
                     make_assertion(
@@ -272,7 +258,7 @@ class OffeneRegisterAdapter:
                         corporation,
                         valid_from=valid_from,
                         valid_to=valid_to,
-                        recorded_at=published_at,
+                        recorded_at=vintage,
                     )
                 )
                 officer_count += 1
@@ -283,13 +269,15 @@ class OffeneRegisterAdapter:
             malformed_lines=malformed_lines,
             companies_without_number_or_name=skipped_no_number,
             companies_without_officers=skipped_no_officers,
-            recorded_at=published_at.isoformat(),
+            recorded_at_basis="per-company retrieved_at or explicit legacy publication metadata",
             source_id=self.source_id,
         )
         return NormalizedRecord(
             content_hash=payload_hash(record.payload),
             kind="structured",
             assertions=assertions,
+            entities=entities,
+            errors=malformed_lines + skipped_no_number,
         )
 
 

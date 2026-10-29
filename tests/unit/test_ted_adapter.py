@@ -94,7 +94,7 @@ def test_fetch_yields_one_raw_record_per_notice_and_honors_window():
     assert all(r.content_type == "application/xml" for r in records)
     assert all(r.fetched_at.tzinfo is not None for r in records)
     # The window is compiled into the search query text as an ISO date range.
-    assert body["query"] == "publication_date:[2025-01-01 TO 2025-12-31]"
+    assert body["query"] == "PD >= 20250101 AND PD <= 20251231"
     assert body["limit"] == FETCH_LIMIT
 
 

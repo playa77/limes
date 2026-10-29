@@ -51,7 +51,7 @@ def _record() -> RawRecord:
 
 def test_fetch_posts_the_overpass_query_and_yields_one_record():
     with respx.mock:
-        respx.post(OVERPASS_URL, json={"data": OVERPASS_QUERY}).mock(
+        respx.post(OVERPASS_URL, data={"data": OVERPASS_QUERY}).mock(
             return_value=Response(200, content=_fixture())
         )
         records = list(ADAPTER.fetch(None, None))

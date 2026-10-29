@@ -64,7 +64,9 @@ def build_run_context(
         settings.neo4j_database,
     )
     provision(driver, ontology, settings.embedding_dimensions)
-    registry = build_default_registry()
+    registry = build_default_registry(
+        bundestag_dip_api_key=settings.bundestag_dip_api_key.get_secret_value()
+    )
     archive = build_archive_store(settings)
     recorder = CostRecorder(driver)
 

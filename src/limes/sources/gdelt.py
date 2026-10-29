@@ -151,6 +151,15 @@ class GdeltAdapter:
     supports_backfill: bool = True
     supports_incremental: bool = True
 
+    def bound_ingest_window(self, since: datetime, until: datetime) -> datetime:
+        """One checkpointed prefix per ingest; leave the remaining backlog for next time."""
+        first = _first_slot(since, until)
+        latest = until.astimezone(UTC).replace(second=0, microsecond=0)
+        latest -= timedelta(minutes=latest.minute % 15)
+        # Leave one publication interval for the most recent file to become available.
+        latest -= _SLOT
+        return max(since, min(first + (MAX_SLOTS - 1) * _SLOT, latest))
+
     def fetch(self, since: datetime | None, until: datetime | None) -> Iterator[RawRecord]:
         """Fetch at most one day (96 slots); larger windows fail before I/O.
 

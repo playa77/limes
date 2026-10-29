@@ -103,7 +103,7 @@ def test_query_nl_runs_trace_3_end_to_end(
         assert body["results"]["counts"]["rows"] == 1
         assert body["coverage"]["relation_counts"] == {"SUBSIDIARY_OF": 1}
         assert body["diagnosis"] is None
-        assert response.headers["X-LIMES-Ontology-Version"] == "1.2.0"
+        assert response.headers["X-LIMES-Ontology-Version"] == "1.3.0"
 
         # AC-30: the executed query is persisted with question, Cypher,
         # ontology version, and result count.
@@ -111,7 +111,7 @@ def test_query_nl_runs_trace_3_end_to_end(
         assert len(saved) == 1
         assert saved[0]["question"] == "What does Alpha own?"
         assert saved[0]["cypher"] == body["cypher"]
-        assert saved[0]["ontology_version"] == "1.2.0"
+        assert saved[0]["ontology_version"] == "1.3.0"
         assert saved[0]["result_count"] == 1
 
 

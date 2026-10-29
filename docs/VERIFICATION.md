@@ -850,3 +850,148 @@ existing tests and are not a quota. Ontology/prompt/schema versions are explicit
 | Handwritten implementation and prompts | 1488 | 31 | 1457 |
 | Tests/helpers | 683 | 31 | 652 |
 | Versioned ontology | 55 | 1 | 54 |
+
+## 2026-10-29 — BE-47 first full-ingest repair candidate
+
+Branch `codex/be-47-ingest-repair`, baseline live main `f1e773812baf`.
+Parent acceptance is **incomplete**: see [INGEST_RUN_DIAGNOSIS](INGEST_RUN_DIAGNOSIS.md)
+and OI-25 for GLEIF consolidation mapping, TED eForms/pagination, unavailable
+compatible OffeneRegister vintage metadata and Transparency export obligations.
+No operator full-ingest success, paid provider verification or deployment is claimed.
+
+| Check | Result and retained evidence |
+|---|---|
+| Affected adapters/config/CLI/extraction | 127 passed, 7.44 s; `work/be47/affected.xml` |
+| Broader backend unit suite | 867 passed, zero failures/errors/skips, 192.15 s; `work/be47/final-unit.xml` |
+| Final pipeline/failure regressions | 21 passed, 50.73 s; `work/be47/final-regressions.xml` |
+| Final broadened TED UBL guard + repair tests | 34 passed, 3.84 s; `work/be47/final-ted.xml` |
+| Disposable graph composition/ingest/structured/unstructured | 27 passed, 128.66 s; `work/be47/integration.xml` |
+| Shared checks | Ruff, strict mypy (169 source files), documentation, generated docs, G1–G4 runtime guards and whitespace pass |
+
+The unit suite tested the revision immediately before broadening TED's unsupported
+UBL guard from award notices to all UBL notice types. The final 34-test run covers
+that delta (award, contract and prior-information documents); do not add these
+counts together or call them a full frozen final pre-merge qualification.
+The final source manifest is `work/be47/final-source.json`, digest
+`45b415dbc4eff1d1ec63d87d7b7260d77da2e0068a299f56bcbd8df3813806ed`.
+The preceding unit-tested source digest was
+`3c7975fae354853b3505b5cb3f5b77456df2f22ce936c5c9a3cdfa8542ce8c0d`.
+Graph checks preceded the final fetch-parse closure addition, which has a direct
+passing unit regression in both the 21-test and broader unit runs.
+
+Commands: `venv/bin/python -m pytest tests/unit -q -o faulthandler_timeout=60`,
+`venv/bin/python -m pytest tests/unit/test_pipeline_run.py tests/unit/test_ingest_repairs.py -q`,
+`venv/bin/python -m pytest tests/unit/test_ingest_repairs.py tests/unit/test_ted_adapter.py -q`,
+and `venv/bin/python -m pytest tests/integration/test_composition_root.py tests/integration/test_cli_ingest.py tests/integration/test_pipeline_run_structured.py tests/integration/test_pipeline_run_unstructured.py -q`.
+JUnit arguments target the files above. All test model/source transports are mocks;
+graph containers are fixture-owned and disposable. No desktop source was changed;
+desktop and full acceptance/release suites were not rerun for this local candidate.
+
+An initial sandboxed unit execution stalled without producing results and was
+terminated; a collection-only check collected 867 tests successfully. Retrying with
+local IPC available completed the broader suite above. The virtual environment
+was refreshed with frozen main dependencies after initial focused collection found
+missing `curl_cffi`/`yfinance`; no dependency versions were changed. Existing
+Starlette/runpy warnings remain. An automatic review rejected one proposed probe
+that embedded the DIP key in its script; the subsequent date-filter probe used the
+normal masked application settings loader and succeeded. No action remains blocked
+by that rejection. The user key resides only in ignored local secrets, not this diff.
+
+Bounded live probes verified DIP header auth/date filtering, GLEIF publication URLs
+and 64-KiB archive prefixes, TED one-result search syntax and official download
+pages. No full bulk archives, production graph operations or paid calls occurred.
+No commit, staging, push or PR was requested or performed. Implementation time,
+validation time and merge latency are not equated; there was no publication/merge.
+
+## 2026-10-29 — BE-47 complete local acceptance, final frozen candidate
+
+This supersedes the earlier partial BE-47 candidate disposition. The user
+explicitly requested finishing this parent on its existing branch before another
+full ingest. All acceptance items in INGEST_RUN_DIAGNOSIS pass under the scoped
+current-source/explicit-availability-failure contract. OI-25 closes locally;
+OI-26 retains observed external availability limits. No successful production
+full ingest, deployment or paid-model quality is claimed.
+
+Branch: codex/be-47-ingest-repair. Live-fetched baseline/HEAD:
+f1e773812baf1870a7a667d7d49006619384d4ee. The working tree includes uncommitted
+implementation and fixtures; HEAD alone is not the candidate identity.
+Authoritative report: work/be47/candidate-3/report.json, status passed.
+Frozen source manifest: work/be47/candidate-3/source.json; SHA-256:
+9381ee7d65ba80c6b7423cb20ab978d1dd4416a99c2ae025730030f18f9564a6.
+The runner confirms the same source fingerprint before and after the complete run.
+
+| Lane | Cumulative tests | Failures/errors/skips | Captured lane seconds |
+|---|---:|---|---:|
+| Backend unit | 879 | 0 / 0 / 0 | 198.947 |
+| Desktop unit/contract | 147 | 0 / 0 / 0 | 10.540 |
+| Disposable graph integration | 175 | 0 / 0 / 0 | 600.388 |
+| Acceptance (separate collection) | 85 | 0 / 0 / 0 | 124.647 |
+| Desktop integration | 3 | 0 / 0 / 0 | 48.739 |
+
+Total: 1,289 cumulative passes. New cases relative to main: 22 backend unit and
+2 graph integration (24), covering distinct reported behaviors/invariants. These
+are not 1,289 new tests, copied pair registrations or an acceptance quota. Backend
+and runtime/desktop checks passed together on that frozen source; the publication
+addendum below records subsequent formatting-only normalization. Existing Starlette/runpy warnings remain.
+
+Shared guards pass: live-main baseline, runtime/test and tool Ruff checks, strict
+mypy (172 source files), docs consistency, generated-doc check, G1–G4 runtime
+invariants, whitespace and final source-drift check. Runtime remains three services
+with existing auth/privilege and schema-transaction constraints. Additive ontology
+1.3.0 needs no destructive rewrite; older evidence retains its original stamps.
+
+Exact command: `venv/bin/python tools/qualify.py --output work/be47/candidate-3`.
+To repeat, choose a new output directory under work/; reuse is rejected. The report
+records every exact child command/exit code and JUnit/log path. All model transports
+are mocks, graph services are fixture-owned Docker containers, Qt is headless, and
+no test points at operator data. Final validation took 987.387 seconds; that is
+validation latency, not implementation effort or merge latency. No merge or PR
+was performed.
+
+Candidate-1's supervisor was interrupted by an environment transition after unit
+and desktop checks; its orphan integration output cannot establish a complete
+candidate result. Candidate-2 was superseded after final identity review found
+ISO3/ISO2 buyer/address divergence. Both retained reports are failed/incomplete
+and are not added into final pass counts. Candidate-3 includes the reference-backed
+identity fix and regression before its freeze. Workflow correction: verify
+cross-format identity and source semantics before the expensive final graph lane;
+retain one full parent delivery instead of creating smaller packages after findings.
+
+Fixture attribution/reductions and authoritative source links are in
+`tests/fixtures/ingest47/README.md`. They cover actual publication metadata, two
+range-limited GLEIF prefixes, OffeneRegister historical rows, the daily TR export,
+public UBL and SDK-checked synthetic award joins, and a real two-binding EUR-Lex
+response. Bounded live FSD/Overpass/TED failures remain OI-26, never silently marked
+available. The DIP key is in ignored split secrets; tracked examples contain no key.
+
+Change accounting for the complete branch diff (additions/deletions, not net
+growth) is retained in work/be47/complete-change-accounting.json. Categories keep
+handwritten runtime/API/model changes separate from tests/helpers, fixture data
+and attribution, generated runtime docs and the generated country reference.
+
+| Complete branch category | Additions | Deletions |
+|---|---:|---:|
+| Handwritten runtime/API/models | 976 | 247 |
+| Tests/helpers | 742 | 45 |
+| Fixture data/attribution | 520 | 0 |
+| Country reference data | 261 | 0 |
+| Generated runtime docs | 18 | 3 |
+| Tool renderer | 21 | 4 |
+| Config examples | 3 | 0 |
+| Hand-maintained documentation | 409 | 8 |
+
+Publication authorization (2026-10-29): after complete local BE-47 acceptance,
+the user explicitly requested preparing and opening a PR for this session's work,
+authorizing staging, commit and push. The qualified runtime/test/tool/reference
+source fingerprint is unchanged. Merge, deployment and live ingestion remain separate.
+
+Publication formatting addendum: staging exposed CSV CRLF line endings and extra
+blank test-file EOF lines that the earlier unstaged whitespace check had not seen.
+The CSV is normalized to LF and the test EOF is trimmed; runtime, tool, ontology,
+reference and test logic are unchanged. The affected current-source, ingest-repair
+and GLEIF suites passed 38 tests (work/be47/publication-regressions.xml); Ruff,
+docs, generation and staged whitespace checks pass. Publication source digest:
+11be7926b618bb8e4917c682e252df3db3fdec2f074b0545a1c29e64c61795fb.
+Comparing with candidate-3/source.json confirms only those two formatting changes.
+The full 1,289-test run remains evidence for identical runtime behavior, not a
+claim that its original byte fingerprint equals this normalized publication tree.

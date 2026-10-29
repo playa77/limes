@@ -71,7 +71,7 @@ def test_fetch_yields_one_record_via_respx():
     assert record.content_type == "application/json"
     assert record.fetched_at.tzinfo is not None
     params = route.calls[0].request.url.params
-    assert params["f.known"] == "true"
+    assert "f.known" not in params
     assert "apikey" not in params
     assert "f.aktualisiert" not in params
 
@@ -82,8 +82,9 @@ def test_fetch_sends_apikey_when_configured():
         route = respx.get(PERSON_URL).mock(return_value=Response(200, content=_payload()))
         list(adapter.fetch(None, None))
     params = route.calls[0].request.url.params
-    assert params["apikey"] == "operator-secret-key"
-    assert params["f.known"] == "true"
+    assert "apikey" not in params
+    assert route.calls[0].request.headers["Authorization"] == "ApiKey operator-secret-key"
+    assert "f.known" not in params
 
 
 def test_fetch_window_adds_aktualisiert_filter():
@@ -92,7 +93,8 @@ def test_fetch_window_adds_aktualisiert_filter():
     with respx.mock:
         route = respx.get(PERSON_URL).mock(return_value=Response(200, content=_payload()))
         list(ADAPTER.fetch(since, until))
-    assert route.calls[0].request.url.params["f.aktualisiert"] == "2025-01-01..2025-12-31"
+    assert route.calls[0].request.url.params["f.aktualisiert.start"] == since.isoformat()
+    assert route.calls[0].request.url.params["f.aktualisiert.end"] == until.isoformat()
 
 
 def test_fetch_401_raises_source_fetch_error():

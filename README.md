@@ -121,7 +121,7 @@ for desktop backup; a consumer token cannot submit operational jobs.
 # On the client; supply the operator token in the environment, never an argument.
 export LIMES_REMOTE_URL=https://your-api.example
 venv/bin/limes remote run ingest --source gleif
-venv/bin/limes remote run backfill --source gdelt --days 30
+venv/bin/limes remote run backfill --source gdelt --days 1
 venv/bin/limes remote run backup
 venv/bin/limes remote status JOB_UUID --wait
 ```

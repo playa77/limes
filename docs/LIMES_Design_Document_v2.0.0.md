@@ -407,7 +407,7 @@ Every node and edge records the ontology version under which it was written, so 
 
 ### 5.2 Entity Types
 
-Twenty-three concrete types under three abstract supertypes (ontology 1.2.0). Supertypes make traversal expressible without enumerating subtypes.
+Twenty-three concrete types under three abstract supertypes (ontology 1.3.0). Supertypes make traversal expressible without enumerating subtypes.
 
 | # | Type | Supertype (— = none) | Identifying key |
 |---|---|---|---|
@@ -449,11 +449,13 @@ Not ontology entities, excluded from the type count, each with exactly one ownin
 
 ### 5.4 Relation Types
 
-Thirty-four relations. BE-46 adds four evidence/listing connections to the thirty historical relations. The original count reached thirty because `SANCTIONED_BY` is decomposed into `TARGETS`, `IMPOSED_BY`, and `ESTABLISHED_BY` — a sanction's target, its imposing authority, and its establishing instrument are three facts with three sources and three validity intervals.
+Thirty-six relations. BE-47 adds direct and ultimate financial consolidation; BE-46 added four evidence/listing connections to the thirty historical relations. The original count reached thirty because `SANCTIONED_BY` is decomposed into `TARGETS`, `IMPOSED_BY`, and `ESTABLISHED_BY` — a sanction's target, its imposing authority, and its establishing instrument are three facts with three sources and three validity intervals.
 
 `MEMBER_OF`, `HOLDS_OFFICE`, `OFFICE_AT`, `DIRECTOR_OF`, `OWNS_STAKE_IN`, `SUBSIDIARY_OF`, `HEADQUARTERED_IN`, `LOCATED_IN`, `PART_OF_REGION`, `TARGETS`, `IMPOSED_BY`, `ESTABLISHED_BY`, `ADOPTED`, `AMENDS`, `REPEALS`, `CITES`, `APPLIES_TO`, `AWARDED_TO`, `BUYER_OF`, `SUPPLIES`, `LOBBIES_FOR`, `MET_WITH`, `PARTICIPANT_IN`, `ACTOR_IN`, `TARGET_OF`, `OCCURRED_IN`, `OPERATES`, `ABOUT_TOPIC`, `MENTIONS`, `REPRESENTS`.
 
 `HAS_ENRICHMENT`, `HAS_OBSERVATION`, `HAS_LISTING` and `REPRESENTS_SECURITY` are non-temporal evidence/identity connections. Snapshot and observation properties carry their independent source and recording dates.
+
+`DIRECTLY_CONSOLIDATED_BY` and `ULTIMATELY_CONSOLIDATED_BY` connect corporations for financial accounting consolidation. Neither asserts share ownership, legal subsidiary status or an ownership percentage.
 
 Domain and range for each are specified in Technical Specification §5.4 and are authoritative in the ontology artifact.
 

@@ -116,6 +116,7 @@ class GesetzeImInternetAdapter:
             content_type=TOC_CONTENT_TYPE,
             source_url=TOC_URL,
             fetched_at=toc_fetched_at,
+            acquisition_context={"archive_only": True},
         )
         for law_number, link in enumerate(links, start=1):
             fetched_at = now_utc()
@@ -142,6 +143,8 @@ class GesetzeImInternetAdapter:
         archives); skips law XML that is unidentifiable (no fundstelle
         citation) and counts the reason.
         """
+        if (record.acquisition_context or {}).get("archive_only"):
+            return NormalizedRecord(content_hash=payload_hash(record.payload), kind="structured")
         try:
             archive = zipfile.ZipFile(io.BytesIO(record.payload))
         except zipfile.BadZipFile as exc:

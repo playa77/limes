@@ -8,6 +8,7 @@ must refuse to emit without a known publication date rather than fall back to
 the wall clock, and the assertions must carry `source_trust = 0.30`.
 """
 
+import bz2
 import gzip
 from datetime import UTC, datetime
 
@@ -17,10 +18,11 @@ from httpx import Response
 from limes.errors import SourceParseError
 from limes.sources.offeneregister import (
     DATA_URL,
-    METADATA_URL,
     OffeneRegisterAdapter,
 )
 from limes.types import RawRecord
+
+METADATA_URL = "https://example.test/offeneregister/meta.json"
 
 FIXTURES = __import__("pathlib").Path(__file__).parents[1] / "fixtures" / "offeneregister"
 FETCHED_AT = datetime(2026, 8, 1, 12, 0, 0, tzinfo=UTC)
@@ -44,16 +46,16 @@ def _data_record() -> RawRecord:
     )
 
 
-def test_fetch_yields_metadata_then_data():
+def test_fetch_legacy_metadata_then_original_and_bounded_data():
     with respx.mock:
         respx.get(METADATA_URL).mock(
             return_value=Response(200, content=b'{"published_at": "2026-01-15"}')
         )
-        respx.get(DATA_URL).mock(return_value=Response(200, content=gzip.compress(b"{}")))
-        records = list(OffeneRegisterAdapter().fetch(None, None))
-    assert [r.source_url for r in records] == [METADATA_URL, DATA_URL]
+        respx.get(DATA_URL).mock(return_value=Response(200, content=bz2.compress(b"{}")))
+        records = list(OffeneRegisterAdapter(metadata_url=METADATA_URL).fetch(None, None))
+    assert [r.source_url for r in records] == [METADATA_URL, DATA_URL, DATA_URL]
     assert records[0].content_type == "application/json"
-    assert records[1].content_type == "application/gzip"
+    assert records[1].content_type == "application/x-bzip2"
 
 
 def test_metadata_record_sets_publication_date():

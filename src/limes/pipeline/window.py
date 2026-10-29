@@ -44,6 +44,12 @@ def resolve_window(
     if not adapter.supports_incremental:
         return None, None
     if source_node is not None and source_node.last_success_at is not None:
-        return source_node.last_success_at, spec.until
-    cutoff = (now or datetime.now(UTC)) - timedelta(days=settings.backfill_days_unstructured)
+        cutoff = source_node.last_success_at
+    elif source_node is not None and source_node.initial_window_from is not None:
+        cutoff = source_node.initial_window_from
+    else:
+        cutoff = (now or datetime.now(UTC)) - timedelta(days=settings.backfill_days_unstructured)
+    bound = getattr(adapter, "bound_ingest_window", None)
+    if bound is not None:
+        return cutoff, bound(cutoff, spec.until or now or datetime.now(UTC))
     return cutoff, spec.until

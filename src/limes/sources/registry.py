@@ -58,7 +58,7 @@ class SourceRegistry:
         return self.get(source_id).trust_rank
 
 
-def build_default_registry() -> SourceRegistry:
+def build_default_registry(*, bundestag_dip_api_key: str = "") -> SourceRegistry:
     """The authoritative list of live sources (Doc 2 §8.5.1).
 
     The only place the ingestable source set is defined. One line per
@@ -74,7 +74,7 @@ def build_default_registry() -> SourceRegistry:
 
     from limes.sources.bundestag_dip import BundestagDipAdapter
 
-    registry.register(BundestagDipAdapter())
+    registry.register(BundestagDipAdapter(api_key=bundestag_dip_api_key))
 
     from limes.sources.eurlex import EurlexAdapter
 

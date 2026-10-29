@@ -4,19 +4,19 @@
 Loads the legal-entity backbone: `Corporation` nodes keyed by `lei`,
 `HEADQUARTERED_IN` edges to address-identity `Location` nodes, `LOCATED_IN`
 edges to the NUTS region the postal-code correspondence resolves, and
-`SUBSIDIARY_OF` / `OWNS_STAKE_IN` edges between corporations (Doc 1 §5.4).
+direct/ultimate financial-consolidation edges (ontology 1.3.0). Legacy archived
+subsidiary/percentage rows retain their original interpretation.
 
 The golden copy is a full snapshot: `fetch` downloads both zips, ignores the
-window, and yields one `RawRecord` per zip. `supports_incremental` is True
+window, and archives each original ZIP before yielding bounded CSV chunks.
+`supports_incremental` is True
 per the source table, but the snapshot always supersedes any window, so
 window resolution never changes what is fetched.
 
 Non-obvious choices, each load-bearing:
 
-- The URL constants are the single place to refresh when the golden-copy
-  endpoints move. They follow the documented GLEIF pattern; the exact live
-  URL could not be verified from this host, so treat them as unverified
-  until the first fetch succeeds.
+- Download URLs come from the latest publication catalog entry, with entity
+  and relationship CSV files selected from the same publication.
 - An address without geonames identity gets its `entity_id` from a SHA-256
   over `country|postal|city` (the `coordinate_hash` key). The hash is
   identity, not location: region membership is a lookup, never geometry
@@ -48,15 +48,18 @@ from __future__ import annotations
 
 import csv
 import io
+import json
 import re
 import zipfile
+from collections import Counter
 from collections.abc import Callable, Iterator
 from datetime import UTC, datetime
 from typing import Literal
+from urllib.parse import urlsplit
 
 import structlog
 
-from limes.errors import SourceParseError
+from limes.errors import SourceFetchError, SourceParseError
 from limes.sources.base import (
     address_location,
     fetch_bytes,
@@ -74,18 +77,12 @@ from limes.types import (
 
 logger = structlog.get_logger(__name__)
 
-# The single place to refresh when the golden-copy endpoints move (see the
-# module docstring: the exact live URL is unverified from this host).
-ENTITY_ZIP_URL = "https://goldencopy.gleif.org/api/v2/golden-copies/latest/lei2-goldencopy.csv.zip"
-RELATIONSHIP_ZIP_URL = (
-    "https://goldencopy.gleif.org/api/v2/golden-copies/latest/lei2-relationships-goldencopy.csv.zip"
-)
+PUBLICATIONS_URL = "https://goldencopy.gleif.org/api/v2/golden-copies/publishes"
 
 ZIP_CONTENT_TYPE = "application/zip"
 
 _ENTITY_CSV_MARKERS = ("LEI", "Entity.EntityStatus")
 _RELATIONSHIP_CSV_MARKER = "Relationship.RelationshipType"
-_RELATIONSHIP_MEMBER_HINT = "relationships"
 _SUBSIDIARY_TYPE = "IS_SUBSIDIARY_OF"
 _ACTIVE_STATUS = "ACTIVE"
 
@@ -108,20 +105,17 @@ class GleifAdapter:
         """Download both golden-copy zips. The window is ignored: the golden
         copy is a full snapshot and always supersedes any window."""
         fetched_at = now_utc()
-        for url in (ENTITY_ZIP_URL, RELATIONSHIP_ZIP_URL):
-            payload = fetch_bytes(url)
+        for url in _published_urls(fetch_bytes(PUBLICATIONS_URL, max_bytes=2 * 1024 * 1024)):
+            payload = fetch_bytes(url, max_bytes=1024 * 1024 * 1024)
             logger.info(
                 "gleif payload fetched",
                 url=url,
                 bytes=len(payload),
                 fetched_at=fetched_at.isoformat(),
             )
-            yield RawRecord(
-                payload=payload,
-                content_type=ZIP_CONTENT_TYPE,
-                source_url=url,
-                fetched_at=fetched_at,
-            )
+            from limes.sources.bulk import zip_csv_records
+
+            yield from zip_csv_records(payload, url, fetched_at)
 
     def normalize(
         self,
@@ -129,18 +123,26 @@ class GleifAdapter:
         *,
         postal_lookup: Callable[[str, str], str | None] | None = None,
     ) -> NormalizedRecord:
-        """One zip to entity or relationship records, routed on the inner CSV
-        member name.
+        """A CSV chunk or legacy ZIP, routed by validated column headers.
 
         `postal_lookup` resolves (country, postal code) to a NUTS code from
         graph-resident reference data (C-07); the caller passes it when the
         correspondence is available. A missing lookup or miss means no
         `LOCATED_IN` — never guessed — counted and summarized once.
         """
-        member, text = _read_zip(record)
-        if _RELATIONSHIP_MEMBER_HINT in member.lower():
-            return self._normalize_relationships(text, record)
-        return self._normalize_entities(text, record, postal_lookup)
+        if (record.acquisition_context or {}).get("archive_only"):
+            return NormalizedRecord(content_hash=payload_hash(record.payload), kind="structured")
+        if record.content_type == "text/csv":
+            member, text = None, record.payload.decode("utf-8-sig")
+        else:
+            member, text = _read_zip(record)
+        if _RELATIONSHIP_CSV_MARKER in next(csv.reader(io.StringIO(text)), []):
+            normalized = self._normalize_relationships(text, record)
+        else:
+            normalized = self._normalize_entities(text, record, postal_lookup)
+        for assertion in normalized.assertions:
+            assertion.provenance.evidence_member = member
+        return normalized
 
     def _normalize_entities(
         self,
@@ -229,6 +231,8 @@ class GleifAdapter:
 
     def _normalize_relationships(self, text: str, record: RawRecord) -> NormalizedRecord:
         rows = _csv_rows(text, _RELATIONSHIP_CSV_MARKER)
+        if "Relationship.StartNode.NodeID" in rows[0]:
+            return self._normalize_current_relationships(rows, record)
         assertions: list[Assertion] = []
         subsidiary = 0
         ownership = 0
@@ -322,6 +326,78 @@ class GleifAdapter:
             assertions=assertions,
         )
 
+    def _normalize_current_relationships(
+        self, rows: list[dict[str, str]], record: RawRecord
+    ) -> NormalizedRecord:
+        mapping = {
+            "IS_DIRECTLY_CONSOLIDATED_BY": "DIRECTLY_CONSOLIDATED_BY",
+            "IS_ULTIMATELY_CONSOLIDATED_BY": "ULTIMATELY_CONSOLIDATED_BY",
+        }
+        assertions: list[Assertion] = []
+        errors = 0
+        unsupported: Counter[str] = Counter()
+        for ordinal, row in enumerate(rows, 1):
+            relation = mapping.get(row.get("Relationship.RelationshipType", ""))
+            if relation is None:
+                unsupported[row.get("Relationship.RelationshipType", "unknown")] += 1
+                continue  # Fund-management relationships have different semantics.
+            start = row.get("Relationship.StartNode.NodeID", "").strip()
+            end = row.get("Relationship.EndNode.NodeID", "").strip()
+            if not (_LEI_PATTERN.fullmatch(start) and _LEI_PATTERN.fullmatch(end)):
+                errors += 1
+                continue
+            periods = [
+                n
+                for n in range(1, 6)
+                if row.get(f"Relationship.Period.{n}.periodType") == "RELATIONSHIP_PERIOD"
+            ]
+            if len(periods) > 1:
+                errors += 1
+                continue  # Do not choose among conflicting relationship intervals.
+            n = periods[0] if periods else 1
+            prefix = f"Relationship.Period.{n}."
+            raw_start = row.get(prefix + "startDate", "") if periods else ""
+            raw_end = row.get(prefix + "endDate", "") if periods else ""
+            valid_from = _parse_period_start(raw_start) if raw_start else record.fetched_at
+            valid_to = _parse_period_start(raw_end) if raw_end else None
+            if (
+                valid_from is None
+                or (raw_end and valid_to is None)
+                or (valid_to is not None and valid_to < valid_from)
+            ):
+                errors += 1
+                continue
+            if row.get("Relationship.RelationshipStatus") != "ACTIVE" and valid_to is None:
+                continue  # Inactive without an end date cannot assert current consolidation.
+            assertion = make_assertion(
+                self,
+                record,
+                _corporation(start, start),
+                relation,
+                _corporation(end, end),
+                valid_from=valid_from,
+                valid_to=valid_to,
+            )
+            assertion.provenance.evidence_row = ordinal
+            assertion.provenance.source_url = record.source_url
+            assertion.provenance.source_recorded_at = _parse_period_start(
+                row.get("Registration.LastUpdateDate", "")
+            )
+            assertions.append(assertion)
+        logger.info(
+            "gleif: current RR normalized",
+            rows=len(rows),
+            consolidation_assertions=len(assertions),
+            errors=errors,
+            unsupported_relationship_types=dict(unsupported),
+        )
+        return NormalizedRecord(
+            content_hash=payload_hash(record.payload),
+            kind="structured",
+            assertions=assertions,
+            errors=errors,
+        )
+
 
 def _read_zip(record: RawRecord) -> tuple[str, str]:
     """The inner CSV member name and its decoded text; non-CSV members
@@ -360,7 +436,8 @@ def _parse_period_start(raw: str) -> datetime | None:
     """GLEIF period dates are `YYYY-MM-DD`; a bare date is treated as UTC
     midnight so assertion ids stay timezone-stable."""
     try:
-        return datetime.fromisoformat(raw).replace(tzinfo=UTC)
+        parsed = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+        return parsed.replace(tzinfo=UTC) if parsed.tzinfo is None else parsed.astimezone(UTC)
     except ValueError:
         return None
 
@@ -372,3 +449,26 @@ def _corporation(lei: str, label: str) -> EntityEndpoint:
         label=label,
         deterministic_key=("lei", lei),
     )
+
+
+def _published_urls(payload: bytes) -> tuple[str, str]:
+    """Resolve both full CSV archives from one official publication."""
+    try:
+        latest = json.loads(payload)["data"][0]
+        urls = [latest[kind]["full_file"]["csv"]["url"] for kind in ("lei2", "rr")]
+        for url in urls:
+            parts = urlsplit(url)
+            if (
+                parts.scheme != "https"
+                or parts.netloc != "goldencopy.gleif.org"
+                or not parts.path.startswith("/storage/golden-copy-files/")
+                or not parts.path.endswith(".csv.zip")
+                or parts.query
+                or parts.fragment
+            ):
+                raise ValueError("unexpected download URL")
+        return urls[0], urls[1]
+    except (ValueError, KeyError, IndexError, TypeError, AttributeError) as exc:
+        raise SourceFetchError(
+            "gleif: invalid publication catalog; expected full lei2/rr CSV URLs"
+        ) from exc

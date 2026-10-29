@@ -492,3 +492,21 @@ def test_explicit_historical_window_checkpoint_uses_until(tmp_path):
         _ctx(tmp_path, driver, adapter),
     )
     assert [p["last_success_at"] for _, p in driver.writes if "last_success_at" in p] == [until]
+
+
+def test_fetch_response_parse_error_closes_run_without_checkpoint(tmp_path):
+    from limes.errors import SourceParseError
+
+    class BrokenSearchAdapter(FakeAdapter):
+        def fetch(self, since, until):
+            raise SourceParseError("invalid search response")
+            yield  # generator-shaped fetch
+
+    driver = FakeDriver()
+    ctx = _ctx(tmp_path, driver, BrokenSearchAdapter())
+    with pytest.raises(SourceParseError, match="invalid search response"):
+        execute_run(RunSpec(source_id="test", mode="ingest"), ctx)
+    closures = [params for _, params in driver.writes if "finished_at" in params]
+    assert len(closures) == 1
+    assert closures[0]["errors"] == 1
+    assert not any("last_success_at" in params for _, params in driver.writes)

@@ -82,6 +82,7 @@ class EdgeRef(BaseModel):
     prompt_version: str | None = None
     schema_version: str | None = None
     evidence_document_id: str | None = None
+    evidence_manifest_hash: str | None = None
     evidence_start: int | None = None
     evidence_end: int | None = None
     evidence_channel: str | None = None
@@ -320,6 +321,7 @@ def edge_ref(rel: Relationship) -> EdgeRef:
         evidence_end=_int_or_none(props.get("evidence_end")),
         evidence_channel=_str_or_none(props.get("evidence_channel")),
         evidence_member=_str_or_none(props.get("evidence_member")),
+        evidence_manifest_hash=_str_or_none(props.get("evidence_manifest_hash")),
         evidence_row=_int_or_none(props.get("evidence_row")),
         source_event_id=_str_or_none(props.get("source_event_id")),
         source_url=_str_or_none(props.get("source_url")),

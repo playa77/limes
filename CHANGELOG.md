@@ -1,3 +1,20 @@
+## 2026-10-29 — BE-47 first full-ingest repair
+
+- Wire masked DIP credentials into header auth and handle current fields,
+  UTC date filters and cursor pagination. Keep credentials out of archive URLs.
+- Use provider-compatible extraction messages, retry remote disconnects and close
+  durable runs for fetch/search parsing failures; submit Overpass form data.
+- Parse current TED UBL and complete bounded iteration, official Transparency XML,
+  historical OffeneRegister bzip2 observations and actual EUR-Lex CDM predicates.
+- Add ontology 1.3.0 direct/ultimate financial consolidation without reinterpreting
+  ownership. Archive original bulk snapshots before bounded chunks, with manifest
+  provenance exposed through graph/API/desktop mirrors.
+- Advance default catch-up through covered prefixes with a durable first-window
+  anchor; failed windows never skip history. Continue ingest-all source failures
+  and fail its aggregate job. Archive laws indexes without a permanent parse error.
+- Qualify fixtures and disposable behavior; retain explicit upstream availability
+  and unrun production/paid evidence limits.
+
 ## 2026-10-29 — DC-14 desktop correctness and qualification
 
 - Preserve admissible builder choices and propagate upstream changes through all

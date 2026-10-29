@@ -65,7 +65,7 @@ def test_fetch_without_window_sends_no_date_filter():
         query = route.calls[0].request.url.params["query"]
 
     assert len(records) == 1
-    assert "FILTER" not in query
+    assert "?date >=" not in query and "?date <=" not in query
 
 
 def test_normalize_produces_expected_assertions():

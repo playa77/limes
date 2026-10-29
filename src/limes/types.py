@@ -51,6 +51,7 @@ class Provenance(BaseModel):
     schema_version: str | None = None
     ontology_version: str
     evidence_document_id: str | None = None
+    evidence_manifest_hash: str | None = None
     evidence_start: int | None = None
     evidence_end: int | None = None
     evidence_channel: str | None = None
@@ -223,6 +224,7 @@ class SourceRecord(BaseModel):
     kind: Literal["structured", "unstructured"]
     trust_rank: float
     last_success_at: datetime | None = None
+    initial_window_from: datetime | None = None
     last_run_id: str | None = None
 
 

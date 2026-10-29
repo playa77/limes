@@ -13,7 +13,7 @@ merges or deployment without explicit instruction. Production/co-tenant operatio
 are outside implementation scope. Snapshot and issue rows below are historical
 records; subsequent evidence/closures are appended without erasing them.
 
-## Current disposition — 2026-10-29 (DC-14 candidate; BE-45 waiver retained)
+## Current disposition — 2026-10-29 (BE-47 local acceptance; BE-45 waiver retained)
 
 This index supersedes the status wording in the historical inventory below, without
 erasing its evidence. Package placement: [backend](docs/BACKEND_ROADMAP.md),
@@ -22,6 +22,8 @@ closure sections; “open” is not a statement that every old symptom still exi
 
 | Issue | Current state | Owner/package | Remaining obligation or closure evidence |
 |---|---|---|---|
+| OI-25 | Closed — complete local BE-47 acceptance | BE-47 | Final frozen candidate-3: all five suites/shared guards pass with no source drift. Current formats, archive manifests/API, identity compatibility and failure/checkpoint regressions have direct evidence below; production success is unclaimed. |
+| OI-26 | Open — external source availability | Operator/upstream | Bounded probes observed FSD HTTP 500, a tiny Overpass timeout, and empty XML for two TED award links. Require compatible current responses or explicit failed-source/record outcomes when acquiring; never infer coverage from retry code or mocked tests. |
 | OI-01 | BE-45 operator-evidence gate waived (D-84); unmeasured | Operator | Actual deployed revision/configuration remains unknown; no inferred deployment |
 | OI-02 | Closed | DC-12 | 2026-10-07 Closed with evidence: 2 integration cases; no new deployed smoke claim |
 | OI-03 | BE-45 operator-evidence gate waived (D-84); unmeasured | Operator | Actual production smoke remains unobserved; disposable qualification is separate |
@@ -651,3 +653,39 @@ cross-view qualification. **DEP-DC-1** is an unspecified current administrator
 Compose deployment for manual workflow/backup observation. BE-45's waiver does not
 supply these facts. No production data, paid model, deployment or historical
 review closure is inferred from candidate fixtures.
+
+## 2026-10-29 — OI-25 first full-ingest evidence
+
+The user supplied ERROR_RECORD.md and a public expiring DIP key. Candidate fixes
+and fresh bounded public probes are separated from unverified operator facts in
+[INGEST_RUN_DIAGNOSIS](docs/INGEST_RUN_DIAGNOSIS.md). No raw job JSON, archived
+EUR-Lex response or failed-law exception was supplied. OI-25 remains open; zero
+errors or successful production completion is not inferred from mocked tests.
+
+## 2026-10-29 — OI-25 Closed with complete BE-47 candidate evidence
+
+The user's explicit continuation completed the full BE-47 parent on the same
+branch. `work/be47/candidate-3/report.json` is passed, with source digest
+9381ee7d65ba80c6b7423cb20ab978d1dd4416a99c2ae025730030f18f9564a6,
+1,289 cumulative tests, zero failures/errors/skips and no source drift. Run
+`venv/bin/python tools/qualify.py --output work/be47/recheck` using a fresh output
+directory to repeat the complete candidate. No paid provider or production graph
+was used. The 24 new regression cases address distinct behaviors, not a test quota.
+
+`test_current_sources.py` verifies actual GLEIF accounting consolidation,
+OffeneRegister historical observation dates, complete daily Transparency XML,
+current UBL lot/winner joins and negative awards, search completeness, ISO country
+identity compatibility, bulk byte/row bounds, law-index handling, real EUR-Lex
+predicates/standalone acts/pagination and aggregate source failures.
+`test_ingest47_sources.py` exercises actual fetch/archive/normalize/load/API paths,
+unchanged original compressed bytes, manifest provenance, idempotent replay and
+initial-failure/success/failure/resume catch-up on disposable Neo4j. Existing
+DIP/extraction/transport and fetch-parse closure regressions complete the checklist.
+
+Current source migrations are implemented rather than left as placeholders.
+OI-26 separates the measured availability limits: the public FSD probe returned
+500; the tiny Overpass form probe timed out; two public TED award XML links
+returned empty bodies. No full source acquisition or paid model quality is inferred
+from fixtures. Unknown original job-log details remain unknown, with reproducible
+law-index/CDM defects independently repaired. No staging, commit, push, PR,
+deployment or production full-ingest run occurred.

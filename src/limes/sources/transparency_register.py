@@ -12,11 +12,10 @@ but a full snapshot always supersedes any window.
 
 Non-obvious choices, each load-bearing:
 
-- `EXPORT_URL` is the single refresh point when the download URL moves. The
-  dataset is documented on data.europa.eu as "eu-transparency-register"; the
-  live URL is not stable and could not be verified from this host, so treat
-  it as unverified until the first fetch succeeds. Refresh here, nowhere
-  else.
+- The current daily XML endpoint is linked by the official transparency-register
+  dataset catalog. ListOfIRPublicDetail export date/count are required. Current
+  exports supply interests but no head-person or meetings: neither is inferred.
+  Archived Templates payloads retain their legacy parser.
 - Declared interests are `Topic` nodes under the register's own "EU_TR"
   vocabulary, never EuroVoc: the register's interest classification has no
   EuroVoc equivalent, and a source-namespaced vocabulary keeps the two
@@ -70,7 +69,7 @@ logger = structlog.get_logger(__name__)
 
 # The single place to refresh when the download URL moves (see the module
 # docstring: the data.europa.eu URL is not stable).
-EXPORT_URL = "https://data.europa.eu/api/hub/store/data/eu-transparency-register.xml"
+EXPORT_URL = "https://transparency-register.europa.eu/odplastorganisationxml_en"
 
 XML_CONTENT_TYPE = "application/xml"
 
@@ -99,7 +98,7 @@ class TransparencyRegisterAdapter:
         """GET the full export. The window is ignored: the export is the
         whole current register and there is no delta endpoint, so every run
         is a full load."""
-        payload = fetch_bytes(EXPORT_URL)
+        payload = fetch_bytes(EXPORT_URL, max_bytes=256 * 1024 * 1024)
         fetched_at = now_utc()
         logger.info(
             "transparency_register: export fetched",
@@ -122,6 +121,8 @@ class TransparencyRegisterAdapter:
             raise SourceParseError(
                 f"transparency_register: payload is not parseable XML: {exc}"
             ) from exc
+        if etree.QName(root).localname == "ListOfIRPublicDetail":
+            return self._normalize_current(root, record)
         if etree.QName(root).localname != "Templates":
             raise SourceParseError(
                 "transparency_register: payload root is not <Templates>; not the register export"
@@ -183,6 +184,74 @@ class TransparencyRegisterAdapter:
             content_hash=payload_hash(record.payload),
             kind="structured",
             assertions=assertions,
+        )
+
+    def _normalize_current(self, root: etree._Element, record: RawRecord) -> NormalizedRecord:
+        def text(node: etree._Element, name: str) -> str | None:
+            values = node.xpath(f".//*[local-name()='{name}']/text()")
+            return str(values[0]).strip() if values else None
+
+        def date(raw: str | None) -> datetime | None:
+            try:
+                parsed = datetime.fromisoformat(raw.replace("Z", "+00:00")) if raw else None
+                if parsed is None:
+                    return None
+                return (
+                    parsed.replace(tzinfo=UTC) if parsed.tzinfo is None else parsed.astimezone(UTC)
+                )
+            except ValueError:
+                return None
+
+        rows = root.xpath(".//*[local-name()='interestRepresentative']")
+        try:
+            expected = int(text(root, "numberOfIR") or "-1")
+        except ValueError as exc:
+            raise SourceParseError("transparency_register: invalid export count") from exc
+        as_of = date(text(root, "exportDate"))
+        if as_of is None or expected != len(rows):
+            raise SourceParseError(
+                "transparency_register: incomplete export or missing export date"
+            )
+        assertions: list[Assertion] = []
+        entities: list[EntityEndpoint] = []
+        errors = 0
+        for ordinal, row in enumerate(rows, 1):
+            identifier, name = text(row, "identificationCode"), text(row, "originalName")
+            if not identifier or not name:
+                errors += 1
+                continue
+            group = EntityEndpoint(
+                entity_id=key_entity_id(("transparency_register_id", identifier)),
+                type="InterestGroup",
+                label=name,
+                deterministic_key=("transparency_register_id", identifier),
+            )
+            entities.append(group)
+            for interest in row.xpath("./*[local-name()='interests']/*[local-name()='interest']"):
+                label = text(interest, "name")
+                if not label:
+                    errors += 1
+                    continue
+                # Export supplies labels, not classification codes: namespaced label digest.
+                code = hash_entity_id("interest", label).split(":", 1)[1]
+                assertion = make_assertion(
+                    self,
+                    record,
+                    group,
+                    "LOBBIES_FOR",
+                    topic_endpoint(INTEREST_VOCABULARY, code, label=label),
+                    valid_from=as_of,
+                )
+                assertion.provenance.source_recorded_at = date(text(row, "lastUpdateDate"))
+                assertion.provenance.source_url = record.source_url
+                assertion.provenance.evidence_row = ordinal
+                assertions.append(assertion)
+        return NormalizedRecord(
+            content_hash=payload_hash(record.payload),
+            kind="structured",
+            entities=entities,
+            assertions=assertions,
+            errors=errors,
         )
 
 

@@ -189,7 +189,7 @@ def _records_for(source_id: str) -> list[RawRecord]:
             RawRecord(
                 payload=(FIXTURES / "offeneregister" / "meta.json").read_bytes(),
                 content_type="application/json",
-                source_url=offeneregister.METADATA_URL,
+                source_url="https://example.test/offeneregister/meta.json",
                 fetched_at=FETCHED_AT,
             ),
             RawRecord(
