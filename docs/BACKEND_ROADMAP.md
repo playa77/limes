@@ -1,6 +1,6 @@
 # Backend work-package roadmap
 
-Updated 2026-10-29 on `codex/be-46-entity-enrichment`, based on live-fetched main `b89287512335`. Canonical prefix **BE-**;
+Updated 2026-10-29 on `codex/be-47-ingest-repair`, based on live-fetched main `f1e773812baf`. Canonical prefix **BE-**;
 historical backend `WP-NN` maps to `BE-NN`, including the inserted BE-25a.
 The original roadmap defined WP-01–39 plus WP-25a (40 packages); WP-40 was a
 later coverage exercise. The separate desktop sequence is [DC](DESKTOP_ROADMAP.md).
@@ -13,7 +13,7 @@ claim that all original acceptance conditions are currently met. BE-41 was merge
 in PR #7 and BE-42 in PR #9 (`b1afc86`). **BE-43/DC-15 merged in PR #10** (`84c832d`), under the dynamic tracking
 contract confirmed in D-82. BE-44/DC-16 merged in PR #11 (`44ab4eb`).
 BE-45 merged in PR #12 (`b892875`) under the explicit D-84 evidence waiver;
-BE-46 passes complete local implementation acceptance in the current PR candidate.
+BE-46 merged in PR #13; BE-47 repairs the first full-ingest source contracts.
 News is core scope immediately after the existing implementation, not a phase
 waiting for unrelated historical cleanups to finish.
 
@@ -282,3 +282,17 @@ Multi-user accounts, retention/pseudonymization, polygon processing, internal
 scheduler, alerts and additional vector stores need a measured need and explicit
 package scope; they have no assigned implementation slots. News acquisition,
 qualified claims and cross-source analysis are already in core scope above.
+
+### BE-47 — first full-ingest repair and source-contract qualification
+
+Active on `codex/be-47-ingest-repair`, base `f1e773812baf`.
+[Acceptance and evidence](INGEST_RUN_DIAGNOSIS.md) cover DIP/auth/extraction,
+transport/error lifecycle, current GLEIF/TED/OffeneRegister/Transparency/EUR-Lex
+formats, the laws TOC defect, original bulk archives with bounded chunks and
+manifest/API provenance, and checkpointed initial catch-up/failure replay.
+Additive ontology 1.3.0 distinguishes direct/ultimate financial consolidation.
+Complete local implementation acceptance passes. Final frozen qualification
+passed all five suites (1,289 cumulative tests, no failures/errors/skips), shared
+guards and source-drift checks; exact evidence is in VERIFICATION.
+External availability and unrun production/paid evidence remain explicitly bounded;
+no historical claim is silently upgraded to successful operator ingestion.

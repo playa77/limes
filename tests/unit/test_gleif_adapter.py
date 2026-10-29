@@ -23,8 +23,7 @@ from structlog.testing import capture_logs
 
 from limes.errors import SourceParseError
 from limes.sources.gleif import (
-    ENTITY_ZIP_URL,
-    RELATIONSHIP_ZIP_URL,
+    PUBLICATIONS_URL,
     GleifAdapter,
 )
 from limes.types import EntityEndpoint, RawRecord
@@ -32,6 +31,8 @@ from limes.types import EntityEndpoint, RawRecord
 FIXTURES = __import__("pathlib").Path(__file__).parents[1] / "fixtures" / "gleif"
 NOW = datetime(2026, 8, 1, 12, 0, 0, tzinfo=UTC)
 
+ENTITY_ZIP_URL = "https://goldencopy.gleif.org/storage/golden-copy-files/test-lei2.csv.zip"
+RELATIONSHIP_ZIP_URL = "https://goldencopy.gleif.org/storage/golden-copy-files/test-rr.csv.zip"
 ADAPTER = GleifAdapter()
 
 LEI_DE = "5493000TEST000000001"  # Beispiel AG, Stuttgart (DE)
@@ -69,15 +70,43 @@ def _relationship_record() -> RawRecord:
     return _record(_zip_bytes("lei2-relationships-goldencopy.csv", csv_text), RELATIONSHIP_ZIP_URL)
 
 
-def test_fetch_yields_two_records_via_respx():
+def test_fetch_archives_originals_then_yields_csv_chunks():
     with respx.mock:
+        respx.get(PUBLICATIONS_URL).mock(
+            return_value=Response(
+                200,
+                json={
+                    "data": [
+                        {
+                            "lei2": {"full_file": {"csv": {"url": ENTITY_ZIP_URL}}},
+                            "rr": {"full_file": {"csv": {"url": RELATIONSHIP_ZIP_URL}}},
+                        }
+                    ]
+                },
+            )
+        )
         respx.get(ENTITY_ZIP_URL).mock(return_value=Response(200, content=_entity_record().payload))
         respx.get(RELATIONSHIP_ZIP_URL).mock(
             return_value=Response(200, content=_relationship_record().payload)
         )
         records = list(ADAPTER.fetch(None, None))
-    assert [r.source_url for r in records] == [ENTITY_ZIP_URL, RELATIONSHIP_ZIP_URL]
-    assert all(r.content_type == "application/zip" for r in records)
+    assert [r.source_url for r in records] == [
+        ENTITY_ZIP_URL,
+        ENTITY_ZIP_URL,
+        RELATIONSHIP_ZIP_URL,
+        RELATIONSHIP_ZIP_URL,
+    ]
+    assert [r.content_type for r in records] == [
+        "application/zip",
+        "text/csv",
+        "application/zip",
+        "text/csv",
+    ]
+    assert records[0].acquisition_context["archive_only"]
+    assert (
+        records[1].acquisition_context["source_archive_hash"]
+        == hashlib.sha256(records[0].payload).hexdigest()
+    )
     assert all(r.fetched_at.tzinfo is not None for r in records)
 
 

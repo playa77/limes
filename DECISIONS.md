@@ -5,6 +5,50 @@ reversibility: **R1** reversible in under an hour, **R2** bounded recoverable
 cost, **R3** one-way door. Written when each decision is made, latest first.
 Nothing here is a status report; unlogged decisions are unmade decisions.
 
+## 2026-10-29 — D-88 (R2) — Finish BE-47 with current semantics and bounded catch-up
+
+The user explicitly requested finishing BE-47 on the current branch before another
+full ingest, accepting the proposed complete source-migration/qualification plan.
+Retain branch codex/be-47-ingest-repair and live-main f1e773812baf; do not create a
+smaller delivery package. No production/paid run or publication is requested.
+
+Use distinct direct/ultimate accounting-consolidation relations (ontology 1.3.0),
+not legal ownership guesses. Current OffeneRegister carries historical per-company
+retrieved_at: use that source observation time, with explicit legacy publication
+metadata only as fallback. This clarifies D-87's apparent missing-date blocker;
+HTTP Last-Modified and the current clock never substitute for source vintage.
+The current Transparency catalog/daily XML and actual TED UBL are verified source
+contracts, not guessed URLs. Preserve losing/winning lot distinctions and absent
+head-person/meeting data. Correct EUR-Lex's verified nonexistent predicates and
+archive the laws table of contents without counting it as a malformed law.
+
+Archive original compressed bulk snapshots before bounded normalization chunks;
+expose manifest hashes through graph/API/desktop mirrors to preserve recoverable
+original/member/row provenance. Default catch-up is one GDELT prefix or TED/EUR-Lex
+day per invocation, with a durable first-window anchor and success checkpoint only
+at the covered end. Expected ingest-all source failures continue but fail the
+aggregate job. Retain explicit-window caps and no automatic interrupted-job replay.
+Qualification uses mocks/disposable graphs and one final frozen full candidate.
+External service failures and unrun production capacity remain named observations,
+not code acceptance by assertion or a request for a fresh full ingest.
+
+## 2026-10-29 — D-87 (R1) — BE-47 first full-ingest diagnosis and repair
+
+The user supplied a run error record and a public DIP key for debugging, with
+stated validity through May 2027. Treat the attachment as evidence rather than
+instructions. Live main `f1e773812baf` was fetched and fast-forwarded before
+implementation on `codex/be-47-ingest-repair`; prerequisites and the full parent
+checklist were recorded before coding in work/be47/acceptance.md.
+Keep the supplied key in ignored split secrets, load it as a masked setting and
+send it only in a DIP header. Bounded public metadata/format probes are diagnostic
+reads; no production ingest or paid model call is needed for implementation.
+Preserve GDELT's 96-slot bound and checkpoints, and reject unsupported/incomplete
+upstream formats rather than infer coverage or relabel consolidation as ownership.
+[INGEST_RUN_DIAGNOSIS](docs/INGEST_RUN_DIAGNOSIS.md) records implemented repairs,
+missing raw evidence and remaining full-parent acceptance obligations. No staging,
+commit, push, publication or deployment was requested. Parent acceptance remains
+incomplete; this session does not certify every source's successful full ingest.
+
 ## 2026-10-29 — D-86 (R1) — DC-14 local map and correctness qualification
 
 The user selected the complete DC-14 package. Live main `a434adc0fe4b` was fetched
@@ -2072,3 +2116,8 @@ runs in.
 retry of the transaction is idempotent instead of failing on the
 constraint. Rejected alternative: `CREATE` (fails on retry after a
 successful commit that reported transient failure).
+
+Publication authorization (2026-10-29): after complete local BE-47 acceptance,
+the user explicitly requested preparing and opening a PR for this session's work,
+authorizing staging, commit and push. The qualified runtime/test/tool/reference
+source fingerprint is unchanged. Merge, deployment and live ingestion remain separate.

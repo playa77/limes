@@ -8,6 +8,14 @@ changes are major bumps with a numbered migration (Doc 1 §9.6).
 
 ---
 
+## 1.3.0 — 2026-10-29
+
+BE-47 adds DIRECTLY_CONSOLIDATED_BY and ULTIMATELY_CONSOLIDATED_BY from
+Corporation to Corporation. Both are temporal accounting-consolidation evidence,
+not shareholding percentages or legal subsidiary status. Existing relations and
+stamps remain unchanged; normal additive provisioning applies. No destructive
+migration is required.
+
 ## 1.2.0 — 2026-10-29
 
 BE-46 additive migration: EnrichmentSnapshot, EnrichmentObservation, Security and

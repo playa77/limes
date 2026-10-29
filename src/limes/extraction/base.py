@@ -150,9 +150,10 @@ def build_extraction_messages(
     prompt_template: str,
     ontology_serialized: str,
 ) -> list[dict[str, str]]:
-    """The single system message for one batch: the instruction portion with
+    """The single user message for one batch: the instruction portion with
     the ontology serialized in, and the passages inside the explicit data
-    delimiters (Doc 1 §7.5). Passage indices in the block are the passages'
+    delimiters (Doc 1 §7.5). A user turn also supports providers that reject
+    system-only conversations. Passage indices in the block are the passages'
     original `index` values, so a returned `passage_index` resolves against
     the document's full passage list, not the batch's.
     """
@@ -160,4 +161,4 @@ def build_extraction_messages(
     content = prompt_template.replace("{ontology}", ontology_serialized).replace(
         "{passages}", f"{PASSAGES_OPEN}\n{block}\n{PASSAGES_CLOSE}"
     )
-    return [{"role": "system", "content": content}]
+    return [{"role": "user", "content": content}]

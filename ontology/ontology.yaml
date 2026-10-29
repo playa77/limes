@@ -1,4 +1,4 @@
-version: "1.2.0"
+version: "1.3.0"
 supertypes: [Agent, Place, Artifact]
 entity_types:
   - name: NewsDocument
@@ -300,6 +300,8 @@ relation_types:
   - {name: DIRECTOR_OF, domain: [Person], range: [Corporation], temporal: true}
   - {name: OWNS_STAKE_IN, domain: [Agent], range: [Corporation], temporal: true}
   - {name: SUBSIDIARY_OF, domain: [Corporation], range: [Corporation], temporal: true}
+  - {name: DIRECTLY_CONSOLIDATED_BY, domain: [Corporation], range: [Corporation], temporal: true}
+  - {name: ULTIMATELY_CONSOLIDATED_BY, domain: [Corporation], range: [Corporation], temporal: true}
   - {name: HEADQUARTERED_IN, domain: [Corporation, PublicBody, IGO, InterestGroup, PoliticalParty], range: [Location], temporal: true}
   - {name: LOCATED_IN, domain: [Location, Asset], range: [AdministrativeRegion], temporal: true}
   - {name: PART_OF_REGION, domain: [AdministrativeRegion], range: [AdministrativeRegion, Country], temporal: true}

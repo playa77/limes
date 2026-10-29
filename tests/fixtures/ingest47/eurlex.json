@@ -1,0 +1,5 @@
+
+{ "head": { "link": [], "vars": ["celex", "title", "date", "author", "amends_celex", "repeals_celex", "cites_celex", "topic_code", "topic_voc"] },
+  "results": { "distinct": false, "ordered": true, "bindings": [
+    { "celex": { "type": "literal", "value": "11975X/TXT" }	, "date": { "type": "literal", "datatype": "http://www.w3.org/2001/XMLSchema#date", "value": "1975-07-10" }	, "author": { "type": "literal", "value": "http://publications.europa.eu/resource/authority/corporate-body/EUMS9" }},
+    { "celex": { "type": "literal", "value": "11983B/AFI/DCL" }	, "date": { "type": "literal", "datatype": "http://www.w3.org/2001/XMLSchema#date", "value": "1983-01-28" }	, "author": { "type": "literal", "value": "http://publications.europa.eu/resource/authority/country/GBR" }	, "amends_celex": { "type": "literal", "datatype": "http://www.w3.org/2001/XMLSchema#string", "value": "11972B/AFI/DCL/07" }} ] } }

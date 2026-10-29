@@ -58,7 +58,7 @@ logger = structlog.get_logger(__name__)
 # One place to bump on migration (WP-31); the loader stamps nodes with the
 # *loaded* ontology's version, so a stale constant here only mislabels
 # assertions, never nodes.
-ONTOLOGY_VERSION = "1.2.0"
+ONTOLOGY_VERSION = "1.3.0"
 
 # §11 retry policy, as module constants matching the §4.2 defaults: adapters
 # are constructed without Settings (build_default_registry takes none), so the
@@ -281,7 +281,16 @@ def is_transient(exc: BaseException) -> bool:
     if isinstance(exc, TransientFailure):
         return True
     # Connection errors and timeouts are always transient (§11).
-    return isinstance(exc, (httpx.ConnectError, httpx.ConnectTimeout, httpx.ReadTimeout))
+    return isinstance(
+        exc,
+        (
+            httpx.ConnectError,
+            httpx.TimeoutException,
+            httpx.ReadError,
+            httpx.WriteError,
+            httpx.RemoteProtocolError,
+        ),
+    )
 
 
 class RetryExhausted(Exception):
@@ -310,6 +319,7 @@ def request_with_retry(
     url: str,
     *,
     json_body: dict[str, Any] | None = None,
+    form_body: dict[str, str] | None = None,
     headers: dict[str, str] | None = None,
     timeout_s: float = HTTP_TIMEOUT_SECONDS,
     follow_redirects: bool = True,
@@ -348,10 +358,14 @@ def request_with_retry(
             try:
                 if max_bytes is None:
                     response = (
-                        client.post(url, json=json_body) if method == "POST" else client.get(url)
+                        client.post(url, data=form_body)
+                        if form_body is not None
+                        else client.post(url, json=json_body)
+                        if method == "POST"
+                        else client.get(url)
                     )
                 else:
-                    with client.stream(method, url, json=json_body) as streamed:
+                    with client.stream(method, url, json=json_body, data=form_body) as streamed:
                         chunks = bytearray()
                         for chunk in streamed.iter_bytes():
                             if len(chunks) + len(chunk) > max_bytes:
@@ -361,12 +375,17 @@ def request_with_retry(
                             streamed.status_code,
                             # iter_bytes() already decoded HTTP content encoding.
                             # Retaining gzip/br headers would decode a second time.
-                            headers={key: value for key, value in streamed.headers.items()
-                                     if key.lower() not in ("content-encoding", "content-length")},
+                            headers={
+                                key: value
+                                for key, value in streamed.headers.items()
+                                if key.lower() not in ("content-encoding", "content-length")
+                            },
                             content=bytes(chunks),
                             request=streamed.request,
                         )
-            except (httpx.ConnectError, httpx.ConnectTimeout, httpx.ReadTimeout) as exc:
+            except httpx.TransportError as exc:
+                if not is_transient(exc):
+                    raise
                 raise TransientFailure(str(exc)) from exc
             if response.status_code in RETRYABLE_STATUSES:
                 raise TransientFailure(f"HTTP {response.status_code} from {url}")
@@ -410,11 +429,17 @@ def fetch_bytes_post(
     return _fetch("POST", url, json_body=json_body, timeout_s=timeout_s)
 
 
+def fetch_bytes_form(url: str, form_body: dict[str, str]) -> bytes:
+    """POST URL-encoded form data through the shared source retry policy."""
+    return _fetch("POST", url, form_body=form_body)
+
+
 def _fetch(
     method: str,
     url: str,
     *,
     json_body: dict[str, object] | None = None,
+    form_body: dict[str, str] | None = None,
     timeout_s: int = HTTP_TIMEOUT_SECONDS,
     max_bytes: int | None = None,
     headers: dict[str, str] | None = None,
@@ -424,6 +449,7 @@ def _fetch(
             method,
             url,
             json_body=json_body,
+            form_body=form_body,
             headers={"User-Agent": USER_AGENT, "Accept": "*/*", **(headers or {})},
             timeout_s=timeout_s,
             log=logger,

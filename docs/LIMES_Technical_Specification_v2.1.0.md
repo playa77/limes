@@ -325,6 +325,8 @@ Relationship property indexes on `valid_from`, `valid_to`, `recorded_at` are gen
 | `DIRECTOR_OF` | Person | Corporation | yes |
 | `OWNS_STAKE_IN` | Agent | Corporation | yes |
 | `SUBSIDIARY_OF` | Corporation | Corporation | yes |
+| `DIRECTLY_CONSOLIDATED_BY` | Corporation | Corporation | yes |
+| `ULTIMATELY_CONSOLIDATED_BY` | Corporation | Corporation | yes |
 | `HEADQUARTERED_IN` | Corporation, PublicBody, IGO, InterestGroup, PoliticalParty | Location | yes |
 | `LOCATED_IN` | Location, Asset | AdministrativeRegion | yes |
 | `PART_OF_REGION` | AdministrativeRegion | AdministrativeRegion, Country | yes |
@@ -826,7 +828,7 @@ Adapters emit records and **write nothing to the graph**.
 | `source_id` | Access | Emits | Incremental | Trust |
 |---|---|---|---|---|
 | `gisco_nuts` | Static CSV | `AdministrativeRegion`, `PART_OF_REGION`, `LookupRow(postal_code)` | no | 1.00 |
-| `gleif` | Golden copy CSV | `Corporation`, `HEADQUARTERED_IN`, `SUBSIDIARY_OF`, `OWNS_STAKE_IN` | yes | 1.00 |
+| `gleif` | Published golden copy CSV | `Corporation`, `HEADQUARTERED_IN`, `DIRECTLY_CONSOLIDATED_BY`, `ULTIMATELY_CONSOLIDATED_BY` | yes | 1.00 |
 | `eurlex` | Cellar SPARQL | `LegalAct`, `Topic`, `ADOPTED`, `AMENDS`, `REPEALS`, `CITES`, `ABOUT_TOPIC` | yes | 1.00 |
 | `fsd` | Consolidated XML | `Sanction`, `TARGETS`, `IMPOSED_BY`, `ESTABLISHED_BY` | yes | 1.00 |
 | `ted` | Bulk XML | `Contract`, `AWARDED_TO`, `BUYER_OF`, `ABOUT_TOPIC` | yes | 1.00 |
@@ -835,7 +837,7 @@ Adapters emit records and **write nothing to the graph**.
 | `gesetze_im_internet` | Index + XML | `LegalAct`, `APPLIES_TO`, `Topic` | yes | 1.00 |
 | `wikidata` | SPARQL, read-only enrichment | aliases and QIDs; never bulk-loaded | n/a | 0.90 |
 | `osm` | Overpass, DE bbox | `Asset`, `LOCATED_IN`, `OPERATES`, KRITIS `Topic` | no | 0.75 |
-| `offeneregister` | Bulk JSON | `Corporation`, `DIRECTOR_OF`, `OWNS_STAKE_IN` | no | 0.30 |
+| `offeneregister` | Historical bzip2 JSONL | `Corporation`, `DIRECTOR_OF` | no | 0.30 |
 | `gdelt` | 15-min ZIP containing 61-column TSV | Coded `Event` observations, role/location edges, export/row/report provenance; original report documents only when separately acquired | yes | 0.50 |
 | `feeds` | RSS/Atom per `feeds.yaml` | One source-versioned document per entry | yes | 0.60–0.70 |
 | `wikipedia` (BE-46) | MediaWiki API, verified Wikidata sitelinks | Revision-linked entity context and optional evidence-linked extracted claims | Revision-aware refresh, not full history | 0.65 |
@@ -935,7 +937,7 @@ a time under the existing provision lock.
 
 Verified source specifics, adopted from live checks rather than assumed: the NUTS hierarchy file carries no level column, so level derives from `NUTS_ID` length and parent by prefix; the postcode correspondence is at `/v2/pcode/csv/`, not `/postalcodes/`; that file uses mixed single and double quoting requiring explicit quote handling.
 
-`offeneregister` sets `recorded_at` to the **dataset's publication date**, never the ingestion timestamp. Setting it to ingestion time makes multi-year-stale directorships look current and defeats the trust ranking entirely.
+`offeneregister` sets `recorded_at` to each company's source-provided historical `retrieved_at`; an explicitly supplied legacy metadata publication date remains a fallback for archived wrapped records. Missing both is a parse failure. The current clock and HTTP Last-Modified are never substituted for source observation/publication time. This BE-47 clarification preserves stale directorships as stale rather than guessing a nonexistent dataset publication date.
 
 `wikidata` does not ingest. It exposes `enrich(entity_type, label) -> WikidataMatch | None` for the resolver, returning `None` on ambiguity rather than guessing.
 
@@ -1694,3 +1696,42 @@ investigation views consume these APIs only, provide separate network/map/timeli
 panes and independent instant filters, retain unknown time/geometry and distinguish
 qualified/coded artifacts from factual assertions. The coordinate-only map makes
 no provider requests. Chronology implies neither causation nor misconduct.
+
+### BE-47 current-source acquisition contracts
+
+GLEIF ontology 1.3.0 separates direct and ultimate accounting consolidation from
+ownership and legal subsidiary relationships. Read relationship periods/status and
+source update dates; preserve source row/member evidence. Additive schema changes
+need no destructive migration and never relabel historical assertions.
+
+TED search uses bounded iteration (400 pages of 50 notices) with count/token,
+timeout and duplicate validation. Default TED and EUR-Lex catch-up is at most one day per run;
+explicit excessive windows fail without a checkpoint. eForms UBL isolates lots
+under notice-plus-lot keys; only winning LotResult/TenderingParty joins produce
+awards. Unsuccessful tenders and subcontractors are not awardees. A reference-backed
+ISO3-to-ISO2 conversion keeps buyer/address identity compatible with legacy TED and
+GLEIF, and enables the existing ISO2 postal lookup. Unknown codes remain unknown. Archive search
+request/response manifests alongside notice XML. Current TR XML exports must match
+their declared row count/export date; absent head-person and meeting data stays
+absent, rather than inferred from names or free-text descriptions.
+
+GLEIF and OffeneRegister retain original compressed downloads, then process at
+most 1,000 rows/8 MiB input per normalization chunk with 1 MiB row bounds. Chunk
+manifests reference the original archive hash, member and row offset; optional
+evidence_manifest_hash passes through provenance, graph edges, API and desktop
+models to make that pointer inspectable. GLEIF
+compressed responses are bounded to 1 GiB, OffeneRegister to 512 MiB. These are
+work limits, not a production-scale capacity certification.
+
+EUR-Lex uses canonical underscore CDM predicates and up to forty ordered pages
+of 5,000 bindings; repeated pages and limit exhaustion fail without a checkpoint.
+Standalone legal acts survive missing relations. The laws TOC is archived as
+metadata rather than counted as a law parse failure.
+
+Default GDELT ingestion advances at most 96 slots per invocation, checkpointing
+only that covered prefix of the historical backlog. Consecutive runs share one
+inclusive boundary slot; stable identities make that overlap idempotent. A durable Source.initial_window_from anchor is established when opening an
+initial run, so first-failure retries cannot slide the lookback start. Failure
+never advances past unprocessed history. Explicit oversized requests still fail.
+`ingest-all` continues expected source failures and returns a failed aggregate job
+listing failed sources; a completed bounded pass never claims the backlog is gone.

@@ -121,7 +121,7 @@ def test_load_materializes_nodes_with_labels_and_keys(driver: GraphDriver, ontol
     assert set(rows[0]["labels"]) == {"Entity", "Agent", "Corporation"}
     assert rows[0]["n"]["label"] == "Entity ac08-parent"
     assert rows[0]["n"]["lei"] == "LEI-AC08"
-    assert rows[0]["n"]["ontology_version"] == "1.2.0"
+    assert rows[0]["n"]["ontology_version"] == "1.3.0"
 
 
 def test_load_materializes_standalone_entities(driver: GraphDriver, ontology):
@@ -242,7 +242,7 @@ def test_lower_trust_rematch_never_overwrites(driver: GraphDriver, ontology):
         10,
     )
     assert rows[0]["label"] == "Original Label"
-    assert rows[0]["v"] == "1.2.0"
+    assert rows[0]["v"] == "1.3.0"
 
 
 def test_interval_closure_within_source(driver: GraphDriver, ontology):

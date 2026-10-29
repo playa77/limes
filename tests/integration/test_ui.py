@@ -772,7 +772,7 @@ def test_api_client_reaches_the_live_api(
 
     health = api_client.get_health()
     assert health["status"] == "ok"
-    assert health["ontology_version"] == "1.2.0"
+    assert health["ontology_version"] == "1.3.0"
 
     schema = api_client.get_builder_schema()
     assert schema["entity_types"] and schema["relation_types"]

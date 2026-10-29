@@ -55,7 +55,7 @@ import structlog
 from limes.errors import SourceParseError
 from limes.sources.base import (
     coordinate_location,
-    fetch_bytes_post,
+    fetch_bytes_form,
     hash_entity_id,
     key_entity_id,
     make_assertion,
@@ -132,7 +132,7 @@ class OsmAdapter:
         as the `application/json` payload.
         """
         fetched_at = now_utc()
-        payload = fetch_bytes_post(OVERPASS_URL, {"data": OVERPASS_QUERY})
+        payload = fetch_bytes_form(OVERPASS_URL, {"data": OVERPASS_QUERY})
         logger.info(
             "osm payload fetched",
             bytes=len(payload),

@@ -89,10 +89,13 @@ RETURN s.source_id AS source_id,
        s.kind AS kind,
        s.trust_rank AS trust_rank,
        s.last_success_at AS last_success_at,
-       s.last_run_id AS last_run_id
+       s.last_run_id AS last_run_id,
+       s.initial_window_from AS initial_window_from
 """
 
 _RUN_OPEN = """
+MATCH (s:Source {source_id: $source_id})
+SET s.initial_window_from = coalesce(s.initial_window_from, $initial_window_from)
 CREATE (r:IngestionRun {
     run_id: $run_id,
     source_id: $source_id,
@@ -178,6 +181,7 @@ def execute_run(spec: RunSpec, ctx: RunContext) -> IngestionRunRecord:
                     "started_at": record.started_at,
                     "window_from": since,
                     "window_to": until,
+                    "initial_window_from": since if spec.since is None else None,
                 },
             )
         ]
@@ -196,7 +200,7 @@ def execute_run(spec: RunSpec, ctx: RunContext) -> IngestionRunRecord:
         for raw in adapter.fetch(since, until):
             record.records_fetched += 1
             _process_record(spec, ctx, adapter, raw, record)
-    except (SourceFetchError, ExtractionError, GraphWriteError) as exc:
+    except (SourceFetchError, SourceParseError, ExtractionError, GraphWriteError) as exc:
         # Fetch and configuration failures abort the run; the durable record
         # still closes with the error counted (Doc 2 §8.6.1).
         record.errors += 1
@@ -297,6 +301,10 @@ def _process_record(
     if normalized.assertions or normalized.entities or normalized.lookup_rows:
         for assertion in normalized.assertions:
             assertion.provenance.evidence_document_id = content_hash
+            if raw.acquisition_context is not None:
+                evidence_manifest = raw.acquisition_context.get("manifest_hash")
+                if isinstance(evidence_manifest, str):
+                    assertion.provenance.evidence_manifest_hash = evidence_manifest
             if normalized.document is not None and assertion.provenance.evidence_channel is None:
                 assertion.provenance.evidence_channel = "structured"
                 assertion.assertion_id = hash_entity_id(
@@ -757,6 +765,7 @@ def _read_source(ctx: RunContext, source_id: str) -> SourceRecord | None:
         # Neo4j returns its own DateTime type; the model accepts native
         # datetimes only.
         last_success_at=_native_datetime(row["last_success_at"]),
+        initial_window_from=_native_datetime(row.get("initial_window_from")),
         last_run_id=row["last_run_id"],
     )
 

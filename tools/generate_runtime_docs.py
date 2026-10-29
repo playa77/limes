@@ -136,7 +136,7 @@ for desktop backup; a consumer token cannot submit operational jobs.
 # On the client; supply the operator token in the environment, never an argument.
 export LIMES_REMOTE_URL=https://your-api.example
 venv/bin/limes remote run ingest --source gleif
-venv/bin/limes remote run backfill --source gdelt --days 30
+venv/bin/limes remote run backfill --source gdelt --days 1
 venv/bin/limes remote run backup
 venv/bin/limes remote status JOB_UUID --wait
 ```
@@ -341,7 +341,9 @@ owned by the operator, without world-read permission or root-owned bind mounts.
 Existing volumes must already be owned by UID 7474; an administrator must migrate
 older root-owned volumes from a verified backup before startup. Fresh named
 volumes inherit the image directory ownership. Set `LIMES_OPENROUTER_API_KEY`
-privately in `config/secrets.env`. Keep tokens out
+privately in `config/secrets.env`. Set `LIMES_BUNDESTAG_DIP_API_KEY` there for
+Bundestag DIP (sent as a header, excluded from source URLs). Public test keys
+expire and must be replaced; no key is committed. Keep tokens out
 of history, CLI arguments and logs. Use independent consumer, operator and backup
 tokens. Back up configuration securely; it is untracked and excluded from images.
 
@@ -424,10 +426,23 @@ actual authorized deployment. CI records JUnit results for every required suite.
 
 ## Investigation-driven news acquisition
 
+Default GDELT ingest covers one prefix of at most 96 slots; TED and EUR-Lex one day per
+invocation. Later ingests resume at the durable covered endpoint; failures never
+skip backlog. `ingest-all` attempts all sources, reports individual failures and
+fails its aggregate job when any source fails. Its success means a bounded pass,
+not that every historical window has been acquired. The first window anchor is persisted
+before fetching, so a failed initial attempt cannot slide the lookback start.
+
 GDELT backfill accepts explicit windows of at most 96 fifteen-minute slots
 (one day); larger requests fail before network access and must be split into
 consecutive jobs. Compressed responses are capped at 16 MiB, decompressed exports
-at 128 MiB and rows at 250,000. Malformed/partial records block checkpoint
+at 128 MiB and rows at 250,000. GLEIF and OffeneRegister archive original compressed
+snapshots before bounded normalization chunks (1,000 rows/8 MiB input, 1 MiB per
+row). Chunk manifests link original archive hashes/member/row offsets. OffeneRegister
+uses historical source `retrieved_at`, never the current clock. GLEIF consolidation
+relations distinguish accounting consolidation from ownership. Current TED eForms
+and the daily Transparency Register XML are supported with completeness checks.
+Malformed/partial records block checkpoint
 advancement; successful checkpoints use the covered window endpoint and never
 move backward. Failed document loads remain replayable; reextract bypasses the
 cache and retracts only extracted evidence after replacement loading succeeds.

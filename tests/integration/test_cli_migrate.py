@@ -80,7 +80,7 @@ def graph(neo4j_instance: Neo4jInstance):
 def test_cli_migrate_fresh_database_is_a_no_op(graph, cli_env):
     # G10 — on a fresh database the command reports nothing to migrate and
     # exits zero; the migration pattern stays untouched.
-    result = runner.invoke(app, ["migrate", "--ontology-version", "1.2.0"])
+    result = runner.invoke(app, ["migrate", "--ontology-version", "1.3.0"])
     assert result.exit_code == 0, result.output
     assert "nothing to migrate" in result.output
 
@@ -105,12 +105,12 @@ def test_cli_migrate_after_stamped_ingest_is_a_no_op(
     result = runner.invoke(app, ["ingest", "--source", "gisco_nuts"])
     assert result.exit_code == 0, result.output
 
-    result = runner.invoke(app, ["migrate", "--ontology-version", "1.2.0"])
+    result = runner.invoke(app, ["migrate", "--ontology-version", "1.3.0"])
     assert result.exit_code == 0, result.output
-    assert "already at 1.2.0" in result.output
+    assert "already at 1.3.0" in result.output
 
     rows = graph.read(
-        "MATCH (n:Entity {ontology_version: '1.2.0'}) RETURN count(n) AS c",
+        "MATCH (n:Entity {ontology_version: '1.3.0'}) RETURN count(n) AS c",
         {},
         30,
     )

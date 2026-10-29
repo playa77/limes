@@ -7,6 +7,21 @@ The [documentation index](INDEX.md) identifies each document's authority; the
 Historical bare WP numbers must be qualified as backend or desktop. Old counts,
 unticked archived plans and merged commits are never substituted for acceptance.
 
+## Active ingest repair — BE-47 (2026-10-29)
+
+Current branch `codex/be-47-ingest-repair`, live-main base `f1e773812baf`.
+The user explicitly requested completing this parent before another full ingest.
+[Acceptance and source qualification](INGEST_RUN_DIAGNOSIS.md) map the complete
+error record to delivered behavior and bounded public-source evidence. Current
+GLEIF/TED/OffeneRegister/Transparency migrations, bounded default catch-up,
+initial-failure anchors, archive manifests and failure reporting are implemented.
+Complete local acceptance passes: the final frozen candidate passed all five
+suites (1,289 tests, no failures/errors/skips) and shared guards with no source
+drift. VERIFICATION records the exact source and scoped evidence.
+FSD's HTTP 500 and OSM's timed-out tiny query are external availability observations,
+not a claim of deployment or successful operator acquisition. No production/paid
+run, staging, commit, push or PR is requested by this implementation instruction.
+
 ## Active desktop delivery — DC-14 (2026-10-29)
 
 Branch `codex/dc-14-desktop-qualification`, live-fetched base `a434adc0fe4b`.
@@ -393,3 +408,8 @@ instead of only dump creation, a distinct recovery failure mode that justifies
 its cost. Eight new unit cases cover false-green JUnit, source identity/drift,
 failed-run reporting and evidence-directory reuse. No runtime package was split
 to reduce validation time, and no fixed test count is an acceptance target.
+
+Publication authorization (2026-10-29): after complete local BE-47 acceptance,
+the user explicitly requested preparing and opening a PR for this session's work,
+authorizing staging, commit and push. The qualified runtime/test/tool/reference
+source fingerprint is unchanged. Merge, deployment and live ingestion remain separate.

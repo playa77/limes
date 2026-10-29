@@ -101,6 +101,9 @@ class Settings(BaseSettings):
     query_max_estimated_rows_total: int = 20_000_000
     query_timeout_seconds: int = 120
 
+    # ---------- Source credentials ----------
+    bundestag_dip_api_key: SecretStr = SecretStr("")
+
     # ---------- Ingestion ----------
     backfill_days_unstructured: int = 90
     archive_path: Path

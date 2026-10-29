@@ -53,5 +53,9 @@ def backfill_source(
             f"written, {record.assertions_skipped} skipped, {record.errors} errors, "
             f"cost EUR {record.cost_eur}"
         )
+        if record.errors:
+            from limes.errors import LimesError
+
+            raise LimesError(f"backfill {source}: record errors; checkpoint unchanged")
     finally:
         ctx.driver.close()

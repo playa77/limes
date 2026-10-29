@@ -55,18 +55,23 @@ def ingest_source(
 def ingest_all() -> None:
     """Ingest every ingestable source in sequence, skipping
     enrichment-only sources (D-43). Each source runs under its own
-    advisory lock; a failure aborts the sequence — the failed run's record
-    is durable, and the remaining sources are not silently skipped."""
+    advisory lock; expected source failures are reported and collection continues.
+    Any failure makes the aggregate job fail after every source is attempted."""
     settings = load_settings()
     configure_logging(settings)
+    from limes.errors import LimesError
+
+    failures = []
     for source_id in _ingestable_source_ids():
         typer.echo(f"ingest-all: {source_id}")
-        _ingest_source(
-            settings,
-            source_id,
-            RunSpec(source_id=source_id, mode="ingest"),
-        )
-    typer.echo("ingest-all: complete")
+        try:
+            _ingest_source(settings, source_id, RunSpec(source_id=source_id, mode="ingest"))
+        except LimesError as exc:
+            failures.append(source_id)
+            typer.echo(f"ingest-all: {source_id} failed: {exc}", err=True)
+    if failures:
+        raise LimesError("ingest-all: failed sources: " + ", ".join(failures))
+    typer.echo("ingest-all: complete bounded pass; backlog resumes from source checkpoints")
 
 
 def _ingest_source(settings: Settings, source_id: str, spec: RunSpec) -> None:
@@ -92,6 +97,16 @@ def _ingest_source(settings: Settings, source_id: str, spec: RunSpec) -> None:
             f"{record.assertions_skipped} skipped, {record.errors} errors, "
             f"cost EUR {record.cost_eur}"
         )
+        if record.errors:
+            raise LimesError(
+                f"ingest {source_id}: {record.errors} record errors; checkpoint unchanged"
+            )
+        covered_until = getattr(record, "window_to", None)
+        if covered_until is not None:
+            typer.echo(
+                f"ingest {source_id}: covered window through {covered_until.isoformat()}; "
+                "source checkpoint never moves backward"
+            )
     finally:
         ctx.driver.close()
 

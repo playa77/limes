@@ -50,6 +50,7 @@ class EdgeRef:
     prompt_version: str | None = None
     schema_version: str | None = None
     evidence_document_id: str | None = None
+    evidence_manifest_hash: str | None = None
     evidence_start: int | None = None
     evidence_end: int | None = None
     evidence_channel: str | None = None
@@ -84,6 +85,7 @@ class EdgeRef:
             evidence_end=d.get("evidence_end"),
             evidence_channel=d.get("evidence_channel"),
             evidence_member=d.get("evidence_member"),
+            evidence_manifest_hash=d.get("evidence_manifest_hash"),
             evidence_row=d.get("evidence_row"),
             source_event_id=d.get("source_event_id"),
             source_url=d.get("source_url"),

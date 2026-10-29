@@ -38,13 +38,13 @@ from __future__ import annotations
 import json
 from collections import Counter
 from collections.abc import Iterator
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any, Literal
 from urllib.parse import urlencode
 
 import structlog
 
-from limes.errors import SourceParseError
+from limes.errors import SourceFetchError, SourceParseError
 from limes.sources.base import (
     fetch_bytes,
     key_entity_id,
@@ -77,40 +77,43 @@ AUTHOR_QIDS: dict[str, str] = {
 
 # The `{date_filter}` line is replaced with the adoption-date FILTER compiled
 # from the fetch window, or with nothing for an unfiltered full load.
+PAGE_SIZE = 5000
 _QUERY_TEMPLATE = """\
 PREFIX cdm: <http://publications.europa.eu/ontology/cdm#>
-PREFIX dc: <http://purl.org/dc/elements/1.1/>
-PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 SELECT DISTINCT ?celex ?title ?date ?author
-       ?amends_celex ?repeals_celex ?cites_celex
-       ?topic_code ?topic_voc ?applies_to_voc ?applies_to_code
+       ?amends_celex ?repeals_celex ?cites_celex ?topic_code ?topic_voc
 WHERE {
-  ?act cdm:resource-legal-id-celex ?celex .
-  OPTIONAL { ?act cdm:work-date-document ?date . }
-  OPTIONAL { ?act dc:title ?title . }
+  ?act cdm:resource_legal_id_celex ?celex .
+  OPTIONAL { ?act cdm:work_date_document ?date . }
   OPTIONAL {
-    ?act cdm:responsible_legal ?body .
-    ?body skos:prefLabel ?author .
+    ?act cdm:work_title ?title .
+    FILTER(lang(?title) = "" || langMatches(lang(?title), "en"))
   }
-  OPTIONAL { ?act cdm:amends_legal ?amended . ?amended cdm:resource-legal-id-celex ?amends_celex . }
   OPTIONAL {
-    ?act cdm:repeals_legal ?repealed .
-    ?repealed cdm:resource-legal-id-celex ?repeals_celex .
+    ?act cdm:work_created_by_agent ?body .
+    BIND(IF(STR(?body) = "http://publications.europa.eu/resource/authority/corporate-body/CONSIL",
+            "Council of the European Union",
+            IF(STR(?body) = "http://publications.europa.eu/resource/authority/corporate-body/EP",
+               "European Parliament", STR(?body))) AS ?author)
   }
-  OPTIONAL { ?act cdm:cites_legal ?cited . ?cited cdm:resource-legal-id-celex ?cites_celex . }
   OPTIONAL {
-    ?act cdm:subject-matter-eurovoc ?topic .
-    ?topic cdm:resource-id ?topic_code .
+    ?act cdm:resource_legal_amends_resource_legal ?amended .
+    ?amended cdm:resource_legal_id_celex ?amends_celex .
+  }
+  OPTIONAL {
+    ?act cdm:resource_legal_repeals_resource_legal ?repealed .
+    ?repealed cdm:resource_legal_id_celex ?repeals_celex .
+  }
+  OPTIONAL { ?act cdm:work_cites_work ?cited . ?cited cdm:resource_legal_id_celex ?cites_celex . }
+  OPTIONAL {
+    ?act cdm:work_is_about_concept_eurovoc ?topic .
+    BIND(REPLACE(STR(?topic), "^.*/", "") AS ?topic_code)
     BIND("EuroVoc" AS ?topic_voc)
-  }
-  OPTIONAL {
-    ?act cdm:applies-to ?applies .
-    ?applies cdm:resource-id ?applies_to_code .
-    BIND("EuroVoc" AS ?applies_to_voc)
   }
   {date_filter}
 }
+ORDER BY ?celex ?title ?date ?author ?amends_celex ?repeals_celex ?cites_celex ?topic_code
 """
 
 
@@ -132,22 +135,35 @@ class EurlexAdapter:
         Yields one `RawRecord` per response.
         """
         query = _build_query(since, until)
-        url = f"{SPARQL_URL}?{urlencode({'query': query, 'format': 'json'})}"
-        fetched_at = now_utc()
-        payload = fetch_bytes(url)
-        logger.info(
-            "eurlex payload fetched",
-            bytes=len(payload),
-            since=since.isoformat() if since else None,
-            until=until.isoformat() if until else None,
-            fetched_at=fetched_at.isoformat(),
-        )
-        yield RawRecord(
-            payload=payload,
-            content_type=SPARQL_CONTENT_TYPE,
-            source_url=SPARQL_URL,
-            fetched_at=fetched_at,
-        )
+        seen_pages: set[str] = set()
+        for page in range(40):
+            paged = f"{query}\nLIMIT {PAGE_SIZE} OFFSET {page * PAGE_SIZE}"
+            url = f"{SPARQL_URL}?{urlencode({'query': paged, 'format': 'json'})}"
+            payload = fetch_bytes(url, max_bytes=32 * 1024 * 1024)
+            try:
+                document = json.loads(payload)
+                bindings = document["results"]["bindings"]
+                if not isinstance(bindings, list):
+                    raise ValueError("bindings is not a list")
+            except (ValueError, TypeError, KeyError) as exc:
+                raise SourceFetchError("eurlex: invalid SPARQL search response") from exc
+            digest = payload_hash(json.dumps(bindings, sort_keys=True).encode())
+            if digest in seen_pages:
+                raise SourceFetchError("eurlex: repeated SPARQL page; checkpoint unchanged")
+            seen_pages.add(digest)
+            yield RawRecord(
+                payload=payload,
+                content_type=SPARQL_CONTENT_TYPE,
+                source_url=SPARQL_URL,
+                fetched_at=now_utc(),
+                acquisition_context={"query": paged, "page": page + 1},
+            )
+            if len(bindings) < PAGE_SIZE:
+                return
+        raise SourceFetchError("eurlex: page limit exceeded; submit a narrower window")
+
+    def bound_ingest_window(self, since: datetime, until: datetime) -> datetime:
+        return min(since + timedelta(days=1), until)
 
     def normalize(self, record: RawRecord) -> NormalizedRecord:
         """One SPARQL JSON results document -> assertions.
@@ -169,11 +185,24 @@ class EurlexAdapter:
 
         assertions: list[Assertion] = []
         skipped: Counter[str] = Counter()
+        candidates: dict[str, EntityEndpoint] = {}
         for row in bindings:
             assertions.extend(self._normalize_row(row, record, skipped))
+            celex = _binding_value(row.get("celex")) if isinstance(row, dict) else None
+            if celex:
+                entity = EntityEndpoint(
+                    entity_id=key_entity_id(("celex", celex)),
+                    type="LegalAct",
+                    label=_binding_value(row.get("title")) or celex,
+                    deterministic_key=("celex", celex),
+                )
+                candidates[entity.entity_id] = entity
+        involved = {e.entity_id for a in assertions for e in (a.subject, a.object)}
+        standalone = [e for key, e in candidates.items() if key not in involved]
         logger.info(
             "eurlex: normalized",
             bindings=len(bindings),
+            standalone_entities=len(standalone),
             assertions=len(assertions),
             skipped=dict(skipped) if skipped else None,
             source_id=self.source_id,
@@ -182,6 +211,7 @@ class EurlexAdapter:
             content_hash=payload_hash(record.payload),
             kind="structured",
             assertions=assertions,
+            entities=standalone,
         )
 
     def _normalize_row(
