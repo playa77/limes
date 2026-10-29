@@ -95,6 +95,7 @@ class EntityView(QWidget):
 
     # re-centering signal (FR-DC-022): neighbor click → set_selection
     neighbor_selected = Signal(str)
+    assertion_selected = Signal(str)
 
     def __init__(
         self,
@@ -196,6 +197,8 @@ class EntityView(QWidget):
         row = self.assertion_model.row_at(index.row())
         if row is None:
             return
+        if row.edge.assertion_id:
+            self.assertion_selected.emit(row.edge.assertion_id)
         self._render_provenance(row)
         self.provenance_box.setVisible(True)
 

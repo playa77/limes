@@ -17,8 +17,8 @@ def test_health_returns_200_with_ontology_version(neo4j_instance: Neo4jInstance,
         body = response.json()
         assert body["status"] == "ok"
         assert body["neo4j"] is True
-        assert body["ontology_version"] == "1.0.0"
-        assert response.headers["X-LIMES-Ontology-Version"] == "1.0.0"
+        assert body["ontology_version"] == "1.1.0"
+        assert response.headers["X-LIMES-Ontology-Version"] == "1.1.0"
 
 
 def test_health_returns_503_when_neo4j_unreachable(tmp_path: Path):

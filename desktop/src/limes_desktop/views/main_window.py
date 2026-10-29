@@ -148,7 +148,7 @@ class MainWindow(QMainWindow):
 
         self.stack = QStackedWidget(self)
         # the entity view (Task 6); Tasks 8-11 replace the remaining placeholders
-        self.entity_view = EntityView(state)
+        self.entity_view = EntityView(state, client_factory=client_factory)
         self.stack.addWidget(self.entity_view)
         self.nlq_view = NlqView(state, client_factory=client_factory)
         self.stack.addWidget(self.nlq_view)
@@ -202,6 +202,21 @@ class MainWindow(QMainWindow):
             application.aboutToQuit.connect(self.backup_runner.close)
         self.backup_dialog = BackupDialog(self.backup_runner, parent=self)
         self.stack.addWidget(self.backup_dialog)
+        from PySide6.QtGui import QAction
+
+        from limes_desktop.views.news import NewsView
+
+        self.news_view = NewsView(client_factory, self)
+        self.stack.addWidget(self.news_view)
+        news_action = QAction("Investigations and news", self)
+        news_action.triggered.connect(lambda: self.stack.setCurrentWidget(self.news_view))
+        self.menuBar().addAction(news_action)
+        state.selection_changed.connect(
+            lambda value: setattr(self.news_view, "selected_entity", value)
+        )
+        self.entity_view.assertion_selected.connect(
+            lambda value: setattr(self.news_view, "selected_relation", value)
+        )
         self.setCentralWidget(self.stack)
 
         # result bundles flow into the viz views; expansion goes through the
@@ -262,6 +277,15 @@ class MainWindow(QMainWindow):
             detail = self.banner.client_factory().entity(entity_id)
         except (ApiError, ApiUnreachable):
             return  # degraded: keep the current view, never crash the shell
+        self.news_view.selected_relation = None
+        self.entity_view.show_assertions([])
+        try:
+            neighbors = self.banner.client_factory().entity_neighbors(entity_id)
+        except (ApiError, ApiUnreachable):
+            pass  # Keep the selected entity usable while relation evidence is unavailable.
+        else:
+            self.entity_view.show_neighbors(neighbors)
+            self.entity_view.show_assertions(neighbors.neighbors)
         self._state.publish(QueryOutcomeBundle(result=detail, coverage=None, source="selection"))
         self.stack.setCurrentWidget(self.entity_view)
 

@@ -16,6 +16,8 @@ from typing import Literal
 
 from pydantic import BaseModel
 
+from limes.news.models import ClaimQualifiers
+
 
 class Mention(BaseModel):
     """An entity as named in text, before identity is assigned."""
@@ -73,6 +75,7 @@ class Validity(BaseModel):
 class ExtractedAssertion(BaseModel):
     """Pre-resolution. What the extractor returns. Endpoints are mentions."""
 
+    qualifiers: ClaimQualifiers | None = None
     passage_index: int
     subject: Mention
     relation: str
@@ -87,6 +90,7 @@ class ExtractedAssertion(BaseModel):
 class Assertion(BaseModel):
     """Resolved. What the loader accepts. Endpoints are identified."""
 
+    qualifiers: ClaimQualifiers | None = None
     assertion_id: str
     subject: EntityEndpoint
     relation: str
@@ -107,6 +111,7 @@ class LookupRow(BaseModel):
 class DocumentPayload(BaseModel):
     """A normalized document ready for gating and extraction."""
 
+    news_metadata: dict[str, object] | None = None
     content_hash: str
     title: str
     body: str
@@ -128,6 +133,7 @@ class Passage(BaseModel):
 class RawRecord(BaseModel):
     """A raw payload as fetched from a source."""
 
+    acquisition_context: dict[str, object] | None = None
     payload: bytes
     content_type: str
     source_url: str | None = None

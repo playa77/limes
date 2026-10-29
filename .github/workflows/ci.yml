@@ -1,12 +1,14 @@
 name: CI
 on:
   push:
+    branches: [main]
   pull_request:
   workflow_dispatch:
 permissions:
   contents: read
 jobs:
   offline:
+    if: github.event_name != 'push'
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     env:
@@ -33,6 +35,7 @@ jobs:
           name: offline-results
           path: test-results/
   graph:
+    if: github.event_name != 'push'
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
@@ -56,3 +59,38 @@ jobs:
         with:
           name: graph-results
           path: test-results/
+  smoke:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      UV_PROJECT_ENVIRONMENT: venv
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: '0.12.1'
+          enable-cache: true
+      - run: uv sync --frozen --all-packages --python 3.12
+      - run: venv/bin/python tools/check_docs.py docs/
+      - run: venv/bin/python -m pytest tests/unit/test_config.py tests/unit/test_news.py tests/unit/test_runtime_docs.py -q
+  candidate-check:
+    if: always()
+    needs: [offline, graph, smoke]
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Require the complete applicable lanes
+        env:
+          EVENT: ${{ github.event_name }}
+          OFFLINE: ${{ needs.offline.result }}
+          GRAPH: ${{ needs.graph.result }}
+          SMOKE: ${{ needs.smoke.result }}
+        run: |
+          python3 - <<'PY'
+          import os
+          required = ['SMOKE'] if os.environ['EVENT'] == 'push' else ['OFFLINE', 'GRAPH']
+          failed = [name for name in required if os.environ[name] != 'success']
+          if failed:
+              raise SystemExit('Required lanes did not succeed: ' + ', '.join(failed))
+          PY

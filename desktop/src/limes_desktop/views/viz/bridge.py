@@ -5,6 +5,7 @@ This module must stay importable without QtWebEngine: the QWebEngineView
 subclass lives in `page.py` and is imported only when a viz view is actually
 instantiated (NFR-DC-071 — the unit suite stays headless-safe).
 """
+
 from __future__ import annotations
 
 import json
@@ -30,6 +31,22 @@ def _entity_payload(node: EntityRef, geometry: list[float] | None) -> dict[str, 
         "type": node.type,
         "label": node.label,
         "geometry": geometry,
+        "claim": {
+            key: node.properties.get(key)
+            for key in (
+                "modality",
+                "attribution",
+                "assessment",
+                "event_status",
+                "time_precision",
+                "event_candidate",
+                "evidence_document_id",
+                "source_trust",
+                "confidence",
+            )
+        }
+        if node.properties.get("claim_id")
+        else None,
     }
 
 
@@ -79,14 +96,44 @@ def timeline_payload(
             "target": edge.object_id,
             "assertion_id": edge.assertion_id,
         }
-        if edge.valid_from and (validity_from is None or edge.valid_from >= validity_from) and (
-            validity_to is None or edge.valid_from <= validity_to
+        if (
+            edge.valid_from
+            and (validity_from is None or edge.valid_from >= validity_from)
+            and (validity_to is None or edge.valid_from <= validity_to)
         ):
             validity.append({**base, "t": edge.valid_from, "kind": "validity"})
-        if edge.recorded_at and (validity_from is None or edge.recorded_at >= validity_from) and (
-            validity_to is None or edge.recorded_at <= validity_to
+        if (
+            edge.recorded_at
+            and (validity_from is None or edge.recorded_at >= validity_from)
+            and (validity_to is None or edge.recorded_at <= validity_to)
         ):
             belief.append({**base, "t": edge.recorded_at, "kind": "belief"})
+    # Qualified artifacts stay separate from factual edges. Unknown event time
+    # contributes only belief time; proposals/denials are explicitly labeled.
+    for node in graph.nodes:
+        props = node.properties
+        if not props.get("claim_id"):
+            continue
+        base = {
+            "relation": f"{props.get('modality', 'unknown')}: {props.get('relation', '')}",
+            "source": props.get("subject_id"),
+            "target": props.get("object_id"),
+            "assertion_id": props["claim_id"],
+            "event_status": props.get("event_status"),
+            "time_precision": props.get("time_precision", "unknown"),
+        }
+        for name, series in (("valid_from", validity), ("recorded_at", belief)):
+            instant = props.get(name)
+            if name == "valid_from" and props.get("time_precision", "unknown") == "unknown":
+                continue
+            if (
+                instant
+                and (validity_from is None or instant >= validity_from)
+                and (validity_to is None or instant <= validity_to)
+            ):
+                series.append(
+                    {**base, "t": instant, "kind": "validity" if name == "valid_from" else "belief"}
+                )
     return json.dumps({"validity": validity, "belief": belief, "coverage": None})
 
 

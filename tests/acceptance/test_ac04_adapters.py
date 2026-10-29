@@ -52,6 +52,7 @@ EXPECTED_SOURCE_IDS = [
     "gesetze_im_internet",
     "gisco_nuts",
     "gleif",
+    "news",
     "offeneregister",
     "osm",
     "ted",
@@ -233,6 +234,8 @@ def _records_for(source_id: str) -> list[RawRecord]:
                 fetched_at=FETCHED_AT,
             )
         ]
+    if source_id == "news":
+        return []  # Investigation-driven transport is covered by test_news_pipeline.
     if source_id == "wikidata":
         return []  # enrichment-only: no fetch, no normalize-from-fetch
     raise AssertionError(f"no fixture mapping for adapter {source_id!r}")

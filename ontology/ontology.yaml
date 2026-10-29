@@ -1,6 +1,60 @@
-version: "1.0.0"
+version: "1.1.0"
 supertypes: [Agent, Place, Artifact]
 entity_types:
+  - name: NewsDocument
+    supertype: Artifact
+    identifying_keys: [document_id]
+    properties:
+      - {name: label, type: string, required: true}
+      - {name: document_id, type: string, required: true, unique: true}
+      - {name: body, type: string, required: false}
+      - {name: investigation_id, type: string, required: false}
+      - {name: dispatch_id, type: string, required: false}
+      - {name: publisher, type: string, required: false}
+      - {name: article_text_available, type: boolean, required: false}
+      - {name: url, type: string, required: false}
+      - {name: published_at, type: datetime, required: false}
+      - {name: recorded_at, type: datetime, required: false}
+      - {name: feed_hash, type: string, required: false}
+      - {name: metadata, type: string, required: false}
+      - {name: previous_document_id, type: string, required: false}
+      - {name: correction_status, type: string, required: false}
+      - {name: evaluation_status, type: string, required: false}
+  - name: NewsClaim
+    supertype: Artifact
+    identifying_keys: [claim_id]
+    properties:
+      - {name: label, type: string, required: true}
+      - {name: claim_id, type: string, required: true, unique: true}
+      - {name: subject_id, type: string, required: false}
+      - {name: object_id, type: string, required: false}
+      - {name: relation, type: string, required: false}
+      - {name: modality, type: string, required: false}
+      - {name: attribution, type: string, required: false}
+      - {name: assessment, type: string, required: false}
+      - {name: event_status, type: string, required: false}
+      - {name: time_precision, type: string, required: false}
+      - {name: event_candidate, type: string, required: false}
+      - {name: investigation_id, type: string, required: false}
+      - {name: evidence_document_id, type: string, required: false}
+      - {name: publisher, type: string, required: false}
+      - {name: recorded_at, type: datetime, required: false}
+      - {name: valid_from, type: datetime, required: false}
+      - {name: valid_to, type: datetime, required: false}
+      - {name: source_id, type: string, required: false}
+      - {name: source_trust, type: float, required: false}
+      - {name: confidence, type: float, required: false}
+      - {name: evidence_start, type: integer, required: false}
+      - {name: evidence_end, type: integer, required: false}
+      - {name: dispatch_id, type: string, required: false}
+      - {name: syndication_key, type: string, required: false}
+      - {name: report_url, type: string, required: false}
+      - {name: retracted_at, type: datetime, required: false}
+      - {name: extractor_model, type: string, required: false}
+      - {name: prompt_version, type: string, required: false}
+      - {name: schema_version, type: string, required: false}
+      - {name: subject_label, type: string, required: false}
+      - {name: object_label, type: string, required: false}
   - name: Person
     supertype: Agent
     identifying_keys: [wikidata_qid, bundestag_id]

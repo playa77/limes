@@ -1,3 +1,19 @@
+## 2026-10-28 — BE-43 / DC-15 dynamic investigation news
+
+- Persist investigations tracking entities/relations; automatically discover and
+  acquire bounded DE/EN news search feeds from current graph names and aliases.
+  Support pause/resume, durable per-investigation cycle status and manual replay.
+- Archive feed bytes, stable dispatch envelopes and acquisition manifests; retain
+  source versions, unknown dates, dependent reporting and missing full article text.
+- Add schema/prompt 2.0.0 qualified extraction and additive ontology 1.1.0
+  NewsDocument/NewsClaim artifacts. Proposals/denials never become factual edges;
+  preserve legacy schema/cache meaning and archive-only replacement ownership.
+- Add authenticated claim/evidence/filtering/review APIs, an evolving evaluation
+  pool and paired desktop investigation controls, qualified evidence and timeline
+  semantics. No production acquisition, paid evaluation or deployment is run.
+- Separate bounded main smoke from full PR/manual CI lanes with a fail-closed
+  candidate-check aggregate; hosted required-check configuration remains unverified.
+
 ## 2026-10-28 — Wikipedia and Yahoo Finance enrichment planning (D-80)
 
 - Integrate planned Wikipedia revision-linked entity context and Yahoo Finance

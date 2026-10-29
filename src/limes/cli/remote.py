@@ -19,6 +19,8 @@ app = typer.Typer(no_args_is_help=True)
 def run(
     command: str,
     source: str | None = None,
+    investigation_id: str | None = None,
+    after_document: str | None = None,
     days: int | None = None,
     version: str | None = None,
     stage: str | None = None,
@@ -36,6 +38,8 @@ def run(
                 request_id=key,
                 command=command,
                 source=source,
+                investigation_id=investigation_id,
+                after_document=after_document,
                 days=days,
                 version=version,
                 stage=stage,

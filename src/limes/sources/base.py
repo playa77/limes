@@ -58,7 +58,7 @@ logger = structlog.get_logger(__name__)
 # One place to bump on migration (WP-31); the loader stamps nodes with the
 # *loaded* ontology's version, so a stale constant here only mislabels
 # assertions, never nodes.
-ONTOLOGY_VERSION = "1.0.0"
+ONTOLOGY_VERSION = "1.1.0"
 
 # §11 retry policy, as module constants matching the §4.2 defaults: adapters
 # are constructed without Settings (build_default_registry takes none), so the
@@ -378,7 +378,11 @@ def request_with_retry(
 
 
 def fetch_bytes(
-    url: str, *, timeout_s: int = HTTP_TIMEOUT_SECONDS, max_bytes: int | None = None
+    url: str,
+    *,
+    timeout_s: int = HTTP_TIMEOUT_SECONDS,
+    max_bytes: int | None = None,
+    headers: dict[str, str] | None = None,
 ) -> bytes:
     """GET a URL with the §11 retry policy: exponential backoff from 2 s,
     factor 2, jittered, at most 4 attempts, on connection errors, timeouts,
@@ -388,7 +392,7 @@ def fetch_bytes(
     final status or reason. HTTP 404 is a permanent miss (the URL constant is
     wrong or the resource moved) and is reported as such without retries.
     """
-    return _fetch("GET", url, timeout_s=timeout_s, max_bytes=max_bytes)
+    return _fetch("GET", url, timeout_s=timeout_s, max_bytes=max_bytes, headers=headers)
 
 
 def fetch_bytes_post(
@@ -410,17 +414,20 @@ def _fetch(
     json_body: dict[str, object] | None = None,
     timeout_s: int = HTTP_TIMEOUT_SECONDS,
     max_bytes: int | None = None,
+    headers: dict[str, str] | None = None,
 ) -> bytes:
     try:
         response = request_with_retry(
             method,
             url,
             json_body=json_body,
-            headers={"User-Agent": USER_AGENT, "Accept": "*/*"},
+            headers={"User-Agent": USER_AGENT, "Accept": "*/*", **(headers or {})},
             timeout_s=timeout_s,
             log=logger,
             max_bytes=max_bytes,
         )
+    except httpx.DecodingError as exc:
+        raise SourceFetchError("invalid source response encoding") from exc
     except PermanentStatus as exc:
         raise SourceFetchError(f"fetch failed: {exc.url} returned HTTP {exc.status_code}") from exc
     except RetryExhausted as exc:

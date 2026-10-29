@@ -8,6 +8,8 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 Command = Literal[
+    "news-reextract",
+    "news-refresh",
     "ingest",
     "ingest-all",
     "backfill",
@@ -25,6 +27,8 @@ class JobRequest(BaseModel):
     request_id: UUID
     command: Command
     source: str | None = Field(default=None, pattern=r"^[a-z][a-z0-9_]{0,63}$")
+    investigation_id: str | None = Field(default=None, pattern=r"^[a-zA-Z0-9_-]{1,64}$")
+    after_document: str | None = Field(default=None, pattern=r"^[a-f0-9]{64}$")
     days: int | None = Field(default=None, ge=1, le=36500)
     version: str | None = Field(default=None, pattern=r"^\d{1,4}\.\d{1,4}\.\d{1,4}$")
     stage: Literal["provisional", "measured"] | None = None
@@ -33,6 +37,8 @@ class JobRequest(BaseModel):
     @model_validator(mode="after")
     def validate_parameters(self) -> JobRequest:
         permitted = {
+            "news-reextract": {"investigation_id", "version", "after_document"},
+            "news-refresh": {"investigation_id"},
             "ingest": {"source"},
             "backfill": {"source", "days"},
             "reextract": {"source", "version"},
@@ -40,10 +46,20 @@ class JobRequest(BaseModel):
             "select-models": {"stage"},
             "evaluate": {"evaluation"},
         }.get(self.command, set())
-        for field in ("source", "days", "version", "stage", "evaluation"):
+        for field in (
+            "source",
+            "days",
+            "version",
+            "stage",
+            "evaluation",
+            "investigation_id",
+            "after_document",
+        ):
             if getattr(self, field) is not None and field not in permitted:
                 raise ValueError(f"{field} is not supported by {self.command}")
         required = {
+            "news-reextract": ("investigation_id", "version"),
+            "news-refresh": ("investigation_id",),
             "ingest": ("source",),
             "backfill": ("source", "days"),
             "reextract": ("version",),
@@ -56,7 +72,7 @@ class JobRequest(BaseModel):
             from limes.sources.registry import build_default_registry
 
             if (
-                self.source == "wikidata"
+                self.source in ("wikidata", "news")
                 or self.source not in build_default_registry().source_ids()
             ):
                 raise ValueError("unknown or enrichment-only source")
@@ -64,6 +80,10 @@ class JobRequest(BaseModel):
 
     def argv(self) -> list[str]:
         args = ["limes", self.command]
+        if self.after_document:
+            args += ["--after-document", self.after_document]
+        if self.investigation_id:
+            args += ["--investigation-id", self.investigation_id]
         if self.source:
             args += ["--source", self.source]
         if self.days:

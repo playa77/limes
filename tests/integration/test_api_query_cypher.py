@@ -117,4 +117,4 @@ def test_query_cypher_empty_result_produces_diagnosis(
         assert diagnosis is not None
         assert diagnosis["clause_index"] == 1
         assert diagnosis["relation_counts"] == {"SUBSIDIARY_OF": 1}
-        assert response.headers["X-LIMES-Ontology-Version"] == "1.0.0"
+        assert response.headers["X-LIMES-Ontology-Version"] == "1.1.0"

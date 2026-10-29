@@ -30,6 +30,7 @@ schema.py: `GraphDriver._driver` is the only seam into the raw driver.
 
 from __future__ import annotations
 
+import json
 from collections.abc import Callable
 from datetime import UTC, datetime
 from typing import Any
@@ -44,7 +45,8 @@ from limes.graph.driver import GraphDriver
 from limes.graph.embeddings import normalize_embedding
 from limes.ontology.model import Ontology
 from limes.ontology.validator import validate_assertions
-from limes.types import Assertion, EntityEndpoint, LookupRow, ValidationError
+from limes.sources.base import hash_entity_id
+from limes.types import Assertion, DocumentPayload, EntityEndpoint, LookupRow, ValidationError
 
 BATCH_SIZE = 500
 REASON_ENDPOINT_UNIDENTIFIED = "ENDPOINT_UNIDENTIFIED"
@@ -428,3 +430,137 @@ def _embeddings_for(
         endpoint.entity_id: normalize_embedding(vector)
         for endpoint, vector in zip(missing, vectors, strict=True)
     }
+
+
+def save_document(driver: GraphDriver, doc: DocumentPayload, ontology: Ontology) -> None:
+    metadata = doc.news_metadata or {}
+    props = {
+        "entity_id": doc.content_hash,
+        "document_id": doc.content_hash,
+        "label": doc.title,
+        "body": doc.body,
+        "url": doc.url,
+        "published_at": doc.published_at if metadata.get("publication_known") else None,
+        "recorded_at": datetime.now(UTC),
+        "metadata": json.dumps(metadata, sort_keys=True),
+        "investigation_id": metadata.get("investigation_id"),
+        "dispatch_id": metadata.get("dispatch_id") or None,
+        "publisher": metadata.get("publisher"),
+        "feed_hash": metadata.get("feed_hash"),
+        "article_text_available": False,
+        "ontology_version": ontology.version,
+    }
+    labels = ":".join(ontology.labels_for("NewsDocument"))
+    driver.write_batch(
+        [
+            (
+                f"OPTIONAL MATCH (old:NewsDocument) "
+                "WHERE old.dispatch_id=$dispatch AND old.publisher=$publisher "
+                "AND old.document_id <> $id "
+                "WITH old ORDER BY old.recorded_at DESC LIMIT 1 "
+                f"MERGE (d:{labels} {{entity_id: $id}}) "
+                "ON CREATE SET d += $props, d.previous_document_id=old.document_id, "
+                "d.correction_status='unknown', d.evaluation_status='unreviewed'",
+                {
+                    "id": doc.content_hash,
+                    "props": props,
+                    "dispatch": metadata.get("dispatch_id") or None,
+                    "publisher": metadata.get("publisher"),
+                },
+            )
+        ]
+    )
+
+
+def news_claim_id(assertion: Assertion, doc: DocumentPayload) -> str:
+    assert assertion.qualifiers is not None
+    return hash_entity_id(
+        "claim",
+        doc.content_hash,
+        assertion.subject.entity_id,
+        assertion.relation,
+        assertion.object.entity_id,
+        str(assertion.provenance.evidence_start),
+        str(assertion.provenance.evidence_end),
+        (
+            assertion.validity.valid_from.isoformat()
+            if assertion.qualifiers.time_precision != "unknown"
+            else "unknown"
+        ),
+        str(assertion.validity.valid_to),
+        assertion.qualifiers.model_dump_json(),
+        str(assertion.provenance.prompt_version),
+        str(assertion.provenance.schema_version),
+        str(assertion.provenance.extractor_model),
+    )
+
+
+def save_claims(
+    driver: GraphDriver, assertions: list[Assertion], doc: DocumentPayload, ontology: Ontology
+) -> LoadResult:
+    statements = []
+    metadata = doc.news_metadata or {}
+    labels = ":".join(ontology.labels_for("NewsClaim"))
+    for assertion in assertions:
+        q = assertion.qualifiers
+        if q is None:
+            raise ValueError("news claim has no qualifiers")
+        key = news_claim_id(assertion, doc)
+        props = {
+            "entity_id": key,
+            "label": f"{q.modality}: {assertion.relation}",
+            "claim_id": key,
+            "subject_id": assertion.subject.entity_id,
+            "subject_label": assertion.subject.label,
+            "object_id": assertion.object.entity_id,
+            "object_label": assertion.object.label,
+            "relation": assertion.relation,
+            **q.model_dump(),
+            "evidence_document_id": doc.content_hash,
+            "evidence_start": assertion.provenance.evidence_start,
+            "evidence_end": assertion.provenance.evidence_end,
+            "source_id": assertion.provenance.source_id,
+            "source_trust": assertion.provenance.source_trust,
+            "confidence": assertion.provenance.confidence,
+            "recorded_at": assertion.validity.recorded_at,
+            "valid_from": assertion.validity.valid_from if q.time_precision != "unknown" else None,
+            "valid_to": assertion.validity.valid_to,
+            "retracted_at": None,
+            "ontology_version": ontology.version,
+            "prompt_version": assertion.provenance.prompt_version,
+            "schema_version": assertion.provenance.schema_version,
+            "extractor_model": assertion.provenance.extractor_model,
+            "investigation_id": metadata.get("investigation_id"),
+            "dispatch_id": metadata.get("dispatch_id") or None,
+            "publisher": metadata.get("publisher"),
+            "report_url": doc.url,
+            # A shared dispatch is dependent reporting; never count it as corroboration.
+            "syndication_key": hash_entity_id(
+                "dispatch",
+                str(metadata.get("publisher")),
+                str(metadata.get("dispatch_id") or doc.content_hash),
+            ),
+        }
+        statements.append(
+            (
+                f"MERGE (c:{labels} {{entity_id: $id}}) ON CREATE SET c += $props",
+                {"id": key, "props": props},
+            )
+        )
+    if not statements:
+        return LoadResult()
+    written = driver.write_batch(statements).nodes_created
+    return LoadResult(written=written, skipped=len(statements) - written)
+
+
+def save_news_review(driver: GraphDriver, document_id: str, review_json: str) -> None:
+    """Persist operator-supplied evaluation labels; these never assess graph truth."""
+    driver.write_batch(
+        [
+            (
+                "MATCH (d:NewsDocument {document_id:$id}) "
+                "SET d.evaluation_status='reviewed', d.evaluation_review=$review",
+                {"id": document_id, "review": review_json},
+            )
+        ]
+    )

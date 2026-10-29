@@ -28,7 +28,12 @@ from limes.extraction.base import (
     batch_passages,
     build_extraction_messages,
 )
-from limes.extraction.schema import EXTRACTION_SCHEMA, SCHEMA_VERSION, parse_extraction_response
+from limes.extraction.schema import (
+    SCHEMA_VERSION,
+    SUPPORTED_SCHEMA_VERSIONS,
+    parse_extraction_response,
+    schema_for_version,
+)
 from limes.ontology.model import Ontology
 from limes.sources.base import PermanentStatus, RetryExhausted, request_with_retry
 from limes.types import ExtractedAssertion, Passage
@@ -68,7 +73,7 @@ class OllamaExtractor:
         prompt_version: str,
         schema_version: str,
     ) -> ExtractionResult:
-        if schema_version != SCHEMA_VERSION:
+        if schema_version not in SUPPORTED_SCHEMA_VERSIONS:
             raise ExtractionError(
                 f"unsupported extraction schema version {schema_version!r}; "
                 f"this extractor implements {SCHEMA_VERSION!r}"
@@ -90,11 +95,13 @@ class OllamaExtractor:
         raw_responses: list[str] = []
         for batch in batches:
             messages = build_extraction_messages(batch, prompt_text, ontology_serialized)
-            response = self._chat(messages)
+            response = self._chat(messages, schema_version)
             raw = _content_of(response)
             batch_input = int(response.get("prompt_eval_count", 0))
             batch_output = int(response.get("eval_count", 0))
-            batch_assertions, batch_errors = parse_extraction_response(raw, passages, ontology)
+            batch_assertions, batch_errors = parse_extraction_response(
+                raw, passages, ontology, schema_version
+            )
             assertions.extend(batch_assertions)
             parse_errors.extend(batch_errors)
             input_tokens += batch_input
@@ -108,14 +115,16 @@ class OllamaExtractor:
             parse_errors=parse_errors,
         )
 
-    def _chat(self, messages: list[dict[str, str]]) -> dict[str, Any]:
+    def _chat(
+        self, messages: list[dict[str, str]], schema_version: str = "1.0.0"
+    ) -> dict[str, Any]:
         """One local chat call with the §11 retry policy (inference calls are
         retried like any other); no governor, no ledger."""
         payload: dict[str, Any] = {
             "model": self._model_id,
             "messages": messages,
             "stream": False,
-            "format": EXTRACTION_SCHEMA,
+            "format": schema_for_version(schema_version),
             "options": {"temperature": 0},
         }
         url = f"{self._base_url}/api/chat"

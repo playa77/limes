@@ -35,6 +35,7 @@ gate the document out on retry and lose its assertions permanently.
 
 from __future__ import annotations
 
+import json
 import uuid
 from datetime import UTC, datetime
 from decimal import Decimal
@@ -51,7 +52,7 @@ from limes.errors import (
     SourceParseError,
 )
 from limes.extraction.cache import put as cache_put
-from limes.graph.loader import load, retract
+from limes.graph.loader import load, news_claim_id, retract, save_claims, save_document
 from limes.ontology.validator import validate_assertions
 from limes.pipeline import window as window_module
 from limes.pipeline.gate import gate_document
@@ -255,6 +256,19 @@ def _process_record(
     run but fetch/configuration failures."""
     try:
         content_hash = ctx.archive.put(spec.source_id, raw.payload, raw.content_type)
+        if raw.acquisition_context is not None:
+            manifest = json.dumps(
+                {
+                    "entry_hash": content_hash,
+                    "source_id": spec.source_id,
+                    "context": raw.acquisition_context,
+                    "fetched_at": raw.fetched_at.isoformat(),
+                    "source_url": raw.source_url,
+                },
+                sort_keys=True,
+            ).encode()
+            manifest_hash = ctx.archive.put(spec.source_id, manifest, "application/json")
+            raw.acquisition_context = {**raw.acquisition_context, "manifest_hash": manifest_hash}
         normalized = adapter.normalize(raw)
     except SourceParseError as exc:
         record.errors += 1
@@ -286,6 +300,8 @@ def _process_record(
             )
         return
     normalized.document.content_hash = content_hash
+    if normalized.document.news_metadata is not None:
+        save_document(ctx.driver, normalized.document, ctx.ontology)
     _process_document(spec, ctx, adapter, raw, normalized, record)
 
 
@@ -436,6 +452,20 @@ def _process_document(
         )
         return
 
+    if doc.news_metadata is not None:
+        if any(item.qualifiers is None for item in result.assertions):
+            record.errors += 1
+            return  # Old/unqualified model output is retryable, never a fact edge.
+        for item in result.assertions:
+            assert item.qualifiers is not None
+            # Extraction cannot certify a claim or promote a proposal to completion.
+            item.qualifiers.assessment = "unassessed"
+            if item.valid_from is None:
+                item.qualifiers.time_precision = "unknown"
+            if item.qualifiers.modality in ("denied", "proposed", "conditional"):
+                item.qualifiers.event_status = (
+                    "denied" if item.qualifiers.modality == "denied" else "proposed"
+                )
     assertions, stats = resolve_assertions(result.assertions, ctx, doc)
     trust = _document_trust(adapter, spec.source_id, ctx, raw.source_url)
     for assertion in assertions:
@@ -465,6 +495,32 @@ def _process_document(
             assertion_index=validation_error.assertion_index,
             detail=validation_error.detail,
         )
+
+    if doc.news_metadata is not None:
+        # Resolve identities through the shared resolver; only the loader creates entities.
+        load(
+            ctx.driver,
+            [],
+            ctx.ontology,
+            standalone_entities=[e for a in accepted for e in (a.subject, a.object)],
+        )
+        claim_result = save_claims(ctx.driver, accepted, doc, ctx.ontology)
+        record.assertions_written += claim_result.written
+        record.assertions_skipped += claim_result.skipped
+        if not rejected and not result.parse_errors:
+            if spec.mode == "reextract":
+                _retract_superseded(
+                    ctx, doc.content_hash, spec.source_id, {news_claim_id(a, doc) for a in accepted}
+                )
+            cache_put(
+                ctx.driver,
+                doc.content_hash,
+                settings.extraction_prompt_version,
+                settings.extraction_schema_version,
+                ctx.extractor.model_id,
+                result,
+            )
+        return
 
     load_result = load(
         ctx.driver,
@@ -519,6 +575,23 @@ def _retract_superseded(
     this document that the new extraction did not reproduce (D-39). The
     retraction happens only after extraction and resolution succeeded, so a
     failed re-extraction leaves the prior record intact."""
+    if source_id == "news":
+        ctx.driver.write_batch(
+            [
+                (
+                    "MATCH (c:NewsClaim {evidence_document_id: $doc, source_id: $source}) "
+                    "WHERE c.retracted_at IS NULL AND NOT c.claim_id IN $ids "
+                    "SET c.retracted_at=$now",
+                    {
+                        "doc": content_hash,
+                        "source": source_id,
+                        "ids": list(new_assertion_ids),
+                        "now": datetime.now(UTC),
+                    },
+                )
+            ]
+        )
+        return
     rows = ctx.driver.read(
         _PRIOR_DOCUMENT_ASSERTIONS,
         {"content_hash": content_hash, "source_id": source_id},

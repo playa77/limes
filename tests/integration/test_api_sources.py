@@ -28,6 +28,7 @@ REGISTERED_SOURCES = {
     "offeneregister",
     "gdelt",
     "feeds",
+    "news",
 }
 
 FETCHED_AT = datetime(2026, 8, 1, 10, 0, tzinfo=UTC)

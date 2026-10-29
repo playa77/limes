@@ -13,7 +13,7 @@ merges or deployment without explicit instruction. Production/co-tenant operatio
 are outside implementation scope. Snapshot and issue rows below are historical
 records; subsequent evidence/closures are appended without erasing them.
 
-## Current disposition — 2026-10-28 (BE-42 candidate)
+## Current disposition — 2026-10-28 (BE-43/DC-15 candidate)
 
 This index supersedes the status wording in the historical inventory below, without
 erasing its evidence. Package placement: [backend](docs/BACKEND_ROADMAP.md),
@@ -44,7 +44,7 @@ closure sections; “open” is not a statement that every old symptom still exi
 | OI-20 | Closed in BE-42 candidate | Agent + BE-42 | 2026-10-28 direct closure below: Independent channels, collision-free identity, gate/cache/empty/failure/retry/reextract graph scenarios |
 | OI-21 | Closed in BE-42 candidate | Agent + BE-42 | 2026-10-28 direct closure below: Archive/member/row/event/export/report/time provenance survives graph/API; no synthetic document; text explicitly unavailable |
 | OI-22 | Closed in BE-42 candidate | Agent + BE-42 | 2026-10-28 direct closure below: GeoNames FIPS conversion, types 1–5, finite coordinate bounds, fractional slot ceiling and explicit workload limits |
-| OI-23 | Open workflow/configuration gap | Agent + BE-45 | Full suites currently run on main pushes as well as PRs; document/configure bounded main smoke and authoritative candidate status; hosted required-check configuration unverified |
+| OI-23 | Repository workflow repaired; hosted configuration evidence open | Agent + BE-45 | BE-43 separates bounded main smoke from full PR/manual lanes and adds fail-closed candidate-check; GitHub execution/required-check configuration remains unverified |
 | OI-24 | Open measurement/acceptance gaps | Agent/operator + DC-14/BE-45 | Reference-platform startup/visual time-sync/manual workflows, representative memory/storage and current live/model/recovery evidence lack current qualification |
 
 The documentation reconciliation can close while these implementation/operator
@@ -506,3 +506,40 @@ The four affected checks and the final full graph suite passed. No guard was ski
 Mentions, article acquisition, paid agency quality, representative resource
 measurement, hosted required statuses and production deployment remain unclaimed
 under BE-43/45; unrelated OI-01/03/05/09/10/11/18/23/24 stay open.
+
+
+## 2026-10-28 — BE-43/DC-15 local implementation acceptance
+
+D-82 records the user's confirmed investigation tracking contract and supersedes
+the pre-existing corpus/procurement coding gate. LIMES now sets up DE/EN search
+feeds from tracked graph entities/relations, refreshes identity/aliases each cycle,
+and acquires them automatically inside the existing worker. Track edits and
+pause/resume persist; failed/interrupted cycles require manual replay. Unchanged
+reports remain cacheable despite unrelated feed changes. Original RSS, entry
+bytes and acquisition manifests are archived; publication/update/unknown times,
+source versions, dependent dispatches and missing full text are distinct.
+
+The shared extraction/resolution/loader path stores qualified NewsClaim artifacts,
+never positive fact edges for denials/proposals. Disposable graph/API evidence
+covers preserved contradictions, exact spans, unknown event time, idempotent
+retry, failed replacement preservation and successful archive-only retraction
+scoped to one document. Desktop controls expose entity/relation tracking, claim
+qualifications, prior versions and explicit evidence gaps; an asynchronous reply
+cannot substitute evidence from another claim. Ontology 1.1.0 is additive; legacy
+schema/cache behavior and queued request UUID identity remain compatible.
+
+Final commands and candidate manifest are in docs/VERIFICATION.md. Backend unit,
+desktop unit/contract, complete graph integration, acceptance and desktop integration
+suites pass. Tests mock news/model transports and use disposable graph volumes.
+The single successful public RSS format inspection is source qualification only,
+not production ingestion or paid quality evidence. Existing OI-01/03/05/09/10/11/18/24
+obligations are not closed. OI-23's repository triggers/gate are repaired, but
+hosted execution and required-status configuration remain unverified.
+
+No staging, commit, push, PR, deployment or production/model run occurred. Missing
+full article text and undisclosed original-agency correction/syndication metadata
+remain source-coverage limits, not inferred facts or new user-supplied prerequisites.
+
+Publication update (2026-10-29): after the local acceptance above, the user
+explicitly requested preparing and opening the BE-43/DC-15 PR, authorizing its
+commit and push. Deployment and production/model runs remain outside that request.

@@ -1,4 +1,102 @@
-# Verification and acceptance evidence — BE-41
+# Verification and acceptance evidence
+
+## 2026-10-28 — BE-43/DC-15 local implementation acceptance
+
+Complete parent: dynamic investigation-driven news acquisition and qualified
+reporting, including its paired desktop consumer. Branch
+`codex/be-43-dynamic-news`; live-fetched main `b1afc86ab283`. After local acceptance, the user explicitly requested preparing and opening a PR,
+authorizing commit and push. The checked acceptance/handoff is in ROADMAP; D-82 records the
+user's confirmed tracking contract. A supplied provider/subscription or pre-existing
+corpus is not an implementation prerequisite.
+
+### Final verification
+
+Final runtime/test/ontology/tool/CI source manifest SHA-256:
+`448c9d1b63718ca29a50ba585f3ad19c0c1e49b759aeb5ce5b71a3f488f05e29`.
+It hashes sorted unique paths plus NUL, bytes plus NUL from `git ls-files -co
+--exclude-standard src desktop/src tests desktop/tests tools ontology docker
+pyproject.toml uv.lock .github/workflows/ci.yml`. Local logs, XML and the manifest
+are retained under ignored `work/be43/candidate/`. Documentation handoff edits
+follow validation; the source manifest is rechecked after them.
+
+| Suite | Final result | JUnit file |
+|---|---|---|
+| unit-final | 823 passed; 134.45s | `unit-final.xml` |
+| desktop-final | 137 passed; 4.48s | `desktop-final.xml` |
+| integration-final | 170 passed; 277.20s | `integration-final.xml` |
+| acceptance-final | 85 passed; 34.94s | `acceptance-final.xml` |
+| desktop-integration-final | 2 passed; 19.27s | `desktop-integration-final.xml` |
+
+Commands use `venv/bin/python -m pytest PATHS -q --tb=short --junitxml=FILE`.
+Paths, respectively: `tests/unit`; `desktop/tests/unit desktop/tests/contract`;
+`tests/integration`; `tests/acceptance`; `desktop/tests/integration`. Qt uses
+`QT_QPA_PLATFORM=offscreen` and
+`QTWEBENGINE_CHROMIUM_FLAGS='--no-sandbox --disable-gpu'`.
+`BUILDX_CONFIG` points to ignored `work/be43/buildx` for disposable image builds.
+All provider/model transports in automated suites are mocked; graph, backup and
+runtime tests own disposable containers/volumes. No production graph is selected.
+
+Ruff over src/tests/desktop, strict mypy (156 files), documentation C1–C9,
+generated-document drift and whitespace checks pass. The bounded main smoke
+command (config/news/runtime-doc units, plugin autoload disabled) passes 33 cases.
+The CI aggregate was locally exercised with success, failure, skipped and cancelled
+lane results: required lanes fail closed. Hosted GitHub execution and required-check
+configuration were not inspected or claimed; OI-23 retains that evidence obligation.
+
+The environment connection was reset during an earlier run: partial unit/graph
+logs without completed JUnit are not counted as results. Only fixture-owned
+containers/project volumes were cleaned up. The next complete graph run had 168
+passes and two stale source-selection expectations; those tests now explicitly
+exclude investigation-only news from global ingest/reextract. The entire graph
+suite then passed as above. Backend units ran again after queued-request schema
+compatibility was repaired; desktop units/contracts ran after selectable relation
+wiring and late-reply evidence protection. Repetition was caused by these actual
+changes/failures and the interrupted environment, not a test quota. Durations are
+validation measurements; implementation effort and merge latency are unmeasured.
+
+### Acceptance evidence and boundaries
+
+- Tracking lifecycle, current graph label/alias and relation endpoint discovery,
+  persistent scheduling, queue backpressure, failed/interrupted manual replay,
+  publication versus update times and optional-field job migration:
+  `tests/unit/test_news.py` and `news/store.py`, `news/targets.py`, `sources/news.py`.
+- Independently captured RSS transport fixture, byte/text/target bounds, raw feed
+  and entry identity, unchanged-report deduplication and visible partial failure:
+  fixture README plus upstream-format news units. One successful public response
+  (53,216 bytes; source SHA-256 recorded in the fixture README) was inspected
+  read-only. Identity encoding resolved the first decoding failure. This is
+  bounded source-format qualification, not production ingestion or full coverage.
+- Bilingual proposal/denial/reporting/completion/cancellation/conditional/unknown
+  precision fixtures cover qualification preservation and rejection. They are
+  independently authored synthetic behavioral labels, not measured model quality.
+  Acquired documents enter an unreviewed evaluation pool; operator annotations
+  can grow it during investigation. Automated extraction is never its own gold.
+- `tests/integration/test_news_pipeline.py` exercises real composition, gate,
+  schema-2 extraction parsing, shared resolution, loader, archive and authenticated
+  API against disposable Neo4j. Proposed/denied reports retain contradictions and
+  exact evidence, never create unqualified positive edges, share dependent dispatch
+  identity, preserve source versions and unknown dates, replay without paid calls,
+  survive failed replacement, and retract only their own archived document after
+  successful empty replacement. Other source/channel history is untouched.
+- Five new desktop regressions cover tracking/pause/manual replay, qualified
+  denial and prior-version evidence, unknown event-time/network semantics,
+  selectable relation evidence from the shell, and stale asynchronous replies.
+  API mirrors have field parity; ontology literals remain out of desktop views.
+  Existing desktop integration flows also pass. DC-14's unrelated map-policy and
+  reference-platform/manual-performance obligations are not inferred complete.
+
+Ontology 1.1.0 is additive: historical stamps/assertions remain unchanged. Legacy
+schema/prompt/cache behavior remains available; news uses 2.0.0 with qualifiers.
+Claims are ontology-visible artifacts with separate source trust, extraction
+confidence and unassessed assessment; event descriptions remain unresolved
+candidates. Canonical original-agency identity, correction metadata and full
+article text are unknown where public RSS does not supply them. Headlines/snippets
+are never described as licensed agency full text or independent corroboration.
+Representative paid quality, production ingestion/deployment/resource/recovery
+qualification and broader licensed sources remain unclaimed. No staging, commit,
+push, PR, deployment or paid provider evaluation occurred.
+
+## Historical BE-41 documentation candidate
 
 Reviewed 2026-10-27 on `codex/core-news-design`; live-fetched base main
 `3f1effd01bd9`. Product implementation was not changed. The delivery changes are
@@ -178,3 +276,20 @@ report URLs instead of empty trailing columns, preserving all 61 fields without
 whitespace exceptions. Affected adapter/upstream unit checks and the complete
 AC-04 adapter acceptance file passed again; runtime and the independent upstream
 fixture are unchanged. The source manifest above includes this fixture update.
+### BE-43 change accounting
+
+Counts compare tracked edits and delivery files with live base main. They are
+line additions/deletions/net growth, not engineering effort. Fifteen new backend
+unit cases (including six bilingual parameter cases), five desktop cases and one
+disposable graph scenario cover distinct regressions; suite totals above include
+existing tests and are not a quota. Ontology/prompt/schema versions are explicit.
+
+| Category | Added | Deleted | Net |
+|---|---:|---:|---:|
+| Documentation/CI tooling | 61 | 11 | 50 |
+| Fixture data | 10 | 0 | 10 |
+| Generated documents | 23 | 11 | 12 |
+| Handwritten documentation | 422 | 47 | 375 |
+| Handwritten implementation and prompts | 1488 | 31 | 1457 |
+| Tests/helpers | 683 | 31 | 652 |
+| Versioned ontology | 55 | 1 | 54 |

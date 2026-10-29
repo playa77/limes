@@ -272,7 +272,7 @@ def test_ac08_loading_materializes_endpoints_and_standalone_entities(driver: Gra
     by_id = {row["id"]: row for row in rows}
     assert set(by_id) == {subject.entity_id, object_.entity_id, standalone.entity_id}
     for row in by_id.values():
-        assert row["ov"] == "1.0.0"
+        assert row["ov"] == "1.1.0"
     assert by_id[subject.entity_id]["lei"] == "LEI-MAT-A"
     assert by_id[standalone.entity_id]["iso2"] == "DE"
     assert "Entity" in by_id[standalone.entity_id]["labels"]
@@ -320,7 +320,7 @@ def test_ac09_lower_trust_remerge_does_not_overwrite(driver: GraphDriver, ontolo
     )
     assert rows[0]["label"] == "Keep A"  # the canonical label survived
     assert rows[0]["lei"] == "LEI-KEEP-A"
-    assert rows[0]["ov"] == "1.0.0"
+    assert rows[0]["ov"] == "1.1.0"
 
     identical = load(
         driver,

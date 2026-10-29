@@ -1,6 +1,6 @@
 # Desktop work-package roadmap
 
-Reviewed 2026-10-27 against live main `3f1effd`. Canonical prefix **DC-**.
+Updated 2026-10-28 on candidate based on live main `b1afc86`. Canonical prefix **DC-**.
 Historical desktop `wp-NN`/Task N maps to DC-NN; it never means BE-NN.
 Original tasks and acceptance are preserved in the
 [archived plan](archive/desktop-plan-2026-09-09.md); its unticked checkboxes and
@@ -12,7 +12,9 @@ this sequence with the [backend](BACKEND_ROADMAP.md).
 DC-01–13 implementations are in main, merged at `5ab2d4e` on 2026-09-10.
 Current runtime auth/backup/lifecycle changes subsequently updated them.
 **DC-14 is the next desktop repair/qualification package**; DC-15 and DC-16 are
-core news consumer work paired with BE-43 and BE-44 respectively. There is no
+core news consumer work paired with BE-43 and BE-44 respectively. DC-15 now
+passes local implementation acceptance with BE-43 on the PR candidate;
+DC-14's independent repair/platform obligations remain open. There is no
 standalone news UI or ledger iteration. No claim that every desktop acceptance
 criterion is currently satisfied is made.
 
@@ -74,7 +76,9 @@ must stay intact. No fixed test quotas or duplicate backend numerical suites.
 
 ### DC-15 — qualified news evidence and event presentation
 
-Status P; depends on BE-43's versioned API contract. Coordinated delivery parent
+Local implementation acceptance passed with BE-43 on codex/be-43-dynamic-news;
+prepared for PR publication. See ROADMAP and VERIFICATION for the paired checklist,
+source/evidence scope and final results. Consumes the versioned API contract. Coordinated delivery parent
 BE-43 includes DC-15 in one session/branch/PR; do not ship backend fields while
 silently leaving the analyst surface incomplete. Implement API mirrors, query
 filters, provenance/entity views and network/timeline payloads for attributed

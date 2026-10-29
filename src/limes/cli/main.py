@@ -252,6 +252,13 @@ def stamp_embeddings() -> None:
         ctx.driver.close()
 
 
+from limes.cli.news import reextract as reextract_news  # noqa: E402
+from limes.cli.news import refresh as refresh_news  # noqa: E402
+
+app.command("news-refresh")(_run(refresh_news))
+app.command("news-reextract")(_run(reextract_news))
+
+
 def main() -> None:
     """Console entry point: `python -m limes.cli.main` (the `limes` console
     script is registered at install time by WP-38)."""
