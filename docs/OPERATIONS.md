@@ -4,6 +4,19 @@
 
 <!-- limes-runtime: {"services":["api","neo4j","worker"],"api_publication":"127.0.0.1:8000:8000","database_published":false,"api_authentication":"bearer","desktop_credentials":"session-only","budget_enforcement":false,"service_user":"7474:7474","host_docker_socket":false,"operations_authentication":"operator-bearer","backup_transport":"private-http","job_replay":"manual","deployment":"immutable-image-ids"} -->
 
+## Reviewed enrichment jobs
+
+Submit `enrich` through POST /operations/jobs with source wikipedia or
+yahoo_finance and one to ten `selections`. Each mapping carries an existing
+entity_id, a QID and/or symbol plus exchange, evidence_url and rationale. ISIN
+and share_class are optional separately reviewed security mappings. A bare ticker
+or name never selects a company. `extract_context` defaults to false and is only
+accepted for Wikipedia. No consumer read fetches providers. Remote CLI accepts
+`--selections` as JSON and `--extract-context`; request IDs preserve job replay.
+Inspect acquired sections via GET /entity/ID/enrichment; failed jobs require manual
+replay with a new request ID after inspection. Existing source checkpoints advance
+only after the entire selected run succeeds; source versions replay idempotently.
+
 ## Configuration and first startup
 
 Run `python3 tools/init_config.py` as the checkout owner. It creates missing split

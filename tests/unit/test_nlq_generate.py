@@ -57,7 +57,7 @@ def test_generate_sends_question_as_delimited_data():
     assert client.last_model == "test/model"
     assert client.last_purpose == "nl2cypher"
     system = client.last_messages[0]["content"]
-    assert "Ontology version 1.1.0" in system
+    assert "Ontology version 1.2.0" in system
     assert "SUBSIDIARY_OF" in system
 
 

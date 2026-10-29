@@ -56,9 +56,10 @@ the [documentation map](docs/INDEX.md), backend/desktop package registers and
 [verification status](docs/TESTING_PHASE.md) for implementation and acceptance
 status. Those records distinguish current artifacts, evidence gaps and open repairs.
 
-Wikipedia context and Yahoo Finance governance, shareholder structure and
-financial-report metadata are planned in BE-46, including their supporting data
-model and API changes. Scope remains German and European policy; comprehensive
+BE-46 adds revision-linked Wikipedia context and Yahoo Finance company,
+governance, shareholder and earnings/report observations with source-section
+evidence, unknown-data semantics and reviewed company/security/listing identity.
+Scope remains German and European policy; comprehensive
 EU-27 coverage is deferred to a possible later version.
 
 ## Architecture and runtime

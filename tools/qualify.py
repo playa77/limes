@@ -24,6 +24,11 @@ SOURCE_PATHS = (
     "gold_set", "reference_questions", "pyproject.toml", "uv.lock", ".github",
     "docker-compose.yml", ".dockerignore", "docs/runtime-contract.json", "Makefile",
 )
+TOOL_LINT_PATHS = (
+    "tools/build_context.py", "tools/deploy.py", "tools/init_config.py",
+    "tools/generate_runtime_docs.py", "tools/smoke_test.py", "tools/qualify.py",
+    "docker/neo4j_control.py",
+)
 SUITES = {
     "unit": ["tests/unit"],
     "desktop": ["desktop/tests/unit", "desktop/tests/contract"],
@@ -104,7 +109,8 @@ def main() -> int:
     checks = [
         ("baseline", [python, "tools/check_git_baseline.py"]),
         ("lint", [str(ROOT / "venv/bin/ruff"), "check", "src", "tests", "desktop/src",
-                  "desktop/tests", "tools/qualify.py"]),
+                  "desktop/tests"]),
+        ("tools-lint", [str(ROOT / "venv/bin/ruff"), "check", *TOOL_LINT_PATHS]),
         ("types", [str(ROOT / "venv/bin/mypy")]),
         ("docs", [python, "tools/check_docs.py", "docs/"]),
         ("generated", [python, "tools/generate_runtime_docs.py", "--check"]),

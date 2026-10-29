@@ -7,7 +7,50 @@ The [documentation index](INDEX.md) identifies each document's authority; the
 Historical bare WP numbers must be qualified as backend or desktop. Old counts,
 unticked archived plans and merged commits are never substituted for acceptance.
 
-## Active qualification delivery — BE-45 (2026-10-29)
+## Active runtime delivery — BE-46 (2026-10-29)
+
+Selected complete parent on `codex/be-46-entity-enrichment`, live-fetched main
+`b89287512335` (BE-45 merged in PR #12). Baseline passed after clean fast-forward.
+Prerequisites: independent DE/EN revision and German/European Yahoo fixtures,
+field/access/retention review in tests/fixtures/enrichment/README.md, existing
+mixed-channel and qualified-claim paths. Reviewed explicit company/QID/listing
+mappings preserve registry entity IDs; bare names/tickers never merge companies.
+Trust ranks: Wikipedia 0.65, Yahoo Finance 0.70 (secondary observations).
+Additive ontology 1.2.0; immutable source/section snapshots and typed observation
+properties, no snapshot disappearance retraction. Unknown source/term dates stay
+null; retrieval is the observation interval start when source validity is unknown.
+
+- [x] Both registered adapters, bounded operator selections/jobs, archived original
+  responses, idempotent replay/checkpoints/backoff and partial-failure visibility.
+- [x] Exact DE/EN revision context, attribution and shared qualified extraction.
+- [x] Reviewed company/security/listing identity and unresolved holder/person candidates.
+- [x] Available governance, named holdings, separate aggregate ratios and calendar/
+  actual-report metadata with source dates, units and row/field locators.
+- [x] Versioned ontology/property/loader/API migration, immutable history and
+  source-section isolation; existing registry and news evidence preserved.
+- [x] Authenticated source/section/freshness/evidence reads, ontology queries and
+  desktop mirror/evidence compatibility; no consumer fetches.
+- [x] Independent fixtures, failure/missing cases, disposable graph/API and full
+  candidate evidence, with measured boundaries retained.
+
+Local implementation acceptance passes for the full BE-46 parent. Both adapters,
+ontology 1.2.0/property persistence, reviewed identity, source-section history,
+authenticated API and desktop compatibility satisfy the checklist. All five final
+candidate suites pass (1,256 tests; zero failures/errors/skips), with source-bound
+evidence in VERIFICATION and work/be46/final-5/. The same candidate passes lint,
+strict types, docs/generation, runtime guards, whitespace and live baseline checks.
+
+Both sources remain secondary and incomplete; missing terms, currency, shareholder/
+board/report coverage and identity stay explicit. Bounded source-format checks do
+not imply production acquisition, paid quality or deployment. No staging, commit,
+push or publication occurred. BE-45/DC-14 retain separate release/platform limits.
+
+Publication update: after local acceptance, the user explicitly requested preparing
+and opening a PR for this session, authorizing staging, commit and push.
+The qualified source fingerprint remains unchanged; merge and deployment
+remain separate.
+
+## Previous qualification delivery — BE-45 (2026-10-29)
 
 Branch `codex/be-45-qualification`, live-fetched baseline `44ab4eb605a2`.
 The user selected BE-45 and explicitly waived operator-evidence and separate
@@ -209,7 +252,7 @@ Acceptance checklist:
 
 | Track | Implemented history | Current position | Next runtime delivery |
 |---|---|---|---|
-| Backend | BE-01–40 plus BE-25a have implementation commits in main; changes/defects/qualification differ per row | BE-43/DC-15 and BE-44/DC-16 merged; BE-45 candidate qualification passes under D-84 waiver; no production claim | BE-46 Wikipedia and Yahoo Finance enrichment |
+| Backend | BE-01–45 plus BE-25a have implementation/qualification history; row-specific evidence and waivers apply | BE-46 complete local acceptance passes; PR publication requested; deployment unrequested | No further backend implementation slot assigned; release/platform follow-up retains its existing boundaries |
 | Desktop | DC-01–13 and DC-15 merged; later auth/backup/lifecycle changes supersede old behavior | DC-16 merged with BE-44; OI-05/10/11/18 and manual/performance evidence remain | DC-14 correctness/qualification |
 
 No further runtime coding begins before BE-41's documentation acceptance passes.

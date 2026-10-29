@@ -166,6 +166,11 @@ def resolve_assertions(
                 continue
             deterministic = keys.deterministic_key(role, ctx.ontology)
             if deterministic is not None:
+                if role.type == "Corporation" and deterministic[0] == "wikidata_qid":
+                    mapped = reviewed_corporation(ctx.driver, deterministic[1], role.surface)
+                    if mapped is not None:
+                        resolutions[key] = mapped
+                        continue
                 resolutions[key] = _Resolution(
                     endpoint=EntityEndpoint(
                         entity_id=key_entity_id(deterministic),
@@ -180,6 +185,11 @@ def resolve_assertions(
                 continue
             enriched = _enrich(role, ctx)
             if enriched is not None:
+                if role.type == "Corporation":
+                    mapped = reviewed_corporation(ctx.driver, enriched.qid, role.surface)
+                    if mapped is not None:
+                        resolutions[key] = mapped
+                        continue
                 resolutions[key] = _Resolution(
                     endpoint=EntityEndpoint(
                         entity_id=key_entity_id(("wikidata_qid", enriched.qid)),
@@ -431,3 +441,45 @@ def _enrich(mention: Mention, ctx: RunContext) -> WikidataMatch | None:
         match = None
     _ENRICH_CACHE[cache_key] = match
     return match
+
+
+def observation_identity_candidates(
+    driver: GraphDriver, surface: str, entity_type: str,
+) -> list[str]:
+    """Conservative deterministic resolution for secondary holder/officer observations.
+
+    A name supplies candidates only, even when there is one exact match. No paid
+    adjudication or name-derived canonical identity is allowed for these rows.
+    The operator can review identity using the archived row evidence.
+    """
+    if not surface.strip():
+        return []
+    rows = driver.read(
+        "MATCH (n:Entity) WHERE $type IN labels(n) AND "
+        "(toLower(n.label) = toLower($name) OR "
+        "any(a IN coalesce(n.aliases, []) WHERE toLower(a)=toLower($name))) "
+        "RETURN n.entity_id AS id ORDER BY id LIMIT 11",
+        {"type": entity_type, "name": surface.strip()}, 30,
+    )
+    return [str(row["id"]) for row in rows]
+
+
+
+def reviewed_corporation(driver: GraphDriver, qid: str, surface: str) -> _Resolution | None:
+    """Reuse reviewed QID-to-registry identity; conflicting mappings remain unresolved."""
+    rows = driver.read(
+        "MATCH (n:Corporation) WHERE n.wikidata_qid=$qid OR EXISTS { "
+        "MATCH (s:EnrichmentSnapshot {wikidata_qid:$qid, mapping_status:'operator_reviewed'}) "
+        "WHERE s.company_id=n.entity_id AND s.status='available' } "
+        "RETURN DISTINCT n.entity_id AS id, n.label AS label ORDER BY id LIMIT 2",
+        {"qid": qid}, 30,
+    )
+    if len(rows) == 1:
+        return _Resolution(EntityEndpoint(entity_id=str(rows[0]["id"]), type="Corporation",
+                                          label=str(rows[0]["label"]), aliases=[surface]),
+                           "deterministic", 1.0)
+    if len(rows) > 1:
+        # Document-local candidate, never a guessed canonical corporation.
+        return _Resolution(EntityEndpoint(entity_id=hash_entity_id("unresolved-qid", qid, surface),
+                                          type="Corporation", label=surface), "mint", 0.0)
+    return None

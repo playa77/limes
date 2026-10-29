@@ -81,3 +81,20 @@ def test_successful_commands_cannot_qualify_changed_source(tmp_path, monkeypatch
     report = json.loads((output / "report.json").read_text())
     assert report["status"] == "failed"
     assert "source changed" in report["error"]
+
+
+
+def test_local_tool_lint_covers_the_hosted_offline_lane():
+    import shlex
+    from pathlib import Path
+
+    import yaml
+
+    from tools.qualify import TOOL_LINT_PATHS
+
+    workflow = yaml.safe_load(
+        (Path(__file__).resolve().parents[2] / ".github/workflows/ci.yml").read_text())
+    steps = workflow["jobs"]["offline"]["steps"]
+    command = next(step["run"] for step in steps
+                   if step.get("run", "").startswith("venv/bin/ruff check tools/"))
+    assert tuple(shlex.split(command)[2:]) == TOOL_LINT_PATHS

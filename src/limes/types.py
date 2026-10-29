@@ -37,6 +37,7 @@ class EntityEndpoint(BaseModel):
     label: str
     deterministic_key: tuple[str, str] | None = None
     aliases: list[str] = []
+    properties: dict[str, str | int | float | bool | datetime | None] = {}
 
 
 class Provenance(BaseModel):

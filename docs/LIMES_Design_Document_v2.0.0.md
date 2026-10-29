@@ -231,7 +231,7 @@ The distinction between pre-resolution and resolved assertions is load-bearing a
 
 ---
 
-### 3.6 Entity context and company enrichment — BE-46 target
+### 3.6 Entity context and company enrichment — BE-46
 
 Two adapters join the existing worker, registry, archive, resolver, ontology,
 loader and authenticated API. They introduce no service or separate data store.
@@ -286,9 +286,39 @@ disappearance, a failed request or a partial response never proves a resignation
 sale or zero holding. Reconcile snapshots only under an explicit same-source,
 same-section completeness rule, preserving prior evidence and contradictions.
 
+BE-46 implements ontology 1.2.0 with immutable `EnrichmentSnapshot` and
+`EnrichmentObservation` artifacts. Typed properties include role/term dates, numeric
+shares/ratios/value, units/basis/currency, source dates and exact section/row
+locators. Four non-temporal connections link selected entities to snapshots,
+snapshots to observations, companies to `SecurityListing` and reviewed listings
+to ISIN-identified `Security`. Existing entity/edge stamps remain intact; same-major
+additive migration provisions constraints/indexes through the existing lock.
+`EnrichmentCheck` retains each acquisition manifest/check time independently.
+
+Company/QID/listing selections require an operator-reviewed evidence URL and
+rationale; Yahoo's returned price symbol/exchange must match before other sections
+are acquired. QID mappings reuse canonical registry company IDs during resolution.
+Unidentified holder/officer names enter the shared conservative candidate resolver;
+no name-only identity becomes a canonical person, fund or company. Security/ISIN
+and share-class mappings are separately optional reviewed claims, not guesses
+from a company name or ticker suffix. Wikipedia validates the QID on the actual
+DE/EN revision page; redirect chains and ambiguity remain visible.
+
+No provider section asserts exhaustive ownership or board coverage. Completeness
+is always false for these partial surfaces, so no missing row closes any interval.
+Unchanged versions replay idempotently; subsequent checks update acquisition
+history without replacing source data. Section failures retain available sections
+and prevent the run checkpoint from advancing. Operators inspect then replay.
+The API exposes source dates separately from last check and labels freshness based
+only on acquisition when source freshness is unknown. Wikipedia wikitext remains
+available without inference; optional extraction uses qualified prompt/schema 2.0.0
+and the shared pipeline, never direct factual edges.
+
+Wikipedia accepts all existing ontology entity types with reviewed QIDs, including
+countries/places; Yahoo selects corporations only.
+
 Both adapters retain source-specific trust and provenance; they do not inherit
-Wikidata's or official registries' trust ranks. Choose and document their ranks
-before implementation acceptance. API evidence/coverage responses expose available,
+Wikidata's or official registries' trust ranks. Their ranks are Wikipedia 0.65 and Yahoo Finance 0.70; neither establishes official authority. API evidence/coverage responses expose available,
 missing, unsupported, stale and failed sections plus scope and dates; graph-wide
 counts are not measures of country or shareholder completeness. Existing desktop
 access remains through the API; parity/consumer compatibility is part of BE-46.
@@ -377,13 +407,13 @@ Every node and edge records the ontology version under which it was written, so 
 
 ### 5.2 Entity Types
 
-Seventeen concrete types under three abstract supertypes. Supertypes make traversal expressible without enumerating subtypes.
+Twenty-three concrete types under three abstract supertypes (ontology 1.2.0). Supertypes make traversal expressible without enumerating subtypes.
 
 | # | Type | Supertype (— = none) | Identifying key |
 |---|---|---|---|
 | 1 | `Person` | `Agent` | Wikidata QID; Bundestag ID; else resolved |
 | 2 | `PublicBody` | `Agent` | Wikidata QID; TED buyer ID; else resolved |
-| 3 | `Corporation` | `Agent` | LEI; German register number; else resolved |
+| 3 | `Corporation` | `Agent` | LEI; German register number; reviewed Wikidata QID; else resolved |
 | 4 | `PoliticalParty` | `Agent` | Wikidata QID |
 | 5 | `IGO` | `Agent` | Wikidata QID |
 | 6 | `InterestGroup` | `Agent` | EU Transparency Register ID |
@@ -398,6 +428,12 @@ Seventeen concrete types under three abstract supertypes. Supertypes make traver
 | 15 | `Event` | — | Source event ID plus timestamp |
 | 16 | `Office` | — | Body ID plus title plus interval |
 | 17 | `Topic` | — | Vocabulary plus code |
+| 18 | `NewsDocument` | `Artifact` | Archived document ID |
+| 19 | `NewsClaim` | `Artifact` | Qualified claim ID |
+| 20 | `EnrichmentSnapshot` | `Artifact` | Source/selection/section/content identity |
+| 21 | `EnrichmentObservation` | `Artifact` | Snapshot plus source-row identity |
+| 22 | `Security` | `Artifact` | Reviewed ISIN |
+| 23 | `SecurityListing` | `Artifact` | Provider/exchange/symbol |
 
 `Office` is reified rather than expressed as a property because questions of the form "who held this position when that act was adopted" require the interval to be a joinable object. This is the most consequential modeling choice in the ontology.
 
@@ -407,15 +443,17 @@ Seventeen concrete types under three abstract supertypes. Supertypes make traver
 
 Not ontology entities, excluded from the type count, each with exactly one owning writer (Technical Specification §15):
 
-`Source`, `IngestionRun`, `ExtractionCacheEntry`, `CostLedgerEntry`, `SavedQuery`, `GoldSetItem`, `PostalCode`, `Mention`, `AdvisoryLock`.
+`Source`, `IngestionRun`, `ExtractionCacheEntry`, `CostLedgerEntry`, `SavedQuery`, `GoldSetItem`, `PostalCode`, `Mention`, `AdvisoryLock`, `EventMatchReview`, `EnrichmentCheck`.
 
 `PostalCode` exists because of C-07: the postal-code-to-NUTS correspondence is produced by one source and consumed by three others in separate processes, so it lives in the graph rather than in module state or a derived file.
 
 ### 5.4 Relation Types
 
-Thirty relations. [COMPLEXITY JUSTIFICATION] The approved band was 24–30. The count reaches thirty because `SANCTIONED_BY` is decomposed into `TARGETS`, `IMPOSED_BY`, and `ESTABLISHED_BY` — a sanction's target, its imposing authority, and its establishing instrument are three facts with three sources and three validity intervals.
+Thirty-four relations. BE-46 adds four evidence/listing connections to the thirty historical relations. The original count reached thirty because `SANCTIONED_BY` is decomposed into `TARGETS`, `IMPOSED_BY`, and `ESTABLISHED_BY` — a sanction's target, its imposing authority, and its establishing instrument are three facts with three sources and three validity intervals.
 
 `MEMBER_OF`, `HOLDS_OFFICE`, `OFFICE_AT`, `DIRECTOR_OF`, `OWNS_STAKE_IN`, `SUBSIDIARY_OF`, `HEADQUARTERED_IN`, `LOCATED_IN`, `PART_OF_REGION`, `TARGETS`, `IMPOSED_BY`, `ESTABLISHED_BY`, `ADOPTED`, `AMENDS`, `REPEALS`, `CITES`, `APPLIES_TO`, `AWARDED_TO`, `BUYER_OF`, `SUPPLIES`, `LOBBIES_FOR`, `MET_WITH`, `PARTICIPANT_IN`, `ACTOR_IN`, `TARGET_OF`, `OCCURRED_IN`, `OPERATES`, `ABOUT_TOPIC`, `MENTIONS`, `REPRESENTS`.
+
+`HAS_ENRICHMENT`, `HAS_OBSERVATION`, `HAS_LISTING` and `REPRESENTS_SECURITY` are non-temporal evidence/identity connections. Snapshot and observation properties carry their independent source and recording dates.
 
 Domain and range for each are specified in Technical Specification §5.4 and are authoritative in the ontology artifact.
 

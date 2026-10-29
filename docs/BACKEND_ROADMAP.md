@@ -1,6 +1,6 @@
 # Backend work-package roadmap
 
-Updated 2026-10-29 on `codex/be-45-qualification`, based on live-fetched main `44ab4eb605a2`. Canonical prefix **BE-**;
+Updated 2026-10-29 on `codex/be-46-entity-enrichment`, based on live-fetched main `b89287512335`. Canonical prefix **BE-**;
 historical backend `WP-NN` maps to `BE-NN`, including the inserted BE-25a.
 The original roadmap defined WP-01–39 plus WP-25a (40 packages); WP-40 was a
 later coverage exercise. The separate desktop sequence is [DC](DESKTOP_ROADMAP.md).
@@ -12,8 +12,8 @@ Implementation commits exist in main for **BE-01–40 and BE-25a**. This is not 
 claim that all original acceptance conditions are currently met. BE-41 was merged
 in PR #7 and BE-42 in PR #9 (`b1afc86`). **BE-43/DC-15 merged in PR #10** (`84c832d`), under the dynamic tracking
 contract confirmed in D-82. BE-44/DC-16 merged in PR #11 (`44ab4eb`).
-BE-45 candidate qualification passes under the explicit D-84 evidence waiver;
-BE-46 is the next independently available implementation package.
+BE-45 merged in PR #12 (`b892875`) under the explicit D-84 evidence waiver;
+BE-46 passes complete local implementation acceptance in the current PR candidate.
 News is core scope immediately after the existing implementation, not a phase
 waiting for unrelated historical cleanups to finish.
 
@@ -204,8 +204,8 @@ restore known graph content and retain bounded synthetic resource observations.
 
 ### BE-46 — Wikipedia context and Yahoo Finance company/shareholder enrichment
 
-Status P; provider and scope approved in D-80. Deliver both adapters and supporting
-identity/model/persistence/API changes as one complete backend package. Depends on
+Status: full local implementation acceptance passed; provider/scope approved in D-80. Both adapters and supporting
+identity/model/persistence/API changes are delivered as one complete backend package. Dependencies:
 BE-09/18/25–27 and BE-31–35 implementations and BE-42's reliable mixed-channel path.
 It does not require unrelated desktop polish, agency procurement, production
 qualification BE-45 or comprehensive EU-27 coverage. BE-42 is verified in the current candidate; BE-46 can follow it without
@@ -223,40 +223,52 @@ names only after checking supplied fields; never invent missing board/holder dat
 
 Acceptance checklist:
 
-- [ ] Register `wikipedia` and `yahoo_finance` through composition and bounded
+- [x] Register `wikipedia` and `yahoo_finance` through composition and bounded
   operator jobs; retain all original payloads, idempotent replay, checkpoints,
   backoff/rate limits and visible partial failures. Consumer reads do not fetch.
-- [ ] Wikipedia retrieves verified DE/EN page revisions with IDs, URLs, dates and
+- [x] Wikipedia retrieves verified DE/EN page revisions with IDs, URLs, dates and
   attribution/license. Missing/ambiguous pages and redirects are handled explicitly;
   context remains retrievable without extraction output. Extracted claims use the
   shared cache/resolver/loader with exact revision/span evidence.
-- [ ] Verified QID/company/security/listing mappings link existing corporations
+- [x] Verified QID/company/security/listing mappings link existing corporations
   without conflating tickers, share classes or multiple listings. Ambiguous person
   and holder matches stay unresolved; existing registry identity is preserved.
-- [ ] Yahoo Finance preserves available company profile, executive versus board/
+- [x] Yahoo Finance preserves available company profile, executive versus board/
   supervisory roles and membership/structure without representing executives as a
   complete board. Source dates and unknown term dates remain distinguishable.
-- [ ] Shareholder structure retains named major/institutional/fund holdings and
+- [x] Shareholder structure retains named major/institutional/fund holdings and
   separate aggregate ownership ratios, with shares, percentages/basis, value/
   currency, security/share class and as-of dates where supplied. No overlapping-list
   double counting, inferred control/beneficial ownership or assumed completeness.
-- [ ] Earnings calendars and actual report metadata retain supplied fiscal periods,
+- [x] Earnings calendars and actual report metadata retain supplied fiscal periods,
   report kinds, dates, status and URLs. Estimated dates are not published reports;
   missing/stale/unsupported sections are not zero holdings or evidence of disposal.
-- [ ] Version and migrate ontology, assertion/property persistence, loader and API
+- [x] Version and migrate ontology, assertion/property persistence, loader and API
   together. Quantities, roles and field/row provenance survive archive→graph→API,
   replay and update with both time axes; partial snapshots cannot retract evidence
   from another section/source. Existing GLEIF/OffeneRegister history remains intact.
-- [ ] Expose source/section availability, freshness, unresolved identity and evidence
+- [x] Expose source/section availability, freshness, unresolved identity and evidence
   through authenticated APIs and ontology-generated queries; update desktop mirrors
   and verify existing evidence views can consume them. No dedicated new desktop
   dashboard or direct desktop provider access is implied.
-- [ ] Use independently checkable revision/holdings fixtures, missing-field and
+- [x] Use independently checkable revision/holdings fixtures, missing-field and
   failure cases plus disposable graph/API round trips. Mock paid calls and providers
   in automated checks; separately record any bounded live source qualification.
   No production ingestion, paid evaluation or deployment is authorized by planning.
 
-Core design §3.6 and technical specification §8.5.3 are the authoritative target.
+Implementation/evidence: registered adapters, `enrichment/` contracts/read service,
+shared pipeline/cache/resolver/loader and additive ontology 1.2.0, bounded `enrich`
+operator jobs and mirrored desktop HTTP consumers. Wikipedia covers any reviewed
+existing ontology entity, including countries; Yahoo remains corporation-only.
+The final source manifest and five passing suites (1,256 tests, no skips) are in
+VERIFICATION; independent source fixtures, malformed/missing/failure cases and two
+real graph/API/shared-pipeline scenarios support every checklist item. Normalized
+property drift becomes a durable failed section. Generic ingest/re-extraction
+cannot select these adapters implicitly. No staging/commit/publication or production ingestion
+was performed. Live probes qualify formats only; source coverage, production,
+paid quality and platform evidence are not inferred from implementation acceptance.
+
+Core design §3.6 and technical specification §8.5.3 are the authoritative contract.
 Package completion includes both adapters and these supporting changes; parser-only
 or one-adapter delivery is not full acceptance. BE-45 qualifies any release
 candidate containing BE-46; it is not a prerequisite for developing this package.

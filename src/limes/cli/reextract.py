@@ -70,6 +70,10 @@ def _reextract_sources(explicit: str | None) -> list[str]:
     sources hold no documents and nothing to retract."""
     from limes.cli.main import adapter_kind
 
+    if explicit in ("wikipedia", "yahoo_finance"):
+        from limes.errors import LimesError
+
+        raise LimesError("use enrich with reviewed selections for enrichment sources")
     if explicit is not None:
         adapter_kind(explicit)  # fail fast on an unknown id (AC-38)
         return [explicit]
@@ -78,5 +82,5 @@ def _reextract_sources(explicit: str | None) -> list[str]:
     return [
         source_id
         for source_id in build_default_registry().source_ids()
-        if source_id != "news" and adapter_kind(source_id) == "unstructured"
+        if source_id not in ("news", "wikipedia") and adapter_kind(source_id) == "unstructured"
     ]

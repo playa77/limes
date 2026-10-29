@@ -122,7 +122,7 @@ def test_mention_carried_key_ignored_when_not_declared(ontology):
     mention = Mention(
         surface="Volkswagen AG",
         type="Corporation",
-        deterministic_key=("wikidata_qid", "Q159431"),
+        deterministic_key=("ticker", "VOW.DE"),
     )
     assert deterministic_key(mention, ontology) is None
 

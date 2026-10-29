@@ -125,4 +125,9 @@ def build_default_registry() -> SourceRegistry:
 
     registry.register(WikidataAdapter())
 
+    from limes.sources.wikipedia import WikipediaAdapter
+    from limes.sources.yahoo_finance import YahooFinanceAdapter
+
+    registry.register(WikipediaAdapter())
+    registry.register(YahooFinanceAdapter())
     return registry

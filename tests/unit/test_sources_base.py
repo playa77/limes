@@ -143,3 +143,17 @@ def test_deterministic_assertion_id_includes_valid_to_when_present():
 
 def test_payload_hash_is_sha256_of_bytes():
     assert payload_hash(b"payload") == hashlib.sha256(b"payload").hexdigest()
+
+
+def test_bounded_fetch_decodes_gzip_once_and_enforces_decoded_limit():
+    import gzip
+
+    logical = b'{"revision":"bounded original JSON"}'
+    encoded = gzip.compress(logical)
+    with respx.mock:
+        respx.get(URL).mock(
+            return_value=Response(200, content=encoded, headers={"Content-Encoding": "gzip"})
+        )
+        assert fetch_bytes(URL, max_bytes=len(logical)) == logical
+        with pytest.raises(SourceFetchError, match="byte limit"):
+            fetch_bytes(URL, max_bytes=len(logical) - 1)

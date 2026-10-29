@@ -13,7 +13,7 @@ merges or deployment without explicit instruction. Production/co-tenant operatio
 are outside implementation scope. Snapshot and issue rows below are historical
 records; subsequent evidence/closures are appended without erasing them.
 
-## Current disposition — 2026-10-29 (BE-44/DC-16 candidate)
+## Current disposition — 2026-10-29 (BE-46 candidate; BE-45 waiver retained)
 
 This index supersedes the status wording in the historical inventory below, without
 erasing its evidence. Package placement: [backend](docs/BACKEND_ROADMAP.md),
@@ -589,3 +589,23 @@ an offline-loaded dump, recording dump size, load/start/verify duration and boun
 memory/storage observations as suite properties. VERIFICATION retains exact final
 source fingerprint and numerical results. This is evidence for that failure mode,
 not closure of production-scale or paid-model quality evidence by proxy.
+
+
+## 2026-10-29 — BE-46 enrichment evidence boundaries
+
+The complete implementation candidate is tracked in ROADMAP/BACKEND_ROADMAP and
+VERIFICATION. Both adapters archive source evidence and expose section/identity/
+date/completeness gaps; no missing row is interpreted as disposal, resignation or
+zero ownership. Original DE/EN revisions and bounded Yahoo issuer/listing payloads
+are source-format qualification only. Reviewer-supplied mappings, secondary source
+trust and unknown full-board/holder/report coverage remain explicit. No production
+ingestion, paid quality, commercial/retention certification, deployment or new
+historical issue closure is inferred. Existing OI-05/10/11/18 and DC-14 obligations
+are unchanged; the BE-45 D-84 waiver is not relabeled measured evidence.
+
+
+BE-46 final acceptance update: work/be46/final-5/report.json passes with all five
+suites, exact source identity and zero failures/errors/skips. VERIFICATION maps
+all nine backend acceptance items to direct source/graph/API/desktop evidence.
+Earlier failed/interrupted candidates are retained, not counted as acceptance.
+No existing issue is closed by assertion or cumulative pass counts.

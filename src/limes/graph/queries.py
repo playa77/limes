@@ -28,7 +28,8 @@ def merge_entity(labels: list[str], key_prop: str | None = None) -> str:
     key_set = f",\n              n.{key_prop} = $key_value" if key_prop else ""
     return f"""
 MERGE (n:{label_segment} {{entity_id: $entity_id}})
-ON CREATE SET n.label = $label,
+ON CREATE SET n += $entity_properties,
+              n.label = $label,
               n.aliases = $aliases,
               n.label_embedding = $label_embedding,
               n.ontology_version = $ontology_version,

@@ -5,6 +5,45 @@ reversibility: **R1** reversible in under an hour, **R2** bounded recoverable
 cost, **R3** one-way door. Written when each decision is made, latest first.
 Nothing here is a status report; unlogged decisions are unmade decisions.
 
+## 2026-10-29 — D-85 (R2) — BE-46 reviewed identity and secondary observations
+
+Deliver the complete next backend package BE-46 on codex/be-46-entity-enrichment,
+live-fetched main b89287512335 after a clean fast-forward (BE-45 merged in PR #12).
+Pre-coding source inspection retained original DE/EN Siemens revisions and Yahoo
+Siemens dual-listing/BMW/ASML responses; VW ordinary/preference price responses
+subsequently check the implemented bounded transport. Yahoo symbol/section misses
+are explicit. The selected yfinance 1.7.0 raw-response seam preserves bytes that
+DataFrame accessors discard. Software licensing does not grant provider-data
+rights; private research checks do not certify production retention/redistribution.
+
+Bound operator jobs to ten existing entities with reviewed QID/listing mappings,
+evidence URL and rationale. Require matching returned Yahoo symbol/exchange;
+ISIN/share-class links need separate reviewed input. Wikipedia verifies page QID
+and records redirects/ambiguity. QID resolution reuses reviewed canonical registry
+companies; conflicting mappings and unverified holder/person names stay unresolved.
+Wikipedia trust is 0.65; Yahoo Finance 0.70. Both are secondary, partial evidence.
+
+Ontology 1.2.0 adds immutable typed snapshots/observations and distinct securities/
+listings. Loader properties are ontology-bounded, typed and create-only. Every
+section is incomplete, so disappearance never retracts any source evidence.
+Acquisition checks are separate infrastructure records with manifest/time history;
+this preserves retries/freshness without changing immutable versions. Wikipedia
+context needs no inference; optional extraction uses existing qualified schema/
+cache/resolver/claim storage, never direct authoritative relations. Source/term/
+publication unknowns remain null; calendar estimates are not published reports.
+Wikipedia context accepts all existing ontology entity types, including countries,
+with generic EnrichmentObservation/target_id; Yahoo remains corporation-only.
+The bounded live country probe exposed double HTTP decompression in the shared
+transport. Preserve already-decoded bytes by dropping encoding/length headers
+before buffering into a response, with shared decoded-limit regression coverage.
+No new service, desktop dashboard, production ingestion, paid evaluation, staging,
+commit or publication is implied by this implementation request.
+
+Publication update: after local acceptance, the user explicitly requested preparing
+and opening a PR for this session, authorizing staging, commit and push.
+The qualified source fingerprint remains unchanged; merge and deployment
+remain separate.
+
 ## 2026-10-29 — D-84 (R2) — BE-45 qualification and evidence waiver
 
 The user explicitly selected BE-45 and stated: “the requirement for operator

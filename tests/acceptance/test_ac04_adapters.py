@@ -58,6 +58,8 @@ EXPECTED_SOURCE_IDS = [
     "ted",
     "transparency_register",
     "wikidata",
+    "wikipedia",
+    "yahoo_finance",
 ]
 
 
@@ -234,6 +236,10 @@ def _records_for(source_id: str) -> list[RawRecord]:
                 fetched_at=FETCHED_AT,
             )
         ]
+    if source_id in ("wikipedia", "yahoo_finance"):
+        from tests.fixtures.enrichment_data import record
+
+        return [record("wikipedia", "de") if source_id == "wikipedia" else record()]
     if source_id == "news":
         return []  # Investigation-driven transport is covered by test_news_pipeline.
     if source_id == "wikidata":
@@ -241,7 +247,7 @@ def _records_for(source_id: str) -> list[RawRecord]:
     raise AssertionError(f"no fixture mapping for adapter {source_id!r}")
 
 
-def test_ac04_registry_returns_all_thirteen_adapters():
+def test_ac04_registry_returns_all_registered_adapters():
     registry = build_default_registry()
     assert registry.source_ids() == EXPECTED_SOURCE_IDS
 

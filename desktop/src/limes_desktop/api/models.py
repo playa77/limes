@@ -445,6 +445,8 @@ class QueryOutcome:
 class OperationRequest:
     request_id: str
     command: str
+    selections: list[dict[str, Any]] | None = None
+    extract_context: bool | None = None
     source: str | None = None
     investigation_id: str | None = None
     after_document: str | None = None
@@ -592,3 +594,15 @@ class DevelopmentView:
                 "reviews": [EventMatchReview(**v) for v in data["reviews"]],
             }
         )
+
+
+@dataclass(frozen=True, slots=True)
+class EnrichmentResponse:
+    entity_id: str
+    snapshots: list[dict[str, Any]] = field(default_factory=list)
+    truncated: bool = False
+    diagnosis: list[str] = field(default_factory=list)
+
+    @classmethod
+    def from_api(cls, d: dict[str, Any]) -> Self:
+        return cls(**d)

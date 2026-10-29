@@ -212,12 +212,14 @@ app = typer.Typer(
 # initialized, and a name moved below this block would not exist for them.
 from limes.cli.backfill import backfill_source  # noqa: E402
 from limes.cli.backup import backup  # noqa: E402
+from limes.cli.enrichment import enrich  # noqa: E402
 from limes.cli.evaluate import evaluate  # noqa: E402
 from limes.cli.ingest import ingest_all, ingest_source  # noqa: E402
 from limes.cli.migrate import migrate  # noqa: E402
 from limes.cli.reextract import reextract_source  # noqa: E402
 from limes.cli.select_models import select_models  # noqa: E402
 
+app.command("enrich")(_run(enrich))
 app.command("ingest")(_run(ingest_source))
 app.command("ingest-all")(_run(ingest_all))
 app.command("backfill")(_run(backfill_source))
