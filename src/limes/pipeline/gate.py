@@ -83,7 +83,7 @@ def gate_document(
         )
         return GateDecision(passed=False, reason="unsupported_language", passages=[])
 
-    text = f"{doc.title}\n\n{doc.body}"
+    text = doc.body if doc.news_metadata is not None else f"{doc.title}\n\n{doc.body}"
     entities = [
         NerSpan(text=ent.text, label=ent.label_, start=ent.start_char, end=ent.end_char)
         for ent in nlp(text).ents

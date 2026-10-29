@@ -62,7 +62,7 @@ def test_authenticated_consumer_can_use_api_without_host_privileges(app, scheme)
     with TestClient(app, headers={"Authorization": f"{scheme} {TOKEN}"}) as client:
         response = client.get("/ontology")
     assert response.status_code == 200
-    assert response.json()["version"] == "1.0.0"
+    assert response.json()["version"] == "1.1.0"
 
 
 def test_authentication_preserves_read_only_query_validation(app):

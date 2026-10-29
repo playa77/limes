@@ -43,7 +43,9 @@ class JobStore:
             db.execute("BEGIN IMMEDIATE")
             existing = db.execute("SELECT request FROM jobs WHERE id = ?", (key,)).fetchone()
             if existing:
-                if existing["request"] != payload:
+                # Additive request fields must not break reconnect idempotency
+                # for operations persisted by an older worker/API version.
+                if JobRequest.model_validate_json(existing["request"]) != request:
                     raise ValueError("request_id already belongs to a different operation")
             else:
                 count = db.execute(

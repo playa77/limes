@@ -68,6 +68,10 @@ def build_default_registry() -> SourceRegistry:
     """
     registry = SourceRegistry()
 
+    from limes.sources.news import NewsAdapter
+
+    registry.register(NewsAdapter())
+
     from limes.sources.bundestag_dip import BundestagDipAdapter
 
     registry.register(BundestagDipAdapter())

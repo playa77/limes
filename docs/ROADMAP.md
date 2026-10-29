@@ -7,7 +7,47 @@ The [documentation index](INDEX.md) identifies each document's authority; the
 Historical bare WP numbers must be qualified as backend or desktop. Old counts,
 unticked archived plans and merged commits are never substituted for acceptance.
 
-## Active runtime delivery — BE-42 (2026-10-28)
+## Active runtime delivery — BE-43 + DC-15 (2026-10-28)
+
+Branch `codex/be-43-dynamic-news`, live-fetched main `b1afc86ab283`.
+The user confirmed: tracked means an entity or relation belongs to an ongoing
+investigation that LIMES actively keeps informed about. LIMES discovers, sets up
+and acquires relevant feeds dynamically, adapting to tracked entities/relations.
+Provider setup and evolving evaluation material are implementation responsibilities;
+a supplied agency subscription or pre-existing corpus is not a coding prerequisite.
+BE-42 is merged. No publication, production ingestion or paid run is requested.
+
+Acceptance checklist (one integrated parent including DC-15):
+
+- [x] Persistent investigation entity/relation tracking, pause/resume, dynamic
+  identity/alias-based DE/EN feed discovery and automatic bounded worker acquisition.
+- [x] Archive-linked dispatch/version/correction/syndication lineage, honest
+  publication/text availability and per-investigation checkpoints; visible partial
+  failures, manual failed-job replay, bounded jobs and rate/backoff behavior.
+- [x] Typed attribution, modality, assessment, event lifecycle and time precision;
+  qualified source→extraction→resolution→graph→API round trips with contradictions
+  preserved, no unqualified denial/proposal edges or implicit event merging.
+- [x] Versioned schema/prompt/cache contracts and additive migration with old
+  qualifiers unknown; filtering and explicit work limits across consumers.
+- [x] Desktop investigation controls and qualified evidence display, uncertainty,
+  source/evidence inspection and paired analyst-facing regression acceptance.
+- [x] Independently annotated DE/EN behavioral fixtures, evolving evaluation capture,
+  disposable graph/API evidence and one full pre-merge candidate check.
+
+Local implementation acceptance passes for the complete BE-43/DC-15 parent.
+TrackingStore/NewsAdapter/worker cover the tracking and acquisition obligations;
+the shared schema/resolver/loader and disposable graph/API scenario cover qualified
+claims, preserved versions and replacement ownership. NewsView, shell relation
+selection, API mirrors and timeline tests cover DC-15. VERIFICATION records the
+exact candidate, final suites, source-format inspection and evidence boundaries.
+The user subsequently requested preparing and opening a PR, authorizing commit
+and push of this candidate. No deployment, production ingestion or paid evaluation
+was requested or performed. Public RSS supplies headlines and
+snippets: full article text and original-agency correction metadata remain explicit
+unknowns where the source does not supply them. This is not paid-model quality,
+licensed full-text coverage or production qualification.
+
+## Historical runtime delivery — BE-42 (2026-10-28)
 
 Branch `codex/be-42-ingestion-repair`, live main `b093599d3667`; clean
 fast-forward reconciled before implementation. BE-41 and BE-46 planning are
@@ -40,7 +80,7 @@ BE-42 implementation and local acceptance pass; the user requested PR publicatio
 merge remains pending. Direct closure evidence and full candidate results are recorded in
 VERIFICATION and OPEN_ISSUES. No production ingestion, paid calls, deployment or
 hosted required-status qualification is claimed. BE-43 is next in the numbered
-backend sequence with its provider/corpus/schema prerequisites still unresolved;
+backend sequence, now active under the confirmed dynamic tracking contract;
 BE-46 can follow BE-42 independently at its documented prerequisites.
 
 ## Current documentation delivery — BE-46 planning (2026-10-28)
@@ -96,7 +136,7 @@ Acceptance checklist:
 
 | Track | Implemented history | Current position | Next runtime delivery |
 |---|---|---|---|
-| Backend | BE-01–40 plus BE-25a have implementation commits in main; changes/defects/qualification differ per row | BE-42 implemented and locally verified in this candidate; BE-46 enrichment planned; no production claim | BE-43 agency/qualified claims at its prerequisites; BE-46 may follow BE-42 independently |
+| Backend | BE-01–40 plus BE-25a have implementation commits in main; changes/defects/qualification differ per row | BE-42 merged; BE-43/DC-15 implementation and local acceptance pass on this branch; BE-46 planned; no production claim | BE-44/DC-16 cross-source analysis; BE-46 may proceed independently; BE-46 may follow BE-42 independently |
 | Desktop | DC-01–13 merged; later auth/backup/lifecycle changes supersede old behavior | Acceptance gaps OI-05/10/11/18 and manual/performance evidence remain | DC-14 correctness/qualification; DC-15 qualified evidence with BE-43 |
 
 No further runtime coding begins before BE-41's documentation acceptance passes.
@@ -118,7 +158,7 @@ flowchart LR
     E --> Q
 ```
 
-Provider/corpus and map-policy decisions are named blockers in their own packages,
+Map-policy decisions remain named blockers in the desktop package,
 not reasons to pretend earlier packages were accepted or defer news to an
 unspecified after-project phase. Release evidence BE-45 can be collected for a
 specific candidate earlier; it is not a prerequisite to starting BE-42.

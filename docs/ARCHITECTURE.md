@@ -104,7 +104,8 @@ standalone extractor/utility, event-ledger application, extra service or vector
 store is planned. [core design](LIMES_Design_Document_v2.0.0.md) defines the target
 contracts; [ROADMAP](ROADMAP.md) orders complete repair, extraction and analysis
 packages with prerequisites and acceptance. BE-42 repairs ingestion next;
-BE-43/DC-15 delivers qualified news, followed by BE-44/DC-16 cross-source analysis.
+BE-43/DC-15 adds dynamic investigation-driven news and qualified claim artifacts;
+BE-44/DC-16 owns subsequent cross-source analysis.
 BE-41 reconciles the documentation baseline. These target contracts do not alter
 the shipped runtime table or relax current extraction safeguards.
 

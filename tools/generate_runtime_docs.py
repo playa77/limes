@@ -266,7 +266,8 @@ standalone extractor/utility, event-ledger application, extra service or vector
 store is planned. [core design](LIMES_Design_Document_v2.0.0.md) defines the target
 contracts; [ROADMAP](ROADMAP.md) orders complete repair, extraction and analysis
 packages with prerequisites and acceptance. BE-42 repairs ingestion next;
-BE-43/DC-15 delivers qualified news, followed by BE-44/DC-16 cross-source analysis.
+BE-43/DC-15 adds dynamic investigation-driven news and qualified claim artifacts;
+BE-44/DC-16 owns subsequent cross-source analysis.
 BE-41 reconciles the documentation baseline. These target contracts do not alter
 the shipped runtime table or relax current extraction safeguards.
 
@@ -388,7 +389,7 @@ merges, touches production or makes paid calls. Historical test-instance facts
 cannot establish a current release stamp; deploy records are created only by an
 actual authorized deployment. CI records JUnit results for every required suite.
 
-## News acquisition and scheduling (planned)
+## Investigation-driven news acquisition
 
 GDELT backfill accepts explicit windows of at most 96 fifteen-minute slots
 (one day); larger requests fail before network access and must be split into
@@ -399,15 +400,26 @@ move backward. Failed document loads remain replayable; reextract bypasses the
 cache and retracts only extracted evidence after replacement loading succeeds.
 No production ingestion is implied by the disposable fixture scenario.
 
-Agency acquisition remains within the existing worker's operator jobs; no
-standalone utility or additional service is planned. Provider access/retention
-terms, bounded acquisition, per-channel checkpoints and retry behavior must be
-settled before unattended ingestion. An external timer may later submit the same
-authenticated HTTP jobs, reuse request UUIDs after uncertain responses, observe
-completion and avoid overlapping runs. This is planned operational guidance,
-not an installed scheduler. Current legacy budget flags are ignored; job timeout
-is not a monetary spending cap. Cheap filtering and explicit work limits are
-future requirements in [ROADMAP](ROADMAP.md).
+Tracked entities/relations belong to an ongoing investigation that LIMES keeps
+informed. The existing worker schedules bounded news-refresh jobs for active
+investigations and refreshes current graph names/aliases before setting up DE/EN
+public search RSS feeds. Pause stops future cycles; failed/interrupted cycles
+require manual replay. Consumer reads never fetch. Operator-only /news tracking
+and replay endpoints use the existing API; no extra service is added.
+
+Limits: 256 investigations, four targets/eight feeds per cycle, 2 MiB per response,
+25 reports per feed and a 15-minute minimum interval. Original feeds, stable entry
+envelopes and acquisition manifests are archived. NewsDocument/NewsClaim artifacts
+retain evidence and versions; headlines/snippets are never presented as licensed
+agency full text. Publisher access/paywalls are not bypassed. Prompt/schema 2.0.0
+keeps attributed proposals/denials separate from factual graph edges. Missing
+article text, unknown event time and dependent dispatches stay visible. Acquired
+documents form an unreviewed evaluation pool, which operators may annotate.
+
+news-reextract jobs use only archived reports, at most 200 per explicit page,
+and emit a next-document cursor when needed. Legacy budget flags remain ignored;
+work bounds and job timeout are not monetary spending caps. Production acquisition,
+paid quality and deployment are not implied by implementation verification.
 """
     testing = f"""# LIMES testing-phase contract — 2026-10-07
 

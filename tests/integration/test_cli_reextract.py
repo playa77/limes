@@ -39,7 +39,9 @@ def test_reextract_defaults_to_unstructured_sources():
     expected = {
         source_id
         for source_id in registry.source_ids()
-        if registry.get(source_id).kind == "unstructured"
+        if source_id != "news" and registry.get(source_id).kind == "unstructured"
     }
+    # News replay requires an explicit investigation and archive cursor.
+    assert "news" not in _reextract_sources(None)
     assert set(_reextract_sources(None)) == expected
     assert _reextract_sources("feeds") == ["feeds"]

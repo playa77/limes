@@ -11,6 +11,7 @@ import time
 from pathlib import Path
 
 from limes.config import load_settings
+from limes.news.store import TrackingStore
 from limes.operations.models import Job
 from limes.operations.store import OUTPUT_LIMIT, JobStore
 
@@ -65,9 +66,16 @@ def main() -> None:
     # Lifetime lock prevents two worker instances from recovering each other's jobs.
     with Path(str(settings.jobs_path) + ".worker.lock").open("a") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        store = JobStore(settings.jobs_path)
+        store = TrackingStore(settings.jobs_path)
         store.recover()
+        next_news_check = 0.0
         while not stop.is_set():
+            if time.monotonic() >= next_news_check:
+                try:
+                    store.schedule()
+                except OverflowError:
+                    pass  # Persisted cycle IDs retry submission when queue space is available.
+                next_news_check = time.monotonic() + 30
             settings.jobs_path.with_suffix(".heartbeat").touch()
             job = store.claim()
             if job is None:

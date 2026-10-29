@@ -446,6 +446,8 @@ class OperationRequest:
     request_id: str
     command: str
     source: str | None = None
+    investigation_id: str | None = None
+    after_document: str | None = None
     days: int | None = None
     version: str | None = None
     stage: str | None = None
@@ -469,3 +471,63 @@ class OperationJob:
     @classmethod
     def from_api(cls, d: dict[str, Any]) -> Self:
         return cls(**{**d, "request": OperationRequest.from_api(d["request"])})
+
+
+@dataclass(frozen=True, slots=True)
+class NewsClaim:
+    modality: Literal["asserted", "reported", "denied", "proposed", "conditional", "unknown"]
+    claim_id: str
+    subject_id: str
+    subject_label: str
+    object_id: str
+    object_label: str
+    relation: str
+    evidence_document_id: str
+    attribution: str | None = None
+    assessment: Literal["unassessed", "supported", "disputed", "refuted"] = "unassessed"
+    event_status: Literal[
+        "unknown", "proposed", "planned", "ongoing", "completed", "cancelled", "denied"
+    ] = "unknown"
+    time_precision: Literal["unknown", "instant", "day", "month", "year", "interval"] = "unknown"
+    event_candidate: str | None = None
+    evidence_start: int | None = None
+    evidence_end: int | None = None
+    source_id: str | None = None
+    source_trust: float | None = None
+    confidence: float | None = None
+    investigation_id: str | None = None
+    dispatch_id: str | None = None
+    publisher: str | None = None
+    syndication_key: str | None = None
+    report_url: str | None = None
+    valid_from: str | None = None
+    valid_to: str | None = None
+    recorded_at: str | None = None
+    retracted_at: str | None = None
+    ontology_version: str | None = None
+    prompt_version: str | None = None
+    schema_version: str | None = None
+    extractor_model: str | None = None
+
+    @classmethod
+    def from_api(cls, data: dict[str, Any]) -> NewsClaim:
+        return cls(**{key: value for key, value in data.items() if key in cls.__dataclass_fields__})
+
+
+@dataclass(frozen=True, slots=True)
+class NewsInvestigation:
+    investigation_id: str
+    title: str
+    entity_ids: list[str] = field(default_factory=list)
+    assertion_ids: list[str] = field(default_factory=list)
+    active: bool = True
+    interval_minutes: int = 60
+    revision: int = 1
+    job_id: str | None = None
+    next_due: str | None = None
+    last_success: str | None = None
+    status: Literal["ready", "queued", "running", "succeeded", "failed", "paused"] = "ready"
+
+    @classmethod
+    def from_api(cls, data: dict[str, Any]) -> NewsInvestigation:
+        return cls(**{key: value for key, value in data.items() if key in cls.__dataclass_fields__})

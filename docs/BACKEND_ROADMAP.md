@@ -1,6 +1,6 @@
 # Backend work-package roadmap
 
-Updated 2026-10-28 on candidate based on live-fetched main `b093599d3667`. Canonical prefix **BE-**;
+Updated 2026-10-28 on codex/be-43-dynamic-news, based on live-fetched main `b1afc86ab283`. Canonical prefix **BE-**;
 historical backend `WP-NN` maps to `BE-NN`, including the inserted BE-25a.
 The original roadmap defined WP-01–39 plus WP-25a (40 packages); WP-40 was a
 later coverage exercise. The separate desktop sequence is [DC](DESKTOP_ROADMAP.md).
@@ -9,8 +9,10 @@ later coverage exercise. The separate desktop sequence is [DC](DESKTOP_ROADMAP.m
 ## Exact position and status vocabulary
 
 Implementation commits exist in main for **BE-01–40 and BE-25a**. This is not a
-claim that all original acceptance conditions are currently met. BE-41 documentation was merged in PR #7 (`b9d940a`); **BE-42 is implemented and locally verified in the current candidate**, with
-BE-43 news acquisition/qualified claims following its real data-path dependencies.
+claim that all original acceptance conditions are currently met. BE-41 was merged
+in PR #7 and BE-42 in PR #9 (`b1afc86`). **BE-43/DC-15 implementation and local
+acceptance pass in the current PR candidate**, under the dynamic tracking
+contract confirmed in D-82. BE-44/DC-16 follows; BE-46 is independently available.
 News is core scope immediately after the existing implementation, not a phase
 waiting for unrelated historical cleanups to finish.
 
@@ -121,31 +123,39 @@ not required for this repair and remains future acquisition scope. Requests are
 bounded to 96 slots; larger windows must be split. Hosted checks, paid quality and
 production qualification remain BE-45. No publication or deployment is implied.
 
-### BE-43 — agency acquisition and qualified claim/event pipeline
+### BE-43 — investigation-driven news acquisition and qualified reporting
 
-Status P. Depends on BE-42. Select provider access/retention/display terms, format,
-representative independently annotated DE/EN corpus and justified quality thresholds
-before coding. Provider/corpus and enum/migration choices are unresolved prerequisites.
-This is an integrated LIMES worker capability using core design §§3–6 and technical
-specification §§5–9/15; no standalone extractor, ledger application or vector store.
+Implementation and local acceptance passed on `codex/be-43-dynamic-news`, paired
+with DC-15; prepared for PR publication. Evidence: VERIFICATION and the checked
+ROADMAP acceptance checklist. Depends
+on merged BE-42. D-82 records the user's confirmed meaning: tracked entities and
+relations belong to an ongoing investigation that LIMES actively keeps informed
+about. LIMES dynamically discovers, sets up and acquires relevant feeds itself.
+Provider setup and growing evaluation material are implementation responsibilities;
+a user-supplied subscription or pre-existing corpus is not a coding prerequisite.
 
-Deliver source/version/correction/syndication lineage, typed attribution/modality/
-assessment/event lifecycle/time precision, non-destructive event candidates,
-resolver/loader migration, API serialization, filtering and explicit work limits.
-Denial/proposal cannot become an unqualified completed edge; extraction confidence,
-source trust and corroboration are distinct. Missing old qualifiers remain unknown.
-Schema/prompt/cache/ontology and consumer contracts evolve together; retain the old
-reported-speech safeguard until the qualified path works. Source checkpoints,
-bounded authenticated jobs and manual failed-job replay precede external timers.
+Acceptance is the complete checklist in ROADMAP: persistent tracking lifecycle,
+current graph identity/alias-based DE/EN discovery, bounded automatic acquisition
+in the existing worker, archive-linked versions and per-investigation checkpoints,
+visible partial failures/manual replay, typed qualifications, safe persistence,
+authenticated APIs/filtering, additive migrations and paired desktop evidence.
+The initial acquisition surface is public search RSS with publisher/report links
+and supplied headlines/snippets. Full article text, licensed agency access and
+independent corroboration must never be inferred from an index response. Acquired
+reports enter an unreviewed evaluation pool; annotation develops during use.
 
-Acceptance: annotated corpus measures each behavior separately; qualified claims
-round-trip source→archive→graph→API with independently checkable evidence and
-replay/migration semantics. Mock paid transports in automated tests. DC-15 supplies
-analyst-facing consumer acceptance; do not call the integrated feature complete
-until that paired obligation is delivered. The coordinated parent delivery is
-BE-43 with DC-15 in the same work session/branch/PR; they are cross-track entries,
-not permission for a partial backend-only handoff. A paid evaluation requires an
-explicit operator run and is reported separately from mocked verification.
+Qualified reports are NewsClaim artifacts, not positive factual relations. Denial,
+proposal, attribution, assessment, lifecycle and unknown precision round-trip
+through extraction, resolution, graph and API. Event descriptions are unresolved
+candidates. Corrections/versions coexist with prior evidence and shared dispatches
+remain dependent reporting. Existing assertions keep their historical stamps;
+missing qualifiers stay unknown. Old unqualified extraction retains its safeguard.
+
+Automated checks mock provider/model calls. Independent upstream-format and
+bilingual behavioral fixtures plus disposable graph/API and desktop scenarios
+supply implementation acceptance; no representative paid quality score, production
+acquisition or deployment is implied. The coordinated parent includes DC-15 in
+the same session/branch; BE-44 owns subsequent cross-source event matching.
 
 ### BE-44 — cross-source developments and temporal investigation
 
@@ -163,8 +173,8 @@ Status P/blocked on external evidence for production portions. Depends on the
 specific behavior being qualified, not a condition that delays BE-42/43. Preserve
 manual/release checks, exact candidate revision and one stable fail-closed required
 status. Full candidate suites run once; independent CI lanes use separate runners;
-routine main pushes use bounded smoke. Current workflow runs suites on both pushes
-and PRs and has no aggregate status: OI-23 tracks the process gap.
+routine main pushes use bounded smoke. BE-43 separates bounded main smoke from full PR/manual lanes and adds a fail-closed
+candidate-check aggregate. OI-23 retains hosted execution/required-status evidence.
 
 Acceptance: full disposable suites, measured memory/storage under representative
 workload, model-quality/usage evidence, archive/dump recovery validation, revision/

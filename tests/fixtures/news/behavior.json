@@ -1,0 +1,8 @@
+[
+ {"language":"en","text":"Alpha proposes to supply Beta.","modality":"proposed","event_status":"proposed","time_precision":"unknown","attribution":"Alpha"},
+ {"language":"de","text":"Alpha bestreitet, Beta zu beliefern.","modality":"denied","event_status":"denied","time_precision":"unknown","attribution":"Alpha"},
+ {"language":"en","text":"According to Alpha, Alpha supplies Beta.","modality":"reported","event_status":"ongoing","time_precision":"unknown","attribution":"Alpha"},
+ {"language":"de","text":"Alpha hat Beta am 27. Oktober 2026 beliefert.","modality":"asserted","event_status":"completed","time_precision":"day","attribution":null},
+ {"language":"en","text":"Alpha would supply Beta if funding were approved.","modality":"conditional","event_status":"proposed","time_precision":"unknown","attribution":null},
+ {"language":"de","text":"Laut Alpha wurde die geplante Lieferung an Beta abgesagt.","modality":"reported","event_status":"cancelled","time_precision":"unknown","attribution":"Alpha"}
+]

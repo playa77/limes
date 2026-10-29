@@ -144,7 +144,7 @@ C-01 and C-07 are the two constraints the v1.x set violated after stating them. 
 | ID | Non-Goal |
 |---|---|
 | NG-01 | Multi-user account management; consumer/operator bearer authentication remains required. |
-| NG-02 | An internal scheduling service, standalone news utility or separate event-ledger application. |
+| NG-02 | A separate scheduling service, standalone news utility or separate event-ledger application. |
 | NG-03 | Personal-data scoping, retention policy, pseudonymization. |
 | NG-04 | Unlicensed paywalled acquisition, OpenCorporates, X/Twitter and satellite imagery. Agency access requires selected provider terms and credentials. |
 | NG-05 | Quantitative economic time series. |
@@ -677,7 +677,9 @@ Use a representative, independently annotated DE/EN corpus of entities, events,
 claims and evidence. Evaluate extraction fidelity, attribution, modality, temporal
 precision, correction/syndication handling and false event merges separately from
 truth assessment. Compare value against existing feeds/GDELT on overlapping
-coverage. Set justified thresholds before implementation; no fixed test quotas.
+coverage. Grow the annotated evaluation pool from acquired investigation evidence; define
+justified quality thresholds for measured release qualification, not as a coding
+prerequisite. No fixed test quotas.
 Version schema, prompt, ontology, caches, resolver/loader and API/desktop mirrors
 together, preserving historical meaning. Keep the existing reported-speech
 safeguard until every consumer supports qualified claims. Automated tests mock
@@ -760,4 +762,59 @@ section availability for its new inputs; it does not certify geographic complete
 
 ### 11.4 Deferred
 
-Comprehensive EU-27 national and multilingual coverage is deferred to a possible later version. Person-scope predicates and pseudonymization, polygon-capable geography and multi-user accounts remain deferred. External timer submission is in core news scope; an internal scheduler is not. Provider/corpus selection and schema migration are explicit BE-43 prerequisites, not a post-project addendum.
+Comprehensive EU-27 national and multilingual coverage is deferred to a possible later version. Person-scope predicates and pseudonymization, polygon-capable geography and multi-user accounts remain deferred. External timer submission is in core news scope; bounded recurring acquisition runs inside the existing worker once an investigation is tracked. BE-43 implements dynamic investigation-driven acquisition and an evolving evaluation pool (D-82); user-supplied feeds or a pre-existing corpus are not prerequisites.
+
+## Investigation-driven reporting contract (BE-43 / D-82)
+
+Tracked means an entity or relation is part of an ongoing investigation that LIMES
+actively keeps informed about. Tracking is explicit durable investigation state;
+viewing an entity is read-only. The existing worker automatically submits bounded
+acquisition cycles for active investigations, refreshes current graph labels and
+aliases, and sets up DE/EN search feeds for entity names or both relation endpoints.
+Edits change future discovery; pause stops future cycles without deleting evidence.
+Failed or interrupted jobs require explicit replay. No fourth service is added.
+
+Public Google News RSS supplies discovery metadata, publisher/report links and
+headlines/snippets. Only that fixed HTTPS origin is fetched. Arbitrary linked
+publisher pages and paywalls are not fetched; no agency subscription or full-text
+license is claimed. All original RSS responses, stable entry envelopes and
+acquisition manifests are content-addressed in the archive. Whole-feed changes
+must not force re-extraction of unchanged entries. Missing publication times and
+article text stay explicitly unknown/unavailable. Publisher plus dispatch ID
+identifies dependent reporting; versions coexist and correction status stays
+unknown unless the source establishes it.
+
+Ontology 1.1.0 adds NewsDocument and NewsClaim artifacts. It is an additive
+migration: existing entity/assertion stamps are retained, and old qualifiers are
+unknown. New news extraction uses prompt/schema 2.0.0 with separate attribution,
+modality, assessment, event lifecycle, temporal precision and event candidates.
+The shared resolver identifies participants; the loader stores NewsClaim artifacts
+rather than unqualified factual edges, including for asserted reporting. Thus an
+ordinary relation query cannot turn a denial/proposal into a completed fact.
+Machine assessment is unassessed; confidence measures extraction fidelity, source
+trust is the discovery index's 0.5, and neither supplies corroboration. Event
+candidates remain non-destructive hypotheses for BE-44.
+
+Bounds: 256 investigations; four targets and eight DE/EN feeds per cycle; 2 MiB
+per response, 25 entries per feed, 15-minute minimum interval; existing worker
+job timeout and extraction passage/token caps apply. Fresh cycles are automatic;
+failures do not advance the investigation checkpoint and require manual replay.
+Partial successes retain evidence/cache and replay idempotently. Archive-only
+news-reextract jobs cover at most 200 reports per explicitly paged request, replace
+only their own document's claims after successful extraction, and retain retracted
+versions with recorded/retraction times. Other sources/channels are untouched.
+
+Authenticated consumers read /news/investigations, /news/claims (investigation,
+entity and modality filters), /news/documents/{id}, and /news/evaluation. Operator
+credentials change tracking, replay failed acquisition, annotate evidence or submit
+news-refresh/news-reextract jobs. Consumer reads never acquire news. The desktop
+provides investigation controls and qualified evidence, source spans, unavailable
+text, prior versions, unknown event matching and dependent-dispatch explanations.
+Ontology-generated queries can inspect claim properties without assuming facts.
+
+Each acquired document enters an unreviewed evaluation pool. Independent DE/EN
+behavioral fixtures cover proposal, denial, attribution, conditional statements,
+completion, cancellation and unknown precision. Human annotations can grow from
+actual investigations; automated extraction is not its own gold annotation.
+Representative model-quality measurement is an explicit operator run, separate
+from mocked implementation verification.

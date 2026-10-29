@@ -331,7 +331,7 @@ def _assemble(
     subject = resolutions[(item.subject.type, item.subject.surface.casefold())].endpoint
     object_ = resolutions[(item.object.type, item.object.surface.casefold())].endpoint
     validity = Validity(
-        valid_from=item.valid_from or now,
+        valid_from=item.valid_from or (doc.published_at if doc.news_metadata else now),
         valid_to=item.valid_to,
         recorded_at=now,
     )
@@ -348,6 +348,7 @@ def _assemble(
         evidence_end=item.evidence_end,
     )
     return Assertion(
+        qualifiers=item.qualifiers,
         assertion_id=deterministic_assertion_id(
             "",
             item.relation,

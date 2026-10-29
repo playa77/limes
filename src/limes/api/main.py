@@ -43,6 +43,7 @@ from limes.api.routers import (
     entity,
     health,
     ingest_status,
+    news,
     ontology,
     operations,
     query,
@@ -160,6 +161,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     for router in (
         operations.router,
+        news.router,
         health.router,
         ontology.router,
         entity.router,

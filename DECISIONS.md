@@ -5,6 +5,26 @@ reversibility: **R1** reversible in under an hour, **R2** bounded recoverable
 cost, **R3** one-way door. Written when each decision is made, latest first.
 Nothing here is a status report; unlogged decisions are unmade decisions.
 
+## 2026-10-28 — D-82 (R2) — Investigation-driven dynamic news acquisition
+
+The user explicitly corrected the interpretation of BE-43 and confirmed that
+“tracked” means an entity or relation is part of an ongoing investigation that
+LIMES actively keeps informed about. LIMES must discover, set up and acquire news
+feeds dynamically once these are tracked and adapt as their relevance evolves.
+Provider setup and collection of evaluation material are implementation tasks.
+An existing annotated corpus or user-supplied agency access is not a prerequisite.
+This supersedes the blocking procurement/corpus language in D-78/79 and BE-43.
+
+Use the existing API, worker, archive, resolver and graph. Tracking is persistent,
+explicit investigation state, separate from merely viewing a node. Both entity
+and relation targets are supported. Labels/aliases and relation endpoints refresh
+from the graph on each acquisition cycle; stopping an investigation stops future
+acquisition without deleting evidence. Automatic bounded cycles are specifically
+in scope by this user instruction; failed/interrupted cycles require manual replay.
+No production data run, paid evaluation, publication or deployment was requested
+by the implementation instruction. On 2026-10-29, after local acceptance, the user
+explicitly requested preparing and opening a PR, authorizing commit and push.
+
 ## 2026-10-28 — D-81 (R2) — BE-42 coded evidence and channel ownership
 
 The user requested finishing the latest unfinished backend package, otherwise

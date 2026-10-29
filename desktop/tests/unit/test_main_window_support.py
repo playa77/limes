@@ -4,7 +4,7 @@ from __future__ import annotations
 from typing import Any
 
 from limes_desktop.api.errors import ApiError
-from limes_desktop.api.models import EntityDetail, HealthInfo, SearchHit
+from limes_desktop.api.models import EntityDetail, GraphNeighbors, HealthInfo, SearchHit
 
 
 class FakeClient:
@@ -60,6 +60,10 @@ class FakeClient:
         payload = dict(self.entity_payload)
         payload["entity"] = dict(payload["entity"], entity_id=entity_id)
         return EntityDetail.from_api(payload)
+
+    def entity_neighbors(self, entity_id: str) -> GraphNeighbors:
+        detail = EntityDetail.from_api(self.entity_payload)
+        return GraphNeighbors(entity=detail.entity, neighbors=[])
 
     def search(
         self, query: str, kind: str | None = None, limit: int = 50

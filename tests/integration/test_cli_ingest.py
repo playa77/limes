@@ -160,7 +160,7 @@ def test_cli_ingest_unknown_source_fails_naming_registered(graph, cli_env, fixtu
 
 def test_ingest_all_skips_enrichment_only_sources(graph, cli_env, fixture_fetch):
     # G11 — the ingestable list excludes enrichment-only sources (wikidata)
-    # and nothing else; the exclusion is the selection logic's, before any
+    # and investigation-driven news; selection happens before any
     # run (wikidata's fetch raises NotImplementedError and must never reach
     # the run loop).
     from limes.cli.ingest import _ingestable_source_ids
@@ -169,4 +169,5 @@ def test_ingest_all_skips_enrichment_only_sources(graph, cli_env, fixture_fetch)
     registered = set(build_default_registry().source_ids())
     ingestable = _ingestable_source_ids()
     assert "wikidata" not in ingestable
-    assert set(ingestable) == registered - {"wikidata"}
+    assert "news" not in ingestable  # Requires tracked investigation context.
+    assert set(ingestable) == registered - {"wikidata", "news"}

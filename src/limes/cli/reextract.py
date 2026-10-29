@@ -78,5 +78,5 @@ def _reextract_sources(explicit: str | None) -> list[str]:
     return [
         source_id
         for source_id in build_default_registry().source_ids()
-        if adapter_kind(source_id) == "unstructured"
+        if source_id != "news" and adapter_kind(source_id) == "unstructured"
     ]

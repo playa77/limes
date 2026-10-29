@@ -40,7 +40,7 @@ def test_saved_queries_crud_cycle(neo4j_instance: Neo4jInstance, tmp_path: Path)
         assert listed[0]["saved_query_id"] == saved_query_id
         assert listed[0]["question"] == "Who owns Alpha?"
         assert listed[0]["result_count"] == 3
-        assert listed[0]["ontology_version"] == "1.0.0"
+        assert listed[0]["ontology_version"] == "1.1.0"
 
         deleted = client.delete(f"/saved-queries/{saved_query_id}")
         assert deleted.status_code == 200

@@ -23,6 +23,8 @@ from limes_desktop.api.models import (
     GraphNeighbors,
     HealthInfo,
     IngestRun,
+    NewsClaim,
+    NewsInvestigation,
     OperationJob,
     QueryOutcome,
     SavedQuery,
@@ -154,6 +156,27 @@ class ApiClient:
 
     def operation_status(self, job_id: str) -> OperationJob:
         return OperationJob.from_api(self._request("GET", f"/operations/jobs/{job_id}"))
+
+    def news_investigations(self) -> list[NewsInvestigation]:
+        return [
+            NewsInvestigation.from_api(row) for row in self._request("GET", "/news/investigations")
+        ]
+
+    def track_news(self, payload: dict[str, Any]) -> Any:
+        return self._request(
+            "PUT", f"/news/investigations/{payload['investigation_id']}", json=payload
+        )
+
+    def replay_news(self, key: str) -> Any:
+        return self._request("POST", f"/news/investigations/{key}/replay")
+
+    def news_claims(self, **filters: Any) -> list[NewsClaim]:
+        return [
+            NewsClaim.from_api(row) for row in self._request("GET", "/news/claims", params=filters)
+        ]
+
+    def news_document(self, key: str) -> dict[str, Any]:
+        return dict(self._request("GET", f"/news/documents/{key}"))
 
     # -- transport ----------------------------------------------------------
 

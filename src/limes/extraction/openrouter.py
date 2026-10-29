@@ -29,7 +29,12 @@ from limes.extraction.base import (
     prompt_path,
 )
 from limes.extraction.openrouter_client import OpenRouterClient
-from limes.extraction.schema import EXTRACTION_SCHEMA, SCHEMA_VERSION, parse_extraction_response
+from limes.extraction.schema import (
+    SCHEMA_VERSION,
+    SUPPORTED_SCHEMA_VERSIONS,
+    parse_extraction_response,
+    schema_for_version,
+)
 from limes.ontology.model import Ontology
 from limes.types import ExtractedAssertion, Passage
 
@@ -58,7 +63,7 @@ class OpenRouterExtractor:
     ) -> ExtractionResult:
         if not self.model_id:
             raise ExtractionError("no extraction model pinned; run select-models first")
-        if schema_version != SCHEMA_VERSION:
+        if schema_version not in SUPPORTED_SCHEMA_VERSIONS:
             raise ExtractionError(
                 f"unsupported extraction schema version {schema_version!r}; "
                 f"this extractor implements {SCHEMA_VERSION!r}"
@@ -85,9 +90,11 @@ class OpenRouterExtractor:
                 messages,
                 self.model_id,
                 "extraction",
-                json_schema=EXTRACTION_SCHEMA,
+                json_schema=schema_for_version(schema_version),
             )
-            batch_assertions, batch_errors = parse_extraction_response(raw, passages, ontology)
+            batch_assertions, batch_errors = parse_extraction_response(
+                raw, passages, ontology, schema_version
+            )
             assertions.extend(batch_assertions)
             parse_errors.extend(batch_errors)
             input_tokens += batch_input

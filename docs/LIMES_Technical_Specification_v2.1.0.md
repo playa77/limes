@@ -840,7 +840,7 @@ Adapters emit records and **write nothing to the graph**.
 | `feeds` | RSS/Atom per `feeds.yaml` | One source-versioned document per entry | yes | 0.60–0.70 |
 | `wikipedia` (planned BE-46) | MediaWiki API, verified Wikidata sitelinks | Revision-linked entity context and optional evidence-linked extracted claims | Revision-aware refresh, not full history | Source-specific rank set in BE-46 |
 | `yahoo_finance` (planned BE-46) | Yahoo Finance through pinned `yfinance` transport | Company/security identity, available officers/board roles, shareholder structure, earnings/report metadata | Dated snapshots, not reconstructed history | Source-specific rank set in BE-46 |
-| Provider adapter selected in BE-43/DC-15 | Authorized agency feed/API | One archived dispatch version, correction/syndication lineage and source metadata | Provider-dependent | Explicit provider rank |
+| `news` (BE-43/DC-15) | Dynamic DE/EN public search RSS | Archived index responses and report versions, qualified NewsClaim artifacts; full article text unavailable | Investigation-driven bounded cycles | 0.50 index trust |
 
 The two BE-46 rows are target contracts, absent from the current registry.
 Wikipedia must not be confused with the existing enrichment-only Wikidata adapter.
@@ -904,7 +904,9 @@ SOURCEURL and optional Mentions rows link coded observations to reports; neither
 proves availability of article text. No extraction over fabricated summaries.
 Malformed archives/schema drift fail or produce explicit counted rejections.
 BE-42 implements this export contract. Only export SOURCEURL coverage is claimed;
-Mentions ingestion and independent article retrieval remain BE-43 obligations.
+Full GDELT Mentions coverage and licensed full-article retrieval remain explicit
+source-coverage gaps; BE-43 discovers and acquires public investigation search
+feeds with missing full text visible. No index response establishes article access.
 The adapter is structured-only because exports contain no article text. Maximum
 request: 96 slots, 16 MiB compressed, 128 MiB expanded and 250,000 rows per export.
 Oversized windows fail before acquisition; submit consecutive explicit windows.
@@ -1170,8 +1172,8 @@ allowlist accepts bounded parameters; external timers submit authenticated jobs,
 reuse request UUIDs after uncertain responses, observe status and avoid overlapping
 windows. Interrupted paid work is never automatically replayed. Provider access,
 retention/display terms, document/byte/window limits and per-channel checkpoints
-are prerequisites to unattended acquisition. No internal scheduler or fourth
-service is introduced. Usage/cost accounting is passive; timeout is not a spend cap.
+bound unattended acquisition. Active investigations schedule fresh bounded cycles
+in the existing worker (D-82). No fourth service is introduced. Usage/cost accounting is passive; timeout is not a spend cap.
 
 ---
 
@@ -1553,3 +1555,58 @@ NFR memory/storage/latency goals, provider access, live ingestion, paid-model
 quality and production revision/recovery are not certified by mocked tests or
 this document check. No current 100% coverage claim is made. New behavior must
 satisfy the integrated traces and acceptance gates before its package is closed.
+
+## Investigation-driven reporting contract (BE-43 / D-82)
+
+Tracked means an entity or relation is part of an ongoing investigation that LIMES
+actively keeps informed about. Tracking is explicit durable investigation state;
+viewing an entity is read-only. The existing worker automatically submits bounded
+acquisition cycles for active investigations, refreshes current graph labels and
+aliases, and sets up DE/EN search feeds for entity names or both relation endpoints.
+Edits change future discovery; pause stops future cycles without deleting evidence.
+Failed or interrupted jobs require explicit replay. No fourth service is added.
+
+Public Google News RSS supplies discovery metadata, publisher/report links and
+headlines/snippets. Only that fixed HTTPS origin is fetched. Arbitrary linked
+publisher pages and paywalls are not fetched; no agency subscription or full-text
+license is claimed. All original RSS responses, stable entry envelopes and
+acquisition manifests are content-addressed in the archive. Whole-feed changes
+must not force re-extraction of unchanged entries. Missing publication times and
+article text stay explicitly unknown/unavailable. Publisher plus dispatch ID
+identifies dependent reporting; versions coexist and correction status stays
+unknown unless the source establishes it.
+
+Ontology 1.1.0 adds NewsDocument and NewsClaim artifacts. It is an additive
+migration: existing entity/assertion stamps are retained, and old qualifiers are
+unknown. New news extraction uses prompt/schema 2.0.0 with separate attribution,
+modality, assessment, event lifecycle, temporal precision and event candidates.
+The shared resolver identifies participants; the loader stores NewsClaim artifacts
+rather than unqualified factual edges, including for asserted reporting. Thus an
+ordinary relation query cannot turn a denial/proposal into a completed fact.
+Machine assessment is unassessed; confidence measures extraction fidelity, source
+trust is the discovery index's 0.5, and neither supplies corroboration. Event
+candidates remain non-destructive hypotheses for BE-44.
+
+Bounds: 256 investigations; four targets and eight DE/EN feeds per cycle; 2 MiB
+per response, 25 entries per feed, 15-minute minimum interval; existing worker
+job timeout and extraction passage/token caps apply. Fresh cycles are automatic;
+failures do not advance the investigation checkpoint and require manual replay.
+Partial successes retain evidence/cache and replay idempotently. Archive-only
+news-reextract jobs cover at most 200 reports per explicitly paged request, replace
+only their own document's claims after successful extraction, and retain retracted
+versions with recorded/retraction times. Other sources/channels are untouched.
+
+Authenticated consumers read /news/investigations, /news/claims (investigation,
+entity and modality filters), /news/documents/{id}, and /news/evaluation. Operator
+credentials change tracking, replay failed acquisition, annotate evidence or submit
+news-refresh/news-reextract jobs. Consumer reads never acquire news. The desktop
+provides investigation controls and qualified evidence, source spans, unavailable
+text, prior versions, unknown event matching and dependent-dispatch explanations.
+Ontology-generated queries can inspect claim properties without assuming facts.
+
+Each acquired document enters an unreviewed evaluation pool. Independent DE/EN
+behavioral fixtures cover proposal, denial, attribution, conditional statements,
+completion, cancellation and unknown precision. Human annotations can grow from
+actual investigations; automated extraction is not its own gold annotation.
+Representative model-quality measurement is an explicit operator run, separate
+from mocked implementation verification.

@@ -14,12 +14,12 @@ def test_ontology_returns_full_serialized_ontology(neo4j_instance: Neo4jInstance
         response = client.get("/ontology")
         assert response.status_code == 200
         body = response.json()
-        assert body["version"] == "1.0.0"
-        assert len(body["entity_types"]) == 17
+        assert body["version"] == "1.1.0"
+        assert len(body["entity_types"]) == 19
         assert len(body["relation_types"]) == 30
         assert "Corporation" in body["entity_types"]
         assert "DIRECTOR_OF" in body["relation_types"]
-        assert response.headers["X-LIMES-Ontology-Version"] == "1.0.0"
+        assert response.headers["X-LIMES-Ontology-Version"] == "1.1.0"
 
 
 def test_ontology_versions_reports_graph_versions(neo4j_instance: Neo4jInstance, tmp_path: Path):
@@ -34,7 +34,7 @@ def test_ontology_versions_reports_graph_versions(neo4j_instance: Neo4jInstance,
         response = client.get("/ontology/versions")
         assert response.status_code == 200
         versions = {entry["version"]: entry["count"] for entry in response.json()}
-        assert versions.get("1.0.0", 0) >= 4  # alpha, beta, hq, boss
+        assert versions.get("1.1.0", 0) >= 4  # alpha, beta, hq, boss
 
 
 def test_builder_schema_is_rendered_from_ontology(neo4j_instance: Neo4jInstance, tmp_path: Path):

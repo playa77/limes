@@ -30,10 +30,12 @@ from typing import Any
 from jsonschema import Draft202012Validator  # type: ignore[import-untyped]
 
 from limes.extraction.base import strip_model_fence
+from limes.news.models import ClaimQualifiers
 from limes.ontology.model import Ontology
 from limes.types import ExtractedAssertion, Mention, Passage
 
-SCHEMA_VERSION = "1.0.0"
+SCHEMA_VERSION = "2.0.0"
+SUPPORTED_SCHEMA_VERSIONS = {"1.0.0", SCHEMA_VERSION}
 
 _EXTRACTION_MENTION_SCHEMA: dict[str, Any] = {
     "type": "object",
@@ -70,6 +72,7 @@ EXTRACTION_SCHEMA: dict[str, Any] = {
         "evidence_end",
     ],
     "properties": {
+        "qualifiers": {"anyOf": [{"type": "null"}, ClaimQualifiers.model_json_schema()]},
         "passage_index": {"type": "integer", "minimum": 0},
         "subject": _EXTRACTION_MENTION_SCHEMA,
         "relation": {"type": "string", "minLength": 1},
@@ -83,10 +86,26 @@ EXTRACTION_SCHEMA: dict[str, Any] = {
 }
 
 
+def schema_for_version(version: str) -> dict[str, Any]:
+    if version not in SUPPORTED_SCHEMA_VERSIONS:
+        raise ValueError(f"unsupported extraction schema {version}")
+    schema = {
+        **EXTRACTION_SCHEMA,
+        "properties": dict(EXTRACTION_SCHEMA["properties"]),
+        "required": list(EXTRACTION_SCHEMA["required"]),
+    }
+    if version == "1.0.0":
+        schema["properties"].pop("qualifiers", None)
+    else:
+        schema["required"].append("qualifiers")
+    return schema
+
+
 def parse_extraction_response(
     raw: str,
     passages: list[Passage],
     ontology: Ontology,
+    schema_version: str = "1.0.0",
 ) -> tuple[list[ExtractedAssertion], list[str]]:
     """Parse one extractor response into pre-resolution assertions.
 
@@ -101,7 +120,7 @@ def parse_extraction_response(
     if not parsed:
         return [], []
 
-    validator = Draft202012Validator(EXTRACTION_SCHEMA)
+    validator = Draft202012Validator(schema_for_version(schema_version))
     assertions: list[ExtractedAssertion] = []
     errors: list[str] = []
     for index, item in enumerate(parsed):
@@ -157,6 +176,12 @@ def parse_extraction_response(
             )
             continue
 
+        qualifiers = item.get("qualifiers")
+        if qualifiers and qualifiers.get("attribution"):
+            if qualifiers["attribution"].casefold() not in span_text:
+                errors.append(f"EVIDENCE_SPAN_MISMATCH: item {index}: attribution absent from span")
+                continue
+
         valid_from: datetime | None = None
         valid_to: datetime | None = None
         try:
@@ -171,6 +196,11 @@ def parse_extraction_response(
 
         assertions.append(
             ExtractedAssertion(
+                qualifiers=(
+                    ClaimQualifiers.model_validate(item["qualifiers"])
+                    if item.get("qualifiers") is not None
+                    else None
+                ),
                 passage_index=passage_index,
                 subject=_mention(item["subject"]),
                 relation=relation,
