@@ -5,6 +5,22 @@ reversibility: **R1** reversible in under an hour, **R2** bounded recoverable
 cost, **R3** one-way door. Written when each decision is made, latest first.
 Nothing here is a status report; unlogged decisions are unmade decisions.
 
+## 2026-10-29 — D-84 (R2) — BE-45 qualification and evidence waiver
+
+The user explicitly selected BE-45 and stated: “the requirement for operator
+evidence and separately authorized production/paid runs is hereby waived.”
+This supersedes the BE-45 operator-evidence acceptance gate and additional
+production/paid-run permission gate for this session. It does not create measured
+results or identify a production target. Deliver reproducible candidate checks,
+physical recovery verification and bounded fixture measurements on
+`codex/be-45-qualification`, based on live main `44ab4eb605a2`.
+The user subsequently requested preparing and opening a PR, authorizing staging,
+commit and push of this session's candidate. Merge and deployment remain separate.
+Keep unmeasured paid quality, production behavior and reference-platform evidence
+explicit. No deployment/data run is necessary to implement this qualification.
+Do not mislabel waived obligations as verified or recover the missing historical
+review trail by assertion. Existing DC-14 correctness obligations survive.
+
 ## 2026-10-29 — D-83 (R2) — Cross-source temporal investigation and provider ownership
 
 The user reiterated that selecting a free news provider/aggregator is the agent's

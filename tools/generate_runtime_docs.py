@@ -478,7 +478,21 @@ on headless hosts; constrained WebEngine test hosts may need Chromium test flags
 Graph suites own disposable containers and volumes. Only a dedicated external
 test database may be selected via `LIMES_TEST_NEO4J_URI`; never operator data.
 The physical-backup test builds the real supervisor image, uses non-root services,
-checks unauthenticated refusal, verifies a nonempty dump and graph recovery.
+checks unauthenticated refusal, deletes a known marker after backup, loads the
+physical dump offline and verifies restored marker and bounded workload contents.
+The recovery JUnit records dump size, restoration time, post-restore Docker memory
+sample and database/transaction/archive storage for its 1,000-node synthetic fixture.
+These observations do not measure production scale or peak memory.
+
+Run `venv/bin/python tools/qualify.py --output work/qualification/RUN` for one full
+candidate. Use a new output directory for every attempt. The runner writes an
+atomic fail-closed report, exact commands, durations, logs, JUnit and a source hash
+manifest, checks source drift, and rejects externally selected test databases.
+A passed report qualifies offline/disposable behavior only. BE-45's operator-evidence
+gate was explicitly waived by the user (D-84); unmeasured production, paid-quality
+and reference-platform behavior remains unmeasured. The stable CI `candidate-check`
+requires applicable lanes to succeed; branch-protection configuration requires
+separate hosted evidence and is never inferred from local success.
 Worker queue tests cover replay protection, concurrent claims, output bounds,
 parameter rejection and failed process exit codes. Runtime tests reject privilege,
 port, source and documentation drift. Production smoke is a separate administrator

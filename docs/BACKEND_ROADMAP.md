@@ -1,6 +1,6 @@
 # Backend work-package roadmap
 
-Updated 2026-10-29 on codex/be-44-temporal-investigation, based on live-fetched main `84c832df3cd5`. Canonical prefix **BE-**;
+Updated 2026-10-29 on `codex/be-45-qualification`, based on live-fetched main `44ab4eb605a2`. Canonical prefix **BE-**;
 historical backend `WP-NN` maps to `BE-NN`, including the inserted BE-25a.
 The original roadmap defined WP-01–39 plus WP-25a (40 packages); WP-40 was a
 later coverage exercise. The separate desktop sequence is [DC](DESKTOP_ROADMAP.md).
@@ -11,8 +11,9 @@ later coverage exercise. The separate desktop sequence is [DC](DESKTOP_ROADMAP.m
 Implementation commits exist in main for **BE-01–40 and BE-25a**. This is not a
 claim that all original acceptance conditions are currently met. BE-41 was merged
 in PR #7 and BE-42 in PR #9 (`b1afc86`). **BE-43/DC-15 merged in PR #10** (`84c832d`), under the dynamic tracking
-contract confirmed in D-82. BE-44/DC-16 is implemented in the current candidate,
-with local implementation acceptance passed; BE-46 is independently available.
+contract confirmed in D-82. BE-44/DC-16 merged in PR #11 (`44ab4eb`).
+BE-45 candidate qualification passes under the explicit D-84 evidence waiver;
+BE-46 is the next independently available implementation package.
 News is core scope immediately after the existing implementation, not a phase
 waiting for unrelated historical cleanups to finish.
 
@@ -181,7 +182,9 @@ No production acquisition, paid quality or platform qualification is implied.
 
 ### BE-45 — current candidate and operator qualification
 
-Status P/blocked on external evidence for production portions. Depends on the
+Candidate acceptance passed under D-84: the user waived operator-evidence and separate
+production/paid-run authorization requirements. Unmeasured behavior is not verified
+by that waiver; production/model/platform claims stay explicitly bounded. Depends on the
 specific behavior being qualified, not a condition that delays BE-42/43. Preserve
 manual/release checks, exact candidate revision and one stable fail-closed required
 status. Full candidate suites run once; independent CI lanes use separate runners;
@@ -193,7 +196,11 @@ workload, model-quality/usage evidence, archive/dump recovery validation, revisi
 image deployment record and observed production smoke. OI-01/03/09 are operator
 evidence gaps; OI-05's missing review trail stays unresolved unless recovered or
 explicitly replaced by an authorized review with bounded claims. No deployment,
-paid run or historical closure is inferred from this documentation repair.
+paid run or historical closure is inferred from candidate verification. The waiver
+removes external evidence as a BE-45 delivery gate; it does not erase DC-14 defects
+or recover OI-05's missing historical review. `tools/qualify.py` records the exact
+source manifest, fail-closed check results and JUnit. Physical recovery checks
+restore known graph content and retain bounded synthetic resource observations.
 
 ### BE-46 — Wikipedia context and Yahoo Finance company/shareholder enrichment
 

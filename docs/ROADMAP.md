@@ -7,7 +7,43 @@ The [documentation index](INDEX.md) identifies each document's authority; the
 Historical bare WP numbers must be qualified as backend or desktop. Old counts,
 unticked archived plans and merged commits are never substituted for acceptance.
 
-## Active runtime delivery — BE-44 + DC-16 (2026-10-29)
+## Active qualification delivery — BE-45 (2026-10-29)
+
+Branch `codex/be-45-qualification`, live-fetched baseline `44ab4eb605a2`.
+The user selected BE-45 and explicitly waived operator-evidence and separate
+production/paid-run authorization requirements. No production endpoint, credentials
+or model run is required for this delivery. Waived evidence remains unmeasured;
+this is candidate qualification, not a claim of production or paid-model quality.
+Existing DC-14 platform/map obligations remain on that track.
+
+Acceptance checklist, defined before implementation:
+
+- [x] Reproducible fail-closed candidate runner records source fingerprint, exact
+  commands, durations, logs and JUnit results; missing/failed/interrupted checks or
+  source drift cannot produce a passing qualification.
+- [x] Run all five disposable/offline suites and shared lint/type/docs guards once
+  on the final candidate; keep bounded main smoke and independent hosted CI lanes.
+- [x] Exercise physical dump restoration with known graph content, beyond merely
+  producing a nonempty backup; record bounded fixture resource/storage observations.
+- [x] Record hosted CI evidence where available and disposition all BE-45 issues,
+  distinguishing direct verification, explicit waiver and surviving DC obligations.
+- [x] Preserve reproducible artifacts and exact acceptance limits, review workflow
+  latency evidence and update roadmap, verification, decisions and changelog.
+
+Prerequisites: working canonical venv, managed disposable Docker, merged BE-44
+contracts and the user's waiver. Production services and paid model calls are not
+needed to exercise the candidate. Unknown original review findings cannot be
+reconstructed; any waiver must not be described as recovered evidence.
+
+All five acceptance items pass under D-84. The final report and source manifest
+are retained in `work/be45/final/`; VERIFICATION records exact commands, suite
+results, recovery/resource observations and limits. No runtime/test/tool source
+changed after the freeze. The user subsequently requested PR publication,
+authorizing staging, commit and push. No merge or deployment is requested.
+BE-46 is the next backend implementation package; external production/model and
+DC-14 obligations remain explicit rather than being relabeled as verified.
+
+## Previous runtime delivery — BE-44 + DC-16 (2026-10-29)
 
 Branch `codex/be-44-temporal-investigation`; live-main baseline `84c832df3cd5`
 (PR #10). Prerequisites satisfied: BE-43/DC-15 merged, typed claims and
@@ -173,8 +209,8 @@ Acceptance checklist:
 
 | Track | Implemented history | Current position | Next runtime delivery |
 |---|---|---|---|
-| Backend | BE-01–40 plus BE-25a have implementation commits in main; changes/defects/qualification differ per row | BE-43/DC-15 merged; BE-44/DC-16 local implementation acceptance passes; no production claim | BE-45 qualification and independently available BE-46 enrichment |
-| Desktop | DC-01–13 and DC-15 merged; later auth/backup/lifecycle changes supersede old behavior | DC-16 candidate paired with BE-44; OI-05/10/11/18 and manual/performance evidence remain | DC-14 correctness/qualification; BE-45 reference-platform qualification |
+| Backend | BE-01–40 plus BE-25a have implementation commits in main; changes/defects/qualification differ per row | BE-43/DC-15 and BE-44/DC-16 merged; BE-45 candidate qualification passes under D-84 waiver; no production claim | BE-46 Wikipedia and Yahoo Finance enrichment |
+| Desktop | DC-01–13 and DC-15 merged; later auth/backup/lifecycle changes supersede old behavior | DC-16 merged with BE-44; OI-05/10/11/18 and manual/performance evidence remain | DC-14 correctness/qualification |
 
 No further runtime coding begins before BE-41's documentation acceptance passes.
 BE-42 does not wait for unrelated desktop polish or production evidence. BE-43
@@ -259,3 +295,20 @@ Shared invariant coverage remains in the existing contracts, and new tests targe
 distinct failure or behavior boundaries. Continue recording exact source/suite
 results and separate implementation, validation and merge measurements when
 available; do not invent elapsed engineering effort from test durations.
+
+## BE-45 workflow follow-up — 2026-10-29
+
+Read-only GitHub API evidence now separates hosted validation from PR-open-to-merge
+elapsed time. PR #9 was open 13m01s, PR #10 7m34s and PR #11 23m14s. These are
+calendar intervals, not active engineering effort. BE-44's hosted PR run
+40824901246 took 6m59s overall; offline and graph jobs began together on distinct
+runners and took 3m15s and 6m50s respectively. Its aggregate succeeded at 05:49:03
+UTC and merge occurred at 06:05:14 UTC, a subsequent 16m11s interval. Main smoke
+run 40827109504 took 27s and skipped full lanes as intended. No branch-protection
+configuration or hosted execution of the unpublished BE-45 candidate is inferred.
+
+The longer BE-45 recovery test now validates actual dump loading and known data
+instead of only dump creation, a distinct recovery failure mode that justifies
+its cost. Eight new unit cases cover false-green JUnit, source identity/drift,
+failed-run reporting and evidence-directory reuse. No runtime package was split
+to reduce validation time, and no fixed test count is an acceptance target.

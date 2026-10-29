@@ -1,6 +1,6 @@
 # Desktop work-package roadmap
 
-Updated 2026-10-29 on candidate based on live main `84c832df3cd5`. Canonical prefix **DC-**.
+Updated 2026-10-29 during BE-45 qualification based on live main `44ab4eb605a2`. Canonical prefix **DC-**.
 Historical desktop `wp-NN`/Task N maps to DC-NN; it never means BE-NN.
 Original tasks and acceptance are preserved in the
 [archived plan](archive/desktop-plan-2026-09-09.md); its unticked checkboxes and
@@ -13,7 +13,7 @@ DC-01–13 implementations are in main, merged at `5ab2d4e` on 2026-09-10.
 Current runtime auth/backup/lifecycle changes subsequently updated them.
 **DC-14 is the next desktop repair/qualification package**; DC-15 and DC-16 are
 core news consumer work paired with BE-43 and BE-44 respectively. DC-15 merged
-with BE-43 in PR #10; DC-16 is implemented with BE-44 in the current candidate;
+with BE-43 in PR #10; DC-16 merged with BE-44 in PR #11 (`44ab4eb`);
 DC-14's independent repair/platform obligations remain open. There is no
 standalone news UI or ledger iteration. No claim that every desktop acceptance
 criterion is currently satisfied is made.
@@ -94,7 +94,7 @@ must be visible, with actual dependency on changed views assessed before coding.
 
 ### DC-16 — cross-source temporal investigation
 
-Implemented and locally accepted in the current BE-44 candidate.
+Merged and locally accepted with BE-44 in PR #11 (`44ab4eb`).
 Paired with BE-44 under parent BE-44, after merged BE-43/DC-15. Deliver analyst
 navigation between coded observations, agency evidence and later official records
 across network/map/timeline. Preserve alternatives, disputes, gaps and both time
@@ -110,6 +110,10 @@ tile requests, preserving missing geometry explicitly. It does not change the
 existing map's DC-14/OI-11/18 policy and guard obligations. Late replies are scoped
 to the current investigation/request; failures clear result panes and remain
 visible. Explicit reviews remain operator-only hypotheses with retained history.
+
+BE-45's D-84 operator-evidence waiver removes those external evidence gates for
+that backend delivery. It does not complete DC-14, recover OI-05's review trail,
+or claim reference-platform/manual acceptance from offscreen automation.
 
 ## Deferred
 

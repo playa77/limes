@@ -128,7 +128,7 @@ volumes:
     return {"compose_root": str(tmp_path), "archive": str(archive), "uri": uri, "env": env}
 
 
-def test_backup_stops_dumps_and_restarts(backup_env: dict[str, str]):
+def test_backup_stops_dumps_and_restarts(backup_env: dict[str, str], record_testsuite_property):
     compose_root = backup_env["compose_root"]
     uri = backup_env["uri"]
     env = backup_env["env"]
@@ -143,6 +143,19 @@ def test_backup_stops_dumps_and_restarts(backup_env: dict[str, str]):
     )
     try:
         _wait_ready(uri)
+        # Independently known content must survive a physical restore, not just restart.
+        marker = uuid.uuid4().hex
+        driver = GraphDatabase.driver(uri, auth=("neo4j", PASSWORD))
+        try:
+            with driver.session() as session:
+                session.run("CREATE (:RecoveryProbe {marker: $marker})", marker=marker).consume()
+                session.run(
+                    "UNWIND range(1, 1000) AS i "
+                    "CREATE (:RecoveryWorkload {ordinal: i, payload: $payload})",
+                    payload="bounded-fixture-" * 64,
+                ).consume()
+        finally:
+            driver.close()
         import httpx
 
         deadline = time.monotonic() + 360
@@ -212,6 +225,66 @@ def test_backup_stops_dumps_and_restarts(backup_env: dict[str, str]):
             driver.verify_connectivity()
         finally:
             driver.close()
+
+        # Remove the live marker, then restore the offline dump. This proves the
+        # recovered content came from the artifact rather than the running store.
+        driver = GraphDatabase.driver(uri, auth=("neo4j", PASSWORD))
+        try:
+            with driver.session() as session:
+                session.run("MATCH (n:RecoveryProbe) DETACH DELETE n").consume()
+        finally:
+            driver.close()
+        subprocess.run(
+            ["docker", "compose", "stop", "neo4j"], cwd=compose_root,
+            check=True, capture_output=True, timeout=240,
+        )
+        tick = time.monotonic()
+        subprocess.run(
+            ["docker", "compose", "run", "--rm", "--no-deps", "--entrypoint", "sh",
+             "neo4j", "-c", "mkdir -p /data/archive/recovery && "
+             "cp /data/archive/dumps/limes-*.dump /data/archive/recovery/neo4j.dump && "
+             "neo4j-admin database load --from-path=/data/archive/recovery "
+             "--overwrite-destination=true neo4j"],
+            cwd=compose_root, check=True, capture_output=True, timeout=300,
+        )
+        subprocess.run(
+            ["docker", "compose", "start", "neo4j"], cwd=compose_root,
+            check=True, capture_output=True, timeout=60,
+        )
+        _wait_ready(uri)
+        driver = GraphDatabase.driver(uri, auth=("neo4j", PASSWORD))
+        try:
+            with driver.session() as session:
+                rows = list(session.run("MATCH (n:RecoveryProbe) RETURN n.marker AS marker"))
+                assert [row["marker"] for row in rows] == [marker]
+                restored = session.run(
+                    "MATCH (n:RecoveryWorkload) RETURN count(n) AS count, "
+                    "sum(size(n.payload)) AS bytes"
+                ).single()
+                assert restored["count"] == 1000
+                assert restored["bytes"] == 1024000
+        finally:
+            driver.close()
+        restore_seconds = round(time.monotonic() - tick, 3)
+        container = subprocess.check_output(
+            ["docker", "compose", "ps", "-q", "neo4j"], cwd=compose_root, text=True,
+        ).strip()
+        stats = subprocess.check_output(
+            ["docker", "stats", "--no-stream", "--format", "{{json .}}", container],
+            text=True, timeout=30,
+        ).strip()
+        storage = subprocess.check_output(
+            ["docker", "compose", "exec", "-T", "neo4j", "du", "-sk",
+             "/data/databases", "/data/transactions", "/data/archive"],
+            cwd=compose_root, text=True, timeout=30,
+        ).strip()
+        record_testsuite_property(
+            "resource_scope", "1000 synthetic 1024-byte payload nodes; post-restore sample"
+        )
+        record_testsuite_property("docker_stats", stats)
+        record_testsuite_property("storage_kib", storage)
+        record_testsuite_property("dump_bytes", int(size))
+        record_testsuite_property("restore_seconds", restore_seconds)
     finally:
         subprocess.run(
             ["docker", "compose", "down", "-v", "--remove-orphans"],
