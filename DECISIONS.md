@@ -5,6 +5,32 @@ reversibility: **R1** reversible in under an hour, **R2** bounded recoverable
 cost, **R3** one-way door. Written when each decision is made, latest first.
 Nothing here is a status report; unlogged decisions are unmade decisions.
 
+## 2026-10-29 — D-86 (R1) — DC-14 local map and correctness qualification
+
+The user selected the complete DC-14 package. Live main `a434adc0fe4b` was fetched
+and fast-forwarded before coding; delivery branch is
+`codex/dc-14-desktop-qualification`. Preserve the API-only network contract with a
+conforming coordinate-only Leaflet map: local assets, explicit no-basemap/missing
+geometry labels, no tile provider. A deny-by-default WebEngine guard confines
+resources to bundled assets and Qt WebChannel; API traffic stays in ApiClient.
+Builder refills preserve still-admissible choices, deterministically reset invalid
+choices and propagate changed target types across all later hops. Temporal filters
+use validity intervals and independent belief-as-of visibility, never treating an
+unknown timestamp as evidence of an instant. Current evidence/re-review cannot
+recover OI-05's absent historical trail. Ubuntu reference X11/Wayland and real
+administrator deployment evidence must be named explicitly if unavailable.
+The actual-widget full-suite scenario exposed repeated NL execution failing the
+backend's automatic history save with DuplicateSavedQuery. Preserve the existing
+per-execution history contract: the automatic path writes each execution, while
+manual saved-query creation retains duplicate rejection. The widget regression
+submits the same question twice and verifies two execution records.
+No production data run or publication is authorized by this implementation request.
+
+Publication update: after local acceptance, the user explicitly requested preparing
+and opening a PR with this session's work, authorizing staging, commit and push.
+The qualified runtime/test source fingerprint remains unchanged. Merge and
+deployment remain separate.
+
 ## 2026-10-29 — D-85 (R2) — BE-46 reviewed identity and secondary observations
 
 Deliver the complete next backend package BE-46 on codex/be-46-entity-enrichment,

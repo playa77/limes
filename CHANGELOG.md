@@ -1,3 +1,23 @@
+## 2026-10-29 — DC-14 desktop correctness and qualification
+
+- Preserve admissible builder choices and propagate upstream changes through all
+  later hops. Revalidate the complete schema-derived chain before submission.
+- Remove external map tiles, enforce bundled WebEngine resources and same-origin
+  API redirects, correct Leaflet coordinates and retain explicit missing geometry.
+- Register actual JS/Qt slots; redraw original results for shared selection and
+  independent validity/belief filters; retain incremental network expansion and
+  coverage. Keep ontology and API model guards intact.
+- Defer WebEngine loading and perform startup/periodic connection probes off the
+  GUI thread, detect recovery and reject old-profile replies. Expose existing views
+  through navigation, preserve saved-query capture across pages, and connect backup
+  capability/confirmation/output/job identity/post-backup health to the shell.
+- Preserve per-execution automatic NL history so repeating a desktop question
+  succeeds; manual saved-query duplicate rejection remains intact.
+- Add real web-rendering, forbidden-request and actual-widget disposable API/graph
+  regressions. Record current re-review and a requirement-level evidence matrix;
+  missing original review, Ubuntu reference sessions and real administrator
+  deployment remain named evidence obligations, never inferred from mocks.
+
 ## 2026-10-29 — BE-46 entity context and company enrichment
 
 - Register selection-only Wikipedia and Yahoo Finance adapters with bounded

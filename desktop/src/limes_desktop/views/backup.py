@@ -8,7 +8,7 @@ disabled with the prerequisite reasons shown inline until they clear
 
 from __future__ import annotations
 
-from PySide6.QtWidgets import QDialog, QLabel, QPushButton, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QDialog, QLabel, QPushButton, QTextEdit, QVBoxLayout, QWidget
 
 from limes_desktop.backup_runner import BackupRunner
 from limes_desktop.config import ConnectionProfile
@@ -29,6 +29,12 @@ class BackupDialog(QDialog):
         self.reason_label = QLabel("", self)
         self.run_button = QPushButton("Run backup", self)
         self.cancel_button = QPushButton("Cancel", self)
+        self.run_button.setEnabled(False)
+        self.reason_label.setText("Checking API and operator backup capability…")
+        self.output = QTextEdit(self)
+        self.output.setReadOnly(True)
+        runner.output_line.connect(self.output.append)
+        runner.finished.connect(self._finished)
         self.cancel_button.clicked.connect(self.reject)
         self.run_button.clicked.connect(self._on_run)
 
@@ -40,6 +46,7 @@ class BackupDialog(QDialog):
         layout.addWidget(self.reason_label)
         layout.addWidget(self.run_button)
         layout.addWidget(self.cancel_button)
+        layout.addWidget(self.output)
 
     def set_profile(self, profile: ConnectionProfile) -> None:
         self._profile = profile
@@ -47,7 +54,31 @@ class BackupDialog(QDialog):
         self.reason_label.setText("\n".join(reasons))
         self.run_button.setEnabled(not reasons)
 
+    def set_available(self, profile: ConnectionProfile, available: bool) -> None:
+        self._profile = profile
+        self.run_button.setEnabled(available and self._runner._task is None)
+        self.reason_label.setText(
+            "" if available else "Backup requires a reachable API and an operator credential."
+        )
+
     def _on_run(self) -> None:
-        if self._profile is not None:
+        if self._profile is not None and self.run_button.isEnabled():
+            self.run_button.setEnabled(False)
+            self.reason_label.setText(
+                "Backup in progress. Leaving this view does not cancel the server job."
+            )
             self._runner.run(self._profile)
-        self.accept()
+
+    def _finished(self, code: int, healthy: object) -> None:
+        if code == 0 and healthy is True:
+            message = (
+                f"Backup complete; API healthy. Dump: {self._runner.dump_path or 'not reported'}"
+            )
+        elif code == 0:
+            message = (
+                "Backup completed; API health is not confirmed. Check connection before continuing."
+            )
+        else:
+            message = "Backup failed or observation disconnected. No automatic retry."
+        self.reason_label.setText(message)
+        # Capability refresh re-enables deliberate submission, never automatic replay.

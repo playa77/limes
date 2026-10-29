@@ -50,9 +50,12 @@ class SessionState(QObject):
 
     def __init__(self) -> None:
         super().__init__()
+        self.selection: str | None = None
+        self.temporal_filter = TemporalFilter()
         self._history: deque[QueryOutcomeBundle] = deque(maxlen=self._HISTORY_MAX)
 
     def set_selection(self, entity_id: str | None) -> None:
+        self.selection = entity_id
         self.selection_changed.emit(entity_id)
 
     def publish(self, bundle: QueryOutcomeBundle) -> None:
@@ -63,6 +66,7 @@ class SessionState(QObject):
         self.connection_changed.emit(profile)
 
     def set_temporal_filter(self, f: TemporalFilter) -> None:
+        self.temporal_filter = f
         self.temporal_filter_changed.emit(f)
 
     def history(self) -> list[QueryOutcomeBundle]:

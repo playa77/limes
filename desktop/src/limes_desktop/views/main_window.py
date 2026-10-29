@@ -4,13 +4,15 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any
 
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtCore import Qt, QThreadPool, QTimer, Signal, Slot
 from PySide6.QtWidgets import (
     QDockWidget,
     QFrame,
     QHBoxLayout,
     QLabel,
+    QLineEdit,
     QMainWindow,
+    QPushButton,
     QStackedWidget,
     QToolBar,
     QWidget,
@@ -18,7 +20,7 @@ from PySide6.QtWidgets import (
 
 from limes_desktop.api.errors import ApiError, ApiUnreachable
 from limes_desktop.config import ConnectionProfile, ProfileStore
-from limes_desktop.state import QueryOutcomeBundle, SessionState
+from limes_desktop.state import QueryOutcomeBundle, SessionState, TemporalFilter
 from limes_desktop.views.coverage_panel import CoveragePanel
 from limes_desktop.views.entity import EntityView
 from limes_desktop.views.query_builder import BuilderView
@@ -35,9 +37,13 @@ REFRESH_INTERVAL_MS = 10_000
 class _ConnectionBanner(QFrame):
     """Green/amber/red pill + profile + API version; 10 s QTimer refresh (§4)."""
 
+    checked = Signal(object)
+
     def __init__(self, client_factory: Callable[[], Any]) -> None:
         super().__init__()
         self.client_factory = client_factory
+        self._generation = 0
+        self._tasks: dict[int, Any] = {}
         self._unreachable = False
         self._status = "unreachable"
         self._version = ""
@@ -54,7 +60,7 @@ class _ConnectionBanner(QFrame):
 
         self._timer = QTimer(self)
         self._timer.setInterval(REFRESH_INTERVAL_MS)
-        self._timer.timeout.connect(lambda: self.refresh())
+        self._timer.timeout.connect(self.refresh_async)
 
         self.setFrameShape(QFrame.Shape.StyledPanel)
         self._render()
@@ -74,27 +80,44 @@ class _ConnectionBanner(QFrame):
         return self._version_label.text()
 
     def refresh(self) -> None:
-        """One health probe; safe to call directly from tests (no timer wait)."""
+        """Synchronous explicit seam; ordinary startup/timer probes are asynchronous."""
+        from limes_desktop.connection_probe import probe
+
+        self._generation += 1
         try:
-            info = self.client_factory().health()
-        except ApiUnreachable:
-            self._unreachable = True
-            self._status = "unreachable"
-            self._version = ""
-        except ApiError:
-            self._unreachable = True
-            self._status = "degraded"
-            self._version = ""
-        else:
-            self._unreachable = False
-            self._status = info.status
-            self._version = info.ontology_version
-        # pause the timer while unreachable (§4); resume when healthy again
-        if self._unreachable:
-            self._timer.stop()
-        elif not self._timer.isActive():
-            self._timer.start()
+            result = probe(self.client_factory())
+        except (ApiError, ApiUnreachable, ValueError):
+            result = {"status": "unreachable", "version": ""}
+        self._receive(self._generation, result)
+
+    def refresh_async(self) -> None:
+        from limes_desktop.connection_probe import ConnectionProbe
+
+        if self._generation in self._tasks:
+            return
+        self._generation += 1
+        try:
+            client = self.client_factory()  # session credential prompt belongs to GUI thread
+        except (ApiError, ApiUnreachable, ValueError):
+            self._receive(self._generation, {"status": "unreachable", "version": ""})
+            return
+        task = ConnectionProbe(self._generation, client)
+        self._tasks[self._generation] = task
+        task.signals.completed.connect(self._receive)
+        QThreadPool.globalInstance().start(task)
+
+    @Slot(int, object)
+    def _receive(self, generation: int, result: dict[str, Any]) -> None:
+        self._tasks.pop(generation, None)
+        if generation != self._generation:
+            return
+        self._status = result["status"]
+        self._version = result["version"]
+        self._unreachable = self._status != "ok"
+        # Keep probing during outages so recovery is visible without a restart.
+        self._timer.start()
         self._render()
+        self.checked.emit(result)
 
     # -- rendering -----------------------------------------------------------
 
@@ -121,11 +144,10 @@ class MainWindow(QMainWindow):
         super().__init__(parent)
         self.setWindowTitle("LIMES")
         self._state = state
+        self._profile_store = profile_store
 
         self.banner = _ConnectionBanner(client_factory)
-        # immediate startup health probe (FR-DC-002): refresh() also starts
-        # the 10 s timer when the API answers, and pauses it when unreachable
-        self.banner.refresh()
+        # Startup probes run after the window can paint and never block search.
         self._toolbar = QToolBar("connection", self)
         self._toolbar.setMovable(False)
         self._toolbar.addWidget(self.banner)
@@ -154,6 +176,8 @@ class MainWindow(QMainWindow):
         self.stack.addWidget(self.nlq_view)
         self.cypher_console = CypherConsole(state, client_factory=client_factory)
         self.stack.addWidget(self.cypher_console)
+        self._query_source: QWidget = self.cypher_console
+        self.stack.currentChanged.connect(self._remember_query_surface)
         self.saved_queries_panel = SavedQueriesPanel(
             state,
             client_factory=client_factory,
@@ -217,6 +241,42 @@ class MainWindow(QMainWindow):
         self.entity_view.assertion_selected.connect(
             lambda value: setattr(self.news_view, "selected_relation", value)
         )
+        navigation = self.menuBar().addMenu("Views")
+        for view, title in (
+            (self.entity_view, "Entity"),
+            (self.nlq_view, "Natural language"),
+            (self.cypher_console, "Cypher console"),
+            (self.saved_queries_panel, "Saved queries"),
+            (self.builder_view, "Query builder"),
+            (self.network_view, "Network"),
+            (self.map_view, "Map"),
+            (self.timeline_view, "Timeline"),
+            (self.ingest_view, "Ingest status"),
+            (self.ledger_view, "Usage"),
+            (self.references_view, "Sources and ontology"),
+            (self.backup_dialog, "Backup"),
+        ):
+            action = navigation.addAction(title)
+            action.triggered.connect(
+                lambda checked=False, page=view: self.stack.setCurrentWidget(page)
+            )
+        temporal_bar = QToolBar("Time filters", self)
+        self.valid_from_edit = QLineEdit(self)
+        self.valid_to_edit = QLineEdit(self)
+        self.belief_edit = QLineEdit(self)
+        for label, edit in (
+            ("Valid from", self.valid_from_edit),
+            ("Valid through", self.valid_to_edit),
+            ("Known as of", self.belief_edit),
+        ):
+            temporal_bar.addWidget(QLabel(label, self))
+            edit.setPlaceholderText("ISO date/instant; blank = all")
+            temporal_bar.addWidget(edit)
+        apply_time = QPushButton("Apply time", self)
+        apply_time.clicked.connect(self._apply_time)
+        temporal_bar.addWidget(apply_time)
+        self.addToolBar(Qt.ToolBarArea.BottomToolBarArea, temporal_bar)
+        self.statusBar().showMessage("Ready; connecting to API…")
         self.setCentralWidget(self.stack)
 
         # result bundles flow into the viz views; expansion goes through the
@@ -228,7 +288,11 @@ class MainWindow(QMainWindow):
         state.connection_changed.connect(self._on_connection_changed)
         # FR-DC-022: fetch the ontology at connect/profile change so the
         # entity view's neighbors relation filter is populated (§2.3)
-        self._fetch_ontology()
+        self.banner.checked.connect(self._connection_checked)
+        self._profile = profile_store.active() if profile_store else None
+        if self._profile is not None:
+            self.banner._profile_label.setText(f"{self._profile.name} {self._profile.base_url}")
+        QTimer.singleShot(0, self.banner.refresh_async)
         # FR-DC-010/022: a selection (search hit, neighbor click) fetches the
         # entity, publishes the EntityDetail bundle, and shows the entity page
         state.selection_changed.connect(self._on_selection_changed)
@@ -237,12 +301,15 @@ class MainWindow(QMainWindow):
         try:
             graph = self.banner.client_factory().entity_neighbors(entity_id)
         except (ApiError, ApiUnreachable):
+            self.statusBar().showMessage("Neighbor expansion unavailable; check API connection.")
             return
         self.network_view.push_payload(self.network_view.apply_neighbors(entity_id, graph))
 
     def _current_query(self) -> tuple[str, str]:
         """The (surface, query text) of the active query surface, for saving."""
         current = self.stack.currentWidget()
+        if current not in (self.cypher_console, self.nlq_view):
+            current = self._query_source
         if current is self.cypher_console:
             return "cypher", self.cypher_console.editor.toPlainText()
         if current is self.nlq_view:
@@ -252,13 +319,10 @@ class MainWindow(QMainWindow):
     def refresh_banner(self) -> None:
         self.banner.refresh()
 
-    def _fetch_ontology(self) -> None:
-        try:
-            payload = self.banner.client_factory().ontology()
-        except (ApiError, ApiUnreachable):
-            return  # degrade gracefully: filter stays unpopulated
-        if isinstance(payload, dict):
-            self.entity_view.set_ontology(payload)
+    def _remember_query_surface(self, index: int) -> None:
+        current = self.stack.widget(index)
+        if current in (self.cypher_console, self.nlq_view):
+            self._query_source = current
 
     def _on_connection_changed(self, profile: object) -> None:
         if isinstance(profile, ConnectionProfile):
@@ -267,8 +331,27 @@ class MainWindow(QMainWindow):
             self.banner._profile_label.setText("disconnected")
         # the client factory rebinds to the new profile's base_url before this
         # handler runs (connection order in __main__); probe the new endpoint now
-        self.banner.refresh()
-        self._fetch_ontology()
+        self._profile = profile if isinstance(profile, ConnectionProfile) else None
+        self.backup_dialog.set_available(
+            self._profile or ConnectionProfile(name="current"), False
+        )
+        self.banner._generation += 1  # discard an old profile's in-flight response
+        self.banner.refresh_async()
+
+    def _connection_checked(self, result: dict[str, Any]) -> None:
+        if self.banner.is_unreachable():
+            self.statusBar().showMessage(
+                "API unavailable or degraded; previously loaded results may be stale. "
+                "Retrying connection."
+            )
+        elif self.statusBar().currentMessage().startswith(("API unavailable", "Ready; connecting")):
+            self.statusBar().showMessage("API connected.")
+        if isinstance(result.get("ontology"), dict):
+            self.entity_view.set_ontology(result["ontology"])
+        self.backup_dialog.set_available(
+            self._profile or ConnectionProfile(name="current"),
+            self.banner.status_text() == "ok" and bool(result.get("backup")),
+        )
 
     def _on_selection_changed(self, entity_id: object) -> None:
         if not isinstance(entity_id, str) or not entity_id:
@@ -276,9 +359,15 @@ class MainWindow(QMainWindow):
         try:
             detail = self.banner.client_factory().entity(entity_id)
         except (ApiError, ApiUnreachable):
-            return  # degraded: keep the current view, never crash the shell
+            self.statusBar().showMessage(
+                "Entity unavailable; displayed results are from the previous request."
+            )
+            return
         self.news_view.selected_relation = None
         self.entity_view.show_assertions([])
+        self.entity_view._neighbor_rows = []
+        self.entity_view.neighbors_model.set_rows([])
+        self.entity_view.neighbors_table.setRowCount(0)
         try:
             neighbors = self.banner.client_factory().entity_neighbors(entity_id)
         except (ApiError, ApiUnreachable):
@@ -293,5 +382,25 @@ class MainWindow(QMainWindow):
         try:
             hits = self.banner.client_factory().search(query)
         except (ApiError, ApiUnreachable):
+            self.statusBar().showMessage("Search unavailable; check API connection.")
+            self.search_bar._model.set_hits([])
             return
+        self.statusBar().clearMessage()
         self._state.publish(QueryOutcomeBundle(result=hits, coverage=None, source="search"))
+
+    def _apply_time(self) -> None:
+        from limes_desktop.views.viz.bridge import _instant
+
+        values = [
+            edit.text().strip()
+            for edit in (self.valid_from_edit, self.valid_to_edit, self.belief_edit)
+        ]
+        if any(value and _instant(value) is None for value in values):
+            self.statusBar().showMessage("Use ISO dates or instants for time filters.")
+            return
+        lower, upper = _instant(values[0]), _instant(values[1], end_of_day=True)
+        if lower is not None and upper is not None and lower > upper:
+            self.statusBar().showMessage("Validity start must precede its end.")
+            return
+        self._state.set_temporal_filter(TemporalFilter(*(value or None for value in values)))
+        self.statusBar().showMessage("Time filters applied; missing timestamps remain unknown.")

@@ -18,4 +18,5 @@ def test_entity_view_registered_in_stack(qtbot: Any) -> None:
     assert isinstance(win.entity_view, EntityView)
     assert win.entity_view in [win.stack.widget(i) for i in range(win.stack.count())]
     # Task-5 seams intact: startup probe ran, banner present
+    qtbot.waitUntil(lambda: win.banner.status_text() == "ok")
     assert win.banner.version_label_text() == "ontology 1.0.0"

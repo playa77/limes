@@ -7,6 +7,35 @@ The [documentation index](INDEX.md) identifies each document's authority; the
 Historical bare WP numbers must be qualified as backend or desktop. Old counts,
 unticked archived plans and merged commits are never substituted for acceptance.
 
+## Active desktop delivery — DC-14 (2026-10-29)
+
+Branch `codex/dc-14-desktop-qualification`, live-fetched base `a434adc0fe4b`.
+Complete parent: desktop correctness and explicit acceptance qualification.
+Prerequisites: merged authenticated API/DC-01–13/DC-15/DC-16, canonical frozen
+venv, disposable Docker. Reference Ubuntu X11/Wayland hardware, an administrator
+production deployment, and the absent original review log are external evidence
+obligations, not prerequisites for implementing the repairs.
+
+Acceptance checklist, recorded before coding:
+
+- [x] OI-10: preserve admissible relation/direction/target selections and propagate
+  changed upstream types through every downstream hop; validate submitted specs.
+- [x] OI-11/18: conforming local coordinate map with no external tiles; enforce a
+  deny-by-default WebEngine resource policy and prove forbidden requests blocked.
+- [x] Repair and exercise actual JS/Qt selection, map geometry and both temporal
+  axes, redraw current results, preserve unknown evidence and coverage.
+- [x] Qualify startup responsiveness, API degradation/recovery, navigation,
+  confirmation and asynchronous backup observation; retain exact candidate evidence.
+- [x] Explicit current desktop re-review and requirement/AC disposition; preserve
+  OI-05 historical gap and name unmeasurable platform/deployment obligations.
+- [x] Affected/shared checks, then one authoritative full candidate run; record
+  source identity, results, change accounting and remaining external blockers.
+
+Map decision: keep NFR-DC-072 unchanged. Use local Leaflet coordinates/relations
+without any basemap or provider, visibly label that limitation. This is a conforming
+map repair, not an exception permitting external tile traffic.
+No staging, commit, push, deployment or production data run is requested.
+
 ## Active runtime delivery — BE-46 (2026-10-29)
 
 Selected complete parent on `codex/be-46-entity-enrichment`, live-fetched main
@@ -49,6 +78,15 @@ Publication update: after local acceptance, the user explicitly requested prepar
 and opening a PR for this session, authorizing staging, commit and push.
 The qualified source fingerprint remains unchanged; merge and deployment
 remain separate.
+
+Local implementation and candidate qualification pass; the final report is
+`work/dc14/final-2/report.json` (1,265 cumulative passes, no failures/errors/skips,
+no source drift). VERIFICATION retains exact source identity, lane durations,
+the failed first candidate and repeated-NL history repair. OI-10/11/18 close.
+REF-DC-1, DEP-DC-1 and HIST-DC-1 remain explicit external evidence obligations in
+DESKTOP_QUALIFICATION; local acceptance is not blanket Ubuntu/deployment/historical
+review certification. The user subsequently authorized staging, commit and push to open the DC-14 PR.
+Merge and deployment remain separate.
 
 ## Previous qualification delivery — BE-45 (2026-10-29)
 

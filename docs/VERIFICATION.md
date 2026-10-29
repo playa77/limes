@@ -1,5 +1,123 @@
 # Verification and acceptance evidence
 
+## 2026-10-29 — DC-14 desktop correctness and local qualification
+
+The complete DC-14 implementation and bounded local qualification are accepted.
+OI-10/11/18 close with direct behavior evidence and D-86's conforming local-map
+policy. [DESKTOP_QUALIFICATION](DESKTOP_QUALIFICATION.md) records the current
+source re-review and every grouped functional requirement, NFR and AC disposition.
+External Ubuntu reference/manual deployment evidence and the absent original
+review log remain REF-DC-1, DEP-DC-1 and HIST-DC-1; they are not claimed or waived.
+
+Branch `codex/dc-14-desktop-qualification`, live-fetched and fast-forwarded base
+`a434adc0fe4b195338a1a772ccafc89e24469a9b`. The required baseline check and local
+publication hook were installed before coding. Canonical frozen all-package venv
+was synchronized. No staging, commit, push, PR, production ingestion, paid model
+run or deployment is requested/performed by this implementation delivery.
+
+Authoritative final command: `venv/bin/python tools/qualify.py --output work/dc14/final-2`.
+It passed in **958.171s** with all five suites, zero failures,
+errors or skips, and no source drift. The report, exact commands, logs, durations,
+JUnit and complete source mappings are in ignored `work/dc14/final-2/`.
+Source manifest SHA-256: `446d8b41c3cb31505b3ebdf7bba3027a394022a7d25062d4adb36ed411328fbe`.
+The manifest includes tracked and untracked runtime, tests, assets, tools, CI,
+fixtures, ontology and dependency/runtime files. Handoff-only documentation changes
+follow the source freeze; qualified runtime/test/tool sources remain unchanged.
+
+| Suite | Result | Command elapsed | JUnit under work/dc14/final-2 |
+|---|---:|---:|---|
+| unit | 857 passed | 164.999s | unit.xml |
+| desktop | 147 passed | 18.281s | desktop.xml |
+| integration | 173 passed | 642.129s | integration.xml |
+| acceptance | 85 passed | 83.571s | acceptance.xml |
+| desktop-integration | 3 passed | 46.918s | desktop-integration.xml |
+
+The total 1,265 passes is cumulative evidence, not a quota. Shared runtime/tools
+Ruff, strict mypy (169 source files), C1–C9 docs, generated-document consistency,
+static runtime guards, live baseline and whitespace also pass. Existing backend
+unit warnings (3) and Starlette deprecation warnings remain. The desktop lane adds
+one pytest warning about record_property/xunit2 compatibility; its actual startup
+property is present in the retained XML and was checked directly.
+
+### Acceptance mapping
+
+- Builder refill now preserves valid relation/direction/target choices, resets
+  invalid choices deterministically and propagates every upstream change through
+  all later hops. Submission rechecks the entire chain. The invented self-both and
+  multi-hop regression complements independent exact schema/supertype expectations.
+- The actual Leaflet map uses finite correctly ordered LatLng points and selected
+  relations, with explicit no-basemap/missing-geometry labels. No tile provider is
+  registered. Each off-the-record WebEngine profile installs its bundled-resource
+  guard before first page load. Real shipped network/map/timeline pages render,
+  call registered Qt slots and reject a deliberate external resource even when
+  Qt's separate remote-content restriction is relaxed by the test. HTTP client
+  redirects stay within the configured origin, including tokenless requests.
+- Shared selection and independent validity/belief filters redraw retained original
+  results without mutating history. Validity intervals, UTC offsets, belief
+  retraction and unknown dates are distinct. Incremental expansion retains prior
+  data and coverage. Cold shell imports-to-typed-search measured **0.807026s**
+  in a fresh process on **Debian 13/offscreen**, with WebEngine core/widgets still
+  absent. Slow and old-profile probes exercise responsiveness and recovery.
+  This measurement does not certify the Ubuntu reference-machine ≤3s requirement.
+- Existing views are reachable from navigation; saved-query capture retains the
+  last query surface across library navigation. Actual widgets exercise search,
+  entity/assertion provenance, expansion, NLQ/editable re-run, builder, console,
+  manual save/delete and empty diagnosis through the authenticated API and
+  disposable graph. Repeating the same NL question succeeds twice and records
+  two execution-history entries; manual duplicate-save protection remains intact.
+- Backup starts disabled until capability/connection evidence permits it. Visible
+  consequences precede the single deliberate UUID submission; output, job ID/dump
+  and actual post-backup health are retained. A degraded response is not labeled
+  healthy. No failed operation is automatically replayed. Existing full-suite
+  physical recovery still verifies restored synthetic graph contents independently
+  of the mocked desktop job runner. Actual administrator-deployment/desktop backup
+  observation remains DEP-DC-1, not inferred from those fixtures.
+
+### Failed candidate and workflow review
+
+The first full candidate `work/dc14/final/` failed closed after its four earlier
+lanes passed and the new real-widget scenario reused an earlier scenario's NL
+question/Cypher. Automatic history called the manual duplicate guard and raised
+DuplicateSavedQuery, a real repeat-query defect. This is not accepted evidence
+for the final source. The failure report/logs and original source manifest remain
+retained (source SHA-256 `de7f309f428c403632f08b26dd3ab7d522ce2f6d5d63f4bc09971fc3cd64460b`).
+The correction preserves the existing per-execution history contract: automatic
+history permits repeated pairs, while manual creation still rejects duplicates.
+The widget uses a distinct scenario question and explicitly executes it twice.
+Affected desktop integration plus manual saved-query integration passed (6 cases)
+before the final freeze. Only query.py, saved_queries.py and the widget integration
+source differ between the failed and passing candidate manifests.
+
+Eight new cases cover distinct behaviors: six desktop qualification regressions,
+one confirmation/job-result regression, and one actual-widget graph/API scenario.
+Existing tests are updated for corrected coordinates, async probes, origin policy
+and fresh-process startup evidence. No copied backend suite or fixed count target
+is introduced. Existing independent CI lanes and required candidate gate remain
+unchanged. The prior BE-45/46 final runner durations were 588.812/588.520s; this
+candidate's 958.171s includes 642.129s
+for the same 173 graph cases and 18.281s for
+147 desktop cases. Different build/fixture/cache conditions do not establish
+sustained hosted CI growth. The failed 958.050s run and focused repair validation
+are recorded separately, not folded into successful implementation effort.
+Active implementation effort was not measured; merge delay is unavailable because
+publication was not requested. The complete parent remains one branch/delivery.
+
+### Change accounting against live main
+
+Counts include new untracked source files, with additions/deletions separate from
+net growth. No fixture-data, generated-document, dependency, ontology or CI changes.
+
+| Category | Added | Deleted | Net |
+|---|---:|---:|---:|
+| Handwritten runtime (desktop plus supporting history fix) | 588 | 165 | 423 |
+| Tests/helpers | 402 | 15 | 387 |
+| Handwritten documentation | 403 | 36 | 367 |
+
+Publication update: the user subsequently requested preparing and opening the
+DC-14 PR, authorizing staging, commit and push. The exact qualified source manifest
+was rechecked before publication; only handoff documentation changed afterward.
+Merge and deployment are not requested.
+
 ## 2026-10-29 — PR #13 hosted tool-lint correction
 
 Hosted OFFLINE rejected the initial BE-46 commit because the README template in

@@ -32,7 +32,7 @@ def test_map_payload_excludes_null_geometry() -> None:
     )
     payload = json.loads(map_payload(bundle))
     assert [n["id"] for n in payload["nodes"]] == ["e-2"]
-    assert payload["nodes"][0]["geometry"] == [13.4, 52.5]  # Leaflet [lon, lat] order
+    assert payload["nodes"][0]["geometry"] == [52.5, 13.4]  # Leaflet [lat, lon] order
 
 
 def test_map_payload_marks_edges_of_selected_entity() -> None:
@@ -44,7 +44,7 @@ def test_map_payload_marks_edges_of_selected_entity() -> None:
         [EdgeRef(relation="located_in", subject_id="e-1", object_id="e-2")],
     )
     payload = json.loads(map_payload(bundle, selected_id="e-1"))
-    assert payload["lines"][0]["points"] == [[12.0, 51.0], [13.4, 52.5]]
+    assert payload["lines"][0]["points"] == [[51.0, 12.0], [52.5, 13.4]]
     assert payload["lines"][0]["selected"] is True
 
 

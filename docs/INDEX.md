@@ -10,6 +10,7 @@ Updated 2026-10-28. Start with the product purpose in README, then this map.
 | Where are we in each sequence? | [Delivery index](ROADMAP.md), [backend](BACKEND_ROADMAP.md), [desktop](DESKTOP_ROADMAP.md) | Package status and dependencies; BE and DC never share an ambiguous ID |
 | What must the desktop display/do? | [Desktop requirements](LIMES_Desktop_Client_Requirements_v1.0.0.md), [architecture](LIMES_Desktop_Client_Architecture_v1.0.0.md) | HTTP consumer with shared claim semantics; acceptance gaps stay explicit |
 | What is shipped/configured today? | [Runtime architecture](ARCHITECTURE.md), [operations](OPERATIONS.md), [testing](TESTING_PHASE.md) | Generated from renderer and checked runtime JSON; current topology/access facts |
+| What qualifies the current desktop? | [DC-14 qualification](DESKTOP_QUALIFICATION.md) | Current re-review, direct requirement evidence and named external blockers |
 | What defects and external evidence remain? | [OPEN_ISSUES](../OPEN_ISSUES.md) | Current disposition index plus append-only history; direct closure evidence required |
 | Why were decisions made? | [DECISIONS](../DECISIONS.md), [CHANGELOG](../CHANGELOG.md) | Historical records, not current blanket acceptance |
 | What supports the status audit? | [Baseline audit](BASELINE_AUDIT.md), [news investigation](NEWS_REVIEW.md) | Artifact/ancestry/source evidence and limits; not competing architecture |

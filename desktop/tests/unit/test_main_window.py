@@ -17,6 +17,7 @@ def test_banner_refresh_shows_green_state_and_version(qtbot: Any) -> None:
     win = MainWindow(state, ProfileStore(), lambda: client)  # type: ignore[arg-type]
     qtbot.addWidget(win)
 
+    qtbot.waitUntil(lambda: win.banner.status_text() == "ok")
     # the startup probe already ran in __init__; refresh_banner is the test seam
     assert client.health_calls == 1
     win.refresh_banner()
@@ -31,6 +32,7 @@ def test_startup_probe_hits_health_and_shows_version(qtbot: Any) -> None:
     win = MainWindow(state, ProfileStore(), lambda: client)  # type: ignore[arg-type]
     qtbot.addWidget(win)
 
+    qtbot.waitUntil(lambda: win.banner.status_text() == "ok")
     assert client.health_calls == 1
     assert win.banner.status_text() == "ok"
     assert win.banner.version_label_text() == "ontology 1.0.0"
@@ -60,7 +62,7 @@ def test_banner_refresh_timer_pausable(qtbot: Any) -> None:
     win.banner.client_factory = lambda: (_ for _ in ()).throw(ApiUnreachable("down"))
     win.refresh_banner()
     assert win.banner.is_unreachable()
-    assert not win.banner._timer.isActive()
+    assert win.banner._timer.isActive()
 
     # direct seam: tests drive refresh without waiting 10 s
     win.banner.client_factory = lambda: FakeClient()
@@ -111,16 +113,19 @@ def test_connection_changed_updates_banner_profile_and_reprobes(
     win = MainWindow(state, ProfileStore(), factory)  # type: ignore[arg-type]
     qtbot.addWidget(win)
 
+    qtbot.waitUntil(lambda: win.banner.status_text() == "ok")
     client = calls["client"]
     startup_calls = client.health_calls  # startup probe already ran
 
     profile = ConnectionProfile(name="local", base_url="http://127.0.0.1:9999")
     state.set_connection(profile)
     assert win.banner.profile_label_text() == "local http://127.0.0.1:9999"
+    qtbot.waitUntil(lambda: client.health_calls == startup_calls + 1)
     assert client.health_calls == startup_calls + 1  # immediate reprobe
 
     state.set_connection(None)
     assert win.banner.profile_label_text() == "disconnected"
+    qtbot.waitUntil(lambda: client.health_calls == startup_calls + 2)
     assert client.health_calls == startup_calls + 2
 
 

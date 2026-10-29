@@ -9,9 +9,12 @@ instantiated (NFR-DC-071 — the unit suite stays headless-safe).
 from __future__ import annotations
 
 import json
+import math
+from dataclasses import replace
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
-from PySide6.QtCore import QObject, Signal
+from PySide6.QtCore import QObject, Signal, Slot
 
 from limes_desktop.api.models import EntityRef, GraphResult
 from limes_desktop.state import QueryOutcomeBundle, SessionState, TemporalFilter
@@ -55,8 +58,79 @@ def _geometry_of(node: EntityRef) -> list[float] | None:
     lon = node.properties.get("longitude")
     if lat is None or lon is None:
         return None
-    # Leaflet order: [longitude, latitude]
-    return [float(lon), float(lat)]
+    # Leaflet LatLng uses latitude, longitude (GeoJSON uses the reverse).
+    try:
+        latitude, longitude = float(lat), float(lon)
+    except (TypeError, ValueError, OverflowError):
+        return None
+    if not (
+        math.isfinite(latitude)
+        and math.isfinite(longitude)
+        and -90 <= latitude <= 90
+        and -180 <= longitude <= 180
+    ):
+        return None
+    return [latitude, longitude]
+
+
+def _instant(value: Any, *, end_of_day: bool = False) -> datetime | None:
+    if not isinstance(value, str) or not value:
+        return None
+    try:
+        instant = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        if end_of_day and len(value) == 10:
+            instant += timedelta(days=1, microseconds=-1)
+        return instant.replace(tzinfo=UTC) if instant.tzinfo is None else instant.astimezone(UTC)
+    except ValueError:
+        return None
+
+
+def temporal_bundle(bundle: QueryOutcomeBundle, temporal: TemporalFilter) -> QueryOutcomeBundle:
+    """Intersect validity intervals; belief uses recorded/retracted instants independently.
+
+    Missing times remain visible as unknown, never synthesized from the other axis.
+    """
+    lower = _instant(temporal.validity_from)
+    upper = _instant(temporal.validity_to, end_of_day=True)
+    belief = _instant(temporal.belief_as_of, end_of_day=True)
+
+    def visible(values: Any) -> bool:
+        start, end = _instant(values.valid_from), _instant(values.valid_to)
+        recorded, retracted = _instant(values.recorded_at), _instant(values.retracted_at)
+        return not (
+            (upper is not None and start is not None and start > upper)
+            or (lower is not None and end is not None and end <= lower)
+            or (belief is not None and recorded is not None and recorded > belief)
+            or (belief is not None and retracted is not None and retracted <= belief)
+        )
+
+    graph = bundle_graph(bundle)
+    edges = [edge for edge in graph.edges if visible(edge)]
+    incident = {key for edge in graph.edges for key in (edge.subject_id, edge.object_id)}
+    retained = {key for edge in edges for key in (edge.subject_id, edge.object_id)}
+    nodes = []
+    for node in graph.nodes:
+        if node.entity_id in incident and node.entity_id not in retained:
+            continue
+        if node.properties.get("claim_id"):
+            from limes_desktop.api.models import EdgeRef
+
+            props = node.properties
+            values = EdgeRef(
+                relation="",
+                subject_id="",
+                object_id="",
+                valid_from=props.get("valid_from")
+                if props.get("time_precision", "unknown") != "unknown"
+                else None,
+                valid_to=props.get("valid_to"),
+                recorded_at=props.get("recorded_at"),
+                retracted_at=props.get("retracted_at"),
+            )
+            if not visible(values):
+                continue
+        nodes.append(node)
+    return replace(bundle, result=GraphResult(nodes=nodes, edges=edges, counts=graph.counts))
 
 
 def map_payload(bundle: QueryOutcomeBundle, selected_id: str | None = None) -> str:
@@ -75,9 +149,24 @@ def map_payload(bundle: QueryOutcomeBundle, selected_id: str | None = None) -> s
         b = _geometry_of(by_id[edge.object_id]) if edge.object_id in by_id else None
         if a is None or b is None:
             continue
-        lines.append({"points": [a, b], "relation": edge.relation, "selected": True})
+        lines.append(
+            {
+                "points": [a, b],
+                "relation": edge.relation,
+                "selected": True,
+                "source": edge.subject_id,
+                "target": edge.object_id,
+            }
+        )
 
-    return json.dumps({"nodes": nodes, "lines": lines, "coverage": None})
+    return json.dumps(
+        {
+            "nodes": nodes,
+            "lines": lines,
+            "coverage": _coverage(bundle),
+            "missing_geometry": len(graph.nodes) - len(nodes),
+        }
+    )
 
 
 def timeline_payload(
@@ -134,7 +223,7 @@ def timeline_payload(
                 series.append(
                     {**base, "t": instant, "kind": "validity" if name == "valid_from" else "belief"}
                 )
-    return json.dumps({"validity": validity, "belief": belief, "coverage": None})
+    return json.dumps({"validity": validity, "belief": belief, "coverage": _coverage(bundle)})
 
 
 def network_payload(bundle: QueryOutcomeBundle) -> str:
@@ -154,8 +243,12 @@ def network_payload(bundle: QueryOutcomeBundle) -> str:
         }
         for e in graph.edges
     ]
+    return json.dumps({"nodes": nodes, "edges": edges, "coverage": _coverage(bundle)})
+
+
+def _coverage(bundle: QueryOutcomeBundle) -> Any:
     coverage = bundle.coverage
-    coverage_json: Any = (
+    return (
         {
             "relation_counts": dict(coverage.relation_counts),
             "contributing_sources": list(coverage.contributing_sources),
@@ -163,7 +256,6 @@ def network_payload(bundle: QueryOutcomeBundle) -> str:
         if coverage is not None
         else None
     )
-    return json.dumps({"nodes": nodes, "edges": edges, "coverage": coverage_json})
 
 
 class VizBridge(QObject):
@@ -180,6 +272,11 @@ class VizBridge(QObject):
 
     def set_state(self, state: SessionState) -> None:
         self._state = state
+        state.selection_changed.connect(self._sync_selection)
+
+    def _sync_selection(self, value: object) -> None:
+        self._selected_id = str(value) if value else None
+        self.selection_changed.emit(self._selected_id or "")
 
     # -- slots called from JS (QWebChannel) ---------------------------------
 
@@ -187,22 +284,30 @@ class VizBridge(QObject):
         """Default serialization for the network page (nodes/edges/coverage)."""
         return network_payload(bundle)
 
+    @Slot(str)
     def on_node_clicked(self, entity_id: str) -> None:
         self._selected_id = entity_id or None
-        self.selection_changed.emit(entity_id)
-        if self._state is not None and entity_id:
-            self._state.set_selection(entity_id)
+        if self._state is not None:
+            self._state.set_selection(entity_id or None)
+        else:
+            self.selection_changed.emit(entity_id)
 
+    @Slot()
     def on_expand_clicked(self) -> None:
         """MainWindow wires `expand_requested` to ApiClient.entity_neighbors."""
         if self._selected_id is not None:
             self.expand_requested.emit(self._selected_id)
 
+    @Slot(str, str)
     def on_temporal_range(self, validity_from: str, validity_to: str) -> None:
         self.temporal_filter_changed.emit(validity_from, validity_to)
         if self._state is not None:
             self._state.set_temporal_filter(
-                TemporalFilter(validity_from=validity_from, validity_to=validity_to)
+                TemporalFilter(
+                    validity_from=validity_from,
+                    validity_to=validity_to,
+                    belief_as_of=self._state.temporal_filter.belief_as_of,
+                )
             )
 
     def selected_id(self) -> str | None:

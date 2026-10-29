@@ -100,11 +100,14 @@ def persist(
     ontology_version: str,
     result_count: int,
     pinned: bool = False,
+    allow_duplicate: bool = False,
 ) -> str:
     """Write one `:SavedQuery` node — the per-execution write of §7.3
     (FR-14, AC-30) — and return its id. Raises `DuplicateSavedQuery` for an
-    identical (question, cypher) pair."""
-    _check_duplicate(driver, question, cypher)
+    identical (question, cypher) pair for manual saves. Automatic execution
+    history permits repeated pairs so every execution has its own observation."""
+    if not allow_duplicate:
+        _check_duplicate(driver, question, cypher)
     saved_query_id = uuid.uuid4().hex
     driver.write_batch(
         [

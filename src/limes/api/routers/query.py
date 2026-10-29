@@ -127,6 +127,7 @@ def query_nl(
         cypher=outcome.cypher,
         ontology_version=ontology.version,
         result_count=outcome.results.counts.get("rows", 0),
+        allow_duplicate=True,  # FR-14: history records every execution, including repeats
     )
     return response
 

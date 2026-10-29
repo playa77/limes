@@ -40,8 +40,7 @@ class ApiClient:
     instance; reuse one instance per connection profile."""
 
     def __init__(self, base_url: str, timeout_s: float = 30.0, *, token: str = "") -> None:
-        # follow_redirects=True: a 3xx must be followed to the final response,
-        # never surface as an unparseable non-JSON body
+        # Only redirects within the configured origin are permitted.
         endpoint = urlsplit(base_url)
         if (
             token
@@ -52,7 +51,7 @@ class ApiClient:
         self._client = httpx.Client(
             base_url=base_url,
             timeout=httpx.Timeout(timeout_s),
-            follow_redirects=True,
+            follow_redirects=False,
             headers={"Authorization": f"Bearer {token}"} if token else {},
         )
 
@@ -213,8 +212,26 @@ class ApiClient:
     ) -> Any:
         try:
             response = self._client.request(method, path, json=json, params=params)
-        except (httpx.ConnectError, httpx.TimeoutException) as exc:
-            raise ApiUnreachable(str(exc)) from exc
+        except httpx.RequestError as exc:
+            raise ApiUnreachable("API transport unavailable") from exc
+        origin = response.request.url
+        for _ in range(5):
+            following = response.next_request
+            if following is None:
+                break
+            target = following.url
+            if (target.scheme, target.host, target.port) != (
+                origin.scheme,
+                origin.host,
+                origin.port,
+            ):
+                raise ApiError(502, "API redirect outside the configured origin is forbidden")
+            try:
+                response = self._client.send(following, follow_redirects=False)
+            except httpx.RequestError as exc:
+                raise ApiUnreachable("API transport unavailable") from exc
+        if 300 <= response.status_code < 400:
+            raise ApiError(502, "API redirect limit reached or redirect target missing")
         if response.status_code >= 400:
             try:
                 detail: Any = response.json()
@@ -223,4 +240,7 @@ class ApiClient:
             if isinstance(detail, dict):
                 detail = detail.get("detail", response.text)
             raise ApiError(response.status_code, str(detail))
-        return response.json()
+        try:
+            return response.json()
+        except ValueError as exc:
+            raise ApiError(502, "API returned an invalid JSON response") from exc

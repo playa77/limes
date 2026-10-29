@@ -15,6 +15,10 @@
   <div id="bar">
     <span id="selected">no selection</span>
     <button id="expand">Expand neighbors</button>
+    <label>Layout <select id="layout">
+      <option value="cose">Force</option><option value="circle">Circle</option>
+      <option value="grid">Grid</option>
+    </select></label>
   </div>
   <div id="cy"></div>
   <script>
@@ -35,6 +39,10 @@
 
     document.getElementById('expand').addEventListener('click', () => {
       if (bridge) bridge.on_expand_clicked();
+    });
+
+    document.getElementById('layout').addEventListener('change', (event) => {
+      if (cy) cy.layout({name: event.target.value}).run();
     });
 
     function typeColor(type) {
@@ -72,11 +80,17 @@
       } else {
         cy.elements().remove();
         cy.add(elements);
-        cy.layout({ name: 'cose' }).run();
+        cy.layout({ name: document.getElementById('layout').value }).run();
       }
     }
 
-    window.pushResult = render;
+    window.pushResult = (payload) => {
+      render(payload);
+      const id = payload.selected_id;
+      document.getElementById('selected').textContent = id || 'no selection';
+      cy.nodes().removeClass('selected');
+      if (id) cy.getElementById(id).addClass('selected');
+    };
   </script>
 </body>
 </html>

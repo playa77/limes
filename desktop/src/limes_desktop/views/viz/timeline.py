@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from PySide6.QtWidgets import QWidget
 
-from limes_desktop.state import QueryOutcomeBundle, SessionState, TemporalFilter
+from limes_desktop.state import QueryOutcomeBundle, SessionState
 from limes_desktop.views.viz.bridge import timeline_payload
 from limes_desktop.views.viz.page import VizPage
 
@@ -20,15 +20,6 @@ class TimelineView(VizPage):
 
     def __init__(self, state: SessionState, parent: QWidget | None = None) -> None:
         super().__init__("timeline.html", state, parent)
-        self._filter = TemporalFilter()
-        state.temporal_filter_changed.connect(self._on_filter)
-
-    def _on_filter(self, f: TemporalFilter) -> None:
-        self._filter = f
 
     def serialize(self, bundle: QueryOutcomeBundle) -> str:
-        return timeline_payload(
-            bundle,
-            validity_from=self._filter.validity_from,
-            validity_to=self._filter.validity_to,
-        )
+        return timeline_payload(bundle)

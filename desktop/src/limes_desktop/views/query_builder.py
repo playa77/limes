@@ -211,10 +211,10 @@ class BuilderView(QWidget):
         relation_combo.currentTextChanged.connect(
             lambda _: self._refresh_hop(row, refill_relation=False)
         )
-        direction_combo.currentTextChanged.connect(lambda _: self._refresh_hop(row))
-        target_combo.currentTextChanged.connect(
-            lambda _: self._refresh_chain_from(row)
+        direction_combo.currentTextChanged.connect(
+            lambda _: self._refresh_hop(row, refill_relation=False)
         )
+        target_combo.currentTextChanged.connect(lambda _: self._refresh_chain_from(row))
         return row
 
     def _refresh_chain_from(self, row: HopRow) -> None:
@@ -223,17 +223,20 @@ class BuilderView(QWidget):
         if index + 1 < len(self.hop_rows):
             self._fill_hop(self.hop_rows[index + 1])
 
-    def _fill_hop(self, row: HopRow) -> None:
-        current_type = self._current_type(row)
-        row.relation_combo.blockSignals(True)
-        row.relation_combo.clear()
-        for relation, _spec in self._relation_types().items():
-            directions = self._directions_for(current_type, str(relation))
-            if directions:
-                row.relation_combo.addItem(str(relation), str(relation))
-        row.relation_combo.blockSignals(False)
+    @staticmethod
+    def _refill(combo: QComboBox, values: list[str], labels: dict[str, str] | None = None) -> None:
+        previous = combo.currentData()
+        combo.blockSignals(True)
+        combo.clear()
+        for value in values:
+            combo.addItem((labels or {}).get(value, value), value)
+        index = combo.findData(previous)
+        if index >= 0:
+            combo.setCurrentIndex(index)
+        combo.blockSignals(False)
 
-        self._refresh_hop(row, refill_relation=False)
+    def _fill_hop(self, row: HopRow) -> None:
+        self._refresh_hop(row)
 
     def _current_type(self, row: HopRow) -> str:
         index = self.hop_rows.index(row)
@@ -247,30 +250,27 @@ class BuilderView(QWidget):
     def _refresh_hop(self, row: HopRow, refill_relation: bool = True) -> None:
         if refill_relation:
             current_type = self._current_type(row)
-            row.relation_combo.blockSignals(True)
-            row.relation_combo.clear()
-            for relation in self._relation_types():
-                if self._directions_for(current_type, relation):
-                    row.relation_combo.addItem(relation, relation)
-            row.relation_combo.blockSignals(False)
-
+            self._refill(
+                row.relation_combo,
+                [
+                    relation
+                    for relation in self._relation_types()
+                    if self._directions_for(current_type, relation)
+                ],
+            )
         relation = row.relation_combo.currentData()
-        direction_combo = row.direction_combo
-        direction_combo.blockSignals(True)
-        direction_combo.clear()
-        if relation:
-            for direction in self._directions_for(self._current_type(row), str(relation)):
-                direction_combo.addItem(_DIRECTION_LABELS.get(direction, direction), direction)
-        direction_combo.blockSignals(False)
-
-        relation = row.relation_combo.currentData()
+        self._refill(
+            row.direction_combo,
+            self._directions_for(self._current_type(row), str(relation)) if relation else [],
+            _DIRECTION_LABELS,
+        )
         direction = row.direction_combo.currentData()
-        row.target_combo.blockSignals(True)
-        row.target_combo.clear()
-        if relation and direction:
-            for target in self._targets_for(str(relation), str(direction)):
-                row.target_combo.addItem(target, target)
-        row.target_combo.blockSignals(False)
+        self._refill(
+            row.target_combo,
+            self._targets_for(str(relation), str(direction)) if relation and direction else [],
+        )
+        # Signals are blocked during refill; explicitly refresh the whole suffix.
+        self._refresh_chain_from(row)
 
     # -- behavior -----------------------------------------------------------------
 
@@ -289,6 +289,13 @@ class BuilderView(QWidget):
         hops = [row.spec() for row in self.hop_rows]
         if any(not all(h.values()) for h in hops):
             return None
+        current = str(start)
+        for hop in hops:
+            if hop["direction"] not in self._directions_for(current, hop["relation"]) or hop[
+                "target_type"
+            ] not in self._targets_for(hop["relation"], hop["direction"]):
+                return None
+            current = hop["target_type"]
         return {"start_type": str(start), "start_filters": {}, "hops": hops}
 
     def _submit(self) -> None:

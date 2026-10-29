@@ -3,7 +3,7 @@
 from typing import Any
 
 import pytest
-from limes_desktop.api.models import OperationJob, OperationRequest
+from limes_desktop.api.models import HealthInfo, OperationJob, OperationRequest
 from limes_desktop.backup_runner import BackupRunner
 from limes_desktop.config import ConnectionProfile
 from limes_desktop.views.backup import BackupDialog
@@ -41,6 +41,7 @@ class Client:
         self.health_calls += 1
         if not self.healthy:
             raise RuntimeError("unreachable")
+        return HealthInfo(status="ok", neo4j=True, ontology_version="test")
 
 
 @pytest.mark.parametrize(
@@ -89,3 +90,23 @@ def test_backup_enabled_without_docker_or_compose_root(qtbot: Any):
     dialog.set_profile(ConnectionProfile(name="remote", base_url="https://example.test"))
     assert dialog.run_button.isEnabled()
     assert "180 seconds" in dialog.consequence_label.text()
+
+
+def test_confirmation_precedes_submission_and_retains_job_result(qtbot: Any):
+    client = Client()
+    runner = BackupRunner(lambda: client)
+    dialog = BackupDialog(runner)
+    qtbot.addWidget(dialog)
+    dialog.set_profile(ConnectionProfile(name="test"))
+    dialog.show()
+    assert client.submitted == []
+    assert dialog.consequence_label.isVisible()
+    try:
+        dialog.run_button.click()
+        assert not dialog.run_button.isEnabled()
+        qtbot.waitUntil(lambda: "API healthy" in dialog.reason_label.text())
+        assert runner.job_id == "job-id"
+        assert "limes-20261007T120000-abcd.dump" in dialog.reason_label.text()
+        assert len(client.submitted) == 1
+    finally:
+        runner.close()
