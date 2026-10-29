@@ -261,7 +261,10 @@ def _process_record(
                 {
                     "entry_hash": content_hash,
                     "source_id": spec.source_id,
-                    "context": raw.acquisition_context,
+                    "context": {
+                        key: value for key, value in raw.acquisition_context.items()
+                        if key != "manifest_hash"
+                    },
                     "fetched_at": raw.fetched_at.isoformat(),
                     "source_url": raw.source_url,
                 },
@@ -279,6 +282,14 @@ def _process_record(
         )
         return
     normalized.content_hash = content_hash
+    if spec.source_id in ("wikipedia", "yahoo_finance"):
+        from limes.enrichment.service import (
+            resolve_observation_candidates,
+            validate_normalized_section,
+        )
+
+        normalized = validate_normalized_section(adapter, raw, normalized, ctx.ontology)
+        resolve_observation_candidates(ctx.driver, normalized.entities)
     record.errors += normalized.errors
     # Both channels are independent: document cache/gating cannot suppress
     # deterministic payload, and a failed document can replay the structured
@@ -292,6 +303,15 @@ def _process_record(
                     "structured", spec.source_id, assertion.assertion_id, content_hash
                 )
         _process_structured(spec, ctx, normalized, record)
+        if spec.source_id in ("wikipedia", "yahoo_finance"):
+            from limes.graph.loader import save_enrichment_check
+
+            for entity in normalized.entities:
+                if entity.type == "EnrichmentSnapshot":
+                    acquisition_hash = str(
+                        (raw.acquisition_context or {}).get("manifest_hash", content_hash))
+                    record.nodes_created += save_enrichment_check(
+                        ctx.driver, entity.entity_id, acquisition_hash, raw.fetched_at)
     if normalized.document is None:
         if normalized.kind == "document":
             record.errors += 1
@@ -300,6 +320,18 @@ def _process_record(
             )
         return
     normalized.document.content_hash = content_hash
+    if spec.source_id == "wikipedia":
+        # A MediaWiki metadata change is a new archived response, not a new
+        # article revision. Extraction/cache/spans stay bound to its first
+        # archived response containing the identical verified revision text.
+        revision = next((e for e in normalized.entities
+                         if e.properties.get("kind") == "encyclopedia_revision"), None)
+        if revision is not None:
+            rows = ctx.driver.read(
+                "MATCH (o:EnrichmentObservation {entity_id:$id}) "
+                "RETURN o.evidence_document_id AS document", {"id": revision.entity_id}, 30)
+            if rows:
+                normalized.document.content_hash = str(rows[0]["document"])
     if normalized.document.news_metadata is not None:
         save_document(ctx.driver, normalized.document, ctx.ontology)
     _process_document(spec, ctx, adapter, raw, normalized, record)

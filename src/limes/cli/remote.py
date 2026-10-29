@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 from uuid import UUID, uuid4
 
@@ -21,6 +22,8 @@ def run(
     source: str | None = None,
     investigation_id: str | None = None,
     after_document: str | None = None,
+    selections: str | None = None,
+    extract_context: bool | None = None,
     days: int | None = None,
     version: str | None = None,
     stage: str | None = None,
@@ -40,6 +43,8 @@ def run(
                 source=source,
                 investigation_id=investigation_id,
                 after_document=after_document,
+                selections=json.loads(selections) if selections is not None else None,
+                extract_context=extract_context,
                 days=days,
                 version=version,
                 stage=stage,

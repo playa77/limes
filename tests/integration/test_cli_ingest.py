@@ -170,4 +170,4 @@ def test_ingest_all_skips_enrichment_only_sources(graph, cli_env, fixture_fetch)
     ingestable = _ingestable_source_ids()
     assert "wikidata" not in ingestable
     assert "news" not in ingestable  # Requires tracked investigation context.
-    assert set(ingestable) == registered - {"wikidata", "news"}
+    assert set(ingestable) == registered - {"wikidata", "news", "wikipedia", "yahoo_finance"}

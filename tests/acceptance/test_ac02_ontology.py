@@ -25,9 +25,9 @@ ONTOLOGY_PATH = REPO_ROOT / "ontology" / "ontology.yaml"
 
 def test_ac02_committed_artifact_loads_with_full_counts():
     ontology = load_ontology(ONTOLOGY_PATH)
-    assert len(ontology.entity_types) == 19
-    assert len(ontology.relation_types) == 30
-    assert ontology.version == "1.1.0"
+    assert len(ontology.entity_types) == 23
+    assert len(ontology.relation_types) == 34
+    assert ontology.version == "1.2.0"
 
 
 def _mutate(mutations) -> dict:

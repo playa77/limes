@@ -112,24 +112,40 @@ BE-44/DC-16 owns subsequent cross-source analysis.
 BE-41 reconciles the documentation baseline. These target contracts do not alter
 the shipped runtime table or relax current extraction safeguards.
 
-## Entity and company enrichment: planned BE-46
+## Entity and company enrichment: BE-46
 
-The current registry includes Wikidata identity enrichment, GLEIF corporate
-relationships and stale German OffeneRegister officers. It has no Wikipedia or
-Yahoo Finance adapter. Current ownership edges do not retain holding quantities,
-and executive/director roles are coarse.
+`wikipedia` and `yahoo_finance` are registered selection-only sources. Submit
+bounded `enrich` operator jobs with reviewed entity/QID/listing mappings; bulk
+ingest never implicitly selects companies. Reads make no provider requests.
 
-The accepted target adds revision-linked DE/EN Wikipedia context and Yahoo Finance
-company governance, shareholder structure and earnings/report metadata through the
-existing worker/archive/resolver/loader/API. Named holdings and aggregate ownership
-ratios remain distinct; quantities, percentage basis, share classes, roles and
-as-of dates require versioned ontology/persistence/API changes. Missing provider
-sections are explicit gaps, never zero holdings or a complete board. Consumer reads
-do not trigger upstream fetches. Yahoo Finance is the selected provider; exact
-available fields, trust ranks and access terms are qualified during implementation.
+Wikipedia retains original DE/EN revision responses and wikitext context, page/
+revision IDs, timestamps, contributor attribution, history and CC BY-SA 4.0 links.
+Context exists without extraction. Optional context extraction uses shared
+prompt/schema 2.0.0, cache/resolver and qualified claims with exact revision spans.
+A page QID mismatch, ambiguity, redirect or missing sitelink stays explicit.
 
+Yahoo uses pinned yfinance 1.7.0 with bounded response buffering, rate/backoff and
+private transient cookie storage. Separate sections preserve profile/officer
+observations, named holdings, aggregate ratios, earnings calendars and supplied
+filings. Unknown currency/basis/term/report dates stay unknown. Officers do not
+establish a complete board; estimates are not published reports. Overlapping
+holders and multiple listings are never summed into a cap table.
+
+Ontology 1.2.0 adds immutable EnrichmentSnapshot/EnrichmentObservation and distinct
+Security/SecurityListing artifacts with four connecting relations. Declared typed
+properties reach graph/entity/builder APIs without overwriting registry history.
+Reviewed QID mappings reuse registry company identities; holder/officer names
+produce unresolved candidates. No snapshot disappearance causes a retraction.
+EnrichmentCheck records acquisition attempts independently from immutable versions.
+Authenticated `/entity/{entity_id}/enrichment` reads expose source/section status,
+source dates, acquisition checks, freshness basis, evidence and bounded history.
+Existing desktop entity/evidence views consume these artifacts through HTTP.
+
+Trust ranks are Wikipedia 0.65 and Yahoo Finance 0.70. Source-format evidence and
+access/retention review are in tests/fixtures/enrichment/README.md; these are
+secondary incomplete sources, with no commercial redistribution or production
+qualification inferred. German and European policy remains the scope.
 [Core design §3.6](LIMES_Design_Document_v2.0.0.md),
-[technical specification §8.5.3](LIMES_Technical_Specification_v2.1.0.md) and
-[BE-46](BACKEND_ROADMAP.md) define semantics and acceptance. German and European
-policy remains the scope; comprehensive EU-27 coverage is deferred. These are
-planned capabilities, not additions to the shipped runtime or live data coverage.
+[technical specification §8.5.3](LIMES_Technical_Specification_v2.1.0.md),
+[BE-46](BACKEND_ROADMAP.md) and [verification](VERIFICATION.md) retain acceptance
+and qualification boundaries. Comprehensive EU-27 coverage remains deferred.

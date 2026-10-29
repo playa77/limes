@@ -49,7 +49,7 @@ def test_entity_returns_properties_and_edge_summary(
         assert entity["type"] == "Corporation"
         assert entity["label"] == "Alpha Industries"
         assert entity["properties"]["lei"] == "LEI-ALPHA"
-        assert entity["ontology_version"] == "1.1.0"
+        assert entity["ontology_version"] == "1.2.0"
         summary = body["edge_summary"]
         assert summary["out"]["SUBSIDIARY_OF"] == 1
         assert summary["out"]["HEADQUARTERED_IN"] == 1

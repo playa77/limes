@@ -8,6 +8,20 @@ changes are major bumps with a numbered migration (Doc 1 §9.6).
 
 ---
 
+## 1.2.0 — 2026-10-29
+
+BE-46 additive migration: EnrichmentSnapshot, EnrichmentObservation, Security and
+SecurityListing, four evidence/listing connections, Corporation QID support and
+typed immutable observation properties. Quantities, roles, source dates and field/
+row evidence remain queryable without changing official registry assertions.
+Existing stamps remain valid; schema provisioning adds constraints/indexes under
+the existing lock. No destructive rewrite or inferred snapshot retraction.
+
+## 1.1.0 — 2026-10-28
+
+BE-43 additive NewsDocument/NewsClaim artifacts, typed qualifications and shared
+prompt/schema 2.0.0. Existing qualifiers/stamps remain unknown/unchanged.
+
 ## 1.0.0 — 2026-08-01
 
 Initial version. 17 entity types under 3 supertypes (Agent, Place, Artifact),

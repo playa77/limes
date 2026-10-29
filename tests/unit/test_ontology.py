@@ -46,10 +46,10 @@ def _assertion(
     )
 
 
-def test_ontology_loads_all_17_types_and_30_relations(ontology):
-    assert len(ontology.entity_types) == 19
-    assert len(ontology.relation_types) == 30
-    assert ontology.version == "1.1.0"
+def test_ontology_loads_current_version_types_and_relations(ontology):
+    assert len(ontology.entity_types) == 23
+    assert len(ontology.relation_types) == 34
+    assert ontology.version == "1.2.0"
 
 
 def test_self_validation_rejects_undeclared_supertype(tmp_path):

@@ -5,7 +5,7 @@ Updated 2026-10-28. Start with the product purpose in README, then this map.
 | Question | Authoritative document | Boundary |
 |---|---|---|
 | What does the complete product do? | [README](../README.md) | Intended finished product; not proof of current readiness |
-| What is the integrated system design? | [Core design](LIMES_Design_Document_v2.0.0.md) | Integrated registries, news, coded events and planned Wikipedia/Yahoo Finance enrichment; German and European policy scope |
+| What is the integrated system design? | [Core design](LIMES_Design_Document_v2.0.0.md) | Integrated registries, news, coded events and Wikipedia/Yahoo Finance enrichment; German and European policy scope |
 | What must modules/data/API deliver? | [Technical specification](LIMES_Technical_Specification_v2.1.0.md) | Current contracts plus explicitly assigned target obligations |
 | Where are we in each sequence? | [Delivery index](ROADMAP.md), [backend](BACKEND_ROADMAP.md), [desktop](DESKTOP_ROADMAP.md) | Package status and dependencies; BE and DC never share an ambiguous ID |
 | What must the desktop display/do? | [Desktop requirements](LIMES_Desktop_Client_Requirements_v1.0.0.md), [architecture](LIMES_Desktop_Client_Architecture_v1.0.0.md) | HTTP consumer with shared claim semantics; acceptance gaps stay explicit |

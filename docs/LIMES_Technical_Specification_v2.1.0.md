@@ -93,8 +93,8 @@ Recorded so the same ground is not re-covered. Each is resolved in the section n
 | S-26 | Two-stage model selection |
 | S-27 | Composition root and run-context construction |
 | S-28 | Cross-process reference data |
-| S-29 | Wikipedia revision-linked entity context, DE/EN, shared document processing (planned BE-46) |
-| S-30 | Yahoo Finance governance, shareholder structure and earnings/report metadata; identity, schema/loader/API migration and availability semantics (planned BE-46) |
+| S-29 | Wikipedia revision-linked entity context, DE/EN, shared document processing (BE-46) |
+| S-30 | Yahoo Finance governance, shareholder structure and earnings/report metadata; identity, schema/loader/API migration and availability semantics (BE-46) |
 
 **Out of scope:** Design Document §2.4 applies. CI already exists. Agency/news processing is core scope; no separate extractor product, event-ledger application or second vector database is included.
 
@@ -838,16 +838,16 @@ Adapters emit records and **write nothing to the graph**.
 | `offeneregister` | Bulk JSON | `Corporation`, `DIRECTOR_OF`, `OWNS_STAKE_IN` | no | 0.30 |
 | `gdelt` | 15-min ZIP containing 61-column TSV | Coded `Event` observations, role/location edges, export/row/report provenance; original report documents only when separately acquired | yes | 0.50 |
 | `feeds` | RSS/Atom per `feeds.yaml` | One source-versioned document per entry | yes | 0.60–0.70 |
-| `wikipedia` (planned BE-46) | MediaWiki API, verified Wikidata sitelinks | Revision-linked entity context and optional evidence-linked extracted claims | Revision-aware refresh, not full history | Source-specific rank set in BE-46 |
-| `yahoo_finance` (planned BE-46) | Yahoo Finance through pinned `yfinance` transport | Company/security identity, available officers/board roles, shareholder structure, earnings/report metadata | Dated snapshots, not reconstructed history | Source-specific rank set in BE-46 |
+| `wikipedia` (BE-46) | MediaWiki API, verified Wikidata sitelinks | Revision-linked entity context and optional evidence-linked extracted claims | Revision-aware refresh, not full history | 0.65 |
+| `yahoo_finance` (BE-46) | Yahoo Finance through pinned `yfinance` transport | Company/security identity, available officers/board roles, shareholder structure, earnings/report metadata | Dated snapshots, not reconstructed history | 0.70 |
 | `news` (BE-43/DC-15) | Dynamic DE/EN public search RSS | Archived index responses and report versions, qualified NewsClaim artifacts; full article text unavailable | Investigation-driven bounded cycles | 0.50 index trust |
 
-The two BE-46 rows are target contracts, absent from the current registry.
+Both BE-46 adapters are registered selection-only sources; generic ingest-all excludes them.
 Wikipedia must not be confused with the existing enrichment-only Wikidata adapter.
 German and European policy remains the scope; neither new adapter promises
 comprehensive EU-27 coverage. Core design §3.6 defines the enrichment semantics.
 
-#### 8.5.3 BE-46 adapter, identity and persistence contract (planned)
+#### 8.5.3 BE-46 adapter, identity and persistence contract
 
 - `wikipedia`: acquire selected DE/EN article revisions through verified entity/page
   associations. Archive original responses and retain QID, page/revision IDs,
@@ -875,9 +875,9 @@ comprehensive EU-27 coverage. Core design §3.6 defines the enrichment semantics
   resignation/disposal from missing snapshot rows. No historical backfill beyond
   the provider's actually available observations is promised.
 - Before coding, inspect representative payloads and define versioned ontology,
-  migration, assertion/property, loader, cache and API schemas together. Current
-  EntityEndpoint/Assertion and label/key-only property stamping cannot preserve
-  the proposed enrichment simply by adding a parser. Preserve bitemporal history,
+  migration, assertion/property, loader, cache and API schemas together. BE-46
+  extends EntityEndpoint with ontology-declared typed properties, immutably stamped
+  by the loader, and models observations separately from registry facts. Preserve bitemporal history,
   source-section identity, field units and unknown dates without overwriting
   registry evidence. Numeric fields must remain queryable and source-attributed.
 - Operator jobs use bounded selections/pagination, retry/backoff, checkpoints and
@@ -887,6 +887,51 @@ comprehensive EU-27 coverage. Core design §3.6 defines the enrichment semantics
   and unresolved identity. Keep ontology-generated queries and desktop API mirrors
   compatible. Tests mock providers and inference; live upstream availability and
   production ingestion are separate evidence, never inferred from fixtures.
+
+**Implemented BE-46 contracts (ontology 1.2.0).** `EnrichmentSelection` carries
+an existing graph entity ID, QID and/or Yahoo symbol/exchange plus review evidence
+URL and rationale; optional ISIN/share_class identifies a separately reviewed
+security. Authenticated operator `enrich` jobs accept 1–10 selections, at most
+three Wikipedia responses per target (identity/DE/EN) or eight Yahoo sections.
+Generic ingest/backfill cannot widen selections; default re-extraction excludes
+selection-only context, which is acquired through reviewed enrich jobs. Reads never acquire providers.
+Wikipedia responses are bounded to 2 MiB and revision text to 500,000 characters;
+Yahoo's curl session bounds decompressed buffering at 4 MiB, redirects at three,
+with 20-second requests and four outer attempts. Existing worker timeout remains
+an independent bound. Wikipedia requests are spaced 0.5s; Yahoo 1s plus bounded
+backoff. Provider cookie/authentication storage is private and transient.
+
+`EntityEndpoint.properties` accepts declared scalar/datetime properties only.
+Loader validation rejects undeclared/protected/mistyped fields before any batch
+commits; source properties are stamped only on create. Observation numeric fields
+remain Neo4j numeric properties. Snapshot identity binds source/company/reviewed
+selection/section/status/content hash (verified revision/text key for Wikipedia);
+observation identity adds row position.
+Both source validity/as-of dates and first recording dates are retained.
+`EnrichmentCheck` binds each acquisition manifest and time to that immutable
+snapshot; a later unchanged success can follow a failed check without rewriting
+old data. All sections remain incomplete: no inferred disappearance closure.
+
+`GET /entity/{entity_id}/enrichment` returns mirrored EnrichmentResponse fields:
+entity_id, snapshots, truncated, diagnosis. Optional source/section/as_of/believed
+filters and limit 1–100 bound history. Snapshot properties include source_id,
+section, status, complete=false, source_as_of, retrieved_at, recorded_at,
+last_checked_at, stale and freshness_basis; observations expose row/field evidence,
+quantities/units and unresolved identity candidates. Unknown source dates remain
+null; as_of permits explicit unknown-source-time rows rather than backdating them.
+Existing entity/neighbor/builder and archive-evidence APIs also expose these nodes
+and provenance. Wikipedia revision URLs/license/history accompany wikitext;
+context extraction opts into the existing qualified NewsClaim storage contract.
+No claim can become a factual edge through this path.
+
+Pinned yfinance 1.7.0's narrow raw response seam preserves original JSON; its
+public DataFrame accessors are not authoritative archival evidence. Original
+DE/EN, dual-listing/share-class and European-issuer fixtures, failed/missing cases
+and provider-term review are in tests/fixtures/enrichment/README.md. Private
+research format checks do not certify commercial rights, production retention,
+complete boards/ownership or model quality. The same-major additive migration
+retains all pre-existing stamps and adds constraints/indexes one transaction at
+a time under the existing provision lock.
 
 Verified source specifics, adopted from live checks rather than assumed: the NUTS hierarchy file carries no level column, so level derives from `NUTS_ID` length and parent by prefix; the postcode correspondence is at `/v2/pcode/csv/`, not `/postalcodes/`; that file uses mixed single and double quoting requiring explicit quote handling.
 
@@ -1538,8 +1583,8 @@ cli/evaluate.py
 | FR-17 extraction cache | S-11 | AC-12, AC-33 |
 | FR-18 bounded operator jobs, external scheduling | S-21, S-24 | TESTING_PHASE; BE-43/DC-15 acceptance |
 | FR-19 gold-set gate | S-22 | AC-31 |
-| FR-20 Wikipedia entity context | S-29 | §8.5.3; BE-46 revision/evidence acceptance (planned) |
-| FR-21 Yahoo Finance company/shareholder enrichment | S-30 | §8.5.3; BE-46 identity/holdings/API acceptance (planned) |
+| FR-20 Wikipedia entity context | S-29 | §8.5.3; BE-46 revision/evidence acceptance |
+| FR-21 Yahoo Finance company/shareholder enrichment | S-30 | §8.5.3; BE-46 identity/holdings/API acceptance |
 
 ### 16.2 Status and acceptance boundaries
 

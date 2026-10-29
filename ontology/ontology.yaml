@@ -1,4 +1,4 @@
-version: "1.1.0"
+version: "1.2.0"
 supertypes: [Agent, Place, Artifact]
 entity_types:
   - name: NewsDocument
@@ -71,12 +71,13 @@ entity_types:
       - {name: ted_buyer_id, type: string, required: false}
   - name: Corporation
     supertype: Agent
-    identifying_keys: [lei, german_register_number]
+    identifying_keys: [lei, german_register_number, wikidata_qid]
     properties:
       - {name: label, type: string, required: true}
       - {name: lei, type: string, required: false, unique: true}
       - {name: german_register_number, type: string, required: false}
       - {name: legal_form, type: string, required: false}
+      - {name: wikidata_qid, type: string, required: false, unique: true}
   - name: PoliticalParty
     supertype: Agent
     identifying_keys: [wikidata_qid]
@@ -172,6 +173,126 @@ entity_types:
       - {name: label, type: string, required: true}
       - {name: vocabulary, type: string, required: false}
       - {name: code, type: string, required: false}
+  - name: EnrichmentSnapshot
+    supertype: Artifact
+    identifying_keys: [snapshot_id]
+    properties:
+      - {name: label, type: string, required: true}
+      - {name: snapshot_id, type: string, required: true, unique: true}
+      - {name: source_id, type: string, required: false}
+      - {name: source_trust, type: float, required: false}
+      - {name: section, type: string, required: false}
+      - {name: status, type: string, required: false}
+      - {name: reason, type: string, required: false}
+      - {name: complete, type: boolean, required: false}
+      - {name: source_as_of, type: datetime, required: false}
+      - {name: recorded_at, type: datetime, required: false}
+      - {name: retrieved_at, type: datetime, required: false}
+      - {name: valid_from, type: datetime, required: false}
+      - {name: evidence_document_id, type: string, required: false}
+      - {name: source_url, type: string, required: false}
+      - {name: entity_mapping, type: string, required: false}
+      - {name: target_id, type: string, required: false}
+      - {name: company_id, type: string, required: false}
+      - {name: mapping_status, type: string, required: false}
+      - {name: rows, type: integer, required: false}
+      - {name: symbol, type: string, required: false}
+      - {name: exchange, type: string, required: false}
+      - {name: listing_id, type: string, required: false}
+      - {name: security_id, type: string, required: false}
+      - {name: share_class, type: string, required: false}
+      - {name: wikidata_qid, type: string, required: false}
+  - name: EnrichmentObservation
+    supertype: Artifact
+    identifying_keys: [observation_id]
+    properties:
+      - {name: label, type: string, required: true}
+      - {name: observation_id, type: string, required: true, unique: true}
+      - {name: source_id, type: string, required: false}
+      - {name: source_trust, type: float, required: false}
+      - {name: section, type: string, required: false}
+      - {name: status, type: string, required: false}
+      - {name: reason, type: string, required: false}
+      - {name: complete, type: boolean, required: false}
+      - {name: source_as_of, type: datetime, required: false}
+      - {name: recorded_at, type: datetime, required: false}
+      - {name: retrieved_at, type: datetime, required: false}
+      - {name: valid_from, type: datetime, required: false}
+      - {name: evidence_document_id, type: string, required: false}
+      - {name: source_url, type: string, required: false}
+      - {name: entity_mapping, type: string, required: false}
+      - {name: target_id, type: string, required: false}
+      - {name: company_id, type: string, required: false}
+      - {name: mapping_status, type: string, required: false}
+      - {name: rows, type: integer, required: false}
+      - {name: symbol, type: string, required: false}
+      - {name: exchange, type: string, required: false}
+      - {name: listing_id, type: string, required: false}
+      - {name: security_id, type: string, required: false}
+      - {name: share_class, type: string, required: false}
+      - {name: wikidata_qid, type: string, required: false}
+      - {name: snapshot_id, type: string, required: false}
+      - {name: kind, type: string, required: false}
+      - {name: name, type: string, required: false}
+      - {name: evidence_row, type: integer, required: false}
+      - {name: evidence_field, type: string, required: false}
+      - {name: currency, type: string, required: false}
+      - {name: quote_type, type: string, required: false}
+      - {name: country, type: string, required: false}
+      - {name: city, type: string, required: false}
+      - {name: website, type: string, required: false}
+      - {name: industry, type: string, required: false}
+      - {name: sector, type: string, required: false}
+      - {name: business_summary, type: string, required: false}
+      - {name: employees_count, type: integer, required: false}
+      - {name: role_title, type: string, required: false}
+      - {name: body, type: string, required: false}
+      - {name: role_kind, type: string, required: false}
+      - {name: term_start, type: datetime, required: false}
+      - {name: term_end, type: datetime, required: false}
+      - {name: identity_status, type: string, required: false}
+      - {name: identity_candidates, type: string, required: false}
+      - {name: shares, type: float, required: false}
+      - {name: ratio, type: float, required: false}
+      - {name: ratio_basis, type: string, required: false}
+      - {name: quantity_unit, type: string, required: false}
+      - {name: ratio_unit, type: string, required: false}
+      - {name: value, type: float, required: false}
+      - {name: interest_kind, type: string, required: false}
+      - {name: overlap_policy, type: string, required: false}
+      - {name: event_date, type: datetime, required: false}
+      - {name: event_status, type: string, required: false}
+      - {name: fiscal_period, type: string, required: false}
+      - {name: report_kind, type: string, required: false}
+      - {name: publication_date, type: datetime, required: false}
+      - {name: report_url, type: string, required: false}
+      - {name: text_format, type: string, required: false}
+      - {name: language, type: string, required: false}
+      - {name: revision_id, type: integer, required: false}
+      - {name: page_id, type: integer, required: false}
+      - {name: revision_at, type: datetime, required: false}
+      - {name: canonical_url, type: string, required: false}
+      - {name: revision_url, type: string, required: false}
+      - {name: license_url, type: string, required: false}
+      - {name: attribution, type: string, required: false}
+      - {name: history_url, type: string, required: false}
+      - {name: redirects, type: string, required: false}
+  - name: Security
+    supertype: Artifact
+    identifying_keys: [isin]
+    properties:
+      - {name: label, type: string, required: true}
+      - {name: isin, type: string, required: true, unique: true}
+      - {name: share_class, type: string, required: false}
+  - name: SecurityListing
+    supertype: Artifact
+    identifying_keys: [listing_id]
+    properties:
+      - {name: label, type: string, required: true}
+      - {name: listing_id, type: string, required: true, unique: true}
+      - {name: symbol, type: string, required: false}
+      - {name: exchange, type: string, required: false}
+      - {name: provider, type: string, required: false}
 relation_types:
   - {name: MEMBER_OF, domain: [Person, Corporation, Country], range: [PoliticalParty, InterestGroup, PublicBody, IGO], temporal: true}
   - {name: HOLDS_OFFICE, domain: [Person], range: [Office], temporal: true}
@@ -203,6 +324,10 @@ relation_types:
   - {name: ABOUT_TOPIC, domain: [LegalAct, Contract, Document, Event], range: [Topic], temporal: true}
   - {name: MENTIONS, domain: [Document], range: [Agent, Place, Asset, LegalAct, Topic], temporal: false}
   - {name: REPRESENTS, domain: [Person], range: [Country, Agent], temporal: true}
+  - {name: HAS_ENRICHMENT, domain: [Agent, Place, Artifact, Event, Office, Topic], range: [EnrichmentSnapshot], temporal: false}
+  - {name: HAS_OBSERVATION, domain: [EnrichmentSnapshot], range: [EnrichmentObservation], temporal: false}
+  - {name: HAS_LISTING, domain: [Corporation], range: [SecurityListing], temporal: false}
+  - {name: REPRESENTS_SECURITY, domain: [SecurityListing], range: [Security], temporal: false}
 vocabularies:
   - {name: EuroVoc, applies_to: Topic}
   - {name: CPV, applies_to: Topic}

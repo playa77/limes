@@ -94,6 +94,8 @@ def test_build_default_registry_contains_phase_two_sources():
         "transparency_register",
         "wikidata",
         "news",
+        "wikipedia",
+        "yahoo_finance",
     }
     assert set(registry.source_ids()) == expected
 

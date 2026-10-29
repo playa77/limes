@@ -41,6 +41,12 @@ logger = structlog.get_logger(__name__)
 # statement is `IF NOT EXISTS` and therefore safe in any order on a fresh
 # database and on re-runs.
 _SCHEMA_STATEMENTS: list[str] = [
+    "CREATE CONSTRAINT security_isin IF NOT EXISTS FOR (n:Security) REQUIRE n.isin IS UNIQUE",
+    "CREATE CONSTRAINT listing_id IF NOT EXISTS FOR (n:SecurityListing) REQUIRE n.listing_id IS UNIQUE",
+    "CREATE CONSTRAINT enrichment_check_id IF NOT EXISTS FOR (n:EnrichmentCheck) REQUIRE n.check_id IS UNIQUE",
+    "CREATE INDEX enrichment_check_snapshot IF NOT EXISTS FOR (n:EnrichmentCheck) ON (n.snapshot_id, n.checked_at)",
+    "CREATE INDEX enrichment_company IF NOT EXISTS FOR (n:EnrichmentSnapshot) ON (n.company_id, n.source_id, n.section)",
+    "CREATE INDEX enrichment_qid IF NOT EXISTS FOR (n:EnrichmentSnapshot) ON (n.wikidata_qid)",
     "CREATE CONSTRAINT entity_id IF NOT EXISTS FOR (n:Entity) REQUIRE n.entity_id IS UNIQUE",
     "CREATE CONSTRAINT mention_id IF NOT EXISTS FOR (n:Mention) REQUIRE n.mention_id IS UNIQUE",
     "CREATE CONSTRAINT document_hash IF NOT EXISTS FOR (n:Document) REQUIRE n.content_hash IS UNIQUE",

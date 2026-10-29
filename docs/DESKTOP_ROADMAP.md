@@ -115,6 +115,17 @@ BE-45's D-84 operator-evidence waiver removes those external evidence gates for
 that backend delivery. It does not complete DC-14, recover OI-05's review trail,
 or claim reference-platform/manual acceptance from offscreen automation.
 
+## BE-46 supporting consumer compatibility
+
+The enrichment backend package updates job/response mirrors and the authenticated
+HTTP client without a new dashboard or direct provider access. Ontology-generated
+entity properties/neighborhoods expose immutable context, quantities, dates and
+evidence; the disposable backend scenario renders revision and attribution/license
+properties in the existing EntityView and retrieves archive evidence through HTTP.
+Model parity includes EnrichmentResponse and new bounded job selection fields.
+This supporting work does not complete DC-14's independent correctness/platform
+obligations or change the existing map-network policy.
+
 ## Deferred
 
 Packaging as .deb, platform-specific polish, multi-user account UX and ledger

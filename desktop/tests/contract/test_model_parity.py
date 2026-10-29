@@ -12,6 +12,7 @@ import limes.api.routers.query as api_query
 import limes.api.routers.saved_queries as api_saved
 import limes.api.routers.search as api_search
 import limes.api.routers.sources as api_sources
+import limes.enrichment.models as api_enrichment
 import limes.news.developments as api_developments
 import limes.news.models as api_news
 import limes.operations.models as api_operations
@@ -22,6 +23,7 @@ import limes.operations.models as api_operations
 # change anywhere on the API surface trips this test. Router view models are
 # passed as classes; the core models by name for the parity message.
 MIRRORED: list[tuple[type, str]] = [
+    (api_enrichment.EnrichmentResponse, "EnrichmentResponse"),
     (api_developments.DevelopmentEvidence, "DevelopmentEvidence"),
     (api_developments.DevelopmentView, "DevelopmentView"),
     (api_developments.EventMatch, "EventMatch"),

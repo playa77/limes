@@ -31,6 +31,7 @@ schema.py: `GraphDriver._driver` is the only seam into the raw driver.
 from __future__ import annotations
 
 import json
+import math
 from collections.abc import Callable
 from datetime import UTC, datetime
 from typing import Any
@@ -112,6 +113,8 @@ def load(
     result.rejected = len(rejected)
 
     standalone = list(standalone_entities or [])
+    # Validate every property before any batch can commit.
+    validate_entity_properties(_distinct_endpoints(valid, standalone), ontology)
     lookup = list(lookup_rows or [])
     batches = [valid[i : i + BATCH_SIZE] for i in range(0, len(valid), BATCH_SIZE)]
     if not batches:
@@ -251,6 +254,39 @@ def _key_property(endpoint: EntityEndpoint, ontology: Ontology) -> str | None:
     return key_name
 
 
+def validate_entity_properties(endpoints: list[EntityEndpoint], ontology: Ontology) -> None:
+    """Check ontology property types before source processing or any batch commit."""
+    for endpoint in endpoints:
+        _entity_properties(endpoint, ontology)
+
+
+def _entity_properties(endpoint: EntityEndpoint, ontology: Ontology) -> dict[str, Any]:
+    """Only declared, typed properties; immutable on re-merge like the source version."""
+    specs = {p.name: p.type for p in ontology.entity_types[endpoint.type].properties}
+    protected = {"entity_id", "label", "aliases", "ontology_version", "created_at",
+                 "label_embedding", *ontology.entity_types[endpoint.type].identifying_keys}
+    checked: dict[str, Any] = {}
+    for key, value in endpoint.properties.items():
+        if key in protected:
+            # Identifying keys have a separate validated stamping path.
+            if endpoint.deterministic_key == (key, value):
+                continue
+            raise ValueError(f"protected entity property: {key}")
+        kind = specs.get(key)
+        valid = value is None or (
+            (kind == "string" and isinstance(value, str))
+            or (kind == "integer" and isinstance(value, int) and not isinstance(value, bool))
+            or (kind == "float" and isinstance(value, (int, float))
+                and not isinstance(value, bool) and math.isfinite(value))
+            or (kind == "boolean" and isinstance(value, bool))
+            or (kind == "datetime" and isinstance(value, datetime) and value.tzinfo is not None)
+        )
+        if kind is None or not valid:
+            raise ValueError(f"undeclared or invalid entity property: {endpoint.type}.{key}")
+        checked[key] = value
+    return checked
+
+
 def _relationship_properties(assertion: Assertion, temporal: bool) -> dict[str, Any]:
     """Every §5.6 metadata property. `recorded_at` comes from the
     assertion's validity, never the wall clock: sources like OffeneRegister
@@ -318,6 +354,7 @@ def _load_batch(
                 endpoint.deterministic_key[1] if endpoint.deterministic_key is not None else None
             )
             params: dict[str, Any] = {
+                "entity_properties": _entity_properties(endpoint, ontology),
                 "entity_id": endpoint.entity_id,
                 "label": endpoint.label,
                 "aliases": endpoint.aliases,
@@ -447,7 +484,7 @@ def save_document(driver: GraphDriver, doc: DocumentPayload, ontology: Ontology)
         "dispatch_id": metadata.get("dispatch_id") or None,
         "publisher": metadata.get("publisher"),
         "feed_hash": metadata.get("feed_hash"),
-        "article_text_available": False,
+        "article_text_available": bool(metadata.get("text_available", False)),
         "ontology_version": ontology.version,
     }
     labels = ":".join(ontology.labels_for("NewsDocument"))
@@ -582,3 +619,15 @@ def save_event_match_review(
             )
         ]
     )
+
+
+
+def save_enrichment_check(driver: GraphDriver, snapshot_id: str, manifest_hash: str,
+                          checked_at: datetime) -> int:
+    """Acquisition history is distinct from immutable source versions and factual edges."""
+    return driver.write_batch([(
+        "MERGE (c:EnrichmentCheck {check_id:$id}) ON CREATE SET "
+        "c.snapshot_id=$snapshot, c.manifest_hash=$manifest, c.checked_at=$at",
+        {"id": hash_entity_id("source-check", snapshot_id, manifest_hash),
+         "snapshot": snapshot_id, "manifest": manifest_hash, "at": checked_at},
+    )]).nodes_created

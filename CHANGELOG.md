@@ -1,3 +1,17 @@
+## 2026-10-29 — BE-46 entity context and company enrichment
+
+- Register selection-only Wikipedia and Yahoo Finance adapters with bounded
+  reviewed operator jobs, raw archival evidence, section failures and manual replay.
+- Preserve DE/EN revision context and attribution without inference; optional shared
+  qualified extraction retains exact revision spans and registry company identity.
+- Add ontology 1.2.0 source-section snapshots, typed company/holder/role/calendar/
+  report observations and separate security/listing identity. Never sum overlapping
+  holders or infer zero holdings, disposal, resignation or complete boards.
+- Keep generic ingest/re-extraction selection-safe, turn malformed typed provider
+  sections into durable failures, and repair bounded HTTP double decompression.
+- Expose acquisition history, source dates, freshness and unresolved identity through
+  authenticated API reads and desktop mirrors/evidence views.
+
 ## 2026-10-29 — BE-44 / DC-16 cross-source temporal investigation
 
 - Combine tracked news claims, coded observations and source-stamped assertions

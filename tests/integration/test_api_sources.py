@@ -29,6 +29,8 @@ REGISTERED_SOURCES = {
     "gdelt",
     "feeds",
     "news",
+    "wikipedia",
+    "yahoo_finance",
 }
 
 FETCHED_AT = datetime(2026, 8, 1, 10, 0, tzinfo=UTC)

@@ -58,7 +58,7 @@ logger = structlog.get_logger(__name__)
 # One place to bump on migration (WP-31); the loader stamps nodes with the
 # *loaded* ontology's version, so a stale constant here only mislabels
 # assertions, never nodes.
-ONTOLOGY_VERSION = "1.1.0"
+ONTOLOGY_VERSION = "1.2.0"
 
 # §11 retry policy, as module constants matching the §4.2 defaults: adapters
 # are constructed without Settings (build_default_registry takes none), so the
@@ -359,7 +359,10 @@ def request_with_retry(
                             chunks.extend(chunk)
                         response = httpx.Response(
                             streamed.status_code,
-                            headers=streamed.headers,
+                            # iter_bytes() already decoded HTTP content encoding.
+                            # Retaining gzip/br headers would decode a second time.
+                            headers={key: value for key, value in streamed.headers.items()
+                                     if key.lower() not in ("content-encoding", "content-length")},
                             content=bytes(chunks),
                             request=streamed.request,
                         )

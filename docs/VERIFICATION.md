@@ -1,5 +1,195 @@
 # Verification and acceptance evidence
 
+## 2026-10-29 — BE-46 enrichment candidate verification
+
+Complete selected parent: Wikipedia context plus Yahoo Finance enrichment and
+supporting identity/ontology/property/loader/API/desktop compatibility. Branch
+`codex/be-46-entity-enrichment`; live-fetched baseline
+`b892875123350f26a87efd095fab32c947d419d0` (BE-45 merged in PR #12).
+The supplied clean checkout was fast-forwarded before implementation and the
+baseline checker passed; the repository-local publication hook is installed.
+No staging, commit, push, publication, production ingestion or paid model run is
+requested. The canonical frozen all-package environment was synchronized.
+
+Full candidate command: `venv/bin/python tools/qualify.py --output work/be46/final-5`.
+Source manifest SHA-256:
+`b897154b606767fc6562361f1cc087325e36e42f82e9cdbc16f26c2ef169f8c4`.
+The runner retains exact source mappings, commands, elapsed durations, logs and
+JUnit under ignored `work/be46/final-5/`. The fail-closed report passes in
+588.520s and confirms no source drift. All five suites pass with no failures,
+errors or skips (1,256 cumulative passes, not a test quota). Its source set includes runtime, tests,
+fixtures, ontology, dependency files, tools, CI, Docker and runtime JSON; handoff
+documentation updates do not change that source fingerprint.
+
+Publication update: after local acceptance, the user explicitly requested preparing
+and opening a PR for this session, authorizing staging, commit and push.
+The qualified source fingerprint remains unchanged; merge and deployment
+remain separate.
+
+### Final candidate results
+
+| Suite | Result | Command elapsed | JUnit |
+|---|---|---:|---|
+| Backend unit | 856 passed | 142.087s | unit.xml |
+| Desktop unit/contract | 140 passed | 5.530s | desktop.xml |
+| Graph integration | 173 passed | 365.307s | integration.xml |
+| Acceptance | 85 passed | 47.080s | acceptance.xml |
+| Desktop integration | 2 passed | 27.198s | desktop-integration.xml |
+
+JUnit/log paths are under work/be46/final-5/. Pytest's own suite durations are
+140.07s, 4.04s, 363.16s, 44.82s and 25.40s respectively; command durations include
+startup/teardown. Existing root-unit runtime warnings (3) and Starlette deprecation
+warnings remain, with no guard skipped. Lint, strict mypy (167 source files), C1–C9,
+generated-document drift, static runtime guards, live baseline and whitespace pass.
+Qt uses offscreen/WebEngine test flags; graph suites use fixture-owned containers,
+volumes and synthetic data. No production database or paid transport is used.
+
+These are validation durations, not implementation effort or merge delay. Publication
+is unrequested. The BE-45 reference unit/integration command durations were
+139.247s/378.529s; this candidate's 142.087s/365.307s do not establish sustained CI
+growth across different fixture/build-cache inputs. Repeated development corrections
+were traced to source inventories/default selection assumptions across registry,
+API, bulk/re-extraction and acceptance tests. The final review checked those
+consumers together and supplied actual fixtures before restarting qualification;
+no smaller delivery package, copied pair suite or numerical quota was introduced.
+
+Acceptance mapping:
+
+- Composition's authoritative registry includes both selection-only adapters;
+  `enrich` accepts at most ten reviewed existing graph-entity mappings. Operator
+  bearer authentication, persistent jobs/request UUID replay and the existing
+  worker timeout remain intact. Generic ingest-all cannot implicitly acquire
+  enrichment. Yahoo validates the returned exchange/symbol before acquiring
+  remaining sections; Wikipedia resolves reviewed QIDs through DE/EN sitelinks
+  and validates actual page QIDs, missing/ambiguous pages and redirects. Wikipedia
+  accepts any existing ontology entity (including countries/places); Yahoo remains
+  corporation-only. The generic EnrichmentObservation type and target_id avoid
+  assigning company semantics to non-company context.
+- Original provider responses and acquisition manifests reach the content archive.
+  Wikipedia supplies exact page/revision IDs and dates, revision/canonical/history
+  URLs, contributor attribution, license and wikitext, including without inference.
+  Snapshot version identity uses verified revision/text identity; unrelated page
+  metadata changes remain archived but cannot create a new context version or
+  repeat extraction. Shared prompt/schema 2.0.0, gate, resolver, cache and loader
+  retain exact original revision spans as qualified claims. Unqualified replacement
+  output cannot produce factual edges; empty re-extraction leaves context intact.
+- Yahoo's replaceable yfinance 1.7.0 raw transport bounds decompressed buffering
+  before allocation grows past 4 MiB, has three redirects, 20-second requests,
+  rate spacing/backoff and four outer attempts. Cookie state is private/transient,
+  compatible with runtime UID 7474 and no writable home. Individual failures retain
+  available sections, explicit failed/missing/unsupported status and manual replay;
+  failed runs do not advance the checkpoint. EnrichmentCheck retains new acquisition
+  attempts independently from immutable source versions; unchanged success after
+  failure is visible as checked again. Replaying identical raw context does not
+  recursively embed previous manifest hashes or invent additional checks.
+- Profile/governance, named major/institutional/fund holdings, separate aggregate
+  ratios, calendar estimates and available filing metadata retain dates, roles,
+  quantities, units/basis, currency and field/row locators. Explicit title words
+  distinguish executive and named board bodies; no officer roster establishes a
+  complete board structure. Missing currency, term/as-of/fiscal/publication dates
+  stay unknown. Estimated calendar dates never create published-report observations.
+  Overlapping holder lists have a do-not-sum policy and remain incomplete.
+- Ontology 1.2.0 is additive: four artifact types/four connecting relations plus
+  Corporation QID support. Ontology-declared scalar/datetime properties are checked
+  before batch commits and stamped only on creation; protected registry fields
+  cannot be injected or overwritten. Reviewed QIDs reuse existing canonical
+  corporations; securities and exchange/provider-qualified listings are distinct.
+  Holder/officer names yield unresolved shared-resolver candidates. Source/section
+  versions coexist and disappearance never retracts registry/other-section evidence.
+  Schema changes retain old stamps, use the provision lock and one DDL per transaction.
+- Authenticated enrichment reads expose bounded source/section history, independent
+  source/recorded/check dates, freshness basis, unknown-time rows, unresolved identity,
+  evidence and truncation/empty diagnosis. Consumer reads make no provider requests.
+  Numeric properties remain accessible to ontology-generated builder/Cypher queries.
+  Desktop job/response mirrors and the HTTP client match the API. The actual entity
+  property view displays revision/license values; existing archive evidence preview
+  retrieves the original response through its assertion hash and section locator.
+
+Evidence sources: `tests/unit/test_enrichment.py` adds 16 distinct cases and
+`tests/unit/test_sources_base.py` adds one shared compressed-transport regression;
+`tests/integration/test_enrichment.py` adds two full graph/API/desktop/shared-pipeline
+scenarios. Existing ontology-version assertions and mirror contracts are updated,
+not duplicated. Independent raw fixtures and provenance/access review live in
+`tests/fixtures/enrichment/README.md`. The source-format probes fetched DE/EN
+Siemens revisions, SIE.DE/SIEGY/BMW.DE/ASML.AS quoteSummary responses and VOW.DE/
+VOW3.DE prices. BMW3.DE and an unlisted symbol returned 404, and an uncredentialed
+quoteSummary returned 401. Two further read-only price calls confirmed the bounded
+transport handles sequential listings. A subsequent original English Germany revision (page 11867, revision 1381631157,
+Q183) was acquired through the actual bounded MediaWiki transport for country
+coverage. That compressed response exposed the shared helper retaining gzip headers
+on already-decoded bytes; the helper now strips transport encoding/length before
+constructing the buffered response. Regression coverage independently checks one
+decode and the decompressed bound. No provider/model call occurs in tests.
+
+Development checks passed for source/property/job contracts and the disposable
+scenarios before source freeze. An initial bounded subset without sandbox network
+permission stalled the ASGI test loop and was terminated, then passed with the
+required environment permission (89 cases). Development integration corrections
+fixed fixture imports, mock embeddings and absent Neo4j null-property assertions;
+these were test defects, not silently skipped guards. The final source includes
+the metadata-only revision replay regression and acquisition-manifest idempotence.
+The first candidate attempt stopped after 853 unit passes and two compatibility
+failures: an obsolete Corporation-QID undeclared-key assertion and prepended new
+relations changing the legacy builder default. The negative key fixture now uses
+an actually undeclared ticker key, and new ontology types/relations are appended
+to preserve existing order. The focused 49-case regression passed.
+The second attempt passed all 855 then-current backend units and 140 desktop
+checks. Integration found an old registry allowlist omitting the two new sources;
+that fixture is updated. The run was deliberately interrupted during integration
+for the non-agent Wikipedia scope correction and newly exposed compressed HTTP
+repair. It is not acceptance evidence for the final source. Failure/interruption
+reports remain under work/be46/final/ and work/be46/final-2/. The final-3 candidate
+includes generic entity context, independent country evidence and the shared gzip
+regression; affected source and graph/API checks pass before the final freeze.
+The third attempt passed 856 backend units and 140 desktop checks; graph
+integration had 172 passes and one outdated ingest-all exclusion expectation.
+The expectation now includes both selection-only adapters. Reviewing that failure
+also corrected default re-extraction to exclude Wikipedia and to reject explicit
+enrichment sources without reviewed selection jobs. The fourth attempt was
+stopped during units after identifying the remaining shared acceptance registry
+allowlist. AC-04 now includes both adapters and their actual independent fixtures;
+the affected ten acceptance cases pass, as do 33 source/CLI/graph cases.
+
+The final candidate also validates normalized enrichment properties against the
+loaded ontology before writing. Provider scalar drift becomes an archived, durable
+failed section with errors/finished_at, preserving earlier evidence and preventing
+checkpoint advancement. The graph/API scenario injects an invalid employee-count
+scalar and verifies its failed-section visibility and completed run record. These
+corrections remain within BE-46; no guard or failure is waived. Final evidence is
+under work/be46/final-5/; earlier attempts remain retained and non-authoritative.
+A transient execution-tool disconnect was retried after runtime readiness was
+confirmed; it did not erase work or change the managed environment.
+Full-suite results, rather than development passes, govern acceptance.
+
+Source availability is partial. Wikipedia context is wikitext, not a rendered
+article; Yahoo does not supply complete boards, holdings, terms or reports.
+Reviewer-supplied company/security mappings are explicit evidence-bearing inputs,
+not automatically certified by names or tickers. Source-format checks do not
+certify model quality, commercial redistribution/production retention rights,
+production coverage, deployment, or reference-platform desktop performance.
+BE-45/DC-14 and the current issue index retain those separate boundaries.
+
+### Change accounting against live base (local acceptance snapshot)
+
+Nineteen new cases: 16 enrichment unit cases, one shared gzip-bound regression,
+and two integration scenarios. Other tests/fixtures/expected versions are updated
+in place. Pass totals above are cumulative across the repository.
+
+| Category | Added | Deleted | Net |
+|---|---:|---:|---:|
+| Handwritten runtime | 1343 | 9 | 1334 |
+| Tests/helpers | 874 | 34 | 840 |
+| Fixture data and attribution | 57 | 0 | 57 |
+| Ontology artifact | 127 | 2 | 125 |
+| Dependencies | 129 | 4 | 125 |
+| Documentation renderer | 52 | 23 | 29 |
+| Generated docs | 52 | 23 | 29 |
+| Handwritten docs | 448 | 37 | 411 |
+
+Fixture JSON size: 498,797 bytes. Unchanged raw responses are
+single lines. No files are staged or committed; the final source fingerprint
+remains unchanged after this documentation-only handoff.
+
 ## 2026-10-29 — BE-45 candidate qualification under D-84 waiver
 
 Complete selected delivery: reproducible candidate qualification, physical dump

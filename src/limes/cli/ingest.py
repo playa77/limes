@@ -73,6 +73,8 @@ def _ingest_source(settings: Settings, source_id: str, spec: RunSpec) -> None:
     """The shared run: context per kind, lock, execute, release."""
     from limes.errors import LimesError
 
+    if source_id in ("wikipedia", "yahoo_finance"):
+        raise LimesError("use enrich with reviewed entity selections")
     if source_id == "news":
         raise LimesError("use news-refresh with an investigation ID")
     from limes.cli.main import adapter_kind, run_with_lock
@@ -105,5 +107,5 @@ def _ingestable_source_ids() -> list[str]:
     return [
         source_id
         for source_id in build_default_registry().source_ids()
-        if source_id not in ("wikidata", "news")
+        if source_id not in ("wikidata", "news", "wikipedia", "yahoo_finance")
     ]

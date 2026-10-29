@@ -159,7 +159,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     _register_exception_handlers(app)
 
+    from limes.api.routers.enrichment import router as enrichment_router
+
     for router in (
+        enrichment_router,
         operations.router,
         news.router,
         health.router,

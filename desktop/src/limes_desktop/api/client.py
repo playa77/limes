@@ -20,6 +20,7 @@ from limes_desktop.api.models import (
     CostLedger,
     CoverageReport,
     DevelopmentView,
+    EnrichmentResponse,
     EntityDetail,
     GraphNeighbors,
     HealthInfo,
@@ -96,6 +97,11 @@ class ApiClient:
 
     def entity(self, entity_id: str) -> EntityDetail:
         return EntityDetail.from_api(self._request("GET", f"/entity/{entity_id}"))
+
+    def enrichment(self, entity_id: str, **filters: Any) -> EnrichmentResponse:
+        return EnrichmentResponse.from_api(
+            self._request("GET", f"/entity/{entity_id}/enrichment", params=filters)
+        )
 
     def entity_neighbors(
         self, entity_id: str, filters: dict[str, Any] | None = None
