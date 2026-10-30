@@ -52,6 +52,16 @@ file or in existing project guidance.
 
 ## Repository baseline — before any implementation or publication
 
+For every session, including Q&A, architecture review, planning, documentation and
+study material, verify the live GitHub baseline before substantive work. Never
+substitute a supplied checkout or cached remote reference when fetching fails.
+Check required sandbox network permissions first; use the configured proxy with
+explicit network access when needed. If live access still fails, retry every
+120 seconds until it succeeds. Preserve local work, reconcile the checkout with
+current main, and inspect the resulting diff before proceeding. Do not waive this
+prerequisite or ask the user to repeat it. This is the user's explicit standing
+instruction, reaffirmed 2026-10-30.
+
 At session entry inspect `git status` and the current branch. Run
 `python3 tools/check_git_baseline.py`: it fetches main and requires the checkout
 to contain its current history. If stale, preserve local work, reconcile with

@@ -16,6 +16,7 @@ Updated 2026-10-28. Start with the product purpose in README, then this map.
 | Why were decisions made? | [DECISIONS](../DECISIONS.md), [CHANGELOG](../CHANGELOG.md) | Historical records, not current blanket acceptance |
 | What supports the status audit? | [Baseline audit](BASELINE_AUDIT.md), [news investigation](NEWS_REVIEW.md) | Artifact/ancestry/source evidence and limits; not competing architecture |
 | What were the original plans? | [Backend archive](archive/backend-roadmap-2026-08-01.md), [desktop archive](archive/desktop-plan-2026-09-09.md) | Historical definitions only; old commands, ceremonies and boxes are inactive |
+| What is proposed for the next version? | [GraphRAG future work](next-version/GRAPHRAG_WORK_PACKAGES.md) | Proposed packages only, after scoped ingestion stability; outside the current release sequence |
 
 ## Maintenance and precedence
 
