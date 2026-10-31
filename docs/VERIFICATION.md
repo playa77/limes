@@ -1,5 +1,47 @@
 # Verification and acceptance evidence
 
+
+## 2026-10-31 — BE-48 second full-ingest repair
+
+Implementation verified locally; **full runtime qualification remains blocked**.
+Branch `codex/be-48-ingest-rerun-repair`, live-main base `a0ec26f92c7e`.
+[Acceptance mapping and limitations](INGEST_RERUN_REPAIR.md) cover the whole parent.
+Final source digest: `aeb3b835d3276c98a6ab991f27d96567b9ce1346b8f21a0a63b76e77c04d2586`; final source manifest is unchanged
+from `work/be48/candidate-3/source.json`.
+
+- Static/type/docs/generated/shared guards pass.
+- Backend unit: 889 passed; desktop unit/contract: 147 passed.
+- Graph integration: 173 passed, with one backup test failing under storage
+  pressure. That same backup/recovery test subsequently passed in isolation
+  (`work/be48/backup-final.xml`, 120.50 s) after test-image cleanup.
+- Acceptance: 85 passed (`work/be48/acceptance.xml`); desktop integration:
+  3 passed (`work/be48/desktop-integration.xml`).
+- Mandatory runtime-stack recheck fails during worker dependency installation:
+  language-model wheel extraction reports `No space left on device (os error 28)`
+  (`work/be48/runtime-isolated.log`). Earlier Neo4j startup and backup restore
+  failures independently report the same storage exhaustion. These are not a
+  green full candidate. Retain all three failed candidate reports and isolated
+  rechecks; repeat the complete candidate on an executor with enough free disk.
+
+Change accounting against live main (additions/deletions/net): handwritten
+runtime **132/13/+119**; unit regressions **129/4/+125**; integration helpers
+**14/1/+13**; qualification runner **4/1/+3**; CI **3/1/+2**; feed configuration
+**1/1/0**. No fixture data or generated artifacts changed. Documentation separately
+records the acceptance mapping, issue disposition, decision and validation evidence.
+These line counts describe change size, not engineering time or acceptance.
+
+Ten added regression cases cover distinct wire-schema, feed-continuation,
+server-cooldown and XML-integrity behaviors. Existing parser/ontology/evidence,
+cache/checkpoint and graph suites remain in force. No paid inference, operator
+source ingestion, production graph/config write, staging, commit, push or
+publication occurred. FSD/OSM availability and full operator law coverage remain
+external evidence; the operator identifies OpenCode Go as inference provider.
+
+
+Publication update (2026-10-31): the user authorized preparing and opening the
+session PR. Runtime/test/CI source still matches the recorded candidate manifest;
+publication does not turn the disk-blocked runtime check into passing evidence.
+
 ## 2026-10-29 — DC-14 desktop correctness and local qualification
 
 The complete DC-14 implementation and bounded local qualification are accepted.

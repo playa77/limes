@@ -41,6 +41,7 @@ Non-obvious choices, each load-bearing:
 
 from __future__ import annotations
 
+import re
 from collections.abc import Iterator
 from datetime import UTC, datetime
 from typing import Literal
@@ -116,7 +117,12 @@ class TransparencyRegisterAdapter:
         """Convert one export payload into the interest-group assertion set.
         Pure: never touches the network."""
         try:
-            root = etree.fromstring(record.payload)
+            payload = _repair_xml_controls(record.payload)
+            root = etree.fromstring(
+                payload, etree.XMLParser(resolve_entities=False, no_network=True, recover=False)
+            )
+            if root.getroottree().docinfo.doctype:
+                raise SourceParseError("transparency_register: DTD declarations are not supported")
         except (etree.XMLSyntaxError, ValueError) as exc:
             raise SourceParseError(
                 f"transparency_register: payload is not parseable XML: {exc}"
@@ -422,3 +428,41 @@ def _parse_date(raw: str | None, fallback: datetime) -> tuple[datetime, bool]:
         raw=raw,
     )
     return fallback, True
+
+
+_INVALID_XML_CONTROLS = re.compile(
+    rb"<!--[\s\S]*?-->|<!\[CDATA\[[\s\S]*?\]\]>|<\?[\s\S]*?\?>|"
+    rb"[\x00-\x08\x0b\x0c\x0e-\x1f]|&#(?:[0-9]+|x[0-9a-fA-F]+);"
+)
+
+
+def _repair_xml_controls(payload: bytes) -> bytes:
+    """Replace XML 1.0 forbidden C0 controls with spaces; never repair structure.
+
+    Original bytes remain the archived evidence and content-hash identity.
+    Spaces prevent joining words across damaged source text.
+    """
+    # Repair only the UTF-8 export contract; byte replacement would corrupt UTF-16.
+    if payload.startswith((b"\xff\xfe", b"\xfe\xff", b"\x00<", b"<\x00")):
+        return payload
+    repairs = 0
+
+    def replace(match: re.Match[bytes]) -> bytes:
+        nonlocal repairs
+        value = match.group()
+        if value.startswith(b"<"):
+            return value
+        if value.startswith(b"&#"):
+            # Huge/unrelated numeric references remain strict parser errors.
+            if len(value) > 16:
+                return value
+            number = int(value[3:-1], 16) if value.startswith(b"&#x") else int(value[2:-1])
+            if number > 31 or number in (9, 10, 13):
+                return value
+        repairs += 1
+        return b" "
+
+    repaired = _INVALID_XML_CONTROLS.sub(replace, payload)
+    if repairs:
+        logger.warning("transparency_register: XML controls replaced", replacements=repairs)
+    return repaired

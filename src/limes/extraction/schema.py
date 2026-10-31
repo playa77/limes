@@ -101,6 +101,11 @@ def schema_for_version(version: str) -> dict[str, Any]:
     return schema
 
 
+def response_schema_for_version(version: str) -> dict[str, Any]:
+    """Wire contract for a complete response; schema_for_version validates one item."""
+    return {"type": "array", "items": schema_for_version(version)}
+
+
 def parse_extraction_response(
     raw: str,
     passages: list[Passage],

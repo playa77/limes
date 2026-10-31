@@ -22,6 +22,7 @@ closure sections; “open” is not a statement that every old symptom still exi
 
 | Issue | Current state | Owner/package | Remaining obligation or closure evidence |
 |---|---|---|---|
+| OI-27 | Implemented locally — full runtime qualification blocked | BE-48 | [Repair mapping](docs/INGEST_RERUN_REPAIR.md): wire-array schema, feed continuation/RSS, Retry-After and strict XML controls; unit/acceptance/desktop checks pass; backup passes after cleanup; runtime-stack wheel extraction fails with confirmed disk exhaustion. Repeat full qualification on a larger executor. Production outcome remains unverified. |
 | OI-25 | Closed — complete local BE-47 acceptance | BE-47 | Final frozen candidate-3: all five suites/shared guards pass with no source drift. Current formats, archive manifests/API, identity compatibility and failure/checkpoint regressions have direct evidence below; production success is unclaimed. |
 | OI-26 | Open — external source availability | Operator/upstream | Bounded probes observed FSD HTTP 500, a tiny Overpass timeout, and empty XML for two TED award links. Require compatible current responses or explicit failed-source/record outcomes when acquiring; never infer coverage from retry code or mocked tests. |
 | OI-01 | BE-45 operator-evidence gate waived (D-84); unmeasured | Operator | Actual deployed revision/configuration remains unknown; no inferred deployment |
@@ -689,3 +690,14 @@ returned empty bodies. No full source acquisition or paid model quality is infer
 from fixtures. Unknown original job-log details remain unknown, with reproducible
 law-index/CDM defects independently repaired. No staging, commit, push, PR,
 deployment or production full-ingest run occurred.
+
+
+## 2026-10-31 — OI-27 BE-48 implementation and qualification blocker
+
+[Repair acceptance mapping](docs/INGEST_RERUN_REPAIR.md) records the complete
+implementation and supplied evidence disposition. VERIFICATION preserves three
+failed full candidates, passing affected/unit/graph/acceptance/desktop checks and
+the successful isolated backup recheck. The mandatory isolated runtime-stack
+check still fails with explicit `No space left on device` extracting the worker
+language-model wheel. OI-27 remains open for full qualification on an adequately
+sized executor; no deployed success or paid-model quality is claimed.

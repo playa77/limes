@@ -34,7 +34,13 @@ def test_remote_backup_without_host_privileges(tmp_path: Path):
         ]
         if os.environ.get("CODEX_PROXY_CERT"):
             command += ["--secret", "id=proxy_ca,src=/etc/ssl/certs/ca-certificates.crt"]
-        subprocess.run([*command, "."], cwd=context, check=True, capture_output=True, timeout=1800)
+        try:
+            subprocess.run([*command, "."], cwd=context, check=True,
+                           capture_output=True, timeout=1800)
+        except subprocess.CalledProcessError as exc:
+            raise RuntimeError(
+                f"{service} image build failed:\n{exc.stderr.decode(errors='replace')[-12000:]}"
+            ) from exc
     project = "limes-runtime-test-" + uuid4().hex[:12]
     port = _free_port()
     settings = dict(
@@ -76,6 +82,8 @@ def test_remote_backup_without_host_privileges(tmp_path: Path):
             "NEO4J_server_memory_heap_initial__size": "512m",
             "NEO4J_server_memory_heap_max__size": "512m",
             "NEO4J_server_memory_pagecache_size": "512m",
+            "NEO4J_db_tx__log_preallocate": "false",
+            "NEO4J_db_tx__log_rotation_size": "16M",
         }
     )
     path = tmp_path / "compose.yml"

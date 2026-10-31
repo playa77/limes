@@ -15,6 +15,7 @@ from __future__ import annotations
 import hashlib
 from datetime import UTC, datetime
 
+import pytest
 import respx
 from httpx import Response
 from structlog.testing import capture_logs
@@ -252,3 +253,37 @@ def test_skipped_facets_are_counted_by_reason():
     by_label = {a.object.label: a.validity.valid_from for a in met}
     assert by_label["Anna Kowalski"] == datetime(2023, 6, 13, tzinfo=UTC)
     assert by_label["Bernd Beispiel"] == NOW
+
+
+@pytest.mark.parametrize("bad", [b"&#2;", b"&#x02;", b"\x02"])
+def test_current_export_repairs_control_but_keeps_original_identity(bad):
+    from limes.sources.base import payload_hash
+
+    payload = (
+        b"<ListOfIRPublicDetail><exportDate>2026-10-30</exportDate><numberOfIR>1</numberOfIR>"
+        b"<interestRepresentative><identificationCode>TEST</identificationCode>"
+        b"<originalName>Alpha" + bad + b"Beta</originalName></interestRepresentative>"
+        b"</ListOfIRPublicDetail>"
+    )
+    record = RawRecord(payload=payload, content_type="application/xml", source_url=EXPORT_URL,
+                       fetched_at=NOW)
+    result = TransparencyRegisterAdapter().normalize(record)
+    assert result.entities[0].label == "Alpha Beta"
+    assert result.content_hash == payload_hash(payload)
+    assert record.payload == payload
+    with pytest.raises(SourceParseError, match="incomplete export"):
+        TransparencyRegisterAdapter().normalize(record.model_copy(update={
+            "payload": payload.replace(b"<numberOfIR>1", b"<numberOfIR>2")
+        }))
+
+
+def test_control_repair_does_not_recover_structure_or_rewrite_cdata():
+    from limes.sources.transparency_register import _repair_xml_controls
+
+    assert _repair_xml_controls(b"<x><![CDATA[&#2;]]><!-- &#2; -->&#2;</x>") == (
+        b"<x><![CDATA[&#2;]]><!-- &#2; --> </x>"
+    )
+    record = RawRecord(payload=b"<Templates><broken>&#2;</Templates>",
+                       content_type="application/xml", source_url=EXPORT_URL, fetched_at=NOW)
+    with pytest.raises(SourceParseError, match="not parseable XML"):
+        TransparencyRegisterAdapter().normalize(record)

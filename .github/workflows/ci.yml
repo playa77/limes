@@ -51,9 +51,11 @@ jobs:
       - run: sudo apt-get update && sudo apt-get install -y libegl1 libopengl0 libxcb-cursor0 libxkbcommon-x11-0 libnss3 libasound2t64 libxcomposite1 libxdamage1 libxrandr2 libxtst6 libgbm1
       - run: uv sync --frozen --all-packages --python 3.12
       # Separate sessions avoid pytest's nested acceptance plugin collection issue.
-      - run: venv/bin/python -m pytest tests/integration -q --junitxml=test-results/integration.xml
+      - run: venv/bin/python -m pytest tests/integration --ignore=tests/integration/test_runtime_stack.py -q --junitxml=test-results/integration.xml
       - run: venv/bin/python -m pytest tests/acceptance -q --junitxml=test-results/acceptance.xml
       - run: venv/bin/python -m pytest desktop/tests/integration -q --junitxml=test-results/desktop-integration.xml
+      # Isolate image builds/three services from the shared graph fixture.
+      - run: venv/bin/python -m pytest tests/integration/test_runtime_stack.py -q --junitxml=test-results/runtime-stack.xml
       - uses: actions/upload-artifact@v4
         if: always()
         with:

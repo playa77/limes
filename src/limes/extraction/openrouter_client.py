@@ -87,7 +87,7 @@ class OpenRouterClient:
                 "json_schema": {"name": "response", "schema": json_schema},
             }
         logger.info(
-            "openrouter call started",
+            "inference call started",
             purpose=purpose,
             model_id=model_id,
             inference_parameters=parameters,
@@ -115,7 +115,7 @@ class OpenRouterClient:
             request_fee,
         )
         logger.info(
-            "openrouter call completed",
+            "inference call completed",
             purpose=purpose,
             model_id=model_id,
             input_tokens=input_tokens,
@@ -247,7 +247,7 @@ class OpenRouterClient:
         token usage (§8.7.6). A response without usage is logged with a
         warning: an unmetered call is visible, never silent."""
         if input_tokens == 0 and output_tokens == 0:
-            logger.warning("openrouter call returned no token usage; not ledgered")
+            logger.warning("inference call returned no token usage; not ledgered")
             return
         now = datetime.now(UTC)
         cost_usd = Decimal(

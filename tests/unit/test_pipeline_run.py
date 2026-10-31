@@ -378,6 +378,16 @@ def test_document_with_rejected_extraction_is_retryable_and_counted(tmp_path):
     assert record.documents_gated_out == 1
     assert not any("ExtractionCacheEntry" in cypher for cypher, _ in driver.writes)
     assert extractor.calls == 1
+    import json
+
+    snapshots = [json.loads(ctx.archive.get(path.name))
+                 for path in (tmp_path / "archive").rglob("*")
+                 if path.is_file()
+                 if ctx.archive.get(path.name).startswith(b"{")]
+    diagnostic = next(item for item in snapshots if "parse_errors" in item)
+    assert diagnostic["raw_response"] == "[]"
+    assert diagnostic["model_id"] == "test/extractor"
+    assert diagnostic["response_truncated"] is False
 
 
 def test_document_validation_rejection_is_counted(tmp_path):

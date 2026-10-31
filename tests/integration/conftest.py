@@ -108,6 +108,11 @@ def neo4j_instance() -> Iterator[Neo4jInstance]:
             "NEO4J_server_memory_heap_max__size=512m",
             "-e",
             "NEO4J_server_memory_pagecache_size=512m",
+            # Disposable suites do not need production-sized preallocated logs.
+            "-e",
+            "NEO4J_db_tx__log_preallocate=false",
+            "-e",
+            "NEO4J_db_tx__log_rotation_size=16M",
             "--name",
             f"limes-test-neo4j-{port}",
             IMAGE,
