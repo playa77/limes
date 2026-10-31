@@ -1,5 +1,48 @@
 # Verification and acceptance evidence
 
+## 2026-10-31 — BE-50 adaptive OSM acquisition
+
+Live base `54c6a1a3efa2`, branch `codex/be-50-adaptive-osm-acquisition`.
+[Acceptance mapping](OSM_ADAPTIVE_ACQUISITION.md) defines the complete package.
+Affected development checks: 43 adapter/pipeline unit cases and two disposable
+Neo4j acquisition lifecycle cases pass; lint and types pass. Five new unit cases
+and one new graph case cover distinct adaptive behavior. Two earlier incomplete
+response regressions initially failed because their dummy query could not split;
+the fixtures now use a real bbox with subdivision disabled to test terminal
+failure separately. The source classification does not relax payload validation.
+
+Frozen candidate `work/be50/candidate-1/report.json` failed only its isolated
+runtime-stack lane. Source manifest SHA-256:
+`cf2423403980a624ba21be7a3f42079b2e86f42541c8b687aaa3210256e6c818`.
+No production data, paid inference, staging, commit, publication or deployment.
+
+
+| Candidate check | Result | Duration |
+|---|---|---|
+| Baseline, lint, types, docs, generated docs, guards, whitespace | Passed | Individual times in report |
+| Backend unit | 910 passed | 149.583 s |
+| Desktop unit/contract | 147 passed | 8.863 s |
+| Graph integration | 176 passed | 229.573 s |
+| Acceptance | 85 passed | 44.624 s |
+| Desktop integration | 3 passed | 24.442 s |
+| Three-service runtime stack | Failed creating container filesystem | 65.738 s |
+
+Total: 1,321 passing cases and one failed runtime-stack case; 524.298 seconds
+candidate validation, not implementation/merge latency. Exact source manifest was
+rechecked unchanged after the failure. A separate reproduction saved Compose stderr
+in `work/be50/runtime-diagnostic.log`: `Error response from daemon: no space left
+on device` creating the disposable Neo4j container. Disk reached 100% of 7.9 GB.
+Test project containers/volumes, three test image tags and unused build cache were
+removed; free space recovered to 5.8 GB. No storage driver or production resources
+were changed. Full qualification requires an adequately sized executor.
+
+Runtime additions/deletions/net: 83/16/+67 lines. Tests: 131/3/+128 lines,
+including five new parameterized unit cases and one graph case; other changes are
+handwritten documentation. No fixture data, generated files, dependency, ontology,
+Dockerfile, service, config key or deployment changes. OI-28 remains open for full
+runtime qualification and live deployment/capacity evidence.
+
+
 ## 2026-10-31 — BE-49 third-ingest repair
 
 Implementation and affected source/graph checks pass; **full runtime qualification
@@ -1104,3 +1147,10 @@ docs, generation and staged whitespace checks pass. Publication source digest:
 Comparing with candidate-3/source.json confirms only those two formatting changes.
 The full 1,289-test run remains evidence for identical runtime behavior, not a
 claim that its original byte fingerprint equals this normalized publication tree.
+
+
+## BE-50 publication authorization — 2026-10-31
+
+The user authorized preparing and opening the session PR. Staging, commit and
+push preserve the frozen candidate source and its runtime-stack blocker; no
+merge, deployment or production acquisition is included.

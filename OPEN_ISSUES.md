@@ -22,7 +22,7 @@ closure sections; “open” is not a statement that every old symptom still exi
 
 | Issue | Current state | Owner/package | Remaining obligation or closure evidence |
 |---|---|---|---|
-| OI-28 | Implemented locally — full runtime qualification blocked | BE-49 | [Acceptance mapping](docs/INGEST_THIRD_RUN_REPAIR.md): Wikidata action and bounded resumable OSM acquisition repaired; 1,315 candidate cases pass, runtime-stack container creation fails with reproduced executor disk exhaustion. Full acceptance requires a larger executor; live capacity/legacy migration remain separate. |
+| OI-28 | Adaptive acquisition candidate; live capacity and runtime qualification open | BE-49/BE-50 | [BE-50 adaptive follow-up](docs/OSM_ADAPTIVE_ACQUISITION.md); [BE-49 acceptance](docs/INGEST_THIRD_RUN_REPAIR.md): Wikidata action and bounded resumable OSM acquisition repaired; 1,315 candidate cases pass, runtime-stack container creation fails with reproduced executor disk exhaustion. Full acceptance requires a larger executor; live capacity/legacy migration remain separate. |
 | OI-27 | Implemented locally — full runtime qualification blocked | BE-48 | [Repair mapping](docs/INGEST_RERUN_REPAIR.md): wire-array schema, feed continuation/RSS, Retry-After and strict XML controls; unit/acceptance/desktop checks pass; backup passes after cleanup; runtime-stack wheel extraction fails with confirmed disk exhaustion. Repeat full qualification on a larger executor. Supplied third-run operator evidence reports healthy deployment and a successful Transparency Register load; full isolated candidate qualification still requires a passing run. |
 | OI-25 | Closed — complete local BE-47 acceptance | BE-47 | Final frozen candidate-3: all five suites/shared guards pass with no source drift. Current formats, archive manifests/API, identity compatibility and failure/checkpoint regressions have direct evidence below; production success is unclaimed. |
 | OI-26 | Open — external source availability | Operator/upstream | Bounded probes observed FSD HTTP 500, a tiny Overpass timeout, and empty XML for two TED award links. Require compatible current responses or explicit failed-source/record outcomes when acquiring; never infer coverage from retry code or mocked tests. |
@@ -722,3 +722,13 @@ lane fails during Compose startup. Repeating the exact fixture command yields
 `Error response from daemon: no space left on device` with Docker `vfs` on the
 7.9 GB executor. No parent closure or passing deployment is inferred. VERIFICATION
 retains failed/interrupted attempts, affected evidence, exact timings and cleanup.
+
+
+## 2026-10-31 — OI-28 adaptive acquisition follow-up (BE-50)
+
+Fixed-grid capacity failures now have a bounded subdivision implementation.
+The frozen BE-50 candidate passes 1,321 cases; the runtime-stack lane fails with
+reproduced executor disk exhaustion during container creation.
+[Acceptance](docs/OSM_ADAPTIVE_ACQUISITION.md) distinguishes source/graph verification
+from unresolved deployment, live nationwide capacity and runtime qualification.
+Existing OI-28 obligations remain open; no production-success claim is made.

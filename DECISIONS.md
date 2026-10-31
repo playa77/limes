@@ -5,6 +5,23 @@ reversibility: **R1** reversible in under an hour, **R2** bounded recoverable
 cost, **R3** one-way door. Written when each decision is made, latest first.
 Nothing here is a status report; unlogged decisions are unmade decisions.
 
+## 2026-10-31 — D-91 (R1) — BE-50 adaptive OSM acquisition
+
+The user requests action on the remaining acquisition gap. Deliver adaptive
+subdivision on `codex/be-50-adaptive-osm-acquisition`, live base `54c6a1a3efa2`.
+Only explicit runtime timeout/memory remarks justify smaller cells; other errors
+remain explicit failures. Preserve BE-49 root hashes/cursors, archive all response
+bytes, persist split topology before children and require complete leaf coverage.
+Three split levels and 200 fetch calls per invocation bound work; successful leaves
+remain reusable after limits/failure. No automatic jobs, endpoint rotation, staging,
+publication, production writes or deployment is implied. Acceptance is mapped in
+[adaptive acquisition](docs/OSM_ADAPTIVE_ACQUISITION.md).
+
+Publication update (2026-10-31): the user explicitly authorized preparing and
+opening a PR for this session, including staging, commit and push. Publish as a
+draft with the runtime-stack disk-exhaustion blocker preserved. The frozen
+runtime/test source remains unchanged. Merge and deployment are separate.
+
 ## 2026-10-31 — D-90 (R1) — BE-49 third-ingest repair
 
 The user requests proceeding with the fixes after reviewing two attached operator

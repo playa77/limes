@@ -133,6 +133,47 @@ OVERPASS_QUERIES = _partition_queries()
 OVERPASS_QUERY = _overpass_query()
 
 
+MAX_SPLIT_DEPTH = 3
+MAX_REQUESTS_PER_RUN = 200
+
+
+class OverpassCapacityError(SourceParseError):
+    """Explicit server resource exhaustion; eligible for bounded subdivision."""
+
+
+def _split_query(query: str) -> tuple[str, ...]:
+    boxes = re.findall(r'\]\(([-\d.,]+)\);', query)
+    if not boxes or len(set(boxes)) != 1:
+        raise SourceFetchError("osm: cannot subdivide query with an invalid bbox")
+    south, west, north, east = map(Decimal, boxes[0].split(","))
+    lat, lon = (south + north) / 2, (west + east) / 2
+    return tuple(query.replace(f"({boxes[0]});", "(" + ",".join(map(str, box)) + ");")
+                 for box in ((south, west, lat, lon), (south, lon, lat, east),
+                             (lat, west, north, lon), (lat, lon, north, east)))
+
+
+def _leaf_queries(splits: list[str]) -> list[tuple[str, str]]:
+    """Derive coverage from trusted roots; reject orphan/overdeep cursor entries."""
+    pending = [(str(i), query) for i, query in enumerate(OVERPASS_QUERIES)]
+    leaves: list[tuple[str, str]] = []
+    remaining = set(splits)
+    if len(remaining) != len(splits):
+        raise SourceFetchError("osm: duplicate split in acquisition cursor")
+    while pending:
+        key, query = pending.pop(0)
+        if key in remaining:
+            if key.count("/") >= MAX_SPLIT_DEPTH:
+                raise SourceFetchError("osm: acquisition split depth exceeds limit")
+            remaining.remove(key)
+            pending[0:0] = [(f"{key}/{i}", child)
+                            for i, child in enumerate(_split_query(query))]
+        else:
+            leaves.append((key, query))
+    if remaining:
+        raise SourceFetchError("osm: acquisition cursor contains orphan splits")
+    return leaves
+
+
 class OsmAdapter:
     """OpenStreetMap via Overpass - KRITIS assets in the German bbox."""
 
@@ -175,34 +216,53 @@ class OsmAdapter:
         plan_hash = payload_hash(json.dumps([OVERPASS_URL, *OVERPASS_QUERIES]).encode())
         with nullcontext() if self._run_scope_active else store.locked():
             state = store.read(plan_hash)
-            expected = {str(i) for i in range(len(OVERPASS_QUERIES))}
-            if not set(state.partitions) <= expected:
+            leaves = _leaf_queries(state.splits)
+            if not set(state.partitions) <= {key for key, _ in leaves}:
                 raise SourceFetchError("osm: acquisition cursor contains unknown partitions")
-            requested = False
-            for index, query in enumerate(OVERPASS_QUERIES):
-                partition = str(index)
+            requests = 0
+            index = 0
+            while index < len(leaves):
+                partition, query = leaves[index]
                 if partition in state.partitions:
                     _validated_elements(store.payload(state.partitions[partition]))
+                    index += 1
                     continue
-                if requested:
-                    time.sleep(1)  # sequential, at most one new request per second
-                requested = True
+                if requests >= MAX_REQUESTS_PER_RUN:
+                    raise SourceFetchError(
+                        "osm: acquisition request limit reached; "
+                        "progress retained for explicit resume")
+                if requests:
+                    time.sleep(1)
+                requests += 1
                 fetched_at = now_utc()
                 payload = fetch_bytes_form(OVERPASS_URL, {"data": query})
                 content_hash = store.archive.put("osm", payload, "application/json")
-                _validated_elements(payload)  # never cache a timeout/error body as complete
+                try:
+                    _validated_elements(payload)
+                except OverpassCapacityError as exc:
+                    if partition.count("/") >= MAX_SPLIT_DEPTH:
+                        raise SourceFetchError(
+                            f"osm: partition {partition} exhausted subdivision depth; "
+                            "acquisition incomplete, progress retained") from exc
+                    state.splits.append(partition)
+                    store.write(state)  # durable topology before requesting children
+                    leaves = _leaf_queries(state.splits)
+                    logger.info("osm partition subdivided", partition=partition,
+                                error_content_hash=content_hash, leaves=len(leaves))
+                    continue
                 state.partitions[partition] = PartitionEntry(
                     content_hash=content_hash, fetched_at=fetched_at)
                 store.write(state)
-                logger.info("osm partition acquired", partition=index,
-                            completed=len(state.partitions), total=len(OVERPASS_QUERIES),
+                index += 1
+                logger.info("osm partition acquired", partition=partition,
+                            completed=len(state.partitions), total=len(leaves),
                             bytes=len(payload), content_hash=content_hash)
-            if set(state.partitions) != expected:
+            if set(state.partitions) != {key for key, _ in leaves}:
                 raise SourceFetchError("osm: partition coverage is incomplete")
             manifest_hash = store.manifest(state)
             seen: set[str] = set()
-            for index in range(len(OVERPASS_QUERIES)):
-                entry = state.partitions[str(index)]
+            for index, (partition, _) in enumerate(leaves):
+                entry = state.partitions[partition]
                 payload = store.payload(entry)
                 excluded: list[str] = []
                 for element in _validated_elements(payload):
@@ -216,7 +276,8 @@ class OsmAdapter:
                     fetched_at=entry.fetched_at,
                     acquisition_context={
                         "acquisition_id": state.acquisition_id, "plan_hash": plan_hash,
-                        "partition": index, "partition_count": len(OVERPASS_QUERIES),
+                        "partition": index, "partition_key": partition,
+                        "partition_count": len(leaves),
                         "acquisition_manifest_hash": manifest_hash,
                         "excluded_elements": excluded,
                     },
@@ -362,7 +423,12 @@ def _parse_elements(record: RawRecord) -> tuple[list[dict[str, object]], int]:
         raise SourceParseError(f"osm: payload is not JSON: {exc}") from exc
     if not isinstance(data, dict):
         raise SourceParseError("osm: payload is not a JSON object")
-    if data.get("remark"):
+    remark = data.get("remark")
+    if isinstance(remark, str) and remark.startswith("runtime error:") and (
+        "Query timed out" in remark or "out of memory" in remark
+    ):
+        raise OverpassCapacityError("osm: Overpass resource limit; incomplete response")
+    if remark:
         raise SourceParseError("osm: Overpass returned an error remark; incomplete response")
     elements = data.get("elements")
     if not isinstance(elements, list):

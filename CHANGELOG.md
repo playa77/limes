@@ -1,5 +1,12 @@
 ## 2026-10-31 — BE-48 second full-ingest repair
 
+## 2026-10-31 — BE-50 adaptive OSM acquisition
+
+Overpass cells reporting query timeout or memory exhaustion now subdivide into
+four durable child cells. Restart reuses successful leaves; finite depth/request
+limits preserve incomplete state without advancing source success. Existing
+BE-49 cursors remain compatible. Production nationwide completion is unverified.
+
 ## 2026-10-31 — BE-49 third-ingest repair (candidate)
 
 - Fix Wikidata's `wbgetentities` read action and identify API error objects.
