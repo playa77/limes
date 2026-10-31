@@ -1,5 +1,15 @@
 ## 2026-10-31 — BE-48 second full-ingest repair
 
+## 2026-10-31 — BE-49 third-ingest repair (candidate)
+
+- Fix Wikidata's `wbgetentities` read action and identify API error objects.
+- Acquire OSM through 80 bounded, paced geographic queries with archived original
+  responses, durable resume state, strict completeness checks and replay after load
+  failure. Deduplicate boundary elements deterministically by type and id.
+- OSM asset keys now include their element type; unoperated assets are retained.
+  Existing ambiguous numeric-only keys are preserved for explicit migration review.
+
+
 - Match extraction wire schemas to the parser's array contract in both extractors;
   retain bounded rejection diagnostics locally and use provider-neutral call logs.
 - Continue later curated feeds before reporting aggregate failure; replace the

@@ -16,8 +16,8 @@ Non-obvious choices, each load-bearing:
   `valid_from` and `recorded_at` are `fetched_at`, never `datetime.now()`.
 - The ontology's `Asset.osm_type` property cannot be stamped: the loader
   stamps no arbitrary properties, and the endpoint carries only the
-  deterministic key. The node-versus-way distinction survives in the raw
-  payload the archive retains, just not as a queryable property.
+  deterministic key. Element type is part of the key (`node/123`,
+  `way/123`, `relation/123`); numeric IDs alone collide across OSM types.
 - The ontology has no Asset->Topic edge (`ABOUT_TOPIC`'s domain excludes
   `Asset`), so a sector is never asserted as a relationship. The association
   rides the shared Topic node instead: every element of one sector produces
@@ -46,13 +46,16 @@ from __future__ import annotations
 
 import json
 import re
+import time
 from collections.abc import Callable, Iterator
+from contextlib import contextmanager, nullcontext
 from datetime import datetime
+from decimal import Decimal
 from typing import Literal
 
 import structlog
 
-from limes.errors import SourceParseError
+from limes.errors import SourceFetchError, SourceParseError
 from limes.sources.base import (
     coordinate_location,
     fetch_bytes_form,
@@ -63,6 +66,7 @@ from limes.sources.base import (
     payload_hash,
     topic_endpoint,
 )
+from limes.sources.osm_acquisition import OsmAcquisition, PartitionEntry
 from limes.types import (
     Assertion,
     EntityEndpoint,
@@ -90,9 +94,9 @@ _KRITIS_SECTORS: dict[str, dict[str, list[str]]] = {
 }
 
 
-def _overpass_query() -> str:
-    """One query covering every selector in `_KRITIS_SECTORS` in map order,
-    one clause per tag key, restricted to the German bbox.
+def _overpass_query(bbox: str = GERMANY_BBOX) -> str:
+    """One bounded query covering every selector in map order,
+    one clause per tag key, restricted to the supplied bbox.
 
     Derived from the map so the fetch cannot drift from the taxonomy: adding a
     sector or a value here extends the query on the next process start. Values
@@ -104,12 +108,28 @@ def _overpass_query() -> str:
         for tag_key, values in tag_map.items():
             merged.setdefault(tag_key, []).extend(values)
     clauses = [
-        f'  nwr["{tag_key}"~"^({"|".join(re.escape(v) for v in values)})$"]({GERMANY_BBOX});'
+        f'  nwr["{tag_key}"~"^({"|".join(re.escape(v) for v in values)})$"]({bbox});'
         for tag_key, values in merged.items()
     ]
-    return "[out:json][timeout:60];\n(\n" + "\n".join(clauses) + "\n);\nout center;\n"
+    return "[out:json][timeout:25];\n(\n" + "\n".join(clauses) + "\n);\nout center;\n"
 
 
+def _partition_queries() -> tuple[str, ...]:
+    # 8 x 10 adjoining cells cover the exact original bbox. Decimal arithmetic
+    # preserves common boundaries; Overpass may return a way in several cells.
+    south, west, north, east = map(Decimal, GERMANY_BBOX.split(","))
+    height, width = (north - south) / 8, (east - west) / 10
+    return tuple(
+        _overpass_query(",".join(str(v) for v in (
+            south + row * height, west + col * width,
+            south + (row + 1) * height, west + (col + 1) * width,
+        )))
+        for row in range(8) for col in range(10)
+    )
+
+
+OVERPASS_QUERIES = _partition_queries()
+# Compatibility identifier for diagnostics; acquisition uses OVERPASS_QUERIES.
 OVERPASS_QUERY = _overpass_query()
 
 
@@ -123,27 +143,92 @@ class OsmAdapter:
     supports_backfill: bool = False
     supports_incremental: bool = False
 
-    def fetch(self, since: datetime | None, until: datetime | None) -> Iterator[RawRecord]:
-        """Query the Overpass API for KRITIS-relevant tags in the German bbox.
+    def __init__(self, acquisition: OsmAcquisition | None = None) -> None:
+        self.acquisition = acquisition
+        self._completed_acquisition: str | None = None
+        self._run_scope_active = False
 
-        The window is ignored: the query observes the present OSM state, so a
-        full load is the only load and a window changes nothing (§8.6.2 -
-        `supports_incremental` is False). One `RawRecord` per fetch, archived
-        as the `application/json` payload.
+    @contextmanager
+    def run_scope(self) -> Iterator[None]:
+        """Keep the acquisition lock through graph loading and acknowledgement."""
+        if self.acquisition is None:
+            raise SourceFetchError("osm: durable acquisition store is not configured")
+        with self.acquisition.locked():
+            self._run_scope_active = True
+            try:
+                yield
+            finally:
+                self._run_scope_active = False
+
+    def fetch(self, since: datetime | None, until: datetime | None) -> Iterator[RawRecord]:
+        """Acquire every bounded partition before exposing records for loading.
+
+        Cached partitions retain original bytes and fetch instants. This is a
+        collection over an acquisition interval, not a single OSM snapshot.
+        Complete replay is necessary after graph-load failure; the cursor tracks
+        successful acquisition only and never implies successful loading.
         """
-        fetched_at = now_utc()
-        payload = fetch_bytes_form(OVERPASS_URL, {"data": OVERPASS_QUERY})
-        logger.info(
-            "osm payload fetched",
-            bytes=len(payload),
-            fetched_at=fetched_at.isoformat(),
-        )
-        yield RawRecord(
-            payload=payload,
-            content_type="application/json",
-            source_url=OVERPASS_URL,
-            fetched_at=fetched_at,
-        )
+        store = self.acquisition
+        if store is None:
+            raise SourceFetchError("osm: durable acquisition store is not configured")
+        self._completed_acquisition = None
+        plan_hash = payload_hash(json.dumps([OVERPASS_URL, *OVERPASS_QUERIES]).encode())
+        with nullcontext() if self._run_scope_active else store.locked():
+            state = store.read(plan_hash)
+            expected = {str(i) for i in range(len(OVERPASS_QUERIES))}
+            if not set(state.partitions) <= expected:
+                raise SourceFetchError("osm: acquisition cursor contains unknown partitions")
+            requested = False
+            for index, query in enumerate(OVERPASS_QUERIES):
+                partition = str(index)
+                if partition in state.partitions:
+                    _validated_elements(store.payload(state.partitions[partition]))
+                    continue
+                if requested:
+                    time.sleep(1)  # sequential, at most one new request per second
+                requested = True
+                fetched_at = now_utc()
+                payload = fetch_bytes_form(OVERPASS_URL, {"data": query})
+                content_hash = store.archive.put("osm", payload, "application/json")
+                _validated_elements(payload)  # never cache a timeout/error body as complete
+                state.partitions[partition] = PartitionEntry(
+                    content_hash=content_hash, fetched_at=fetched_at)
+                store.write(state)
+                logger.info("osm partition acquired", partition=index,
+                            completed=len(state.partitions), total=len(OVERPASS_QUERIES),
+                            bytes=len(payload), content_hash=content_hash)
+            if set(state.partitions) != expected:
+                raise SourceFetchError("osm: partition coverage is incomplete")
+            manifest_hash = store.manifest(state)
+            seen: set[str] = set()
+            for index in range(len(OVERPASS_QUERIES)):
+                entry = state.partitions[str(index)]
+                payload = store.payload(entry)
+                excluded: list[str] = []
+                for element in _validated_elements(payload):
+                    key = _element_key(element)
+                    if key in seen:
+                        excluded.append(key)
+                    else:
+                        seen.add(key)
+                yield RawRecord(
+                    payload=payload, content_type="application/json", source_url=OVERPASS_URL,
+                    fetched_at=entry.fetched_at,
+                    acquisition_context={
+                        "acquisition_id": state.acquisition_id, "plan_hash": plan_hash,
+                        "partition": index, "partition_count": len(OVERPASS_QUERIES),
+                        "acquisition_manifest_hash": manifest_hash,
+                        "excluded_elements": excluded,
+                    },
+                )
+            self._completed_acquisition = state.acquisition_id
+
+    def complete_fetch(self) -> None:
+        """Retire state after complete loading, before the source success checkpoint."""
+        if self.acquisition is not None and self._completed_acquisition is not None:
+            self.acquisition.complete(
+                self._completed_acquisition, already_locked=self._run_scope_active)
+            self._completed_acquisition = None
 
     def normalize(
         self,
@@ -165,14 +250,24 @@ class OsmAdapter:
         skipped = 0
         missing_regions = 0
         no_coordinates = 0
+        assets = 0
+        duplicates = 0
 
+        raw_excluded = (record.acquisition_context or {}).get("excluded_elements", [])
+        excluded = set(raw_excluded) if isinstance(raw_excluded, list) else set()
+        element_keys: set[str] = set()
         for element in elements:
+            element_key = _element_key(element)
+            if element_key in excluded or element_key in element_keys:
+                duplicates += 1
+                continue
+            element_keys.add(element_key)
             raw_id = element.get("id")
             if raw_id is None:
                 malformed += 1
                 logger.warning("osm: element without id skipped", element=element)
                 continue
-            element_id = str(raw_id)
+            element_id = _element_key(element)
             tags = _string_tags(element)
             if tags is None:
                 malformed += 1
@@ -190,9 +285,11 @@ class OsmAdapter:
             asset = EntityEndpoint(
                 entity_id=key_entity_id(("osm_id", element_id)),
                 type="Asset",
-                label=tags.get("name") or f"OSM {element.get('type', '')} {element_id}",
+                label=tags.get("name") or f"OSM {element_id}",
                 deterministic_key=("osm_id", element_id),
             )
+            assets += 1
+            standalone.append(asset)
             topic = topic_endpoint("KRITIS", sector.lower(), label=sector)
             if topic.entity_id not in seen:
                 standalone.append(topic)
@@ -237,7 +334,8 @@ class OsmAdapter:
         logger.info(
             "osm: payload normalized",
             elements=len(elements),
-            assets=len(elements) - malformed - skipped,
+            assets=assets,
+            duplicates=duplicates,
             assertions=len(assertions),
             standalone_entities=len(standalone),
             skipped=skipped,
@@ -264,6 +362,8 @@ def _parse_elements(record: RawRecord) -> tuple[list[dict[str, object]], int]:
         raise SourceParseError(f"osm: payload is not JSON: {exc}") from exc
     if not isinstance(data, dict):
         raise SourceParseError("osm: payload is not a JSON object")
+    if data.get("remark"):
+        raise SourceParseError("osm: Overpass returned an error remark; incomplete response")
     elements = data.get("elements")
     if not isinstance(elements, list):
         raise SourceParseError("osm: payload lacks an elements list")
@@ -276,6 +376,27 @@ def _parse_elements(record: RawRecord) -> tuple[list[dict[str, object]], int]:
             malformed += 1
             logger.warning("osm: non-object element skipped", element=repr(element)[:120])
     return parsed, malformed
+
+
+def _element_key(element: dict[str, object]) -> str:
+    return f"{element.get('type', 'unknown')}/{element.get('id')}"
+
+
+def _validated_elements(payload: bytes) -> list[dict[str, object]]:
+    record = RawRecord(payload=payload, content_type="application/json",
+                       source_url=OVERPASS_URL, fetched_at=now_utc())
+    elements, malformed = _parse_elements(record)
+    keys: set[str] = set()
+    for element in elements:
+        raw_id = element.get("id")
+        if (element.get("type") not in ("node", "way", "relation")
+                or not isinstance(raw_id, int) or isinstance(raw_id, bool) or raw_id <= 0
+                or _string_tags(element) is None or _element_key(element) in keys):
+            malformed += 1
+        keys.add(_element_key(element))
+    if malformed:
+        raise SourceParseError("osm: malformed partition elements; completeness unverified")
+    return elements
 
 
 def _string_tags(element: dict[str, object]) -> dict[str, str] | None:

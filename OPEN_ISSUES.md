@@ -22,7 +22,8 @@ closure sections; “open” is not a statement that every old symptom still exi
 
 | Issue | Current state | Owner/package | Remaining obligation or closure evidence |
 |---|---|---|---|
-| OI-27 | Implemented locally — full runtime qualification blocked | BE-48 | [Repair mapping](docs/INGEST_RERUN_REPAIR.md): wire-array schema, feed continuation/RSS, Retry-After and strict XML controls; unit/acceptance/desktop checks pass; backup passes after cleanup; runtime-stack wheel extraction fails with confirmed disk exhaustion. Repeat full qualification on a larger executor. Production outcome remains unverified. |
+| OI-28 | Implemented locally — full runtime qualification blocked | BE-49 | [Acceptance mapping](docs/INGEST_THIRD_RUN_REPAIR.md): Wikidata action and bounded resumable OSM acquisition repaired; 1,315 candidate cases pass, runtime-stack container creation fails with reproduced executor disk exhaustion. Full acceptance requires a larger executor; live capacity/legacy migration remain separate. |
+| OI-27 | Implemented locally — full runtime qualification blocked | BE-48 | [Repair mapping](docs/INGEST_RERUN_REPAIR.md): wire-array schema, feed continuation/RSS, Retry-After and strict XML controls; unit/acceptance/desktop checks pass; backup passes after cleanup; runtime-stack wheel extraction fails with confirmed disk exhaustion. Repeat full qualification on a larger executor. Supplied third-run operator evidence reports healthy deployment and a successful Transparency Register load; full isolated candidate qualification still requires a passing run. |
 | OI-25 | Closed — complete local BE-47 acceptance | BE-47 | Final frozen candidate-3: all five suites/shared guards pass with no source drift. Current formats, archive manifests/API, identity compatibility and failure/checkpoint regressions have direct evidence below; production success is unclaimed. |
 | OI-26 | Open — external source availability | Operator/upstream | Bounded probes observed FSD HTTP 500, a tiny Overpass timeout, and empty XML for two TED award links. Require compatible current responses or explicit failed-source/record outcomes when acquiring; never infer coverage from retry code or mocked tests. |
 | OI-01 | BE-45 operator-evidence gate waived (D-84); unmeasured | Operator | Actual deployed revision/configuration remains unknown; no inferred deployment |
@@ -701,3 +702,23 @@ the successful isolated backup recheck. The mandatory isolated runtime-stack
 check still fails with explicit `No space left on device` extracting the worker
 language-model wheel. OI-27 remains open for full qualification on an adequately
 sized executor; no deployed success or paid-model quality is claimed.
+
+
+## 2026-10-31 — OI-28 third-ingest repair selected
+
+Operator reports confirm BE-48 deployment and Transparency Register's 173,562
+assertions with an advanced checkpoint. Feeds abort on a repository Wikidata action
+typo; a small Overpass probe succeeds while the original full query times out.
+OSM workload repair belongs to BE-49, rather than evidence that its service is
+universally unavailable. TED HTTP 429 and FSD HTTP 500 remain OI-26 observations;
+the later FSD probe result is absent. GDELT's bounded structured result and corrected
+law-node counts are supplied operator evidence, not new local data runs.
+
+
+BE-49 final verification: the frozen candidate source digest is
+`a4608e6d217319d55968fa15b21d99450f7b92a0988f585c8fe022ccfc0cf4a0`.
+All source/graph/acceptance/desktop checks pass (1,315 cases); the required runtime
+lane fails during Compose startup. Repeating the exact fixture command yields
+`Error response from daemon: no space left on device` with Docker `vfs` on the
+7.9 GB executor. No parent closure or passing deployment is inferred. VERIFICATION
+retains failed/interrupted attempts, affected evidence, exact timings and cleanup.

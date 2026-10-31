@@ -35,6 +35,7 @@ CONSTRUCTOR_PATTERNS = [
     (r"GraphDriver\(", "driver"),
     (r"OpenRouterClient\(", "client"),
     (r"ArchiveStore\(", "archive"),
+    (r"OsmAcquisition\(", "OSM acquisition store"),
     (r"Governor\(", "governor"),
     (r"OpenRouterExtractor\(", "extractor"),
     (r"GateContext\(", "gate"),

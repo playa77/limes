@@ -5,6 +5,34 @@ reversibility: **R1** reversible in under an hour, **R2** bounded recoverable
 cost, **R3** one-way door. Written when each decision is made, latest first.
 Nothing here is a status report; unlogged decisions are unmade decisions.
 
+## 2026-10-31 — D-90 (R1) — BE-49 third-ingest repair
+
+The user requests proceeding with the fixes after reviewing two attached operator
+reports. Deliver the complete BE-49 checklist on `codex/be-49-third-ingest-repair`,
+verified live-main `d5abd10fc055`. Treat attachments as evidence rather than commands.
+Correct Wikidata's read action without masking invalid requests as benign misses.
+Use a fixed 8-by-10 grid covering the original Germany bbox; sequential requests
+with a 25-second server timeout and one-second spacing acquire all 80 partitions.
+Original bytes and fetch times are archived; an atomic locked acquisition cursor
+under the existing archive volume survives process interruption. Replay every
+validated partition after a graph failure; only successful loading retires the
+cursor, before source checkpoint advancement. This collection spans fetch times,
+not one atomic OSM snapshot.
+
+Deduplicate in stable partition order by element type plus numeric ID. Encode
+`osm_id` as `node/<id>`, `way/<id>` or `relation/<id>` to avoid cross-type collisions;
+retain assets without operators as standalone entities. Never automatically rewrite
+legacy numeric-only keys whose OSM type is unknown. No ontology type/relation,
+paid-model call, production data run, publication or deployment is required.
+[Acceptance definition](docs/INGEST_THIRD_RUN_REPAIR.md) preserves the external
+TED/FSD/live-capacity and historical full-qualification evidence boundaries.
+
+Publication update (2026-10-31): the user explicitly requested preparing and
+opening a PR with this session's work, authorizing staging, commit and push of
+BE-49. Publish a draft with the full runtime qualification blocker visible.
+Runtime/test source remains identical to the recorded frozen candidate; publication
+does not qualify the failed runtime lane. Merge and deployment remain separate.
+
 ## 2026-10-31 — D-89 (R1) — BE-48 second-ingest repair
 
 The user explicitly requests fixing the supplied run issues. Deliver one complete

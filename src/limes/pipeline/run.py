@@ -37,6 +37,7 @@ from __future__ import annotations
 
 import json
 import uuid
+from contextlib import nullcontext
 from datetime import UTC, datetime
 from decimal import Decimal
 from typing import TYPE_CHECKING, Literal
@@ -157,6 +158,14 @@ def execute_run(spec: RunSpec, ctx: RunContext) -> IngestionRunRecord:
     and consumes only what the context carries (§8.15).
     """
     adapter = ctx.registry.get(spec.source_id)
+    run_scope = getattr(adapter, "run_scope", nullcontext)
+    with run_scope():
+        return _execute_run(spec, ctx)
+
+
+def _execute_run(spec: RunSpec, ctx: RunContext) -> IngestionRunRecord:
+    """Run while the adapter's optional acquisition scope remains active."""
+    adapter = ctx.registry.get(spec.source_id)
 
     ctx.driver.write_batch([(_SOURCE_MERGE, _source_params(adapter))])
     source_node = _read_source(ctx, spec.source_id)
@@ -200,7 +209,14 @@ def execute_run(spec: RunSpec, ctx: RunContext) -> IngestionRunRecord:
         for raw in adapter.fetch(since, until):
             record.records_fetched += 1
             _process_record(spec, ctx, adapter, raw, record)
-    except (SourceFetchError, SourceParseError, ExtractionError, GraphWriteError) as exc:
+        # Retire an acquisition only after complete loading, but BEFORE the
+        # success checkpoint: a crash between these steps must trigger a fresh
+        # acquisition rather than certify an old collection as freshly fetched.
+        if not record.errors:
+            complete_fetch = getattr(adapter, "complete_fetch", None)
+            if complete_fetch is not None:
+                complete_fetch()
+    except (SourceFetchError, SourceParseError, ExtractionError, GraphWriteError, OSError) as exc:
         # Fetch and configuration failures abort the run; the durable record
         # still closes with the error counted (Doc 2 §8.6.1).
         record.errors += 1

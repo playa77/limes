@@ -7,6 +7,20 @@ The [documentation index](INDEX.md) identifies each document's authority; the
 Historical bare WP numbers must be qualified as backend or desktop. Old counts,
 unticked archived plans and merged commits are never substituted for acceptance.
 
+## Active third-ingest repair — BE-49 (2026-10-31)
+
+Branch `codex/be-49-third-ingest-repair`, verified live-main `d5abd10fc055`.
+[Completion checklist and evidence](INGEST_THIRD_RUN_REPAIR.md) cover the Wikidata
+read-action regression and bounded, archived, resumable OSM acquisition together.
+The operator reports BE-48 deployed successfully and Transparency Register loaded;
+that does not replace the previously blocked isolated runtime qualification.
+TED/FSD availability, live OSM capacity, GDELT backlog and paid-quality evidence
+remain separate. Implementation/source/graph checks pass (1,315 cases), but the
+required runtime-stack lane remains blocked by reproduced executor disk exhaustion.
+The user subsequently authorized staging, commit, push and PR creation on
+2026-10-31. Publish as a draft with qualification blocked; merge, deployment and
+production data runs remain separate.
+
 ## Active second-ingest repair — BE-48 (2026-10-31)
 
 Branch `codex/be-48-ingest-rerun-repair`, live-main base `a0ec26f92c7e`.

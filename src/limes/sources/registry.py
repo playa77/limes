@@ -15,10 +15,15 @@ CLI invocation fails with the full menu, not with a bare error.
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import structlog
 
 from limes.errors import SourceFetchError
 from limes.sources.base import SourceAdapter
+
+if TYPE_CHECKING:
+    from limes.sources.osm_acquisition import OsmAcquisition
 
 logger = structlog.get_logger(__name__)
 
@@ -58,7 +63,9 @@ class SourceRegistry:
         return self.get(source_id).trust_rank
 
 
-def build_default_registry(*, bundestag_dip_api_key: str = "") -> SourceRegistry:
+def build_default_registry(
+    *, bundestag_dip_api_key: str = "", osm_acquisition: OsmAcquisition | None = None
+) -> SourceRegistry:
     """The authoritative list of live sources (Doc 2 §8.5.1).
 
     The only place the ingestable source set is defined. One line per
@@ -110,7 +117,7 @@ def build_default_registry(*, bundestag_dip_api_key: str = "") -> SourceRegistry
 
     from limes.sources.osm import OsmAdapter
 
-    registry.register(OsmAdapter())
+    registry.register(OsmAdapter(osm_acquisition))
 
     from limes.sources.ted import TedAdapter
 
