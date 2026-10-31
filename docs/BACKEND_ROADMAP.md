@@ -296,3 +296,12 @@ passed all five suites (1,289 cumulative tests, no failures/errors/skips), share
 guards and source-drift checks; exact evidence is in VERIFICATION.
 External availability and unrun production/paid evidence remain explicitly bounded;
 no historical claim is silently upgraded to successful operator ingestion.
+
+
+### BE-48 — second full-ingest repair
+
+Active implementation on `codex/be-48-ingest-rerun-repair`, live-main
+`a0ec26f92c7e`. Depends on BE-47 and the supplied five source job records.
+[Acceptance mapping](INGEST_RERUN_REPAIR.md) defines the full parent and evidence
+limits; VERIFICATION records the candidate result. External FSD/OSM availability,
+operator graph coverage and actual OpenCode Go output remain separate evidence.

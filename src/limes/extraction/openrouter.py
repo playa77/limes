@@ -33,7 +33,7 @@ from limes.extraction.schema import (
     SCHEMA_VERSION,
     SUPPORTED_SCHEMA_VERSIONS,
     parse_extraction_response,
-    schema_for_version,
+    response_schema_for_version,
 )
 from limes.ontology.model import Ontology
 from limes.types import ExtractedAssertion, Passage
@@ -90,7 +90,7 @@ class OpenRouterExtractor:
                 messages,
                 self.model_id,
                 "extraction",
-                json_schema=schema_for_version(schema_version),
+                json_schema=response_schema_for_version(schema_version),
             )
             batch_assertions, batch_errors = parse_extraction_response(
                 raw, passages, ontology, schema_version

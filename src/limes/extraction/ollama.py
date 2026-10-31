@@ -32,7 +32,7 @@ from limes.extraction.schema import (
     SCHEMA_VERSION,
     SUPPORTED_SCHEMA_VERSIONS,
     parse_extraction_response,
-    schema_for_version,
+    response_schema_for_version,
 )
 from limes.ontology.model import Ontology
 from limes.sources.base import PermanentStatus, RetryExhausted, request_with_retry
@@ -124,7 +124,7 @@ class OllamaExtractor:
             "model": self._model_id,
             "messages": messages,
             "stream": False,
-            "format": schema_for_version(schema_version),
+            "format": response_schema_for_version(schema_version),
             "options": {"temperature": 0},
         }
         url = f"{self._base_url}/api/chat"

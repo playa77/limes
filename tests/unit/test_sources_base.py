@@ -157,3 +157,40 @@ def test_bounded_fetch_decodes_gzip_once_and_enforces_decoded_limit():
         assert fetch_bytes(URL, max_bytes=len(logical)) == logical
         with pytest.raises(SourceFetchError, match="byte limit"):
             fetch_bytes(URL, max_bytes=len(logical) - 1)
+
+
+@pytest.mark.parametrize("status", [429, 503])
+def test_retry_after_minimum_is_honored(status, monkeypatch):
+    delays = []
+    monkeypatch.setattr("time.sleep", delays.append)
+    with respx.mock:
+        route = respx.get(URL).mock(side_effect=[
+            Response(status, headers={"Retry-After": "75"}), Response(200, content=b"ok")
+        ])
+        assert fetch_bytes(URL) == b"ok"
+    assert route.call_count == 2
+    assert delays == [75]
+
+
+def test_excessive_cooldown_fails_without_retrying_early(monkeypatch):
+    delays = []
+    monkeypatch.setattr("time.sleep", delays.append)
+    with respx.mock:
+        route = respx.get(URL).mock(return_value=Response(429, headers={"Retry-After": "3600"}))
+        with pytest.raises(SourceFetchError, match="retry later"):
+            fetch_bytes(URL)
+    assert route.call_count == 1
+    assert delays == []
+
+
+def test_retry_after_http_date_and_invalid_values():
+    from datetime import timedelta
+    from email.utils import format_datetime
+
+    from limes.sources.base import _retry_after_seconds
+
+    future = format_datetime(datetime.now(UTC) + timedelta(seconds=90), usegmt=True)
+    delay = _retry_after_seconds(future)
+    assert delay is not None and 88 <= delay <= 90
+    for value in (None, "invalid", "NaN", "inf"):
+        assert _retry_after_seconds(value) is None

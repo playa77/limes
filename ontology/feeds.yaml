@@ -16,7 +16,7 @@ feeds:
     name: European Commission RAPID press releases
     language: en
     trust_rank: 0.70
-  - url: https://www.bundesregierung.de/breg-de/service/rss-feed-presse
+  - url: https://www.bundesregierung.de/service/rss/breg-de/1151244/feed.xml
     name: Bundesregierung press releases
     language: de
     trust_rank: 0.70

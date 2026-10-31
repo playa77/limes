@@ -11,11 +11,12 @@ the produced seam for WP-27.
 import json
 from datetime import UTC, datetime
 
+import pytest
 import respx
 import structlog
 from httpx import Response
 
-from limes.errors import ConfigurationError, SourceParseError
+from limes.errors import ConfigurationError, SourceFetchError, SourceParseError
 from limes.sources.feeds import DEFAULT_TRUST_RANK, FeedsAdapter, _entry_published
 from limes.types import RawRecord
 
@@ -167,8 +168,8 @@ def test_unparseable_feed_yields_no_entries_and_warns(tmp_path):
     with respx.mock:
         respx.get(FEED_URL).mock(return_value=Response(200, content=b"this is not a feed"))
         with structlog.testing.capture_logs() as captured:
-            records = list(adapter.fetch(None, None))
-    assert records == []
+            with pytest.raises(SourceFetchError, match="1 feed failures"):
+                list(adapter.fetch(None, None))
     warnings = [
         e for e in captured if e.get("event") == "feeds: feed unparseable or empty; no entries"
     ]
@@ -299,3 +300,20 @@ def test_normalize_unparseable_published_timestamp_falls_back(tmp_path):
     assert document.published_at == FETCHED_AT
     warnings = [e for e in captured if e.get("event") == "feeds: unparseable published timestamp"]
     assert len(warnings) == 1
+
+
+def test_failed_feed_continues_to_later_feeds_then_fails_aggregate(tmp_path):
+    config = _MINIMAL_CONFIG + "  - url: https://example.com/later.xml\n    name: Later\n"
+    adapter = _adapter(tmp_path, config)
+    with respx.mock:
+        respx.get(FEED_URL).mock(return_value=Response(404))
+        later = respx.get("https://example.com/later.xml").mock(
+            return_value=Response(200, content=(FIXTURES / "feed.xml").read_bytes())
+        )
+        records = []
+        with pytest.raises(SourceFetchError, match="1 feed failures"):
+            for record in adapter.fetch(None, None):
+                records.append(record)
+    assert records
+    assert later.call_count == 1
+    assert all(r.source_url == "https://example.com/later.xml" for r in records)

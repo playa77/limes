@@ -32,9 +32,12 @@ TOOL_LINT_PATHS = (
 SUITES = {
     "unit": ["tests/unit"],
     "desktop": ["desktop/tests/unit", "desktop/tests/contract"],
-    "integration": ["tests/integration"],
+    # Building three images while the suite's shared graph is running can exhaust
+    # constrained executor storage and corrupt that disposable graph's logs.
+    "integration": ["tests/integration", "--ignore=tests/integration/test_runtime_stack.py"],
     "acceptance": ["tests/acceptance"],
     "desktop-integration": ["desktop/tests/integration"],
+    "runtime-stack": ["tests/integration/test_runtime_stack.py"],
 }
 
 

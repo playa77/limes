@@ -1,3 +1,14 @@
+## 2026-10-31 — BE-48 second full-ingest repair
+
+- Match extraction wire schemas to the parser's array contract in both extractors;
+  retain bounded rejection diagnostics locally and use provider-neutral call logs.
+- Continue later curated feeds before reporting aggregate failure; replace the
+  Bundesregierung URL with the verified official press-release RSS endpoint.
+- Honor server Retry-After cooldowns without retrying early; fail excessive waits
+  explicitly. Repair invalid XML controls/references without relaxing structural,
+  date/count or original archive-evidence integrity.
+- Explain structured GDELT and standalone-law counters from source/job evidence.
+
 ## 2026-10-29 — BE-47 first full-ingest repair
 
 - Wire masked DIP credentials into header auth and handle current fields,

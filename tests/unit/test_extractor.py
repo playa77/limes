@@ -71,7 +71,8 @@ class FakeClient:
         self.calls: list[dict] = []
 
     def complete(self, messages, model_id, purpose, json_schema=None):
-        self.calls.append({"messages": messages, "model_id": model_id, "purpose": purpose})
+        self.calls.append({"messages": messages, "model_id": model_id,
+                           "purpose": purpose, "json_schema": json_schema})
         if not self.responses:
             raise AssertionError("FakeClient.complete called more often than responses supplied")
         return self.responses.pop(0)
@@ -298,6 +299,11 @@ def test_ollama_extractor_parses_local_response():
         result = extractor.extract(PASSAGES, ONTOLOGY, "1.0.0", "1.0.0")
 
     assert route.call_count == 1
+    wire_schema = json.loads(route.calls[0].request.content)["format"]
+    from jsonschema import Draft202012Validator
+
+    assert Draft202012Validator(wire_schema).is_valid([ADOPTED_ITEM])
+    assert not Draft202012Validator(wire_schema).is_valid(ADOPTED_ITEM)
     assert len(result.assertions) == 1
     assert result.assertions[0].relation == "ADOPTED"
     assert result.input_tokens == 120
@@ -318,3 +324,22 @@ def test_ollama_extractor_retries_on_5xx():
 
     assert route.call_count == 2
     assert result.assertions == []
+
+
+def test_wire_schema_matches_array_parser_for_both_versions():
+    from jsonschema import Draft202012Validator
+
+    for version in ("1.0.0", "2.0.0"):
+        client = FakeClient([("[]", 1, 1)])
+        result = OpenRouterExtractor(_settings(), client).extract(
+            PASSAGES, ONTOLOGY, "1.0.0", version
+        )
+        validator = Draft202012Validator(client.calls[0]["json_schema"])
+        assert validator.is_valid([])
+        item = dict(ADOPTED_ITEM)
+        if version == "2.0.0":
+            item["qualifiers"] = None
+        assert validator.is_valid([item])
+        assert not validator.is_valid(item)
+        assert not validator.is_valid([{}])
+        assert result.parse_errors == []

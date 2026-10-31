@@ -5,6 +5,28 @@ reversibility: **R1** reversible in under an hour, **R2** bounded recoverable
 cost, **R3** one-way door. Written when each decision is made, latest first.
 Nothing here is a status report; unlogged decisions are unmade decisions.
 
+## 2026-10-31 — D-89 (R1) — BE-48 second-ingest repair
+
+The user explicitly requests fixing the supplied run issues. Deliver one complete
+BE-48 on `codex/be-48-ingest-rerun-repair`, verified live base `a0ec26f92c7e`.
+The operator identifies OpenCode Go as inference provider; legacy client names do
+not identify the actual provider. Fix the object/array request contract without
+relaxing the parser, continue feeds then fail the aggregate, honor server cooldowns,
+and narrowly repair invalid XML controls while preserving original archived bytes
+and count/date checks. Local bounded rejection diagnostics replace reliance on
+unavailable provider logs. Existing valid cache/provenance versions remain intact;
+rejected outputs are not successful cache entries. No paid calls or operator graph
+writes, publication or deployment are required. Acceptance is mapped in
+[BE-48 repair](docs/INGEST_RERUN_REPAIR.md); remaining upstream/operator evidence is
+not silently reclassified as verified.
+
+Publication update (2026-10-31): the user explicitly requested preparing and
+opening a PR for this session's work, authorizing staging, commit and push of the
+complete BE-48 implementation. The PR must preserve the full qualification blocker:
+1,298 passing cases across completed checks/rechecks, but mandatory runtime-stack
+wheel extraction fails with confirmed executor disk exhaustion. No merge,
+deployment, production data run or paid inference is authorized by this request.
+
 ## 2026-10-29 — D-88 (R2) — Finish BE-47 with current semantics and bounded catch-up
 
 The user explicitly requested finishing BE-47 on the current branch before another

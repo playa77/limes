@@ -28,8 +28,10 @@ from __future__ import annotations
 
 import hashlib
 import logging
+import math
 from collections.abc import Iterator
 from datetime import UTC, datetime
+from email.utils import parsedate_to_datetime
 from typing import Any, Literal, Protocol, runtime_checkable
 
 import httpx
@@ -272,7 +274,35 @@ def make_assertion(
 
 
 class TransientFailure(Exception):
-    """Internal marker: a transient failure the §11 policy may retry."""
+    """Internal marker, optionally carrying a server's minimum retry delay."""
+
+    def __init__(self, reason: str, retry_after: float | None = None) -> None:
+        super().__init__(reason)
+        self.retry_after = retry_after
+
+
+def _retry_after_seconds(value: str | None) -> float | None:
+    if value is None:
+        return None
+    try:
+        seconds = float(value)
+    except ValueError:
+        try:
+            when = parsedate_to_datetime(value)
+            if when.tzinfo is None:
+                return None
+            seconds = (when - datetime.now(UTC)).total_seconds()
+        except (TypeError, ValueError, OverflowError):
+            return None
+    return max(0.0, seconds) if math.isfinite(seconds) else None
+
+
+def _retry_wait(state: Any) -> float:
+    fallback = wait_exponential_jitter(initial=2.0, max=60.0, jitter=2.0)(state)
+    error = state.outcome.exception()
+    delay = error.retry_after if isinstance(error, TransientFailure) else None
+    return max(fallback, delay or 0.0)
+
 
 
 def is_transient(exc: BaseException) -> bool:
@@ -342,7 +372,7 @@ def request_with_retry(
 
     @retry(
         stop=stop_after_attempt(HTTP_MAX_ATTEMPTS),
-        wait=wait_exponential_jitter(initial=2.0, max=60.0, jitter=2.0),
+        wait=_retry_wait,
         retry=retry_if_exception(is_transient),
         before_sleep=before_sleep_log(log, logging.WARNING),
         reraise=True,
@@ -388,7 +418,14 @@ def request_with_retry(
                     raise
                 raise TransientFailure(str(exc)) from exc
             if response.status_code in RETRYABLE_STATUSES:
-                raise TransientFailure(f"HTTP {response.status_code} from {url}")
+                delay = _retry_after_seconds(response.headers.get("Retry-After"))
+                # Keep operator jobs bounded without violating a server cooldown.
+                if delay is not None and delay > 300:
+                    raise RetryExhausted(
+                        attempts, url,
+                        f"HTTP {response.status_code}; Retry-After exceeds 300s; retry later",
+                    )
+                raise TransientFailure(f"HTTP {response.status_code} from {url}", delay)
             if response.status_code >= 400:
                 raise PermanentStatus(url=url, status_code=response.status_code)
             return response

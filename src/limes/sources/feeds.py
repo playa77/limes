@@ -57,7 +57,7 @@ import feedparser  # type: ignore[import-untyped]
 import structlog
 import yaml  # type: ignore[import-untyped]
 
-from limes.errors import ConfigurationError, SourceParseError
+from limes.errors import ConfigurationError, SourceFetchError, SourceParseError
 from limes.pipeline.normalize import detect_language, extract_text_from_html
 from limes.sources.base import fetch_bytes, now_utc, payload_hash
 from limes.types import DocumentPayload, NormalizedRecord, RawRecord
@@ -115,10 +115,17 @@ class FeedsAdapter:
         yields no entries and is counted in the summary log.
         """
         fetched_at = now_utc()
+        failures: list[str] = []
         for feed in self._feeds:
-            payload = fetch_bytes(feed.url)
+            try:
+                payload = fetch_bytes(feed.url)
+            except SourceFetchError as exc:
+                failures.append(f"{feed.url}: {exc}")
+                logger.warning("feeds: feed fetch failed; continuing", url=feed.url, error=str(exc))
+                continue
             parsed = feedparser.parse(payload)
             if parsed.get("bozo") and not parsed.entries:
+                failures.append(f"{feed.url}: unparseable feed")
                 logger.warning(
                     "feeds: feed unparseable or empty; no entries",
                     url=feed.url,
@@ -139,6 +146,12 @@ class FeedsAdapter:
                     source_url=feed.url,
                     fetched_at=fetched_at,
                 )
+
+        if failures:
+            raise SourceFetchError(
+                f"feeds: {len(failures)} feed failures after processing remaining feeds: "
+                + "; ".join(failures)
+            )
 
     def normalize(self, record: RawRecord) -> NormalizedRecord:
         """One entry envelope to a `DocumentPayload`. Pure — the entry's

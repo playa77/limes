@@ -7,6 +7,17 @@ The [documentation index](INDEX.md) identifies each document's authority; the
 Historical bare WP numbers must be qualified as backend or desktop. Old counts,
 unticked archived plans and merged commits are never substituted for acceptance.
 
+## Active second-ingest repair — BE-48 (2026-10-31)
+
+Branch `codex/be-48-ingest-rerun-repair`, live-main base `a0ec26f92c7e`.
+[Scope, acceptance mapping and limitations](INGEST_RERUN_REPAIR.md) cover the
+complete second-run repair: extraction wire contract/diagnostics, continuing
+curated feeds, verified RSS replacement, server cooldowns and strict XML repair.
+GDELT/law counters are explained without introducing paid extraction or fabricated
+edges. Implementation checks pass; full runtime qualification is blocked by confirmed
+executor disk exhaustion (VERIFICATION). External limits remain explicit. The user authorized staging, commit, push and PR
+creation on 2026-10-31; merge, production runs and deployment remain separate.
+
 ## Active ingest repair — BE-47 (2026-10-29)
 
 Current branch `codex/be-47-ingest-repair`, live-main base `f1e773812baf`.

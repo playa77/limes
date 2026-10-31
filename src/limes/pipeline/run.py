@@ -450,6 +450,26 @@ def _process_document(
         settings.extraction_prompt_version,
         settings.extraction_schema_version,
     )
+    if result.parse_errors:
+        diagnostic_hash = ctx.archive.put(
+            spec.source_id,
+            json.dumps({
+                "document_hash": doc.content_hash,
+                "model_id": ctx.extractor.model_id,
+                "prompt_version": settings.extraction_prompt_version,
+                "schema_version": settings.extraction_schema_version,
+                "parse_errors": result.parse_errors,
+                "raw_response": result.raw_response[:65536],
+                "response_truncated": len(result.raw_response) > 65536,
+            }, sort_keys=True).encode(),
+            "application/json",
+        )
+        logger.warning(
+            "extraction rejection diagnostic archived",
+            source_id=spec.source_id,
+            content_hash=doc.content_hash,
+            diagnostic_hash=diagnostic_hash,
+        )
     record.assertions_rejected += len(result.parse_errors)
     record.errors += len(result.parse_errors)
     for error in result.parse_errors:
