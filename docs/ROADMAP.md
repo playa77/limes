@@ -7,6 +7,13 @@ The [documentation index](INDEX.md) identifies each document's authority; the
 Historical bare WP numbers must be qualified as backend or desktop. Old counts,
 unticked archived plans and merged commits are never substituted for acceptance.
 
+## Active adaptive OSM acquisition — BE-50
+
+Branch `codex/be-50-adaptive-osm-acquisition`, live base `54c6a1a3efa2`.
+[Acceptance and limits](OSM_ADAPTIVE_ACQUISITION.md) cover durable subdivision,
+finite request/depth limits, leaf completeness and graph recovery. Deployment and
+live national capacity remain unverified; qualification is recorded separately.
+
 ## Active third-ingest repair — BE-49 (2026-10-31)
 
 Branch `codex/be-49-third-ingest-repair`, verified live-main `d5abd10fc055`.

@@ -322,3 +322,11 @@ BE-49 disposition: implementation and 1,315 backend/desktop/graph/acceptance cas
 pass in the frozen candidate. Required runtime-stack container creation fails with
 confirmed disk exhaustion on this 7.9 GB `vfs` executor. Full qualification remains
 open; VERIFICATION retains the exact candidate and reproduced daemon error.
+
+
+### BE-50 — adaptive OSM acquisition
+
+Branch `codex/be-50-adaptive-osm-acquisition`, live base `54c6a1a3efa2`.
+[Acceptance and limits](OSM_ADAPTIVE_ACQUISITION.md) cover durable subdivision,
+finite request/depth limits, leaf completeness and graph recovery. Deployment and
+live national capacity remain unverified; qualification is recorded separately.

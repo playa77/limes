@@ -49,7 +49,7 @@ def test_osm_interruption_load_failure_resume_and_complete_checkpoint(
         if data['data'] == 'west':
             return first
         if failed:
-            return b'{"elements": [], "remark": "runtime error: Query timed out"}'
+            return b'{"elements": [], "remark": "runtime error: incomplete response"}'
         return second
 
     monkeypatch.setattr(osm, 'fetch_bytes_form', fetch)
@@ -140,5 +140,58 @@ def test_osm_interruption_load_failure_resume_and_complete_checkpoint(
             'MATCH (r:IngestionRun {source_id:"osm"}) RETURN r.errors AS errors '
             'ORDER BY r.started_at', {}, 30)
         assert [r['errors'] for r in runs] == [1, 1, 2, 0]
+    finally:
+        ctx.driver.close()
+
+
+def test_adaptive_children_must_all_complete_before_graph_load(
+    neo4j_instance, tmp_path, monkeypatch,
+):
+    root = osm._overpass_query('0,0,2,2')
+    children = osm._split_query(root)
+    monkeypatch.setattr(osm, 'OVERPASS_QUERIES', (root,))
+    monkeypatch.setattr(osm.time, 'sleep', lambda _: None)
+    payload = json.dumps({'elements': [
+        {'id': 9, 'type': 'node', 'lat': 1, 'lon': 1,
+         'tags': {'power': 'plant', 'operator': 'Utility'}},
+    ]}).encode()
+    calls = []
+
+    def fetch(url, data):
+        query = data['data']
+        calls.append(query)
+        if query == root:
+            return b'{"elements": [], "remark": "runtime error: Query timed out"}'
+        if query == children[2]:
+            raise SourceFetchError('child unavailable')
+        return payload
+
+    monkeypatch.setattr(osm, 'fetch_bytes_form', fetch)
+    settings = _settings(neo4j_instance, tmp_path)
+    spec = RunSpec(source_id='osm', mode='ingest')
+    ctx = build_run_context(settings, needs_inference=False)
+    try:
+        with pytest.raises(SourceFetchError, match='child unavailable'):
+            execute_run(spec, ctx)
+        assert ctx.driver.read('MATCH (n:Asset) RETURN count(n) AS c', {}, 30)[0]['c'] == 0
+        assert ctx.driver.read(
+            'MATCH (s:Source {source_id:"osm"}) RETURN s.last_success_at AS at', {}, 30,
+        )[0]['at'] is None
+    finally:
+        ctx.driver.close()
+    calls.clear()
+    monkeypatch.setattr(osm, 'fetch_bytes_form', lambda url, data: (
+        calls.append(data['data']) or payload))
+    ctx = build_run_context(settings, needs_inference=False)
+    try:
+        result = execute_run(spec, ctx)
+        assert calls == list(children[2:])
+        assert result.errors == 0
+        assert result.assertions_written == 1
+        assert ctx.driver.read('MATCH (n:Asset) RETURN count(n) AS c', {}, 30)[0]['c'] == 1
+        assert ctx.driver.read(
+            'MATCH (s:Source {source_id:"osm"}) RETURN s.last_success_at AS at', {}, 30,
+        )[0]['at'] is not None
+        assert not (settings.archive_path / '.acquisition/osm/active.json').exists()
     finally:
         ctx.driver.close()

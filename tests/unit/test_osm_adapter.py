@@ -386,11 +386,14 @@ def test_restart_resumes_only_missing_partitions_and_replays_stable_records(tmp_
     b'<html>unavailable</html>',
 ])
 def test_incomplete_partition_never_enters_cursor_or_yields_data(tmp_path, monkeypatch, payload):
-    monkeypatch.setattr(osm, 'OVERPASS_QUERIES', ('only',))
+    monkeypatch.setattr(osm, 'OVERPASS_QUERIES', (osm._overpass_query('0,0,2,2'),))
+    monkeypatch.setattr(osm, 'MAX_SPLIT_DEPTH', 0)
     monkeypatch.setattr(osm, 'fetch_bytes_form', lambda *args: payload)
     archive = ArchiveStore(tmp_path / 'archive')
     cursor = tmp_path / 'cursor'
-    with pytest.raises(SourceParseError):
+    from limes.errors import SourceFetchError
+
+    with pytest.raises((SourceParseError, SourceFetchError)):
         list(OsmAdapter(OsmAcquisition(archive, cursor)).fetch(None, None))
     assert json.loads((cursor / 'active.json').read_text())['partitions'] == {}
     assert archive.get(osm.payload_hash(payload)) == payload
@@ -423,3 +426,75 @@ def test_cursor_lock_plan_mismatch_and_archive_corruption_fail_closed(tmp_path, 
     archive.path_for(osm.payload_hash(records[0].payload)).unlink()
     with pytest.raises(SourceFetchError, match='archive is unavailable'):
         list(OsmAdapter(store).fetch(None, None))
+
+
+def test_adaptive_split_restart_coverage_and_dedup(tmp_path, monkeypatch):
+    from limes.errors import SourceFetchError
+
+    root = osm._overpass_query('0,0,2,2')
+    children = osm._split_query(root)
+    monkeypatch.setattr(osm, 'OVERPASS_QUERIES', (root,))
+    monkeypatch.setattr(osm.time, 'sleep', lambda _: None)
+    calls = []
+
+    def fetch(url, data):
+        query = data['data']
+        calls.append(query)
+        if query == root:
+            return b'{"elements": [], "remark": "runtime error: Query timed out"}'
+        if query == children[1]:
+            raise SourceFetchError('interrupted')
+        return _fixture()
+
+    archive = ArchiveStore(tmp_path / 'archive')
+    cursor = tmp_path / 'cursor'
+    monkeypatch.setattr(osm, 'fetch_bytes_form', fetch)
+    with pytest.raises(SourceFetchError, match='interrupted'):
+        list(OsmAdapter(OsmAcquisition(archive, cursor)).fetch(None, None))
+    state = json.loads((cursor / 'active.json').read_bytes())
+    assert state['splits'] == ['0']
+    assert set(state['partitions']) == {'0/0'}
+    assert calls == [root, children[0], children[1]]
+    calls.clear()
+    monkeypatch.setattr(osm, 'fetch_bytes_form', lambda url, data: (
+        calls.append(data['data']) or _fixture()))
+    adapter = OsmAdapter(OsmAcquisition(archive, cursor))
+    records = list(adapter.fetch(None, None))
+    assert calls == list(children[1:])
+    assert [r.acquisition_context['partition_key'] for r in records] == [
+        '0/0', '0/1', '0/2', '0/3']
+    assert all(r.acquisition_context['partition_count'] == 4 for r in records)
+    assert sum(len(adapter.normalize(r).assertions) for r in records) == 2
+    manifest = json.loads(archive.get(records[0].acquisition_context['acquisition_manifest_hash']))
+    assert manifest['splits'] == ['0']
+    assert len(manifest['partitions']) == 4
+    assert children == tuple(osm._overpass_query(box) for box in (
+        '0,0,1,1', '0,1,1,2', '1,0,2,1', '1,1,2,2'))
+
+
+def test_adaptive_depth_and_request_limits_preserve_progress(tmp_path, monkeypatch):
+    from limes.errors import SourceFetchError
+
+    monkeypatch.setattr(osm, 'OVERPASS_QUERIES', (osm._overpass_query('0,0,2,2'),))
+    monkeypatch.setattr(osm, 'MAX_SPLIT_DEPTH', 1)
+    monkeypatch.setattr(osm.time, 'sleep', lambda _: None)
+    monkeypatch.setattr(osm, 'fetch_bytes_form', lambda *args:
+                        b'{"elements": [], "remark": "runtime error: out of memory"}')
+    store = OsmAcquisition(ArchiveStore(tmp_path / 'archive'), tmp_path / 'cursor')
+    with pytest.raises(SourceFetchError, match='exhausted subdivision depth'):
+        list(OsmAdapter(store).fetch(None, None))
+    assert json.loads((store.root / 'active.json').read_bytes())['splits'] == ['0']
+    monkeypatch.setattr(osm, 'MAX_REQUESTS_PER_RUN', 1)
+    monkeypatch.setattr(osm, 'fetch_bytes_form', lambda *args: _json_payload([]))
+    with pytest.raises(SourceFetchError, match='request limit'):
+        list(OsmAdapter(store).fetch(None, None))
+    assert set(json.loads((store.root / 'active.json').read_bytes())['partitions']) == {'0/0'}
+
+
+@pytest.mark.parametrize('splits', [['0/0'], ['0', '0'], ['99']])
+def test_adaptive_cursor_rejects_invalid_tree(splits, monkeypatch):
+    from limes.errors import SourceFetchError
+
+    monkeypatch.setattr(osm, 'OVERPASS_QUERIES', (osm._overpass_query('0,0,2,2'),))
+    with pytest.raises(SourceFetchError):
+        osm._leaf_queries(splits)

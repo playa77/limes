@@ -35,6 +35,7 @@ class AcquisitionState(BaseModel):
     plan_hash: str = Field(pattern=r"^[0-9a-f]{64}$")
     started_at: AwareDatetime = Field(default_factory=now_utc)
     partitions: dict[str, PartitionEntry] = Field(default_factory=dict)
+    splits: list[str] = Field(default_factory=list)
 
 
 class OsmAcquisition:
