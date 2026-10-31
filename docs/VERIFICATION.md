@@ -1,5 +1,72 @@
 # Verification and acceptance evidence
 
+## 2026-10-31 — BE-49 third-ingest repair
+
+Implementation and affected source/graph checks pass; **full runtime qualification
+remains blocked by executor storage**. Branch `codex/be-49-third-ingest-repair`,
+verified live-main `d5abd10fc055`. [Acceptance mapping](INGEST_THIRD_RUN_REPAIR.md)
+covers the complete requested repair and its external evidence boundaries.
+
+Final frozen candidate: `work/be49/candidate-2/report.json`, source manifest
+`work/be49/candidate-2/source.json`, SHA-256
+`a4608e6d217319d55968fa15b21d99450f7b92a0988f585c8fe022ccfc0cf4a0`.
+No runtime/test source edits followed this candidate. The full attempt took
+508.580 seconds; implementation and merge latency are not measured by that time.
+
+| Check | Result | Duration |
+|---|---|---|
+| Live baseline, runtime/tool lint, types, docs, generated docs, shared guards, whitespace | Passed | Recorded individually in candidate report |
+| Backend unit | 905 passed, no failures/errors/skips | 138.596 s |
+| Desktop unit/contract | 147 passed, no failures/errors/skips | 7.350 s |
+| Graph integration (separate from runtime-stack) | 175 passed, no failures/errors/skips | 225.818 s |
+| Acceptance | 85 passed, no failures/errors/skips | 48.588 s |
+| Desktop integration | 3 passed, no failures/errors/skips | 25.014 s |
+| Isolated three-service runtime stack | Failed during Compose container creation | 62.118 s |
+
+This is **1,315 passing cases plus one failed runtime-stack case**, not a green full
+candidate. Candidate 1 was deliberately interrupted during the unit lane to fix
+the cursor-retirement crash window; its failed report is retained. Earlier affected
+checks passed 60 unit cases and 10 graph/composition cases. The first combined
+graph development check exposed missing teardown in the new test; that fixture was
+repaired before final qualification. No failures are hidden by cumulative counts.
+
+The short pytest output did not expose Compose stderr. Repeating the exact
+fixture Compose startup showed:
+
+```text
+Container limes-runtime-test-fa1cb9570f92-api-1  Error response from daemon: no space left on device
+Error response from daemon: no space left on device
+```
+
+Docker reports `storage_driver=vfs`; the executor filesystem is 7.9 GB. Before
+runtime builds it had approximately 6.1 GB free; after the test images were built,
+about 950 MB remained, and creating the three container filesystems exhausted it.
+The fixture containers/volumes were removed. Retired test images and unused build
+cache were cleaned; clearing unused cache alone did not provide the needed space.
+The newly built API/worker test images were then removed to recover workspace
+capacity. The storage driver was not changed. Run the complete frozen candidate on
+an adequately sized executor; no passing runtime/deployment claim is made here.
+
+Change accounting against live main (additions/deletions/net): handwritten runtime
+**308/38/+270**, tests/helpers **343/20/+323**. There are 16 added parameterized
+unit cases and one new end-to-end graph case; existing request fixtures and shared
+constructor coverage are corrected/extended. No fixture data, generated artifacts,
+ontology schema, Dockerfile, dependency, config key or CI lane changed.
+Documentation records the selected parent, supplied operator evidence, acceptance
+mapping, verification and remaining blockers separately from handwritten runtime.
+
+No paid inference, production source run, operator graph/config mutation, staging,
+commit, push, PR, merge or deployment occurred. Operator-reported BE-48 deployment
+and Transparency success remain supplied evidence; TED/FSD availability, nationwide
+OSM capacity, GDELT backlog and any legacy numeric OSM identity migration are not
+certified by these fixtures. OI-27/OI-28 retain full qualification blockers.
+
+
+
+Publication update (2026-10-31): the user authorized preparing and opening the
+session PR. The reviewed runtime/test source still matches the frozen manifest.
+The draft PR preserves the runtime-stack failure; staging, commit and push do not
+turn this candidate into full passing qualification.
 
 ## 2026-10-31 — BE-48 second full-ingest repair
 

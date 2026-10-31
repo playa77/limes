@@ -520,3 +520,32 @@ def test_fetch_response_parse_error_closes_run_without_checkpoint(tmp_path):
     assert len(closures) == 1
     assert closures[0]["errors"] == 1
     assert not any("last_success_at" in params for _, params in driver.writes)
+
+
+@pytest.mark.parametrize('retirement_fails', [False, True])
+def test_acquisition_retirement_precedes_checkpoint_and_failure_is_durable(
+    tmp_path, retirement_fails,
+):
+    driver = FakeDriver()
+    adapter = FakeAdapter()
+    retirements = []
+
+    def complete_fetch():
+        assert not any('last_success_at' in params for _, params in driver.writes)
+        retirements.append(True)
+        if retirement_fails:
+            raise OSError('cursor retirement failed')
+
+    adapter.complete_fetch = complete_fetch
+    ctx = _ctx(tmp_path, driver, adapter)
+    spec = RunSpec(source_id='test', mode='ingest')
+    if retirement_fails:
+        with pytest.raises(OSError, match='retirement failed'):
+            execute_run(spec, ctx)
+        assert not any('last_success_at' in params for _, params in driver.writes)
+        assert any(params.get('errors') == 1 for _, params in driver.writes)
+    else:
+        result = execute_run(spec, ctx)
+        assert result.errors == 0
+        assert any('last_success_at' in params for _, params in driver.writes)
+    assert retirements == [True]

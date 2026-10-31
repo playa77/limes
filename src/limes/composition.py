@@ -64,10 +64,14 @@ def build_run_context(
         settings.neo4j_database,
     )
     provision(driver, ontology, settings.embedding_dimensions)
-    registry = build_default_registry(
-        bundestag_dip_api_key=settings.bundestag_dip_api_key.get_secret_value()
-    )
+    from limes.sources.osm_acquisition import OsmAcquisition
+
     archive = build_archive_store(settings)
+    osm_acquisition = OsmAcquisition(archive, settings.archive_path / ".acquisition" / "osm")
+    registry = build_default_registry(
+        bundestag_dip_api_key=settings.bundestag_dip_api_key.get_secret_value(),
+        osm_acquisition=osm_acquisition,
+    )
     recorder = CostRecorder(driver)
 
     if not needs_inference:

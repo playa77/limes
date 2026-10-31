@@ -305,3 +305,20 @@ Active implementation on `codex/be-48-ingest-rerun-repair`, live-main
 [Acceptance mapping](INGEST_RERUN_REPAIR.md) defines the full parent and evidence
 limits; VERIFICATION records the candidate result. External FSD/OSM availability,
 operator graph coverage and actual OpenCode Go output remain separate evidence.
+
+
+### BE-49 — third-ingest repair
+
+Selected on `codex/be-49-third-ingest-repair`, verified live-main `d5abd10fc055`.
+Depends on merged BE-48 and the supplied operator third-run summary/error record.
+[Completion checklist](INGEST_THIRD_RUN_REPAIR.md): correct Wikidata's read action,
+reject explicit API errors accurately, acquire OSM in bounded sequential partitions,
+archive original bytes, resume durable acquisition state, deduplicate typed OSM
+identities and preserve aggregate checkpoint semantics through failed loads.
+Fixture/disposable qualification and production acquisition are distinct evidence.
+
+
+BE-49 disposition: implementation and 1,315 backend/desktop/graph/acceptance cases
+pass in the frozen candidate. Required runtime-stack container creation fails with
+confirmed disk exhaustion on this 7.9 GB `vfs` executor. Full qualification remains
+open; VERIFICATION retains the exact candidate and reproduced daemon error.

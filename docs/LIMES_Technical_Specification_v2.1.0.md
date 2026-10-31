@@ -836,13 +836,22 @@ Adapters emit records and **write nothing to the graph**.
 | `bundestag_dip` | DIP API | `Person`, `PoliticalParty`, `Office`, `HOLDS_OFFICE`, `OFFICE_AT`, `Document` | yes | 1.00 |
 | `gesetze_im_internet` | Index + XML | `LegalAct`, `APPLIES_TO`, `Topic` | yes | 1.00 |
 | `wikidata` | SPARQL, read-only enrichment | aliases and QIDs; never bulk-loaded | n/a | 0.90 |
-| `osm` | Overpass, DE bbox | `Asset`, `LOCATED_IN`, `OPERATES`, KRITIS `Topic` | no | 0.75 |
+| `osm` | Overpass, DE bbox in bounded resumable partitions | `Asset`, `LOCATED_IN`, `OPERATES`, KRITIS `Topic` | no | 0.75 |
 | `offeneregister` | Historical bzip2 JSONL | `Corporation`, `DIRECTOR_OF` | no | 0.30 |
 | `gdelt` | 15-min ZIP containing 61-column TSV | Coded `Event` observations, role/location edges, export/row/report provenance; original report documents only when separately acquired | yes | 0.50 |
 | `feeds` | RSS/Atom per `feeds.yaml` | One source-versioned document per entry | yes | 0.60–0.70 |
 | `wikipedia` (BE-46) | MediaWiki API, verified Wikidata sitelinks | Revision-linked entity context and optional evidence-linked extracted claims | Revision-aware refresh, not full history | 0.65 |
 | `yahoo_finance` (BE-46) | Yahoo Finance through pinned `yfinance` transport | Company/security identity, available officers/board roles, shareholder structure, earnings/report metadata | Dated snapshots, not reconstructed history | 0.70 |
 | `news` (BE-43/DC-15) | Dynamic DE/EN public search RSS | Archived index responses and report versions, qualified NewsClaim artifacts; full article text unavailable | Investigation-driven bounded cycles | 0.50 index trust |
+
+OSM acquisition (BE-49) covers the original bbox with 80 deterministic cells,
+rejects error remarks even on HTTP 200, archives original responses and retains a
+per-partition cursor under the archive volume until the complete load succeeds.
+Retries replay cached partitions with their original fetch times; this is a
+collection interval, not an atomic snapshot. `Asset.osm_id` includes the OSM type
+(`node/123`, `way/123`, `relation/123`); legacy numeric-only keys cannot be safely
+retyped automatically. Partition-boundary duplicates use the first occurrence in
+stable grid order, while archived originals retain every response.
 
 Both BE-46 adapters are registered selection-only sources; generic ingest-all excludes them.
 Wikipedia must not be confused with the existing enrichment-only Wikidata adapter.

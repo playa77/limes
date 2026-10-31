@@ -3,7 +3,7 @@
 
 The adapter is enrichment-only: `enrich` resolves a label to one unambiguous
 Wikidata item, returning None rather than guessing. HTTP is mocked with respx
-against recorded wbsearchentities/wbsgetentities responses in
+against recorded wbsearchentities/wbgetentities responses in
 tests/fixtures/wikidata/; no live network. The tests assert on `enrich`'s
 outputs — the match, the None misses — never on the mechanics that produce
 them, and the request-parameter dictionaries below are the specification's
@@ -34,7 +34,7 @@ SEARCH_PARAMS = {
     "limit": "10",
 }
 ENTITIES_PARAMS = {
-    "action": "wbsgetentities",
+    "action": "wbgetentities",
     "ids": "Q283036",
     "props": "claims|labels",
     "languages": "de|en",
@@ -304,3 +304,17 @@ def test_non_object_json_response_raises_source_parse_error():
         )
         with pytest.raises(SourceParseError):
             ADAPTER.enrich("Corporation", "Mercedes-Benz Group")
+
+
+@pytest.mark.parametrize('endpoint', ['search', 'entities'])
+def test_api_error_is_explicit_and_never_misreported_as_missing_item(endpoint):
+    with respx.mock:
+        respx.get(SEARCH_URL, params=SEARCH_PARAMS).mock(
+            return_value=Response(200, content=_fixture('search_mercedes.json')))
+        route = respx.get(
+            SEARCH_URL if endpoint == 'search' else ENTITIES_URL,
+            params=SEARCH_PARAMS if endpoint == 'search' else ENTITIES_PARAMS)
+        route.mock(return_value=Response(200, json={
+            'error': {'code': 'badvalue', 'info': 'Unrecognized action'}}))
+        with pytest.raises(SourceParseError, match=f'{endpoint} API error \\(badvalue\\)'):
+            ADAPTER.enrich('Corporation', 'Mercedes-Benz Group')

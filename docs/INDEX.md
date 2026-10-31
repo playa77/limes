@@ -11,6 +11,7 @@ Updated 2026-10-28. Start with the product purpose in README, then this map.
 | What must the desktop display/do? | [Desktop requirements](LIMES_Desktop_Client_Requirements_v1.0.0.md), [architecture](LIMES_Desktop_Client_Architecture_v1.0.0.md) | HTTP consumer with shared claim semantics; acceptance gaps stay explicit |
 | What is shipped/configured today? | [Runtime architecture](ARCHITECTURE.md), [operations](OPERATIONS.md), [testing](TESTING_PHASE.md) | Generated from renderer and checked runtime JSON; current topology/access facts |
 | What qualifies the current desktop? | [DC-14 qualification](DESKTOP_QUALIFICATION.md) | Current re-review, direct requirement evidence and named external blockers |
+| What failed in the third full ingest? | [BE-49 repair](INGEST_THIRD_RUN_REPAIR.md) | Supplied deployment evidence, Wikidata defect and resumable OSM acquisition; local qualification remains distinct |
 | What failed in the second full ingest? | [BE-48 rerun repair](INGEST_RERUN_REPAIR.md) | Supplied job evidence, fixes, qualification and remaining limits |
 | What failed in the first full ingest? | [BE-47 diagnosis](INGEST_RUN_DIAGNOSIS.md) | Current source contracts, acceptance and bounded evidence; no production-success claim |
 | What defects and external evidence remain? | [OPEN_ISSUES](../OPEN_ISSUES.md) | Current disposition index plus append-only history; direct closure evidence required |

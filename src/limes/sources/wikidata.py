@@ -14,7 +14,7 @@ Two deliberate choices, both logged by the integrator:
 
 - The source table names SPARQL as the access method, but the SPARQL
   endpoint is unreachable in practice (timeouts since 2024); the read-only
-  documented surface, `wbsearchentities`/`wbsgetentities`, is what works and
+  documented surface, `wbsearchentities`/`wbgetentities`, is what works and
   what this adapter uses.
 - `_CLASS_QIDS` is a closed map from entity type to Wikidata classes; types
   without a stable class (LegalAct, Topic, Contract, Event, Office, Asset,
@@ -209,7 +209,7 @@ def _search_params(query: str) -> dict[str, str]:
 
 def _entities_params(qid: str) -> dict[str, str]:
     return {
-        "action": "wbsgetentities",
+        "action": "wbgetentities",
         "ids": qid,
         "props": "claims|labels",
         "languages": "de|en",
@@ -226,7 +226,8 @@ def _matches_class(qid: str, class_qids: list[str]) -> bool:
     entities = _parse_json(
         fetch_bytes(f"{ENTITIES_URL}?{urlencode(_entities_params(qid))}"), "entities"
     )
-    entity = entities.get("entities", {}).get(qid)
+    items = entities.get("entities")
+    entity = items.get(qid) if isinstance(items, dict) else None
     if not isinstance(entity, dict):
         raise SourceParseError(f"wikidata: entities response lacks item {qid}")
     claims = entity.get("claims", {})
@@ -253,7 +254,7 @@ def _matches_class(qid: str, class_qids: list[str]) -> bool:
 def _parse_json(payload: bytes, endpoint: str) -> dict[str, Any]:
     """Decode an API payload into a JSON object, or raise `SourceParseError`.
 
-    Both `wbsetentities`-style responses are objects with an `entities` or
+    Both MediaWiki read responses are objects with an `entities` or
     `search` key; anything else is malformed and treated as a record-level
     skip, never guessed past.
     """
@@ -267,6 +268,10 @@ def _parse_json(payload: bytes, endpoint: str) -> dict[str, Any]:
         raise SourceParseError(f"wikidata: {endpoint} response is not JSON") from exc
     if not isinstance(data, dict):
         raise SourceParseError(f"wikidata: {endpoint} response is not a JSON object")
+    if "error" in data:
+        error = data["error"]
+        code = error.get("code", "unknown") if isinstance(error, dict) else "unknown"
+        raise SourceParseError(f"wikidata: {endpoint} API error ({str(code)[:100]})")
     return data
 
 
