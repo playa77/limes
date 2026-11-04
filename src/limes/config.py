@@ -108,6 +108,11 @@ class Settings(BaseSettings):
     # ---------- Ingestion ----------
     backfill_days_unstructured: int = 90
     archive_path: Path
+    osm_http_timeout_seconds: int = Field(default=180, ge=1, le=3600)
+    osm_overpass_endpoints: tuple[str, ...] = (
+        "https://overpass-api.de/api/interpreter",
+        "https://overpass.kumi.systems/api/interpreter",
+    )
     http_timeout_seconds: int = 60
     http_max_retries: int = 4
 

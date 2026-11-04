@@ -1,6 +1,77 @@
 # Verification and acceptance evidence
 
 
+## 2026-11-04 — BE-53 authoritative integrated candidate
+
+Complete local acceptance and qualification pass after reconciliation onto live
+main `06bbfb47134e` (PR #21 merged during standalone verification). The original
+`4ef67c8` standalone result below proves no BE-52 implementation dependency.
+[Handoff and cursor/merge implications](OSM_TRANSPORT_POLICY.md).
+
+Report: `work/be53/candidate-integrated-final/report.json`, status passed.
+Manifest SHA-256:
+`1b0114367718110e68c541fa6e3748e78b8f28a46db0df4eb46e579465bcdbbb`.
+Source unchanged after all lanes; subsequent edits are handwritten documentation.
+Public settings-example SHA-256:
+`d839019401ba227345bb83d7900edf46c4495644750abe6ab7a617b859d0c2d8`.
+
+| Lane | Passed cases | Lane elapsed seconds |
+|---|---:|---:|
+| Backend unit | 936 | 159.617 |
+| Desktop unit/contract | 147 | 10.646 |
+| Disposable graph integration | 176 | 390.886 |
+| Acceptance | 85 | 84.473 |
+| Desktop integration | 3 | 42.334 |
+| Isolated three-service runtime | 1 | 123.339 |
+
+1,348 cumulative passes, zero failures/errors/skips; 11 new BE-53 cases.
+All baseline/lint/types/docs/generated/G1–G4/whitespace/source-stability guards pass.
+Final validation latency 813.700 seconds, separate from implementation and merge.
+Earlier integrated report stopped at 175 graph passes/one failure because the
+BE-52 fixture loaded a local 1.0.0 pin but expected 1.1.0. Its factory now disables
+env-file loading; 9 affected cases passed before final freeze. The failed report
+remains retained; no assertion, runtime pin or provider default was weakened.
+The original standalone run and its earlier env-file failures remain below.
+Requalification was necessary because main advanced and then fixture isolation
+changed. No production acquisition, paid call, deployment, push or merge occurred.
+
+## 2026-11-04 — BE-53 standalone qualification before main advanced
+
+[Full acceptance, operator policy and PR #21 overlap](OSM_TRANSPORT_POLICY.md).
+Live base `4ef67c89ae67`, branch `codex/be-53-feed-and-osm-transport`.
+Standalone `work/be53/candidate-final/report.json` passes, source SHA-256
+`463d4e2234cc5c513bd119dbb6c8fb708a2bfe862436d1ae53d9d1fdac1ecc4a`.
+Manifest unchanged after all checks; subsequent edits are handwritten documentation.
+
+| Lane | Passed cases | Lane elapsed seconds |
+|---|---:|---:|
+| Backend unit | 927 | 161.957 |
+| Desktop unit/contract | 147 | 11.817 |
+| Disposable graph integration | 176 | 420.653 |
+| Acceptance | 85 | 103.971 |
+| Desktop integration | 3 | 39.355 |
+| Isolated three-service runtime | 1 | 119.718 |
+
+All 1,339 cumulative cases pass without failures/errors/skips. Eleven new mocked
+transport/configuration cases cover distinct policy paths; existing acquisition
+coverage protects locks, complete-before-load and graph replay. Lint/types,
+docs/generated-doc drift, G1–G4, baseline, whitespace and source stability pass.
+Total validation latency: 859.134 seconds, not implementation or merge effort.
+No live source/model acquisition, production change, push or deployment.
+This candidate qualifies on the larger overlayfs executor; earlier candidate disk
+failures remain historical evidence, not retroactively passed runs.
+
+Initial candidate stopped with 925 unit passes and two unrelated failures caused
+by test factories loading local env files. Explicit `_env_file=None` isolation
+corrected them; focused recheck passed 39 cases before final freeze. Missing Qt
+libraries were extracted to ignored work/ and supplied via LD_LIBRARY_PATH.
+Exact invocation/environment, affected checks and retained reports are in the
+linked handoff. Full manual/operator coverage and upstream capacity remain separate.
+
+BE-52 merged as `06bbfb47134e` during final baseline verification. The branch was
+fast-forwarded and overlaps reconciled under the standing live-main contract.
+Integrated qualification now passes as recorded above; standalone evidence is preserved.
+
 ## 2026-11-04 — BE-52 ingest source repair
 
 Complete local implementation acceptance and full disposable qualification pass.

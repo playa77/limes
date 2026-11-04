@@ -359,3 +359,13 @@ The exact manifest, failed preliminary attempts and change accounting are record
 in VERIFICATION. This is new current-descendant runtime evidence; historical
 BE-48/49/50/51 failed frozen reports are preserved. Upstream/deployed-quality and
 OSM policy obligations retain their owners; no production ingestion or push occurred.
+
+### BE-53 — dead-feed disposition and OSM transport
+
+Selected on `codex/be-53-feed-and-osm-transport` from live main `4ef67c89ae67`.
+[Acceptance and prerequisites](OSM_TRANSPORT_POLICY.md) define the full package.
+BE-52 / PR #21 remains independent. All BE-53 checklist items and the full frozen
+standalone candidate pass (1,339 cases including runtime stack). After PR #21
+merged, reconciliation onto live main `06bbfb47134e` passes authoritative integrated
+qualification (1,348 cases). Operator availability and nationwide coverage remain
+unmeasured. See VERIFICATION.

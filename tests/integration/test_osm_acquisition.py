@@ -44,7 +44,7 @@ def test_osm_interruption_load_failure_resume_and_complete_checkpoint(
          'tags': {'power': 'plant', 'operator': 'Utility'}},
     ]}).encode()
 
-    def fetch(url, data):
+    def fetch(url, data, **kwargs):
         calls.append(data['data'])
         if data['data'] == 'west':
             return first
@@ -100,7 +100,8 @@ def test_osm_interruption_load_failure_resume_and_complete_checkpoint(
         ctx.driver.close()
 
     monkeypatch.setattr(run, 'load', actual_load)
-    monkeypatch.setattr(osm, 'fetch_bytes_form', lambda *args: pytest.fail('must use archive'))
+    monkeypatch.setattr(osm, 'fetch_bytes_form',
+                        lambda *args, **kwargs: pytest.fail('must use archive'))
     ctx = build_run_context(settings, needs_inference=False)
     actual_normalize = osm.OsmAdapter.normalize
 
@@ -157,7 +158,7 @@ def test_adaptive_children_must_all_complete_before_graph_load(
     ]}).encode()
     calls = []
 
-    def fetch(url, data):
+    def fetch(url, data, **kwargs):
         query = data['data']
         calls.append(query)
         if query == root:
@@ -180,7 +181,7 @@ def test_adaptive_children_must_all_complete_before_graph_load(
     finally:
         ctx.driver.close()
     calls.clear()
-    monkeypatch.setattr(osm, 'fetch_bytes_form', lambda url, data: (
+    monkeypatch.setattr(osm, 'fetch_bytes_form', lambda url, data, **kwargs: (
         calls.append(data['data']) or payload))
     ctx = build_run_context(settings, needs_inference=False)
     try:

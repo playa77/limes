@@ -24,7 +24,3 @@ feeds:
     name: tagesschau
     language: de
     trust_rank: 0.60
-  - url: https://euobserver.com/rss.xml
-    name: EUobserver
-    language: en
-    trust_rank: 0.60

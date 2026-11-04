@@ -48,7 +48,7 @@ def _settings(**overrides: Any) -> Settings:
         archive_path=Path("/tmp/archive"),
     )
     base.update(overrides)
-    return Settings(**base)
+    return Settings(_env_file=None, **base)
 
 
 # --------------------------------------------------------------------------

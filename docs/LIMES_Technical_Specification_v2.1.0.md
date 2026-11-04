@@ -868,6 +868,17 @@ collection interval, not an atomic snapshot. `Asset.osm_id` includes the OSM typ
 (`node/123`, `way/123`, `relation/123`); legacy numeric-only keys cannot be safely
 retyped automatically. Partition-boundary duplicates use the first occurrence in
 stable grid order, while archived originals retain every response.
+BE-50 subdivides explicit runtime-timeout/OOM remarks with durable split topology.
+BE-53 adds a dedicated `LIMES_OSM_HTTP_TIMEOUT_SECONDS` read limit (180 seconds
+by default; other sources retain 60 seconds) and a JSON ordered HTTPS endpoint
+list, `LIMES_OSM_OVERPASS_ENDPOINTS`. Defaults are overpass-api.de and
+Overpass Kumi interpreter URLs. Endpoint transport failures rotate mirrors inside
+the existing four-attempt policy; every attempt identifies its endpoint in logs.
+After retries, 502/503/504 or read timeout may split only original oversized root
+cells. Auth failures, rate limits and transport-failed children do not subdivide.
+Existing three-level remark subdivision, 200 logical-fetch limit, cursor plan
+identity, lock and checkpoint semantics remain. See
+[BE-53 transport policy](OSM_TRANSPORT_POLICY.md) for precise limits/provenance.
 
 Both BE-46 adapters are registered selection-only sources; generic ingest-all excludes them.
 Wikipedia must not be confused with the existing enrichment-only Wikidata adapter.

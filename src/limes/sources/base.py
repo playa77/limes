@@ -276,9 +276,11 @@ def make_assertion(
 class TransientFailure(Exception):
     """Internal marker, optionally carrying a server's minimum retry delay."""
 
-    def __init__(self, reason: str, retry_after: float | None = None) -> None:
+    def __init__(self, reason: str, retry_after: float | None = None,
+                 status_code: int | None = None) -> None:
         super().__init__(reason)
         self.retry_after = retry_after
+        self.status_code = status_code
 
 
 def _retry_after_seconds(value: str | None) -> float | None:
@@ -353,6 +355,8 @@ def request_with_retry(
     form_body: dict[str, str] | None = None,
     headers: dict[str, str] | None = None,
     timeout_s: float = HTTP_TIMEOUT_SECONDS,
+    read_timeout_s: float | None = None,
+    fallback_urls: tuple[str, ...] = (),
     follow_redirects: bool = True,
     log: Any = logger,
     max_bytes: int | None = None,
@@ -370,6 +374,8 @@ def request_with_retry(
     once.
     """
     attempts = 0
+    endpoint_index = 0
+    endpoints = (url, *fallback_urls)
 
     @retry(
         stop=stop_after_attempt(HTTP_MAX_ATTEMPTS),
@@ -379,24 +385,29 @@ def request_with_retry(
         reraise=True,
     )
     def _call() -> httpx.Response:
-        nonlocal attempts
+        nonlocal attempts, endpoint_index
+        attempt_url = endpoints[endpoint_index % len(endpoints)]
         attempts += 1
+        if read_timeout_s is not None:
+            log.info("source HTTP attempt", endpoint=attempt_url, attempt=attempts)
         with httpx.Client(
-            timeout=httpx.Timeout(timeout_s),
+            timeout=httpx.Timeout(timeout_s, read=read_timeout_s or timeout_s),
             follow_redirects=follow_redirects,
             headers=headers,
         ) as client:
             try:
                 if max_bytes is None:
                     response = (
-                        client.post(url, data=form_body)
+                        client.post(attempt_url, data=form_body)
                         if form_body is not None
-                        else client.post(url, json=json_body)
+                        else client.post(attempt_url, json=json_body)
                         if method == "POST"
-                        else client.get(url)
+                        else client.get(attempt_url)
                     )
                 else:
-                    with client.stream(method, url, json=json_body, data=form_body) as streamed:
+                    with client.stream(
+                        method, attempt_url, json=json_body, data=form_body
+                    ) as streamed:
                         chunks = bytearray()
                         for chunk in streamed.iter_bytes():
                             if len(chunks) + len(chunk) > max_bytes:
@@ -418,14 +429,15 @@ def request_with_retry(
                 if not is_transient(exc):
                     raise
                 log.warning(
-                    "HTTP attempt failed", method=method, url=url, attempt=attempts,
+                    "HTTP attempt failed", method=method, url=attempt_url, attempt=attempts,
                     max_attempts=HTTP_MAX_ATTEMPTS, outcome="transport_failure",
                     error_type=type(exc).__name__,
                 )
+                endpoint_index += 1
                 raise TransientFailure(str(exc)) from exc
             delay = _retry_after_seconds(response.headers.get("Retry-After"))
             log.info(
-                "HTTP attempt completed", method=method, url=url, attempt=attempts,
+                "HTTP attempt completed", method=method, url=attempt_url, attempt=attempts,
                 max_attempts=HTTP_MAX_ATTEMPTS, status_code=response.status_code,
                 outcome=("rate_limited" if response.status_code == 429 else
                          "upstream_failure" if response.status_code >= 500 else
@@ -440,10 +452,15 @@ def request_with_retry(
                         attempts, url,
                         f"HTTP {response.status_code}; Retry-After exceeds 300s; retry later",
                     )
-                raise TransientFailure(f"HTTP {response.status_code} from {url}", delay)
+                if response.status_code >= 500:
+                    endpoint_index += 1
+                raise TransientFailure(
+                    f"HTTP {response.status_code} from {attempt_url}", delay,
+                    status_code=response.status_code)
             if response.status_code >= 400:
                 raise PermanentStatus(
-                    url=url, status_code=response.status_code, response_body=response.content
+                    url=attempt_url, status_code=response.status_code,
+                    response_body=response.content
                 )
             return response
 
@@ -483,9 +500,13 @@ def fetch_bytes_post(
     return _fetch("POST", url, json_body=json_body, timeout_s=timeout_s)
 
 
-def fetch_bytes_form(url: str, form_body: dict[str, str]) -> bytes:
+def fetch_bytes_form(
+    url: str, form_body: dict[str, str], *, read_timeout_s: float | None = None,
+    fallback_urls: tuple[str, ...] = (),
+) -> bytes:
     """POST URL-encoded form data through the shared source retry policy."""
-    return _fetch("POST", url, form_body=form_body)
+    return _fetch("POST", url, form_body=form_body,
+                  read_timeout_s=read_timeout_s, fallback_urls=fallback_urls)
 
 
 def _fetch(
@@ -497,6 +518,8 @@ def _fetch(
     timeout_s: int = HTTP_TIMEOUT_SECONDS,
     max_bytes: int | None = None,
     headers: dict[str, str] | None = None,
+    read_timeout_s: float | None = None,
+    fallback_urls: tuple[str, ...] = (),
 ) -> bytes:
     try:
         response = request_with_retry(
@@ -508,6 +531,7 @@ def _fetch(
             timeout_s=timeout_s,
             log=logger,
             max_bytes=max_bytes,
+            read_timeout_s=read_timeout_s, fallback_urls=fallback_urls,
         )
     except httpx.DecodingError as exc:
         raise SourceFetchError("invalid source response encoding") from exc

@@ -5,6 +5,20 @@ reversibility: **R1** reversible in under an hour, **R2** bounded recoverable
 cost, **R3** one-way door. Written when each decision is made, latest first.
 Nothing here is a status report; unlogged decisions are unmade decisions.
 
+## 2026-11-04 — D-94 (R1) — BE-53 feed removal and full OSM transport package
+
+Owner selects REMOVE for the HTTP 410 EUobserver feed and FULL PACKAGE for OSM:
+a dedicated configurable longer read timeout, configured mirror fallback and
+bounded transport-triggered subdivision of oversized cells. Preserve BE-50 remark
+triggers, cursor durability and lock semantics. This supersedes D-91's exclusion
+of transport recovery. BE-52 / PR #21 is independent. Branch from live main
+`4ef67c89ae67`; commit authorized, push prohibited. No live acquisition or paid
+verification. [Acceptance](docs/OSM_TRANSPORT_POLICY.md) defines bounds and evidence.
+PR #21 merged during final baseline verification. Per the standing baseline
+contract, reconcile onto live main `06bbfb47134e`; retain standalone evidence
+and requalify the integrated candidate. This does not introduce a functional
+dependency on BE-52 or change the selected owner decisions.
+
 ## 2026-11-04 — D-93 (R1) — BE-52 ingest source repair
 
 Deliver the complete BE-52 on `codex/be-52-ingest-source-repair` from live-main
