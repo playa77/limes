@@ -5,6 +5,21 @@ reversibility: **R1** reversible in under an hour, **R2** bounded recoverable
 cost, **R3** one-way door. Written when each decision is made, latest first.
 Nothing here is a status report; unlogged decisions are unmade decisions.
 
+## 2026-11-04 — D-93 (R1) — BE-52 ingest source repair
+
+Deliver the complete BE-52 on `codex/be-52-ingest-source-repair` from live-main
+`4ef67c89ae67`; user authorizes local commits, explicitly no push. The supplied
+operational report/handoff drives [acceptance](docs/INGEST_SOURCE_REPAIR.md).
+Supersede D-89's feed continue-then-fail policy: only all configured feeds failing
+is terminal. Nonempty clean partial acquisition advances the checkpoint; empty
+or processing-error runs do not. Checkpoint is acquisition progress, not coverage;
+archive/cache dedup preserves unchanged entries without unsafe date filtering.
+Version ontology-derived wire constraints and offset instructions, retain every
+rejection diagnostic, and expose bounded retry outcomes including terminal attempts.
+Leave feed URL disposition, endpoints/credentials, OSM policy and production data
+untouched. One frozen full candidate follows affected checks; no paid run or
+upstream-recovery claim follows from mocked transports.
+
 ## 2026-11-04 — D-92 (R1) — BE-51 dedicated embedding credential
 
 The user requests this package before further ingestion work. Keep chat's current

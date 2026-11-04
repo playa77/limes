@@ -295,8 +295,8 @@ def test_trace2_document_run_end_to_end(ctx, fixture_fetch):
     assert row["sid"] == "feeds"
     assert row["trust"] == pytest.approx(FEED_TRUST)
     assert row["model"] == EXTRACTION_MODEL
-    assert row["prompt"] == "1.0.0"
-    assert row["schema"] == "1.0.0"
+    assert row["prompt"] == "1.1.0"
+    assert row["schema"] == "1.1.0"
     assert row["confidence"] == pytest.approx(0.95)
     assert row["doc_id"] == hashlib.sha256(_envelope_record().payload).hexdigest()
 
@@ -437,7 +437,7 @@ def test_reextract_retracts_superseded_and_relinks(
     fixture_fetch,
     monkeypatch: pytest.MonkeyPatch,
 ):
-    # Run 1 with prompt 1.0.0 writes assertion A (valid_from 2026-07-01).
+    # Run 1 with prompt 1.1.0 writes assertion A (valid_from 2026-07-01).
     # Reextract with prompt 1.0.1: cache miss, extraction yields the same
     # fact with a later validity — a NEW assertion_id. A is superseded and
     # retracted (D-39), B is written, and the now-existing entities receive

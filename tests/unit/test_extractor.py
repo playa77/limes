@@ -343,3 +343,54 @@ def test_wire_schema_matches_array_parser_for_both_versions():
         assert not validator.is_valid(item)
         assert not validator.is_valid([{}])
         assert result.parse_errors == []
+
+
+def test_ontology_constrained_wire_schema_and_versioned_prompt():
+    from copy import deepcopy
+
+    from jsonschema import Draft202012Validator
+
+    from limes.extraction.schema import response_schema_for_version
+
+    client = FakeClient([("[]", 1, 1)])
+    settings = _settings()
+    assert Settings.model_fields["extraction_prompt_version"].default == "1.1.0"
+    assert Settings.model_fields["extraction_schema_version"].default == "1.1.0"
+    OpenRouterExtractor(settings, client).extract(PASSAGES, ONTOLOGY, "2.1.0", "2.1.0")
+    schema = client.calls[0]["json_schema"]
+    assert "zero-based Python Unicode" in client.calls[0]["messages"][0]["content"]
+    item = {**ADOPTED_ITEM, "qualifiers": None}
+    validator = Draft202012Validator(schema)
+    assert validator.is_valid([item])
+    for relation in ("ACTOR_IN", "TARGET_OF", "INVENTED_RELATION"):
+        bad = deepcopy(item)
+        bad.update(relation=relation, subject={"surface": "Germany", "type": "Country"},
+                   object={"surface": "summit", "type": "Event"})
+        assert not validator.is_valid([bad])
+    # Inherited domains are derived by permits(), not hand-copied type lists.
+    for name in ONTOLOGY.relation_types:
+        condition = next(c for c in schema["items"]["allOf"]
+                         if c["if"]["properties"]["relation"]["const"] == name)
+        for subject in ONTOLOGY.entity_types:
+            for obj in ONTOLOGY.entity_types:
+                properties = condition["then"]["properties"]
+                allowed = (subject in properties["subject"]["properties"]["type"]["enum"]
+                           and obj in properties["object"]["properties"]["type"]["enum"])
+                assert allowed == ONTOLOGY.permits(name, subject, obj)
+    legacy_shape = response_schema_for_version("1.1.0", ONTOLOGY)
+    assert Draft202012Validator(legacy_shape).is_valid([ADOPTED_ITEM])
+    assert not Draft202012Validator(legacy_shape).is_valid([{**ADOPTED_ITEM, "relation": "BOGUS"}])
+    assert response_schema_for_version("1.0.0")["items"]["properties"]["relation"] == {
+        "type": "string", "minLength": 1}
+
+
+def test_ollama_uses_same_ontology_schema_and_requested_prompt():
+    from limes.extraction.schema import response_schema_for_version
+
+    with respx.mock:
+        route = respx.post("http://localhost:11434/api/chat").mock(
+            return_value=Response(200, json={"message": {"content": "[]"}}))
+        OllamaExtractor(_settings()).extract(PASSAGES, ONTOLOGY, "2.1.0", "2.1.0")
+    payload = json.loads(route.calls[0].request.content)
+    assert payload["format"] == response_schema_for_version("2.1.0", ONTOLOGY)
+    assert "zero-based Python Unicode" in payload["messages"][0]["content"]

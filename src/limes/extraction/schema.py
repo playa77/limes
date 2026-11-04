@@ -4,9 +4,10 @@ Specification §8.7.3, §8.7.4, AC-13.
 
 The JSON Schema is the extraction contract: `additionalProperties: false`
 throughout, the seven required assertion fields, mentions requiring `surface`
-and `type`. `relation` and mention `type` are validated against the ontology
-*after* parsing — an out-of-ontology value yields a precise rejection naming
-the value, not a generic schema error (Doc 2 §8.7.3).
+and `type`. `relation` and mention `type` are independently validated against the ontology
+after parsing (new wire versions also constrain them before generation).
+An out-of-ontology value yields a precise rejection naming the value, not a
+generic schema error (Doc 2 §8.7.3).
 
 `parse_extraction_response` is the deterministic half of every extractor:
 JSON → schema → ontology → offset mapping → evidence-span check. The evidence
@@ -24,6 +25,7 @@ Nothing is dropped without an entry in `parse_errors`.
 from __future__ import annotations
 
 import json
+from copy import deepcopy
 from datetime import UTC, datetime
 from typing import Any
 
@@ -34,8 +36,8 @@ from limes.news.models import ClaimQualifiers
 from limes.ontology.model import Ontology
 from limes.types import ExtractedAssertion, Mention, Passage
 
-SCHEMA_VERSION = "2.0.0"
-SUPPORTED_SCHEMA_VERSIONS = {"1.0.0", SCHEMA_VERSION}
+SCHEMA_VERSION = "2.1.0"
+SUPPORTED_SCHEMA_VERSIONS = {"1.0.0", "1.1.0", "2.0.0", SCHEMA_VERSION}
 
 _EXTRACTION_MENTION_SCHEMA: dict[str, Any] = {
     "type": "object",
@@ -94,16 +96,40 @@ def schema_for_version(version: str) -> dict[str, Any]:
         "properties": dict(EXTRACTION_SCHEMA["properties"]),
         "required": list(EXTRACTION_SCHEMA["required"]),
     }
-    if version == "1.0.0":
+    if version in {"1.0.0", "1.1.0"}:
         schema["properties"].pop("qualifiers", None)
     else:
         schema["required"].append("qualifiers")
     return schema
 
 
-def response_schema_for_version(version: str) -> dict[str, Any]:
+def response_schema_for_version(version: str, ontology: Ontology | None = None) -> dict[str, Any]:
     """Wire contract for a complete response; schema_for_version validates one item."""
-    return {"type": "array", "items": schema_for_version(version)}
+    item = deepcopy(schema_for_version(version))
+    if version in {"1.1.0", "2.1.0"}:
+        if ontology is None:
+            raise ValueError("ontology-constrained extraction schema requires the loaded ontology")
+        properties = item["properties"]
+        for endpoint in ("subject", "object"):
+            properties[endpoint]["properties"]["type"]["enum"] = sorted(ontology.entity_types)
+        properties["relation"]["enum"] = sorted(ontology.relation_types)
+        # Constrain direction and inherited domain/range too, not just names.
+        item["allOf"] = [
+            {
+                "if": {"properties": {"relation": {"const": name}}},
+                "then": {"properties": {
+                    endpoint: {"properties": {"type": {"enum": sorted({
+                        subject if endpoint == "subject" else obj
+                        for subject in ontology.entity_types
+                        for obj in ontology.entity_types
+                        if ontology.permits(name, subject, obj)
+                    })}}}
+                    for endpoint in ("subject", "object")
+                }},
+            }
+            for name in sorted(ontology.relation_types)
+        ]
+    return {"type": "array", "items": item}
 
 
 def parse_extraction_response(

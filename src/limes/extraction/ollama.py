@@ -59,7 +59,6 @@ class OllamaExtractor:
         self._settings = settings
         self._model_id = model_id
         self._base_url = base_url
-        self._prompt = _load_prompt()
 
     @property
     def model_id(self) -> str:
@@ -79,7 +78,7 @@ class OllamaExtractor:
                 f"this extractor implements {SCHEMA_VERSION!r}"
             )
         ontology_serialized = ontology.serialize_for_prompt()
-        prompt_text = self._prompt.replace("{ontology}", ontology_serialized)
+        prompt_text = _load_prompt(prompt_version).replace("{ontology}", ontology_serialized)
         prompt_overhead = (len(prompt_text) + len(ontology_serialized)) // 4
 
         batches = batch_passages(
@@ -95,7 +94,7 @@ class OllamaExtractor:
         raw_responses: list[str] = []
         for batch in batches:
             messages = build_extraction_messages(batch, prompt_text, ontology_serialized)
-            response = self._chat(messages, schema_version)
+            response = self._chat(messages, schema_version, ontology)
             raw = _content_of(response)
             batch_input = int(response.get("prompt_eval_count", 0))
             batch_output = int(response.get("eval_count", 0))
@@ -116,7 +115,8 @@ class OllamaExtractor:
         )
 
     def _chat(
-        self, messages: list[dict[str, str]], schema_version: str = "1.0.0"
+        self, messages: list[dict[str, str]], schema_version: str = "1.0.0",
+        ontology: Ontology | None = None
     ) -> dict[str, Any]:
         """One local chat call with the §11 retry policy (inference calls are
         retried like any other); no governor, no ledger."""
@@ -124,7 +124,7 @@ class OllamaExtractor:
             "model": self._model_id,
             "messages": messages,
             "stream": False,
-            "format": response_schema_for_version(schema_version),
+            "format": response_schema_for_version(schema_version, ontology),
             "options": {"temperature": 0},
         }
         url = f"{self._base_url}/api/chat"
@@ -159,11 +159,9 @@ def _content_of(response: dict[str, Any]) -> str:
     return content
 
 
-def _load_prompt() -> str:
-    """The extraction prompt template. Unlike the OpenRouter extractor, the
-    template is fixed at construction: this laptop path has no pinned prompt
-    version of its own and deliberately shares the shipped v1.0.0 file."""
-    path = Path(__file__).parent / "prompts" / "extraction_v1.0.0.md"
+def _load_prompt(version: str = "1.0.0") -> str:
+    """Load the requested version, preserving prompt/cache provenance."""
+    path = Path(__file__).parent / "prompts" / f"extraction_v{version}.md"
     if not path.exists():
         raise ExtractionError(f"extraction prompt file missing: {path}")
     return path.read_text(encoding="utf-8")

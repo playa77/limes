@@ -116,6 +116,7 @@ class FeedsAdapter:
         """
         fetched_at = now_utc()
         failures: list[str] = []
+        entries_yielded = 0
         for feed in self._feeds:
             try:
                 payload = fetch_bytes(feed.url)
@@ -140,6 +141,7 @@ class FeedsAdapter:
             )
             for entry in parsed.entries:
                 envelope = _entry_envelope(feed, entry)
+                entries_yielded += 1
                 yield RawRecord(
                     payload=json.dumps(envelope, sort_keys=True).encode("utf-8"),
                     content_type=ENVELOPE_CONTENT_TYPE,
@@ -148,8 +150,13 @@ class FeedsAdapter:
                 )
 
         if failures:
+            logger.warning(
+                "feeds: acquisition incomplete", failed_feeds=failures,
+                entries_yielded=entries_yielded, configured_feeds=len(self._feeds),
+            )
+        if len(failures) == len(self._feeds):
             raise SourceFetchError(
-                f"feeds: {len(failures)} feed failures after processing remaining feeds: "
+                f"feeds: {len(failures)} feed failures; every configured feed failed: "
                 + "; ".join(failures)
             )
 

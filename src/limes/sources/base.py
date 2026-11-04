@@ -417,9 +417,23 @@ def request_with_retry(
             except httpx.TransportError as exc:
                 if not is_transient(exc):
                     raise
+                log.warning(
+                    "HTTP attempt failed", method=method, url=url, attempt=attempts,
+                    max_attempts=HTTP_MAX_ATTEMPTS, outcome="transport_failure",
+                    error_type=type(exc).__name__,
+                )
                 raise TransientFailure(str(exc)) from exc
+            delay = _retry_after_seconds(response.headers.get("Retry-After"))
+            log.info(
+                "HTTP attempt completed", method=method, url=url, attempt=attempts,
+                max_attempts=HTTP_MAX_ATTEMPTS, status_code=response.status_code,
+                outcome=("rate_limited" if response.status_code == 429 else
+                         "upstream_failure" if response.status_code >= 500 else
+                         "client_failure" if response.status_code >= 400 else "success"),
+                retry_after_seconds=delay,
+                retryable=response.status_code in RETRYABLE_STATUSES,
+            )
             if response.status_code in RETRYABLE_STATUSES:
-                delay = _retry_after_seconds(response.headers.get("Retry-After"))
                 # Keep operator jobs bounded without violating a server cooldown.
                 if delay is not None and delay > 300:
                     raise RetryExhausted(

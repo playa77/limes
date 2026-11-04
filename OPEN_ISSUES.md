@@ -13,7 +13,7 @@ merges or deployment without explicit instruction. Production/co-tenant operatio
 are outside implementation scope. Snapshot and issue rows below are historical
 records; subsequent evidence/closures are appended without erasing them.
 
-## Current disposition — 2026-10-29 (BE-47 local acceptance; BE-45 waiver retained)
+## Current disposition — 2026-11-04 (BE-52 local acceptance; BE-45 waiver retained)
 
 This index supersedes the status wording in the historical inventory below, without
 erasing its evidence. Package placement: [backend](docs/BACKEND_ROADMAP.md),
@@ -22,9 +22,10 @@ closure sections; “open” is not a statement that every old symptom still exi
 
 | Issue | Current state | Owner/package | Remaining obligation or closure evidence |
 |---|---|---|---|
-| OI-29 | Implemented locally; full runtime qualification blocked | BE-51 / Hermes deployment | [Acceptance](docs/EMBEDDING_CREDENTIALS.md): dedicated credential, no fallback, role pricing and guardrail diagnostics; 1,327 cases pass, runtime-stack creation fails with confirmed executor disk exhaustion. Requires a larger runner; production embedding probe and feeds success remain unobserved. |
-| OI-28 | Adaptive acquisition candidate; live capacity and runtime qualification open | BE-49/BE-50 | [BE-50 adaptive follow-up](docs/OSM_ADAPTIVE_ACQUISITION.md); [BE-49 acceptance](docs/INGEST_THIRD_RUN_REPAIR.md): Wikidata action and bounded resumable OSM acquisition repaired; 1,315 candidate cases pass, runtime-stack container creation fails with reproduced executor disk exhaustion. Full acceptance requires a larger executor; live capacity/legacy migration remain separate. |
-| OI-27 | Implemented locally — full runtime qualification blocked | BE-48 | [Repair mapping](docs/INGEST_RERUN_REPAIR.md): wire-array schema, feed continuation/RSS, Retry-After and strict XML controls; unit/acceptance/desktop checks pass; backup passes after cleanup; runtime-stack wheel extraction fails with confirmed disk exhaustion. Repeat full qualification on a larger executor. Supplied third-run operator evidence reports healthy deployment and a successful Transparency Register load; full isolated candidate qualification still requires a passing run. |
+| OI-30 | BE-52 locally accepted; external measurement/ownership open | BE-52 / operator | [Acceptance](docs/INGEST_SOURCE_REPAIR.md) and [candidate](docs/VERIFICATION.md): 1,337 passing cases, including runtime stack. Partial feeds/checkpoints, ontology conformance and attempt diagnostics verified with mocks/disposable graph; update explicit pins to 1.1.0. Deployed quality, upstream availability and dead-URL ownership remain open. |
+| OI-29 | Implemented; supplied embedding probe passed; historical candidate failed | BE-51 / Hermes deployment | [Acceptance](docs/EMBEDDING_CREDENTIALS.md): dedicated credential, no fallback, role pricing and guardrail diagnostics; 1,327 cases pass, runtime-stack creation fails with confirmed executor disk exhaustion. The supplied 4ef67c8 VPS report observes a successful embedding probe; feeds still failed. BE-52 now qualifies the current descendant on a larger runner; the original frozen BE-51 report remains failed. |
+| OI-28 | Adaptive acquisition; live capacity/OSM timeout policy open | BE-49/BE-50 | [BE-50 adaptive follow-up](docs/OSM_ADAPTIVE_ACQUISITION.md); [BE-49 acceptance](docs/INGEST_THIRD_RUN_REPAIR.md): Wikidata action and bounded resumable OSM acquisition repaired; 1,315 candidate cases pass, runtime-stack container creation fails with reproduced executor disk exhaustion. BE-52 qualifies the current descendant on a larger executor; the original frozen reports remain failed. Live capacity, transport-timeout policy and legacy migration remain separate. |
+| OI-27 | Implemented; current descendant qualified in BE-52 | BE-48 | [Repair mapping](docs/INGEST_RERUN_REPAIR.md): wire-array schema, feed continuation/RSS, Retry-After and strict XML controls; unit/acceptance/desktop checks pass; backup passes after cleanup; runtime-stack wheel extraction fails with confirmed disk exhaustion. BE-52 passes full qualification for the current descendant on a larger executor; the original BE-48 report remains failed. Supplied third-run operator evidence reports healthy deployment and a successful Transparency Register load; full isolated candidate qualification still requires a passing run. |
 | OI-25 | Closed — complete local BE-47 acceptance | BE-47 | Final frozen candidate-3: all five suites/shared guards pass with no source drift. Current formats, archive manifests/API, identity compatibility and failure/checkpoint regressions have direct evidence below; production success is unclaimed. |
 | OI-26 | Open — external source availability | Operator/upstream | Bounded probes observed FSD HTTP 500, a tiny Overpass timeout, and empty XML for two TED award links. Require compatible current responses or explicit failed-source/record outcomes when acquiring; never infer coverage from retry code or mocked tests. |
 | OI-01 | BE-45 operator-evidence gate waived (D-84); unmeasured | Operator | Actual deployed revision/configuration remains unknown; no inferred deployment |
@@ -733,3 +734,26 @@ reproduced executor disk exhaustion during container creation.
 [Acceptance](docs/OSM_ADAPTIVE_ACQUISITION.md) distinguishes source/graph verification
 from unresolved deployment, live nationwide capacity and runtime qualification.
 Existing OI-28 obligations remain open; no production-success claim is made.
+
+
+## 2026-11-04 — OI-30 fifth ingest-source repair
+
+Supplied operational report and handoff at
+`~/limes-ops-reports/2026-11-04/02-deployed-and-validated-be-50-be-51/`
+record healthy deployment of revision `4ef67c8` and a successful dedicated embedding
+probe. Feeds yielded 70 records, wrote 115 assertions, rejected 14 assertions and
+recorded 15 errors, then failed on one HTTP 410. This is not successful feeds
+acceptance. TED 429 without Retry-After and FSD 500 were retained prior observations,
+not re-probed by that deployment session. OSM transport timeout/capacity remains
+OI-28 and outside BE-52. [BE-52 contract](docs/INGEST_SOURCE_REPAIR.md) preserves
+those boundaries and the exact checkpoint/rejection replay semantics.
+
+
+BE-52 acceptance evidence: final candidate 3 in VERIFICATION passes all 1,337 cases,
+including current three-service runtime/physical recovery. Source manifest matches
+the reviewed branch; earlier failed attempts remain retained. This supplies current
+runtime evidence for the descendant containing BE-48 through BE-51, without
+rewriting their frozen failed reports or claiming source/corpus recovery. OI-30's
+implementation defects are locally accepted; the operator still owns explicit
+version-pin upgrade, feed URL disposition and separately permitted deployed quality
+measurement. TED/FSD remain OI-26; OSM timeout/capacity remains OI-28.

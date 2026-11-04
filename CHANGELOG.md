@@ -1,3 +1,13 @@
+## 2026-11-04 — BE-52 ingest source repair
+
+- Partial feed acquisition survives individual dead feeds; all-feed failure still
+  names every failed URL. Empty feeds runs never advance source success.
+- Versioned ontology-constrained extraction schemas/prompts 1.1.0 and 2.1.0,
+  with explicit evidence offsets; defaults/example use 1.1.0. Historical versions
+  and rejection archives remain intact. Ollama honors the requested prompt version.
+- Shared HTTP transport logs every response/transport failure, including the final
+  attempt; TED/FSD keep bounded backoff and server cooldowns without endpoint changes.
+
 ## 2026-10-31 — BE-48 second full-ingest repair
 
 ## 2026-10-31 — BE-50 adaptive OSM acquisition
