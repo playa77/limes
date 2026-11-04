@@ -73,8 +73,14 @@ def test_configure_logging_emits_json_with_event_and_context():
 
 
 def test_configure_logging_redacts_secret_in_output():
-    line = _emit("started", LIMES_OPENROUTER_API_KEY="sk-secret")
+    line = _emit(
+        "started", LIMES_OPENROUTER_API_KEY="sk-secret",
+        LIMES_EMBEDDING_OPENROUTER_API_KEY="embedding-secret",
+        nested={"embedding_openrouter_api_key": "embedding-secret"},
+    )
     assert line["LIMES_OPENROUTER_API_KEY"] == REDACTED
+    assert line["LIMES_EMBEDDING_OPENROUTER_API_KEY"] == REDACTED
+    assert line["nested"]["embedding_openrouter_api_key"] == REDACTED
 
 
 def test_bearer_credentials_are_redacted_recursively():

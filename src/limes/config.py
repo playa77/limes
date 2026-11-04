@@ -54,6 +54,7 @@ class Settings(BaseSettings):
     openrouter_base_url: str = "https://openrouter.ai/api/v1"
     extraction_model: str = ""
     adjudication_model: str = ""
+    embedding_openrouter_api_key: SecretStr = SecretStr("")
     embedding_model: str = ""
     nl2cypher_model: str = ""
     # None omits the parameter: provider defaults remain explicit in logs.

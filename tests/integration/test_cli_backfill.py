@@ -112,6 +112,7 @@ def _env(neo4j_instance: Neo4jInstance, tmp_path: Path) -> dict[str, str]:
         "LIMES_BASELINE_PATH": str(tmp_path / "baseline.json"),
         "LIMES_ARCHIVE_PATH": str(tmp_path / "archive"),
         "LIMES_OPENROUTER_API_KEY": "sk-test",
+        "LIMES_EMBEDDING_OPENROUTER_API_KEY": "sk-embedding-test",
         "LIMES_OPENROUTER_BASE_URL": BASE_URL,
         "LIMES_EXTRACTION_MODEL": EXTRACTION_MODEL,
         "LIMES_EMBEDDING_MODEL": EMBED_MODEL,
@@ -224,6 +225,9 @@ def _mock_transport() -> None:
         }
     ]
     respx.get(CATALOGUE_URL).mock(return_value=Response(200, json=CATALOGUE))
+    respx.get(CATALOGUE_URL.replace("/models", "/embeddings/models")).mock(
+        return_value=Response(200, json=CATALOGUE)
+    )
     respx.post(COMPLETIONS_URL).mock(
         return_value=Response(
             200,

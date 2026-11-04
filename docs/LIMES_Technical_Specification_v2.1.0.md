@@ -223,6 +223,10 @@ set secrets privately. Configuration binds are read-only in services. Tool-writt
 model pins and evaluation reports use the models volume; model-only pin validation,
 file locking and atomic replacement apply. Empty values are unset; explicit env
 values override file pins. Legacy `.env` remains supported for migration only.
+Chat roles use `LIMES_OPENROUTER_API_KEY`; embeddings require the separate masked
+`LIMES_EMBEDDING_OPENROUTER_API_KEY`. A missing dedicated key fails at first
+embedding use before network, with no fallback to the chat key. See
+[BE-51](EMBEDDING_CREDENTIALS.md) for workspace isolation and ACL requirements.
 No monthly ceiling/envelope is enforced. See OPERATIONS for exact commands.
 
 ### 4.3 Startup Validation
@@ -722,7 +726,9 @@ Community Edition's lack of RBAC remains a stated residual risk (C-01).
 
 ### 7.4 Secrets
 
-`LIMES_OPENROUTER_API_KEY` is held by `api` and `worker`. Both make paid calls — the worker for extraction and resolution, the API for query generation. No UI service is shipped. Desktop credentials are session-only; HTTPS or loopback transport is required. `logging_setup.py` redacts configured secret keys before emission.
+`LIMES_OPENROUTER_API_KEY` authenticates chat roles in `api` and `worker`;
+`LIMES_EMBEDDING_OPENROUTER_API_KEY` authenticates only embedding requests and
+the embedding catalogue. Both make paid calls — the worker for extraction and resolution, the API for query generation. No UI service is shipped. Desktop credentials are session-only; HTTPS or loopback transport is required. `logging_setup.py` redacts configured secret keys before emission.
 
 ### 7.5 Untrusted Ingested Content
 
@@ -1074,9 +1080,14 @@ class OpenRouterClient:
     def complete(self, messages: list[dict], model_id: str,
                  purpose: str, json_schema: dict | None = None) -> tuple[str, int, int]: ...
     def embed(self, texts: list[str], model_id: str) -> list[list[float]]: ...
-    def catalogue(self) -> list[dict]: ...
+    def catalogue(self, *, embedding: bool = False) -> list[dict]: ...
 ```
-One client for all OpenRouter interaction: chat completions, embeddings, and the model catalogue. It records reported token usage and cost through `CostRecorder.commit` and the ledger. No pre-call spend check exists. Retry policy per §11. Ledger entries are written only for attempts that returned token usage. The API key never reaches a log line.
+One client for all OpenRouter interaction: chat completions, embeddings, and role-specific
+model catalogues. Chat uses `/models` and the chat key; embeddings use
+`/embeddings/models` and the dedicated embedding key. Prices cache by model and
+role; embedding usage is priced from that catalogue, with an explicit logged
+fallback when pricing is unavailable. Policy-related HTTP 404 errors expose bounded
+guardrail reason identifiers and endpoint counts without raw provider messages. It records reported token usage and cost through `CostRecorder.commit` and the ledger. No pre-call spend check exists. Retry policy per §11. Ledger entries are written only for attempts that returned token usage. The API key never reaches a log line.
 
 ### 8.8 Resolution
 

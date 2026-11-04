@@ -185,6 +185,9 @@ def test_ac17_routes_across_all_four_bands(driver: GraphDriver, tmp_path: Path):
 
     with respx.mock:
         respx.get(CATALOGUE_URL).mock(return_value=Response(200, json=support.CATALOGUE))
+        respx.get(CATALOGUE_URL.replace("/models", "/embeddings/models")).mock(
+            return_value=Response(200, json=support.CATALOGUE)
+        )
         respx.post(EMBED_URL).mock(side_effect=embed_handler(vectors))
         respx.post(COMPLETIONS_URL).mock(
             side_effect=adjudication_handler({"Mention A: VW": {"same": True, "confidence": 0.85}})

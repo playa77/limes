@@ -666,6 +666,10 @@ read-only; mutable pins live on a named volume and override seeded pins. Empty
 environment values are unset. Pin writes validate a model-only allowlist and use
 locked atomic replacement; the API refreshes them before its next NL query.
 Legacy `.env` loading remains compatibility behavior. No secret content is printed.
+Embeddings use a dedicated OpenRouter workspace credential,
+`LIMES_EMBEDDING_OPENROUTER_API_KEY`, without fallback to the chat key. Chat
+workspace restrictions remain independent. Embedding catalogue pricing and
+operator ACL/deployment requirements are recorded in [BE-51](EMBEDDING_CREDENTIALS.md).
 
 ### 8.5 Backup
 

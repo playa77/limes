@@ -21,6 +21,7 @@ from limes.config import Settings
 
 DEFAULT_SECRET_KEYS = (
     "LIMES_OPENROUTER_API_KEY",
+    "LIMES_EMBEDDING_OPENROUTER_API_KEY",
     "LIMES_NEO4J_PASSWORD",
     "LIMES_API_TOKEN",
     "Authorization",

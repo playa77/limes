@@ -18,7 +18,7 @@ from httpx import Response
 
 from limes.config import Settings
 from limes.cost.recorder import CostRecorder
-from limes.errors import ExtractionError
+from limes.errors import ConfigurationError, ExtractionError
 from limes.extraction.openrouter_client import (
     FALLBACK_USD_PER_MILLION_INPUT,
     FALLBACK_USD_PER_MILLION_OUTPUT,
@@ -61,6 +61,7 @@ def _settings(**overrides) -> Settings:
         baseline_path="/tmp/baseline.json",
         archive_path="/tmp/archive",
         openrouter_api_key=API_KEY,
+        embedding_openrouter_api_key="embedding-only-secret",
         openrouter_base_url=BASE_URL,
         http_timeout_seconds=10,
         usd_eur_rate=0.92,
@@ -259,7 +260,7 @@ def test_embed_checks_and_commits():
         "usage": {"prompt_tokens": 120, "total_tokens": 120},
     }
     with respx.mock:
-        respx.get(CATALOGUE_URL).mock(return_value=Response(200, json=CATALOGUE))
+        respx.get(f"{BASE_URL}/embeddings/models").mock(return_value=Response(200, json=CATALOGUE))
         respx.post(EMBEDDINGS_URL).mock(return_value=Response(200, json=embedding_response))
         client, governor = _client()
         embeddings = client.embed(["text one", "text two"], MODEL)
@@ -296,7 +297,7 @@ def test_complete_retries_on_connection_error_then_fails():
 
 def test_embed_response_without_data_list_raises():
     with respx.mock:
-        respx.get(CATALOGUE_URL).mock(return_value=Response(200, json=CATALOGUE))
+        respx.get(f"{BASE_URL}/embeddings/models").mock(return_value=Response(200, json=CATALOGUE))
         respx.post(EMBEDDINGS_URL).mock(return_value=Response(200, json={"usage": {}}))
         client, _ = _client()
         with pytest.raises(ExtractionError, match="no data list"):
@@ -305,7 +306,7 @@ def test_embed_response_without_data_list_raises():
 
 def test_embed_item_without_embedding_list_raises():
     with respx.mock:
-        respx.get(CATALOGUE_URL).mock(return_value=Response(200, json=CATALOGUE))
+        respx.get(f"{BASE_URL}/embeddings/models").mock(return_value=Response(200, json=CATALOGUE))
         respx.post(EMBEDDINGS_URL).mock(
             return_value=Response(200, json={"data": [{"embedding": "nope"}], "usage": {}})
         )
@@ -430,3 +431,71 @@ def test_provider_defaults_omit_optional_inference_parameters():
         client.complete([{"role": "user", "content": "x"}], MODEL, "extraction")
     payload = json.loads(route.calls[0].request.content)
     assert not {"temperature", "max_tokens", "reasoning"} & payload.keys()
+
+
+@pytest.mark.parametrize("key", ["", "   "])
+def test_embedding_key_missing_fails_before_any_network(key):
+    client = OpenRouterClient(_settings(embedding_openrouter_api_key=key), MockGovernor())
+    with respx.mock as router:
+        with pytest.raises(ConfigurationError, match="LIMES_EMBEDDING_OPENROUTER_API_KEY"):
+            client.embed(["text"], "baai/bge-m3")
+        assert not router.calls
+
+
+def test_roles_route_credentials_and_separate_price_cache():
+    import json
+
+    governor = MockGovernor()
+    client = OpenRouterClient(_settings(), governor)
+    embedding_catalogue = {"data": [{"id": MODEL, "pricing": {"prompt": "0.00000001"}}]}
+    with respx.mock as router:
+        chat_models = router.get(CATALOGUE_URL).respond(200, json=CATALOGUE)
+        embed_models = router.get(f"{BASE_URL}/embeddings/models").respond(
+            200, json=embedding_catalogue
+        )
+        chat = router.post(COMPLETIONS_URL).respond(200, json=COMPLETION)
+        embed = router.post(EMBEDDINGS_URL).respond(200, json={
+            "data": [{"embedding": [1.0, 0.0]}], "usage": {"prompt_tokens": 1000000}
+        })
+        client.complete([{"role": "user", "content": "hello"}], MODEL, "extraction")
+        client.embed(["hello"], MODEL)
+        client.embed(["again"], MODEL)
+        assert chat_models.call_count == embed_models.call_count == 1
+        for route in (chat_models, chat):
+            assert route.calls[0].request.headers["authorization"] == f"Bearer {API_KEY}"
+        for route in (embed_models, embed):
+            assert route.calls[0].request.headers["authorization"] == "Bearer embedding-only-secret"
+        assert json.loads(embed.calls[0].request.content) == {"model": MODEL, "input": ["hello"]}
+    assert governor.commits[1].cost_usd == Decimal("0.01")
+    assert governor.commits[2].cost_usd == Decimal("0.01")
+
+
+@pytest.mark.parametrize("endpoint", ["embeddings", "chat/completions"])
+def test_guardrail_404_diagnostic_is_bounded_and_does_not_expose_raw_body(endpoint):
+    client, governor = _client()
+    with respx.mock as router:
+        catalogue_url = (
+            f"{BASE_URL}/embeddings/models" if endpoint == "embeddings" else CATALOGUE_URL
+        )
+        router.get(catalogue_url).respond(200, json=CATALOGUE)
+        route = router.post(f"{BASE_URL}/{endpoint}").respond(404, json={"error": {
+            "message": "secret provider message " + API_KEY,
+            "metadata": {"input_endpoint_count": 2, "ineligibility_reasons": {
+                "model-ignored-by-guardrail": 1,
+                "provider-not-allowed-by-guardrail": 2,
+                "private": "embedding-only-secret"
+            }}
+        }})
+        with pytest.raises(ExtractionError) as failure:
+            if endpoint == "embeddings":
+                client.embed(["secret text"], MODEL)
+            else:
+                client.complete([{"role": "user", "content": "secret text"}], MODEL, "extraction")
+    message = str(failure.value)
+    for expected in (MODEL, "input_endpoint_count=2", "model-ignored-by-guardrail",
+                     "provider-not-allowed-by-guardrail", "workspaces/<ws>/guardrails"):
+        assert expected in message
+    for secret in (API_KEY, "embedding-only-secret", "secret provider message", "secret text"):
+        assert secret not in message
+    assert route.call_count == 1
+    assert governor.commits == []

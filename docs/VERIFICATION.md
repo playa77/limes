@@ -1,5 +1,76 @@
 # Verification and acceptance evidence
 
+
+## 2026-11-04 — BE-51 dedicated embedding credential
+
+Implementation and affected verification pass; **full runtime qualification is
+blocked by executor disk capacity**. Live base `6f77a00ec9b4`, branch
+`codex/be-51-dedicated-embedding-credential`. [Acceptance and operator handoff](EMBEDDING_CREDENTIALS.md)
+map dedicated secret parsing/masking, no credential fallback, per-role HTTP
+routing, embedding catalogue pricing/cache isolation and bounded guardrail errors.
+The default logging redactor explicitly includes the new credential name.
+
+Frozen candidate: `work/be51/candidate-4/report.json`, source manifest
+`work/be51/candidate-4/source.json`, SHA-256
+`ab7bbac034fb56e92fb9897fa47f79f51e58d24a0cdd469f4ff1b14dbb4df38a`.
+The complete manifest was rechecked unchanged after the failed runtime lane.
+Only handoff documentation changed after this freeze.
+
+| Candidate lane | Result | Check elapsed |
+|---|---|---|
+| Live baseline, lint, types, docs/generated docs, guards, whitespace | Passed | Individual times in report |
+| Backend unit | 916 passed, no failures/errors/skips | 151.158 s |
+| Desktop unit/contract | 147 passed, no failures/errors/skips | 7.940 s |
+| Graph integration | 176 passed, no failures/errors/skips | 248.342 s |
+| Acceptance | 85 passed, no failures/errors/skips | 51.079 s |
+| Desktop integration | 3 passed, no failures/errors/skips | 28.880 s |
+| Three-service runtime stack | Failed during container creation | 188.468 s |
+
+Total: **1,327 passing cases and one failed runtime-stack case**. Candidate
+validation took 678.702 seconds, not implementation or merge latency. A direct
+repeat of the fixture's Compose startup captured
+`Error response from daemon: no space left on device` creating its Neo4j
+container (`work/be51/runtime-diagnostic.log`). Images built successfully, but
+container filesystems exceed this 7.9-GB executor with the `vfs` storage driver.
+The fixture project and reproduction containers/volumes were removed. Only the
+three test image tags and unused build cache were cleaned; free space recovered
+to 5.8 GB. The CLI cache cleanup itself could not create its config directory
+on the full filesystem; the equivalent local daemon build-prune operation
+completed cleanup. Storage driver and production resources were not changed.
+Repeat the full frozen candidate on an adequately sized executor; no runtime
+acceptance or deployed-success claim is made.
+
+Earlier reports remain retained: candidate 1 exposed 12 integration failures
+from old shared-key fixtures; candidate 2 passed graph integration but exposed
+four acceptance failures from catalogue mocks embedded in subprocess scripts.
+Those fixtures now use separate fake credentials and mock `/embeddings/models`;
+no acceptance assertion or guard was relaxed. The affected integration recheck
+passes 16 cases; the complete acceptance recheck passes 85. Candidate 3 was
+explicitly interrupted before adding the new name to the default secret redactor;
+its report is not accepted evidence. The final candidate includes that correction.
+
+Change accounting against live main (additions/deletions/net): handwritten runtime
+**73/16/+57**; tests/helpers **129/5/+124**; handwritten runtime-doc renderer
+**14/1/+13**; generated operations documentation **14/1/+13**. Six new
+unit cases cover distinct credential/configuration, role-pricing and policy-error
+behaviors; the existing logging test now checks the new secret name and nested
+field. Existing integration/acceptance transport fixtures were updated, without
+adding repeated behavior suites. Other changes are configuration-example and
+handwritten documentation. No fixture data, dependency, ontology, model pin,
+vector index, ER threshold, node stamp or ledger schema changed.
+
+No provider call, production ingestion, VPS secret edit, staging, commit, push,
+PR, merge or deployment occurred. The operator must create/supply the dedicated
+workspace key and separately authorize the production embedding/ledger probe.
+OI-29 retains full-runtime qualification and live embedding/feeds evidence.
+
+
+Publication update (2026-11-04): the user authorized preparing and opening the
+session PR, including staging, commit and push. The reviewed runtime/test source
+still matches candidate 4's manifest. Publish as a draft with the runtime-stack
+failure retained; publication is not full acceptance or deployment evidence.
+
+
 ## 2026-10-31 — BE-50 adaptive OSM acquisition
 
 Live base `54c6a1a3efa2`, branch `codex/be-50-adaptive-osm-acquisition`.

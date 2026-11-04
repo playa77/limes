@@ -330,3 +330,13 @@ Branch `codex/be-50-adaptive-osm-acquisition`, live base `54c6a1a3efa2`.
 [Acceptance and limits](OSM_ADAPTIVE_ACQUISITION.md) cover durable subdivision,
 finite request/depth limits, leaf completeness and graph recovery. Deployment and
 live national capacity remain unverified; qualification is recorded separately.
+
+### BE-51 — dedicated embedding credential and role pricing
+
+Implementation and affected checks pass on `codex/be-51-dedicated-embedding-credential`.
+[Acceptance and operator handoff](EMBEDDING_CREDENTIALS.md): dedicated masked
+secret, no chat-key fallback, role-specific catalogue authentication/pricing and
+guardrail diagnostics. Model pins, dimensions and production state are unchanged.
+The frozen candidate passes 1,327 cases; runtime-stack container creation fails
+with confirmed executor disk exhaustion. Full qualification requires a larger
+runner. Operator deployment and live embedding/feeds evidence remain separate.

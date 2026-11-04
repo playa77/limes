@@ -131,3 +131,11 @@ def test_pin_file_precedence_and_nonempty_environment_override(tmp_path, monkeyp
     assert Settings(_env_file=(legacy, models), **values).extraction_model == "test/new"
     monkeypatch.setenv("LIMES_EXTRACTION_MODEL", "test/environment")
     assert Settings(_env_file=(legacy, models), **values).extraction_model == "test/environment"
+
+
+def test_dedicated_embedding_key_parses_and_is_masked(env, monkeypatch):
+    monkeypatch.setenv("LIMES_EMBEDDING_OPENROUTER_API_KEY", "embedding-secret")
+    settings = load_settings()
+    assert settings.embedding_openrouter_api_key.get_secret_value() == "embedding-secret"
+    assert "embedding-secret" not in repr(settings)
+    assert "embedding-secret" not in settings.model_dump_json()

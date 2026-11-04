@@ -135,6 +135,7 @@ def acceptance_settings(
         "baseline_path": tmp_path / "baseline.json",
         "archive_path": tmp_path / "archive",
         "openrouter_api_key": "sk-test",
+        "embedding_openrouter_api_key": "sk-embedding-test",
         "openrouter_base_url": BASE_URL,
         "extraction_model": EXTRACTION_MODEL,
         "embedding_model": EMBED_MODEL,
@@ -181,6 +182,9 @@ def mock_paid_transport(extraction_items: list[dict[str, Any]] | None = None) ->
             }
         ]
     respx.get(CATALOGUE_URL).mock(return_value=Response(200, json=CATALOGUE))
+    respx.get(CATALOGUE_URL.replace("/models", "/embeddings/models")).mock(
+        return_value=Response(200, json=CATALOGUE)
+    )
     respx.post(COMPLETIONS_URL).mock(
         return_value=Response(
             200,

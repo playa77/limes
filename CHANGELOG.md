@@ -1203,3 +1203,9 @@ missing stamp in the §5.6 merge contract, upstream at one choke point.
 - `README.md` (includes the personal-artifact disclaimer, AC-35) and
   `AGENTS.md` confirmed present.
 - `.gitignore` (existing) covers Python, Docker, Neo4j data, and `.env`.
+
+## BE-51 — dedicated embedding workspace credential
+
+Embedding calls require LIMES_EMBEDDING_OPENROUTER_API_KEY with no chat-key
+fallback; embedding catalogue pricing is separate from chat pricing. Policy 404
+errors report bounded guardrail metadata. Model pins and dimensions are unchanged.

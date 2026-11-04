@@ -72,6 +72,7 @@ def settings_for(tmp_path: Path, **overrides) -> Settings:
         baseline_path=tmp_path / "baseline.json",
         archive_path=tmp_path / "archive",
         openrouter_api_key="sk-test",
+        embedding_openrouter_api_key="sk-embedding-test",
         openrouter_base_url=BASE_URL,
         embedding_model=EMBED_MODEL,
         adjudication_model=ADJUDICATE_MODEL,

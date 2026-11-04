@@ -338,10 +338,11 @@ class PermanentStatus(Exception):
     """A non-retryable HTTP status (a 4xx other than 429). The wrapper maps
     it onto the layer's own error type; the status is never retried."""
 
-    def __init__(self, url: str, status_code: int) -> None:
+    def __init__(self, url: str, status_code: int, response_body: bytes = b"") -> None:
         super().__init__(f"HTTP {status_code} from {url}")
         self.url = url
         self.status_code = status_code
+        self.response_body = response_body[:16384]
 
 
 def request_with_retry(
@@ -427,7 +428,9 @@ def request_with_retry(
                     )
                 raise TransientFailure(f"HTTP {response.status_code} from {url}", delay)
             if response.status_code >= 400:
-                raise PermanentStatus(url=url, status_code=response.status_code)
+                raise PermanentStatus(
+                    url=url, status_code=response.status_code, response_body=response.content
+                )
             return response
 
     try:

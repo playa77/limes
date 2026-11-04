@@ -8,6 +8,8 @@ connection failures, timeouts, 429 and 5xx without logging credentials.
 
 from __future__ import annotations
 
+import json
+import re
 import uuid
 from datetime import UTC, datetime
 from decimal import Decimal
@@ -17,7 +19,7 @@ import structlog
 
 from limes.config import Settings
 from limes.cost.recorder import CostRecorder
-from limes.errors import ExtractionError
+from limes.errors import ConfigurationError, ExtractionError
 from limes.sources.base import PermanentStatus, RetryExhausted, request_with_retry
 from limes.types import CostLedgerEntry
 
@@ -38,6 +40,8 @@ def post_json_with_retry(
     payload: dict[str, Any],
     headers: dict[str, str],
     timeout_s: float,
+    *,
+    model_id: str = "",
 ) -> dict[str, Any]:
     """POST a JSON payload with the §11 retry policy (`request_with_retry`),
     returning the parsed JSON response. After the last attempt raises
@@ -48,6 +52,9 @@ def post_json_with_retry(
             "POST", url, json_body=payload, headers=headers, timeout_s=timeout_s, log=logger
         )
     except PermanentStatus as exc:
+        diagnostic = _guardrail_diagnostic(exc, model_id)
+        if diagnostic:
+            raise ExtractionError(diagnostic) from exc
         raise ExtractionError(f"call failed: {exc.url} returned HTTP {exc.status_code}") from exc
     except RetryExhausted as exc:
         raise ExtractionError(
@@ -65,7 +72,7 @@ class OpenRouterClient:
         self._settings = settings
         self._recorder = recorder
         # model_id -> (usd_per_input_token, usd_per_output_token, usd_per_request)
-        self._prices: dict[str, tuple[float, float, float]] = {}
+        self._prices: dict[tuple[str, bool], tuple[float, float, float]] = {}
 
     def complete(
         self,
@@ -97,6 +104,7 @@ class OpenRouterClient:
             payload,
             self._headers(),
             self._settings.http_timeout_seconds,
+            model_id=model_id,
         )
         content = _content_of(response)
         usage = response.get("usage") if isinstance(response, dict) else None
@@ -127,12 +135,14 @@ class OpenRouterClient:
     def embed(self, texts: list[str], model_id: str) -> list[list[float]]:
         """One embedding request. Recorded like `complete`;
         embeddings bill prompt tokens only."""
-        input_price, _, _ = self._price_for(model_id)
+        headers = self._headers(embedding=True)  # Validate before catalogue/network work.
+        input_price, _, _ = self._price_for(model_id, embedding=True)
         response = post_json_with_retry(
             f"{self._settings.openrouter_base_url}/embeddings",
             {"model": model_id, "input": texts},
-            self._headers(),
+            headers,
             self._settings.http_timeout_seconds,
+            model_id=model_id,
         )
         data = response.get("data") if isinstance(response, dict) else None
         if not isinstance(data, list):
@@ -147,17 +157,19 @@ class OpenRouterClient:
         self._commit("embedding", model_id, input_tokens, 0, input_price, 0.0, 0.0)
         return embeddings
 
-    def catalogue(self) -> list[dict[str, Any]]:
+    def catalogue(self, *, embedding: bool = False) -> list[dict[str, Any]]:
         """The live model catalogue (`GET /models`) as a list of model dicts.
         Not a paid call: no governor check or commit. Fresh on every call —
         model selection (WP-29) wants the current state; `complete`/`embed`
         use the per-client price cache."""
-        url = f"{self._settings.openrouter_base_url}/models"
+        headers = self._headers(embedding=embedding)
+        path = "embeddings/models" if embedding else "models"
+        url = f"{self._settings.openrouter_base_url}/{path}"
         try:
             response = request_with_retry(
                 "GET",
                 url,
-                headers=self._headers(),
+                headers=headers,
                 timeout_s=self._settings.http_timeout_seconds,
                 log=logger,
             )
@@ -175,11 +187,14 @@ class OpenRouterClient:
             raise ExtractionError("catalogue response carries no data list")
         return [entry for entry in data if isinstance(entry, dict)]
 
-    def _price_for(self, model_id: str) -> tuple[float, float, float]:
+    def _price_for(
+        self, model_id: str, *, embedding: bool = False
+    ) -> tuple[float, float, float]:
         """Per-token USD prices for a model: from the cached catalogue, else
         the conservative fallback (logged — the price affects the ledger and
         accounting, so a fallback must never be silent)."""
-        cached = self._prices.get(model_id)
+        cache_key = (model_id, embedding)
+        cached = self._prices.get(cache_key)
         if cached is not None:
             return cached
         fallback = (
@@ -188,7 +203,7 @@ class OpenRouterClient:
             0.0,
         )
         try:
-            for entry in self.catalogue():
+            for entry in self.catalogue(embedding=embedding):
                 if entry.get("id") != model_id:
                     continue
                 pricing = entry.get("pricing") or {}
@@ -202,7 +217,7 @@ class OpenRouterClient:
                     )
                 except (TypeError, ValueError):
                     break
-                self._prices[model_id] = price
+                self._prices[cache_key] = price
                 return price
         except ExtractionError as exc:
             logger.warning(
@@ -210,7 +225,7 @@ class OpenRouterClient:
                 model_id=model_id,
                 reason=str(exc),
             )
-        self._prices[model_id] = fallback
+        self._prices[cache_key] = fallback
         logger.warning(
             "model absent from catalogue; using conservative fallback price",
             model_id=model_id,
@@ -227,9 +242,17 @@ class OpenRouterClient:
             parameters["reasoning"] = {"effort": self._settings.inference_reasoning_effort}
         return parameters
 
-    def _headers(self) -> dict[str, str]:
+    def _headers(self, *, embedding: bool = False) -> dict[str, str]:
+        key = self._settings.openrouter_api_key
+        if embedding:
+            key = self._settings.embedding_openrouter_api_key.get_secret_value()
+            if not key.strip():
+                raise ConfigurationError(
+                    "Set LIMES_EMBEDDING_OPENROUTER_API_KEY to the dedicated embeddings "
+                    "workspace key in config/secrets.env; embeddings never use the chat key"
+                )
         return {
-            "Authorization": f"Bearer {self._settings.openrouter_api_key}",
+            "Authorization": f"Bearer {key}",
             "Content-Type": "application/json",
         }
 
@@ -278,3 +301,32 @@ def _content_of(response: dict[str, Any]) -> str:
     if not isinstance(content, str):
         raise ExtractionError("chat completion content is not a string")
     return content
+
+
+def _guardrail_diagnostic(error: PermanentStatus, model_id: str) -> str | None:
+    """Expose bounded policy metadata only, never arbitrary provider text or secrets."""
+    if error.status_code != 404:
+        return None
+    try:
+        payload = json.loads(error.response_body)
+        detail = payload.get("error", {})
+        metadata = detail.get("metadata", {})
+        reasons = metadata.get("ineligibility_reasons", {})
+        if "guardrail" not in json.dumps(reasons).lower():
+            return None
+    except (ValueError, AttributeError, TypeError):
+        return None
+    # Permit diagnostic identifiers/counts, not free-form provider messages.
+    reason_codes = sorted(set(re.findall(
+        r'"([a-z][a-z0-9]*(?:-[a-z0-9]+)+)"', json.dumps(reasons)
+    )))
+    rendered = json.dumps([code for code in reason_codes if "guardrail" in code][:20])
+    count = metadata.get("input_endpoint_count")
+    count = count if type(count) is int else "unknown"
+    return (
+        f"OpenRouter guardrail HTTP 404 for model {model_id!r}; "
+        f"input_endpoint_count={count}; ineligibility_reasons={rendered}. "
+        "Review the serving key's workspace policy at "
+        "https://openrouter.ai/workspaces/<ws>/guardrails "
+        "(replace <ws> with that key's workspace); allow the model and its providers."
+    )
