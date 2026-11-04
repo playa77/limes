@@ -76,7 +76,7 @@ def test_fetch_posts_bounded_queries_and_preserves_original_bytes(tmp_path, monk
     assert not (tmp_path / "cursor" / "active.json").exists()
     # A completed load retires the acquisition: the next explicit run is fresh.
     requests = []
-    monkeypatch.setattr(osm, 'fetch_bytes_form', lambda url, data: (
+    monkeypatch.setattr(osm, 'fetch_bytes_form', lambda url, data, **kwargs: (
         requests.append(data['data']) or _json_payload([])))
     list(adapter.fetch(None, None))
     assert requests == list(queries)
@@ -347,7 +347,7 @@ def test_restart_resumes_only_missing_partitions_and_replays_stable_records(tmp_
     cursor = tmp_path / 'cursor'
     calls = []
 
-    def fetch(url, data):
+    def fetch(url, data, **kwargs):
         calls.append(data['data'])
         if data['data'] == 'second':
             raise SourceFetchError('upstream unavailable')
@@ -361,7 +361,7 @@ def test_restart_resumes_only_missing_partitions_and_replays_stable_records(tmp_
     old = json.loads((cursor / 'active.json').read_text())
     assert set(old['partitions']) == {'0'}
     calls.clear()
-    monkeypatch.setattr(osm, 'fetch_bytes_form', lambda url, data: (
+    monkeypatch.setattr(osm, 'fetch_bytes_form', lambda url, data, **kwargs: (
         calls.append(data['data']) or _json_payload([])))
     restarted = OsmAdapter(OsmAcquisition(archive, cursor))
     records = list(restarted.fetch(None, None))
@@ -369,7 +369,8 @@ def test_restart_resumes_only_missing_partitions_and_replays_stable_records(tmp_
     assert records[0].fetched_at.isoformat().replace('+00:00', 'Z') == (
         old['partitions']['0']['fetched_at'])
     assert records[0].payload == _fixture()
-    monkeypatch.setattr(osm, 'fetch_bytes_form', lambda *args: pytest.fail('must replay archive'))
+    monkeypatch.setattr(osm, 'fetch_bytes_form',
+                        lambda *args, **kwargs: pytest.fail('must replay archive'))
     replay = list(OsmAdapter(OsmAcquisition(archive, cursor)).fetch(None, None))
     assert [r.model_dump() for r in replay] == [r.model_dump() for r in records]
 
@@ -388,7 +389,7 @@ def test_restart_resumes_only_missing_partitions_and_replays_stable_records(tmp_
 def test_incomplete_partition_never_enters_cursor_or_yields_data(tmp_path, monkeypatch, payload):
     monkeypatch.setattr(osm, 'OVERPASS_QUERIES', (osm._overpass_query('0,0,2,2'),))
     monkeypatch.setattr(osm, 'MAX_SPLIT_DEPTH', 0)
-    monkeypatch.setattr(osm, 'fetch_bytes_form', lambda *args: payload)
+    monkeypatch.setattr(osm, 'fetch_bytes_form', lambda *args, **kwargs: payload)
     archive = ArchiveStore(tmp_path / 'archive')
     cursor = tmp_path / 'cursor'
     from limes.errors import SourceFetchError
@@ -413,7 +414,7 @@ def test_cursor_lock_plan_mismatch_and_archive_corruption_fail_closed(tmp_path, 
     from limes.errors import SourceFetchError
 
     monkeypatch.setattr(osm, 'OVERPASS_QUERIES', ('only',))
-    monkeypatch.setattr(osm, 'fetch_bytes_form', lambda *args: _fixture())
+    monkeypatch.setattr(osm, 'fetch_bytes_form', lambda *args, **kwargs: _fixture())
     archive = ArchiveStore(tmp_path / 'archive')
     store = OsmAcquisition(archive, tmp_path / 'cursor')
     with store.locked(), pytest.raises(SourceFetchError, match='active'):
@@ -437,7 +438,7 @@ def test_adaptive_split_restart_coverage_and_dedup(tmp_path, monkeypatch):
     monkeypatch.setattr(osm.time, 'sleep', lambda _: None)
     calls = []
 
-    def fetch(url, data):
+    def fetch(url, data, **kwargs):
         query = data['data']
         calls.append(query)
         if query == root:
@@ -456,7 +457,7 @@ def test_adaptive_split_restart_coverage_and_dedup(tmp_path, monkeypatch):
     assert set(state['partitions']) == {'0/0'}
     assert calls == [root, children[0], children[1]]
     calls.clear()
-    monkeypatch.setattr(osm, 'fetch_bytes_form', lambda url, data: (
+    monkeypatch.setattr(osm, 'fetch_bytes_form', lambda url, data, **kwargs: (
         calls.append(data['data']) or _fixture()))
     adapter = OsmAdapter(OsmAcquisition(archive, cursor))
     records = list(adapter.fetch(None, None))
@@ -478,14 +479,14 @@ def test_adaptive_depth_and_request_limits_preserve_progress(tmp_path, monkeypat
     monkeypatch.setattr(osm, 'OVERPASS_QUERIES', (osm._overpass_query('0,0,2,2'),))
     monkeypatch.setattr(osm, 'MAX_SPLIT_DEPTH', 1)
     monkeypatch.setattr(osm.time, 'sleep', lambda _: None)
-    monkeypatch.setattr(osm, 'fetch_bytes_form', lambda *args:
+    monkeypatch.setattr(osm, 'fetch_bytes_form', lambda *args, **kwargs:
                         b'{"elements": [], "remark": "runtime error: out of memory"}')
     store = OsmAcquisition(ArchiveStore(tmp_path / 'archive'), tmp_path / 'cursor')
     with pytest.raises(SourceFetchError, match='exhausted subdivision depth'):
         list(OsmAdapter(store).fetch(None, None))
     assert json.loads((store.root / 'active.json').read_bytes())['splits'] == ['0']
     monkeypatch.setattr(osm, 'MAX_REQUESTS_PER_RUN', 1)
-    monkeypatch.setattr(osm, 'fetch_bytes_form', lambda *args: _json_payload([]))
+    monkeypatch.setattr(osm, 'fetch_bytes_form', lambda *args, **kwargs: _json_payload([]))
     with pytest.raises(SourceFetchError, match='request limit'):
         list(OsmAdapter(store).fetch(None, None))
     assert set(json.loads((store.root / 'active.json').read_bytes())['partitions']) == {'0/0'}

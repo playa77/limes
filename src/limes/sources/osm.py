@@ -53,10 +53,13 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Literal
 
+import httpx
 import structlog
 
 from limes.errors import SourceFetchError, SourceParseError
 from limes.sources.base import (
+    RetryExhausted,
+    TransientFailure,
     coordinate_location,
     fetch_bytes_form,
     hash_entity_id,
@@ -184,7 +187,15 @@ class OsmAdapter:
     supports_backfill: bool = False
     supports_incremental: bool = False
 
-    def __init__(self, acquisition: OsmAcquisition | None = None) -> None:
+    def __init__(self, acquisition: OsmAcquisition | None = None, *,
+                 read_timeout_s: int = 180, endpoints: tuple[str, ...] | None = None) -> None:
+        self.endpoints = endpoints if endpoints is not None else (
+            OVERPASS_URL, "https://overpass.kumi.systems/api/interpreter")
+        if not self.endpoints or any(
+            not endpoint.startswith("https://") for endpoint in self.endpoints
+        ):
+            raise ValueError("osm: endpoints must be a nonempty list of HTTPS URLs")
+        self.read_timeout_s = read_timeout_s
         self.acquisition = acquisition
         self._completed_acquisition: str | None = None
         self._run_scope_active = False
@@ -235,11 +246,24 @@ class OsmAdapter:
                     time.sleep(1)
                 requests += 1
                 fetched_at = now_utc()
-                payload = fetch_bytes_form(OVERPASS_URL, {"data": query})
-                content_hash = store.archive.put("osm", payload, "application/json")
+                content_hash = None
                 try:
+                    payload = fetch_bytes_form(
+                        self.endpoints[0], {"data": query},
+                        read_timeout_s=self.read_timeout_s, fallback_urls=self.endpoints[1:])
+                    content_hash = store.archive.put("osm", payload, "application/json")
                     _validated_elements(payload)
-                except OverpassCapacityError as exc:
+                except (OverpassCapacityError, SourceFetchError) as exc:
+                    if not isinstance(exc, OverpassCapacityError):
+                        cause = exc.__cause__
+                        transient = cause.__cause__ if isinstance(cause, RetryExhausted) else None
+                        eligible = isinstance(transient, TransientFailure) and (
+                            transient.status_code in (502, 503, 504)
+                            or isinstance(transient.__cause__, httpx.ReadTimeout))
+                        # Transport failures only justify splitting the original large
+                        # grid cells, never progressively shrinking small children.
+                        if not eligible or "/" in partition:
+                            raise
                     if partition.count("/") >= MAX_SPLIT_DEPTH:
                         raise SourceFetchError(
                             f"osm: partition {partition} exhausted subdivision depth; "

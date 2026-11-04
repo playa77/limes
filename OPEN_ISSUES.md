@@ -22,9 +22,10 @@ closure sections; “open” is not a statement that every old symptom still exi
 
 | Issue | Current state | Owner/package | Remaining obligation or closure evidence |
 |---|---|---|---|
+| OI-31 | BE-53 locally implemented and qualified; operator coverage open | BE-53 / operator | [Policy and acceptance](docs/OSM_TRANSPORT_POLICY.md): dead feed removed; OSM timeout/mirrors/bounded transport splits; 1,348 integrated candidate cases pass including runtime stack; standalone independence was also qualified before PR #21 merged. Live capacity and extraction quality remain open. |
 | OI-30 | BE-52 locally accepted; external measurement/ownership open | BE-52 / operator | [Acceptance](docs/INGEST_SOURCE_REPAIR.md) and [candidate](docs/VERIFICATION.md): 1,337 passing cases, including runtime stack. Partial feeds/checkpoints, ontology conformance and attempt diagnostics verified with mocks/disposable graph; update explicit pins to 1.1.0. Deployed quality, upstream availability and dead-URL ownership remain open. |
 | OI-29 | Implemented; supplied embedding probe passed; historical candidate failed | BE-51 / Hermes deployment | [Acceptance](docs/EMBEDDING_CREDENTIALS.md): dedicated credential, no fallback, role pricing and guardrail diagnostics; 1,327 cases pass, runtime-stack creation fails with confirmed executor disk exhaustion. The supplied 4ef67c8 VPS report observes a successful embedding probe; feeds still failed. BE-52 now qualifies the current descendant on a larger runner; the original frozen BE-51 report remains failed. |
-| OI-28 | Adaptive acquisition; live capacity/OSM timeout policy open | BE-49/BE-50 | [BE-50 adaptive follow-up](docs/OSM_ADAPTIVE_ACQUISITION.md); [BE-49 acceptance](docs/INGEST_THIRD_RUN_REPAIR.md): Wikidata action and bounded resumable OSM acquisition repaired; 1,315 candidate cases pass, runtime-stack container creation fails with reproduced executor disk exhaustion. BE-52 qualifies the current descendant on a larger executor; the original frozen reports remain failed. Live capacity, transport-timeout policy and legacy migration remain separate. |
+| OI-28 | Adaptive acquisition; BE-53 transport implemented, live capacity open | BE-49/BE-50 | [BE-50 adaptive follow-up](docs/OSM_ADAPTIVE_ACQUISITION.md); [BE-49 acceptance](docs/INGEST_THIRD_RUN_REPAIR.md): Wikidata action and bounded resumable OSM acquisition repaired; 1,315 candidate cases pass, runtime-stack container creation fails with reproduced executor disk exhaustion. BE-52 qualifies the current descendant on a larger executor; the original frozen reports remain failed. BE-53/OI-31 resolves transport policy locally; live capacity and legacy migration remain open. |
 | OI-27 | Implemented; current descendant qualified in BE-52 | BE-48 | [Repair mapping](docs/INGEST_RERUN_REPAIR.md): wire-array schema, feed continuation/RSS, Retry-After and strict XML controls; unit/acceptance/desktop checks pass; backup passes after cleanup; runtime-stack wheel extraction fails with confirmed disk exhaustion. BE-52 passes full qualification for the current descendant on a larger executor; the original BE-48 report remains failed. Supplied third-run operator evidence reports healthy deployment and a successful Transparency Register load; full isolated candidate qualification still requires a passing run. |
 | OI-25 | Closed — complete local BE-47 acceptance | BE-47 | Final frozen candidate-3: all five suites/shared guards pass with no source drift. Current formats, archive manifests/API, identity compatibility and failure/checkpoint regressions have direct evidence below; production success is unclaimed. |
 | OI-26 | Open — external source availability | Operator/upstream | Bounded probes observed FSD HTTP 500, a tiny Overpass timeout, and empty XML for two TED award links. Require compatible current responses or explicit failed-source/record outcomes when acquiring; never infer coverage from retry code or mocked tests. |
@@ -757,3 +758,18 @@ rewriting their frozen failed reports or claiming source/corpus recovery. OI-30'
 implementation defects are locally accepted; the operator still owns explicit
 version-pin upgrade, feed URL disposition and separately permitted deployed quality
 measurement. TED/FSD remain OI-26; OSM timeout/capacity remains OI-28.
+
+## 2026-11-04 — OI-31 BE-53 local closure and retained external obligations
+
+Owner chooses removal of EUobserver and the full OSM transport package. All scoped
+implementation/checklist items pass in the frozen BE-53 candidate, including the
+three-service runtime lane on this larger executor; see VERIFICATION. Existing
+BE-49/BE-50 cursor/lock and checkpoint obligations remain intact, no schema migration.
+No production feeds/OSM run was requested or performed. Feed extraction rejections,
+TED/FSD availability, GDELT backlog and nationwide acquisition capacity remain open.
+The supplied operator report records BE-51's successful embedding probe and healthy
+BE-50/51 deployment; it does not establish full source acquisition or retroactively
+qualify their failed frozen candidates. PR #21 owns its independent feed-failure
+handling and extraction changes. PR #21 merged during final verification; the
+shared retry-block overlap is reconciled, and the current integrated candidate
+passes all 1,348 cases. No source availability/production success is inferred.

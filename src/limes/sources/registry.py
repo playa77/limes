@@ -64,7 +64,8 @@ class SourceRegistry:
 
 
 def build_default_registry(
-    *, bundestag_dip_api_key: str = "", osm_acquisition: OsmAcquisition | None = None
+    *, bundestag_dip_api_key: str = "", osm_acquisition: OsmAcquisition | None = None,
+    osm_http_timeout_seconds: int = 180, osm_overpass_endpoints: tuple[str, ...] | None = None,
 ) -> SourceRegistry:
     """The authoritative list of live sources (Doc 2 §8.5.1).
 
@@ -117,7 +118,8 @@ def build_default_registry(
 
     from limes.sources.osm import OsmAdapter
 
-    registry.register(OsmAdapter(osm_acquisition))
+    registry.register(OsmAdapter(osm_acquisition, read_timeout_s=osm_http_timeout_seconds,
+                                 endpoints=osm_overpass_endpoints))
 
     from limes.sources.ted import TedAdapter
 

@@ -9,8 +9,8 @@ qualification require an identified operator environment and remain unmeasured.
 
 - Explicit Overpass runtime query timeouts and out-of-memory remarks subdivide the
   failed cell into four adjoining quadrants. All seven selectors and the exact
-  parent extent survive. Generic remarks, invalid JSON, HTTP failures and rate
-  limits remain failures; smaller queries cannot establish a remedy for those.
+  parent extent survive. Generic remarks, invalid JSON and rate limits remain failures. BE-53 adds
+  bounded root-cell transport recovery; see [transport policy](OSM_TRANSPORT_POLICY.md).
 - The original failed response is archived. The cursor records the split before
   requesting a child, then records each validated child's original archive hash
   and fetch instant. A restart derives the same tree and reuses completed leaves.
@@ -41,9 +41,9 @@ Existing BE-49 graph failure/replay coverage remains active.
 
 This is a collection over an interval, not an atomic OSM snapshot. No absence,
 removal or historical coverage is inferred. A smallest allowed cell may still
-exceed upstream capacity; the explicit depth failure requires inspection. HTTP
-429/5xx, malformed responses and network failures do not trigger endpoint rotation
-or automatic job replay. No production acquisition, deployment, legacy numeric-ID
+exceed upstream capacity; the explicit depth failure requires inspection. BE-53 adds endpoint rotation and bounded transport subdivision as documented in
+[transport policy](OSM_TRANSPORT_POLICY.md). Malformed responses remain failures;
+no job is automatically replayed. No production acquisition, deployment, legacy numeric-ID
 migration or paid inference is performed by implementation verification.
 
 Validation results and remaining qualification blockers are recorded in

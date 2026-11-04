@@ -1219,3 +1219,9 @@ missing stamp in the §5.6 merge contract, upstream at one choke point.
 Embedding calls require LIMES_EMBEDDING_OPENROUTER_API_KEY with no chat-key
 fallback; embedding catalogue pricing is separate from chat pricing. Policy 404
 errors report bounded guardrail metadata. Model pins and dimensions are unchanged.
+
+## 2026-11-04 — BE-53
+
+Remove the retired EUobserver feed. OSM gets a 180-second configurable read
+timeout, ordered mirror retries with attempt logs, and bounded root subdivision
+on exhausted 502/503/504/read timeouts. Existing cursors and locks remain compatible.

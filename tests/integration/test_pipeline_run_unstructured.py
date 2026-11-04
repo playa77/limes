@@ -123,7 +123,7 @@ def _settings(neo4j_instance: Neo4jInstance, tmp_path: Path, **overrides) -> Set
         http_timeout_seconds=10,
     )
     base.update(overrides)
-    return Settings(**base)
+    return Settings(_env_file=None, **base)
 
 
 def _feeds_config(tmp_path: Path) -> Path:

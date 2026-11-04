@@ -67,7 +67,7 @@ def _settings(**overrides) -> Settings:
         usd_eur_rate=0.92,
     )
     base.update(overrides)
-    return Settings(**base)
+    return Settings(_env_file=None, **base)
 
 
 class MockGovernor:
