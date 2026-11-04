@@ -8,6 +8,15 @@
 - Shared HTTP transport logs every response/transport failure, including the final
   attempt; TED/FSD keep bounded backoff and server cooldowns without endpoint changes.
 
+## 2026-11-04 — BE-54 extraction span geometry
+
+- Add prompt/schema 1.2.0 with explicit passage-local Unicode lengths and
+  per-batch index/offset upper bounds in both extraction transports; defaults and
+  public settings example select 1.2.0. Historical contracts remain supported.
+- Preserve independent deterministic rejection, raw archives and checkpoint/cache
+  failure semantics. Operator must update explicit settings pins and redeploy;
+  reduced live rejection rates remain unmeasured.
+
 ## 2026-10-31 — BE-48 second full-ingest repair
 
 ## 2026-10-31 — BE-50 adaptive OSM acquisition

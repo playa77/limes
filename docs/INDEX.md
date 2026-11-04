@@ -11,6 +11,7 @@ Updated 2026-10-28. Start with the product purpose in README, then this map.
 | What must the desktop display/do? | [Desktop requirements](LIMES_Desktop_Client_Requirements_v1.0.0.md), [architecture](LIMES_Desktop_Client_Architecture_v1.0.0.md) | HTTP consumer with shared claim semantics; acceptance gaps stay explicit |
 | What is shipped/configured today? | [Runtime architecture](ARCHITECTURE.md), [operations](OPERATIONS.md), [testing](TESTING_PHASE.md) | Generated from renderer and checked runtime JSON; current topology/access facts |
 | What qualifies the current desktop? | [DC-14 qualification](DESKTOP_QUALIFICATION.md) | Current re-review, direct requirement evidence and named external blockers |
+| Why are evidence offsets rejected? | [BE-54 span geometry](EXTRACTION_SPAN_GEOMETRY.md) | Passage-local Unicode bounds, versioned generation and live measurement obligation |
 | How are partial feeds and source retries repaired? | [BE-52 source repair](INGEST_SOURCE_REPAIR.md) | Checkpoint semantics, extraction versions, bounded transport evidence and operator limits |
 | What failed in the third full ingest? | [BE-49 repair](INGEST_THIRD_RUN_REPAIR.md) | Supplied deployment evidence, Wikidata defect and resumable OSM acquisition; local qualification remains distinct |
 | How are embedding credentials isolated? | [Dedicated embedding credential](EMBEDDING_CREDENTIALS.md) | BE-51 role authentication, pricing, diagnostics and operator deployment |

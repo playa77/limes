@@ -1082,10 +1082,14 @@ BE-52 wire versions 1.1.0 (legacy claim shape) and 2.1.0 (qualified shape)
 add ontology-derived type/relation enums and direction/domain/range constraints,
 including inherited types; post-generation validation remains an independent
 barrier with archived rejection reasons. Versioned prompts define zero-based
-Unicode passage offsets and exclusive ends. Defaults and the settings example
-select the paired 1.1.0 versions; explicit historical pins remain reproducible
-and must be updated deliberately to enable the constraints. Qualified paths may
-select paired 2.1.0 versions. Neither schema hints nor deterministic validation
+Unicode passage offsets and exclusive ends. BE-54 prompt/schema 1.2.0 retains
+that unqualified shape and coordinate system, supplies explicit passage lengths
+and constrains each batch passage index to its own offset upper bounds. Defaults
+and the settings example select paired 1.2.0 versions; explicit historical pins
+remain reproducible and must be updated deliberately to enable the new contract.
+The independent parser still rejects and archives invalid spans without repairing
+coordinates. Qualified paths may select paired 2.1.0 versions.
+[BE-54 geometry and operator obligations](EXTRACTION_SPAN_GEOMETRY.md). Neither schema hints nor deterministic validation
 establish a measured live-model quality score.
 
 The schema additionally requires the qualified-claim fields specified in §5.5.
