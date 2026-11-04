@@ -104,4 +104,4 @@ def test_non_string_content_is_rejected():
 def test_missing_prompt_file_fails_at_construction(monkeypatch):
     monkeypatch.setattr("limes.extraction.ollama.Path.exists", lambda self: False)
     with pytest.raises(ExtractionError, match="extraction prompt file missing"):
-        OllamaExtractor(_settings())
+        OllamaExtractor(_settings()).extract(PASSAGES, ONTOLOGY, "1.0.0", "1.0.0")

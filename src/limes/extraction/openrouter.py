@@ -90,7 +90,7 @@ class OpenRouterExtractor:
                 messages,
                 self.model_id,
                 "extraction",
-                json_schema=response_schema_for_version(schema_version),
+                json_schema=response_schema_for_version(schema_version, ontology),
             )
             batch_assertions, batch_errors = parse_extraction_response(
                 raw, passages, ontology, schema_version

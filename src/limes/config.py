@@ -72,10 +72,10 @@ class Settings(BaseSettings):
     feeds_config_path: Path
     gold_set_path: Path
     baseline_path: Path
-    extraction_prompt_version: str = "1.0.0"
+    extraction_prompt_version: str = "1.1.0"
     adjudication_prompt_version: str = "1.0.0"
     nl2cypher_prompt_version: str = "1.0.0"
-    extraction_schema_version: str = "1.0.0"
+    extraction_schema_version: str = "1.1.0"
 
     # ---------- Passive accounting ----------
     usd_eur_rate: float = 0.92

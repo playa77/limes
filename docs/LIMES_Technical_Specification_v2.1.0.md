@@ -850,6 +850,16 @@ Adapters emit records and **write nothing to the graph**.
 | `yahoo_finance` (BE-46) | Yahoo Finance through pinned `yfinance` transport | Company/security identity, available officers/board roles, shareholder structure, earnings/report metadata | Dated snapshots, not reconstructed history | 0.70 |
 | `news` (BE-43/DC-15) | Dynamic DE/EN public search RSS | Archived index responses and report versions, qualified NewsClaim artifacts; full article text unavailable | Investigation-driven bounded cycles | 0.50 index trust |
 
+Feeds acquisition (BE-52) treats individual feed failures as visible partial
+availability: log failed URLs and continue; raise an aggregate naming every failure
+only when all configured feeds fail. A healthy empty feed is not a failed feed.
+Only nonempty, cleanly processed acquisitions advance `last_success_at`; zero
+entries or processing/rejection errors never advance it. A partial checkpoint is
+acquisition progress, not all-feed coverage. RSS is still polled as a bounded set;
+content hashes and successful extraction caches avoid duplicate processing without
+dropping undated/corrected entries through a publisher-date filter. Rejections stay
+archived and replayable. Feed URL disposition remains an operator decision.
+
 OSM acquisition (BE-49) covers the original bbox with 80 deterministic cells,
 rejects error remarks even on HTTP 200, archives original responses and retains a
 per-partition cursor under the archive volume until the complete load succeeds.
@@ -1056,6 +1066,16 @@ No identifier is asserted here. Two stages, because gold-set evaluation needs a 
 
 #### 8.7.3 Output Schema
 Versioned JSON Schema, `additionalProperties: false` throughout, requiring `passage_index`, `subject`, `relation`, `object`, `confidence`, `evidence_start`, `evidence_end`; mentions require `surface` and `type`. `relation` and mention `type` are validated against the ontology after parsing, so an out-of-ontology value yields a precise rejection rather than a generic schema error.
+
+BE-52 wire versions 1.1.0 (legacy claim shape) and 2.1.0 (qualified shape)
+add ontology-derived type/relation enums and direction/domain/range constraints,
+including inherited types; post-generation validation remains an independent
+barrier with archived rejection reasons. Versioned prompts define zero-based
+Unicode passage offsets and exclusive ends. Defaults and the settings example
+select the paired 1.1.0 versions; explicit historical pins remain reproducible
+and must be updated deliberately to enable the constraints. Qualified paths may
+select paired 2.1.0 versions. Neither schema hints nor deterministic validation
+establish a measured live-model quality score.
 
 The schema additionally requires the qualified-claim fields specified in §5.5.
 Validate proposition scope and attribution so an announcement, denial or proposal

@@ -362,7 +362,12 @@ def test_document_with_rejected_extraction_is_retryable_and_counted(tmp_path):
     # A document that passes the gate but yields only parse errors: nothing
     # reaches the graph. The partial failure stays retryable and cannot
     # advance the checkpoint or create a success cache marker.
-    extractor = FakeExtractor(parse_errors=["SCHEMA: item 0: nope"])
+    rejections = [
+        "ONTOLOGY_REJECTED: item 0: Country -[ACTOR_IN]-> Event",
+        "EVIDENCE_SPAN_MISMATCH: item 1: unsupported span",
+        "ONTOLOGY_REJECTED: item 2: Country -[TARGET_OF]-> Event",
+    ]
+    extractor = FakeExtractor(parse_errors=rejections)
     adapter = FakeAdapter(records=[_raw_record()], normalize=lambda record: _document_record())
     driver = FakeDriver()
     ctx = _ctx(
@@ -374,7 +379,8 @@ def test_document_with_rejected_extraction_is_retryable_and_counted(tmp_path):
         gate=_gate(driver, tmp_path),
     )
     record = execute_run(RunSpec(source_id="test", mode="ingest"), ctx)
-    assert record.assertions_rejected == 1
+    assert record.assertions_rejected == 3
+    assert record.errors == 3
     assert record.documents_gated_out == 1
     assert not any("ExtractionCacheEntry" in cypher for cypher, _ in driver.writes)
     assert extractor.calls == 1
@@ -385,6 +391,7 @@ def test_document_with_rejected_extraction_is_retryable_and_counted(tmp_path):
                  if path.is_file()
                  if ctx.archive.get(path.name).startswith(b"{")]
     diagnostic = next(item for item in snapshots if "parse_errors" in item)
+    assert diagnostic["parse_errors"] == rejections
     assert diagnostic["raw_response"] == "[]"
     assert diagnostic["model_id"] == "test/extractor"
     assert diagnostic["response_truncated"] is False
@@ -549,3 +556,17 @@ def test_acquisition_retirement_precedes_checkpoint_and_failure_is_durable(
         assert result.errors == 0
         assert any('last_success_at' in params for _, params in driver.writes)
     assert retirements == [True]
+
+
+@pytest.mark.parametrize("entries,errors,advances", [(0, 0, False), (1, 0, True), (1, 1, False)])
+def test_feeds_checkpoint_requires_entries_and_clean_processing(
+    tmp_path, entries, errors, advances
+):
+    normalized = _structured_record()
+    normalized.errors = errors
+    adapter = FakeAdapter(records=[_raw_record()] * entries, normalize=lambda raw: normalized)
+    adapter.source_id = "feeds"
+    driver = FakeDriver()
+    record = execute_run(RunSpec(source_id="feeds", mode="ingest"), _ctx(tmp_path, driver, adapter))
+    stamps = [p["last_success_at"] for _, p in driver.writes if "last_success_at" in p]
+    assert stamps == ([record.started_at] if advances else [])

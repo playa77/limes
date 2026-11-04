@@ -233,7 +233,7 @@ def _execute_run(spec: RunSpec, ctx: RunContext) -> IngestionRunRecord:
     _close_run(ctx, record, cost_before)
     # A partial parse must be replayable. Never skip an unprocessed record or
     # the interval between an explicit historical until and run completion.
-    if record.errors:
+    if record.errors or (spec.source_id == "feeds" and not record.records_fetched):
         return record
     ctx.driver.write_batch(
         [

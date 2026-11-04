@@ -194,3 +194,37 @@ def test_retry_after_http_date_and_invalid_values():
     assert delay is not None and 88 <= delay <= 90
     for value in (None, "invalid", "NaN", "inf"):
         assert _retry_after_seconds(value) is None
+
+
+@pytest.mark.parametrize("source,status,method", [("ted", 429, "POST"), ("fsd", 500, "GET")])
+def test_upstream_failures_without_retry_after_are_bounded_and_log_every_attempt(
+    monkeypatch, source, status, method
+):
+    import structlog
+
+    from limes.sources.fsd import FSD_URL, FsdAdapter
+    from limes.sources.ted import SEARCH_URL, TedAdapter
+
+    delays = []
+    monkeypatch.setattr("time.sleep", delays.append)
+    url = SEARCH_URL if source == "ted" else FSD_URL
+    adapter = TedAdapter() if source == "ted" else FsdAdapter()
+    with respx.mock:
+        route = respx.route(method=method, url=url).mock(return_value=Response(status))
+        with structlog.testing.capture_logs() as captured:
+            # Earlier CLI tests configure/cache loggers; bind this capture explicitly.
+            monkeypatch.setattr("limes.sources.base.logger", structlog.get_logger())
+            with pytest.raises(SourceFetchError, match=f"after 4 attempts.*HTTP {status}"):
+                list(adapter.fetch(datetime(2026, 1, 1, tzinfo=UTC),
+                                   datetime(2026, 1, 1, tzinfo=UTC)))
+    assert route.call_count == 4
+    assert len(delays) == 3
+    assert all(
+        minimum <= delay <= minimum + 2
+        for delay, minimum in zip(delays, [2, 4, 8], strict=True)
+    )
+    attempts = [e for e in captured if e["event"] == "HTTP attempt completed"]
+    assert [e["attempt"] for e in attempts] == [1, 2, 3, 4]
+    assert all(e["retry_after_seconds"] is None for e in attempts)
+    assert {e["outcome"] for e in attempts} == {
+        "rate_limited" if status == 429 else "upstream_failure"}

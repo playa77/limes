@@ -340,3 +340,22 @@ guardrail diagnostics. Model pins, dimensions and production state are unchanged
 The frozen candidate passes 1,327 cases; runtime-stack container creation fails
 with confirmed executor disk exhaustion. Full qualification requires a larger
 runner. Operator deployment and live embedding/feeds evidence remain separate.
+
+
+### BE-52 — ingest source repair
+
+Selected on `codex/be-52-ingest-source-repair`, live base `4ef67c89ae67`.
+[Full acceptance and source contract](INGEST_SOURCE_REPAIR.md): resilient partial
+feeds with honest nonempty checkpoints, ontology-derived versioned extraction
+constraints and preserved rejection archives, bounded TED/FSD retries with every
+attempt surfaced. Depends on merged BE-51 and the supplied deployment evidence.
+Feed URL ownership, OSM policy and live quality/availability remain external;
+VERIFICATION records implementation checks separately from frozen qualification.
+
+
+BE-52 disposition: complete local implementation acceptance and final full candidate
+pass (1,337 cases, zero failures/errors/skips), including three-service runtime.
+The exact manifest, failed preliminary attempts and change accounting are recorded
+in VERIFICATION. This is new current-descendant runtime evidence; historical
+BE-48/49/50/51 failed frozen reports are preserved. Upstream/deployed-quality and
+OSM policy obligations retain their owners; no production ingestion or push occurred.

@@ -1,6 +1,91 @@
 # Verification and acceptance evidence
 
 
+## 2026-11-04 — BE-52 ingest source repair
+
+Complete local implementation acceptance and full disposable qualification pass.
+Live base `4ef67c89ae67`, branch `codex/be-52-ingest-source-repair`.
+[Acceptance mapping and operator handoff](INGEST_SOURCE_REPAIR.md) covers the full
+parent: partial feeds/checkpoints, ontology-constrained versioned extraction with
+preserved rejection archives, and bounded TED/FSD transport diagnostics.
+
+Authoritative frozen candidate: `work/be52/candidate-3/report.json`, exact manifest
+`work/be52/candidate-3/source.json`, SHA-256
+`5a339c1e64b9dd0f5f671a69ef23ee90f104bcf640b59b22483c5b61b4eb9c43`.
+All 442 implementation/verification files matched the review checkout before and
+after qualification. The configuration example (outside the runner's normal
+manifest paths) also matched exactly, SHA-256
+`c1cfe37144dd5339fce33f5badc318aa02241dfd895323af02bedbfabf7901e0`.
+Only handoff/specification/ledger documentation changes followed the final freeze.
+
+| Candidate lane | Result | Check elapsed |
+|---|---|---|
+| Live baseline, runtime/tool lint, types, docs/generated docs, shared guards, whitespace | Passed | Individual times in report |
+| Backend unit | 925 passed | 157.234 s |
+| Desktop unit/contract | 147 passed | 10.373 s |
+| Graph integration | 176 passed | 385.426 s |
+| Acceptance (separate collection) | 85 passed | 87.389 s |
+| Desktop integration | 3 passed | 42.109 s |
+| Three-service runtime stack | 1 passed | 129.813 s |
+
+Total: **1,337 cases, no failures/errors/skips**. Final candidate validation took
+813.981 seconds; this is not implementation effort or merge latency. Implementation
+effort was not separately timed; no push/PR/merge/deployment was requested or done.
+The candidate used the canonical `venv/`, disposable graphs and mocked model/source
+transports. Existing co-tenant services/data were not selected by graph tests.
+Fixture containers/volumes were removed by their own teardowns. The larger executor
+had about 42 GB free with overlayfs, unlike the historical 7.9 GB vfs executor.
+This current descendant candidate passes runtime qualification; older BE-48/49/50/51
+failed reports remain failed historical evidence, not retroactively green runs.
+
+Development evidence: 137 affected unit cases passed (36.26 s); lint, mypy and
+shared C1–C9/G1–G4 guards passed. The focused clean recheck of prior failing unit
+cases/shared transport coverage passed 20 cases (2.28 s), and the default-version
+feeds graph scenario passed (28.10 s). These are separate checks, not added to the
+final candidate total. Nine new parameterized unit cases cover distinct behaviors;
+existing rejection-archive coverage now checks the observed ontology/span reasons,
+and the existing end-to-end feeds graph assertion expects provenance 1.1.0.
+
+Earlier attempts are retained, not accepted: candidate 1 stopped at backend unit
+with four failures (162.934 s). Two came from default Settings reading ignored local
+configuration (missing-backup-credential and optional-inference-default cases);
+the unexpected backup connection attempt failed to connect. The other two were
+new log-capture assertions affected by cached loggers after CLI initialization.
+Their capture now binds a fresh logger. Candidate 2 used an isolated detached
+checkout with no local configuration files and passed units/desktop, but stopped
+at graph integration because an existing test expected provenance 1.0.0 instead
+of the new default 1.1.0 (580.118 s). Only that fixture expectation/comment changed
+before candidate 3; numerical expectations and behavioral checks were preserved.
+No paid call or live source ingestion was executed. No configuration/secret/model
+pin files were edited or their contents printed.
+
+The authoritative run used `/tmp/limes-be52-qualification` (exact source diff
+verified against the review workspace); reports/manifests/logs/JUnit were copied
+back to `work/be52/`. Both checkouts were synced with
+`UV_PROJECT_ENVIRONMENT=venv uv sync --frozen --all-packages`. Qt initially lacked
+system libraries, and sudo installation was unavailable. CI's library packages
+were downloaded/extracted under `/tmp/be52-qt-libs`; the run inherited
+`LD_LIBRARY_PATH=/tmp/be52-qt-libs/root/usr/lib/x86_64-linux-gnu` plus headless Qt
+and Chromium flags from the existing runner. No missing-library check was skipped.
+
+Workflow correction: begin future qualification in a clean checkout, and test new
+structured-log assertions after CLI logger setup before freezing. Search fixed
+provenance expectations when changing defaults. These repeated corrections are
+recorded within BE-52, without splitting its delivery boundary or adding CI lanes,
+fixed quotas or duplicate test suites. Existing independent CI lanes and the stable
+fail-closed required status remain unchanged; hosted execution is not claimed.
+
+Change accounting against live main (additions/deletions/net): handwritten Python
+runtime **69/24/+45**; versioned prompt assets **111/0/+111**; tests/helpers
+**139/12/+127**; configuration example **2/2/0**. Handwritten documentation **301/4/+297**.
+No fixture data, generated artifacts, dependencies, ontology, endpoints, credentials,
+service topology or production model pins changed. Full-runtime acceptance does
+not establish deployed feed success, reduced live rejection rates, TED/FSD recovery,
+OSM capacity/timeout policy or historical corpus completeness. Existing explicitly
+pinned deployments must opt into paired extraction versions 1.1.0; URL disposition
+remains with the operator/owner. OI-26/28/30 retain the appropriate external gaps.
+
+
 ## 2026-11-04 — BE-51 dedicated embedding credential
 
 Implementation and affected verification pass; **full runtime qualification is
