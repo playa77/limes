@@ -879,6 +879,15 @@ cells. Auth failures, rate limits and transport-failed children do not subdivide
 Existing three-level remark subdivision, 200 logical-fetch limit, cursor plan
 identity, lock and checkpoint semantics remain. See
 [BE-53 transport policy](OSM_TRANSPORT_POLICY.md) for precise limits/provenance.
+BE-55 records exhausted leaf acquisition failures in optional `failed_leaves`
+(default empty for old cursors), continues eligible siblings and fails the run
+before yielding records if any leaf remains failed/pending. Each entry has phase
+`fetch`, state `failed`, `failed_at`, `error` and nullable `content_hash` (archived
+capacity-error response if available; transport failure has no validated payload).
+Successful reacquisition atomically replaces the failure with its partition entry;
+explicit resubmission retries incomplete leaves and replays complete coverage for
+loading. No automatic jobs or rollback migration. See
+[BE-55 recovery](GDELT_BACKLOG_OSM_LEAVES.md).
 
 Both BE-46 adapters are registered selection-only sources; generic ingest-all excludes them.
 Wikipedia must not be confused with the existing enrichment-only Wikidata adapter.
@@ -1034,7 +1043,12 @@ legacy budget flags cannot terminate or protect a run.
 def resolve_window(spec: RunSpec, adapter: SourceAdapter,
                    source_node: SourceRecord | None) -> tuple[datetime | None, datetime | None]: ...
 ```
-An explicit `since` in the `RunSpec` always wins. Otherwise: if `adapter.supports_incremental`, the window starts at `Source.last_success_at`, or at `now - LIMES_BACKFILL_DAYS_UNSTRUCTURED` if the source has never run; if not incremental, the window is `(None, None)` meaning a full load. This is why `supports_incremental` exists on the protocol and why `Source.last_success_at` is read and not merely written.
+An explicit `since` in the `RunSpec` wins except for BE-55 rolling GDELT
+backfill (no explicit `until`): if `last_success_at` is older than `since`, record
+the checkpoint as the window anchor and fetch the next at most 96 unconsumed
+slots, excluding the already covered checkpoint slot. Resolve against the source
+read under the CLI source lock. Fresh/absent-checkpoint GDELT and other sources
+retain explicit-window semantics. Otherwise: if `adapter.supports_incremental`, the window starts at `Source.last_success_at`, or at `now - LIMES_BACKFILL_DAYS_UNSTRUCTURED` if the source has never run; if not incremental, the window is `(None, None)` meaning a full load. This is why `supports_incremental` exists on the protocol and why `Source.last_success_at` is read and not merely written.
 
 #### 8.6.3 Gate
 ```python

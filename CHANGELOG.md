@@ -8,6 +8,14 @@
 - Shared HTTP transport logs every response/transport failure, including the final
   attempt; TED/FSD keep bounded backoff and server cooldowns without endpoint changes.
 
+## 2026-11-04 — BE-55
+
+- GDELT rolling backfill addresses an older checkpoint, fetching at most 96 new
+  slots per explicit submission; fresh-day and other-source windows are unchanged.
+- OSM durably records exhausted leaf failures, continues eligible siblings and
+  fails incomplete acquisition before graph loading. Explicit re-runs reuse
+  acquired leaves; old cursors default the new failed-leaf map to empty.
+
 ## 2026-10-31 — BE-48 second full-ingest repair
 
 ## 2026-10-31 — BE-50 adaptive OSM acquisition

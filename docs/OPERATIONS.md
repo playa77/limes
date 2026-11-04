@@ -132,9 +132,25 @@ fails its aggregate job when any source fails. Its success means a bounded pass,
 not that every historical window has been acquired. The first window anchor is persisted
 before fetching, so a failed initial attempt cannot slide the lookback start.
 
-GDELT backfill accepts explicit windows of at most 96 fifteen-minute slots
-(one day); larger requests fail before network access and must be split into
-consecutive jobs. Compressed responses are capped at 16 MiB, decompressed exports
+GDELT `backfill --days 1` addresses an older source checkpoint before the fresh
+day: each explicit submission consumes the oldest unconsumed prefix of at most
+96 fifteen-minute slots, then durably advances the checkpoint. For a G-day gap,
+submit ceil(G/1) successful jobs sequentially, oldest to newest; inspect each
+terminal result and checkpoint before the next submission. No automatic replay.
+A checkpoint already advanced past a gap cannot reconstruct it; preserve the
+operator evidence and arrange a separately reviewed checkpoint repair first.
+When the checkpoint is at or after now-days (or absent), the existing fresh-window
+behavior remains; explicit windows over 96 slots still fail before network access.
+Other sources retain their existing backfill semantics. See
+[GDELT/OSM recovery](GDELT_BACKLOG_OSM_LEAVES.md) for cursor and coverage limits.
+
+OSM exhausted leaf fetch failures are recorded in `failed_leaves` in the durable
+acquisition cursor. Eligible siblings continue within the existing 200-call cap;
+any failed or pending leaf fails the job before loading or checkpoint advancement.
+An explicit resubmission retries incomplete leaves and reuses acquired responses.
+Old cursors need no migration; older binaries cannot read the new optional field.
+
+Compressed responses are capped at 16 MiB, decompressed exports
 at 128 MiB and rows at 250,000. GLEIF and OffeneRegister archive original compressed
 snapshots before bounded normalization chunks (1,000 rows/8 MiB input, 1 MiB per
 row). Chunk manifests link original archive hashes/member/row offsets. OffeneRegister

@@ -369,3 +369,26 @@ standalone candidate pass (1,339 cases including runtime stack). After PR #21
 merged, reconciliation onto live main `06bbfb47134e` passes authoritative integrated
 qualification (1,348 cases). Operator availability and nationwide coverage remain
 unmeasured. See VERIFICATION.
+
+### BE-54 — extraction span geometry (independent branch)
+
+Reserved for the existing `codex/be-54-extraction-span-geometry` branch addressing
+supplied feed evidence-span failures. Not in this main baseline; implementation
+and acceptance are not claimed by BE-55. Preserve that branch's separate work.
+
+### BE-55 — GDELT backlog addressing and OSM per-leaf failures
+
+Owner-selected 2026-11-04; branch `codex/be-55-gdelt-backlog-and-osm-leaves`,
+live base `029f2fceea1d`. Depends on accepted BE-41 and merged BE-47/49/50/52/53,
+not BE-54. [Full acceptance](GDELT_BACKLOG_OSM_LEAVES.md): oldest bounded GDELT
+checkpoint prefix, durable failed OSM leaves with sibling continuation and
+fail-closed acquisition, compatible old cursors and frozen qualification.
+Operator catch-up/re-runs and live capacity remain separate evidence; the already
+advanced GDELT checkpoint cannot recover historical coverage without a reviewed
+anchor repair. No live runs or push are part of implementation.
+
+BE-55 local disposition: all six checklist items and the authoritative frozen
+candidate pass (1,355 cumulative cases, seven new cases), including the isolated
+runtime stack and unchanged source manifest. See VERIFICATION. No external
+coverage, deployment or acquisition success is inferred; OI-33 retains those
+obligations. One full parent commit; no push requested or performed.

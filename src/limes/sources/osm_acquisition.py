@@ -15,6 +15,7 @@ import uuid
 from collections.abc import Iterator
 from contextlib import contextmanager, nullcontext
 from pathlib import Path
+from typing import Literal
 
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, ValidationError
 
@@ -29,6 +30,17 @@ class PartitionEntry(BaseModel):
     fetched_at: AwareDatetime
 
 
+class FailedLeaf(BaseModel):
+    """Acquisition failure only; absent payload means no response was available."""
+
+    model_config = ConfigDict(extra="forbid")
+    phase: Literal["fetch"] = "fetch"
+    state: Literal["failed"] = "failed"
+    failed_at: AwareDatetime = Field(default_factory=now_utc)
+    error: str
+    content_hash: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
+
+
 class AcquisitionState(BaseModel):
     model_config = ConfigDict(extra="forbid")
     acquisition_id: str = Field(default_factory=lambda: uuid.uuid4().hex, pattern=r"^[0-9a-f]{32}$")
@@ -36,6 +48,7 @@ class AcquisitionState(BaseModel):
     started_at: AwareDatetime = Field(default_factory=now_utc)
     partitions: dict[str, PartitionEntry] = Field(default_factory=dict)
     splits: list[str] = Field(default_factory=list)
+    failed_leaves: dict[str, FailedLeaf] = Field(default_factory=dict)
 
 
 class OsmAcquisition:

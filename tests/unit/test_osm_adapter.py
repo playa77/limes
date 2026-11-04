@@ -454,14 +454,15 @@ def test_adaptive_split_restart_coverage_and_dedup(tmp_path, monkeypatch):
         list(OsmAdapter(OsmAcquisition(archive, cursor)).fetch(None, None))
     state = json.loads((cursor / 'active.json').read_bytes())
     assert state['splits'] == ['0']
-    assert set(state['partitions']) == {'0/0'}
-    assert calls == [root, children[0], children[1]]
+    assert set(state['partitions']) == {'0/0', '0/2', '0/3'}
+    assert set(state['failed_leaves']) == {'0/1'}
+    assert calls == [root, *children]
     calls.clear()
     monkeypatch.setattr(osm, 'fetch_bytes_form', lambda url, data, **kwargs: (
         calls.append(data['data']) or _fixture()))
     adapter = OsmAdapter(OsmAcquisition(archive, cursor))
     records = list(adapter.fetch(None, None))
-    assert calls == list(children[1:])
+    assert calls == [children[1]]
     assert [r.acquisition_context['partition_key'] for r in records] == [
         '0/0', '0/1', '0/2', '0/3']
     assert all(r.acquisition_context['partition_count'] == 4 for r in records)
@@ -484,7 +485,12 @@ def test_adaptive_depth_and_request_limits_preserve_progress(tmp_path, monkeypat
     store = OsmAcquisition(ArchiveStore(tmp_path / 'archive'), tmp_path / 'cursor')
     with pytest.raises(SourceFetchError, match='exhausted subdivision depth'):
         list(OsmAdapter(store).fetch(None, None))
-    assert json.loads((store.root / 'active.json').read_bytes())['splits'] == ['0']
+    failed_state = json.loads((store.root / 'active.json').read_bytes())
+    assert failed_state['splits'] == ['0']
+    assert len(failed_state['failed_leaves']) == 4
+    for entry in failed_state['failed_leaves'].values():
+        assert entry['phase'] == 'fetch' and entry['state'] == 'failed'
+        assert b'out of memory' in store.archive.get(entry['content_hash'])
     monkeypatch.setattr(osm, 'MAX_REQUESTS_PER_RUN', 1)
     monkeypatch.setattr(osm, 'fetch_bytes_form', lambda *args, **kwargs: _json_payload([]))
     with pytest.raises(SourceFetchError, match='request limit'):
@@ -499,3 +505,55 @@ def test_adaptive_cursor_rejects_invalid_tree(splits, monkeypatch):
     monkeypatch.setattr(osm, 'OVERPASS_QUERIES', (osm._overpass_query('0,0,2,2'),))
     with pytest.raises(SourceFetchError):
         osm._leaf_queries(splits)
+
+
+def test_leaf_failure_and_pending_work_survive_request_cap(tmp_path, monkeypatch):
+    from limes.errors import SourceFetchError
+
+    monkeypatch.setattr(osm, 'OVERPASS_QUERIES', ('first', 'second', 'third'))
+    monkeypatch.setattr(osm, 'MAX_REQUESTS_PER_RUN', 2)
+    monkeypatch.setattr(osm.time, 'sleep', lambda _: None)
+    store = OsmAcquisition(ArchiveStore(tmp_path / 'archive'), tmp_path / 'cursor')
+    calls = []
+
+    def fetch(url, data, **kwargs):
+        calls.append(data['data'])
+        if data['data'] == 'first':
+            raise SourceFetchError('exhausted')
+        # A failure must be durable before any sibling I/O starts.
+        saved = json.loads((store.root / 'active.json').read_bytes())
+        assert saved['failed_leaves']['0']['state'] == 'failed'
+        return _json_payload([])
+
+    monkeypatch.setattr(osm, 'fetch_bytes_form', fetch)
+    with pytest.raises(SourceFetchError, match='request limit'):
+        list(OsmAdapter(store).fetch(None, None))
+    saved = json.loads((store.root / 'active.json').read_bytes())
+    assert set(saved['failed_leaves']) == {'0'}
+    assert set(saved['partitions']) == {'1'}  # third is pending, absent in both maps
+    assert calls == ['first', 'second']
+    calls.clear()
+    monkeypatch.setattr(osm, 'fetch_bytes_form', lambda url, data, **kwargs: (
+        calls.append(data['data']) or _json_payload([])))
+    records = list(OsmAdapter(store).fetch(None, None))
+    assert calls == ['first', 'third'] and len(records) == 3
+    assert json.loads((store.root / 'active.json').read_bytes())['failed_leaves'] == {}
+
+
+@pytest.mark.parametrize('key', ['unknown', '0'])
+def test_failed_leaf_cursor_rejects_unknown_or_completed_leaf(tmp_path, monkeypatch, key):
+    from limes.errors import SourceFetchError
+
+    monkeypatch.setattr(osm, 'OVERPASS_QUERIES', ('root',))
+    store = OsmAcquisition(ArchiveStore(tmp_path / 'archive'), tmp_path / 'cursor')
+    monkeypatch.setattr(osm, 'fetch_bytes_form', lambda *a, **kw: _json_payload([]))
+    list(OsmAdapter(store).fetch(None, None))
+    path = store.root / 'active.json'
+    saved = json.loads(path.read_bytes())
+    saved['failed_leaves'] = {key: {
+        'phase': 'fetch', 'state': 'failed', 'failed_at': saved['started_at'],
+        'error': 'failed', 'content_hash': None}}
+    path.write_text(json.dumps(saved))
+    monkeypatch.setattr(osm, 'fetch_bytes_form', lambda *a, **kw: pytest.fail('invalid cursor'))
+    with pytest.raises(SourceFetchError, match='unknown partitions'):
+        list(OsmAdapter(store).fetch(None, None))

@@ -180,13 +180,20 @@ def test_adaptive_children_must_all_complete_before_graph_load(
         )[0]['at'] is None
     finally:
         ctx.driver.close()
+    cursor = settings.archive_path / '.acquisition/osm/active.json'
+    state = json.loads(cursor.read_bytes())
+    assert calls == [root, *children]
+    assert set(state['partitions']) == {'0/0', '0/1', '0/3'}
+    assert set(state['failed_leaves']) == {'0/2'}
+    assert state['failed_leaves']['0/2']['phase'] == 'fetch'
+    assert state['failed_leaves']['0/2']['content_hash'] is None
     calls.clear()
     monkeypatch.setattr(osm, 'fetch_bytes_form', lambda url, data, **kwargs: (
         calls.append(data['data']) or payload))
     ctx = build_run_context(settings, needs_inference=False)
     try:
         result = execute_run(spec, ctx)
-        assert calls == list(children[2:])
+        assert calls == [children[2]]
         assert result.errors == 0
         assert result.assertions_written == 1
         assert ctx.driver.read('MATCH (n:Asset) RETURN count(n) AS c', {}, 30)[0]['c'] == 1

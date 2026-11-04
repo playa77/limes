@@ -164,3 +164,29 @@ def test_until_passes_through_unmodified():
         now=NOW,
     )
     assert passed == until
+
+
+def test_gdelt_backfill_old_checkpoint_is_bounded_oldest_prefix():
+    from limes.sources.gdelt import GdeltAdapter
+
+    checkpoint = datetime(2026, 7, 1, 12, 7, tzinfo=UTC)
+    source = SourceRecord(source_id='gdelt', name='GDELT', kind='structured',
+                          trust_rank=0.5, last_success_at=checkpoint)
+    since, until = resolve_window(
+        RunSpec(source_id='gdelt', mode='backfill', since=NOW - timedelta(days=1)),
+        GdeltAdapter(), source, _settings(), now=NOW)
+    assert since == checkpoint
+    # 96 boundaries from July 1 12:15 to July 2 12:00, independent arithmetic.
+    assert until == datetime(2026, 7, 2, 12, 0, tzinfo=UTC)
+
+
+def test_gdelt_fresh_or_absent_checkpoint_keeps_explicit_window():
+    from limes.sources.gdelt import GdeltAdapter
+
+    cutoff = NOW - timedelta(days=1)
+    spec = RunSpec(source_id='gdelt', mode='backfill', since=cutoff)
+    for checkpoint in (None, cutoff, cutoff + timedelta(hours=1)):
+        source = SourceRecord(source_id='gdelt', name='GDELT', kind='structured',
+                              trust_rank=0.5, last_success_at=checkpoint)
+        assert resolve_window(spec, GdeltAdapter(), source, _settings(), now=NOW) == (
+            cutoff, None)

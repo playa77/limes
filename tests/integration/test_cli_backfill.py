@@ -290,3 +290,78 @@ def test_cli_backfill_feeds_end_to_end(graph, cli_env):
 
     rows = graph.read("MATCH (l:AdvisoryLock) RETURN count(l) AS c", {}, 30)
     assert rows[0]["c"] == 0
+
+
+def test_cli_gdelt_backfill_consumes_oldest_prefix_and_retries_errors(
+    graph, neo4j_instance, tmp_path, monkeypatch,
+):
+    """Real CLI/lock/graph/checkpoint; only GDELT transport is replaced."""
+    import io
+    import zipfile
+
+    from limes.errors import SourceFetchError
+    from limes.sources import gdelt
+    from tests.integration.test_pipeline_run_structured import _settings
+
+    settings = _settings(neo4j_instance, tmp_path)
+    monkeypatch.setattr('limes.cli.backfill.load_settings', lambda: settings)
+    anchor = datetime(2026, 8, 2, 0, 0, tzinfo=UTC)
+    graph.write_batch([(
+        'CREATE (:Source {source_id:"gdelt", last_success_at:$at})', {'at': anchor})])
+    requested = []
+    failure = None
+    stream = io.BytesIO()
+    with zipfile.ZipFile(stream, 'w') as archive:
+        archive.writestr('20260802001500.export.CSV', '')
+
+    def fetch(url, **kwargs):
+        requested.append(url)
+        if failure == 'missing' and len(requested) == 2:
+            raise SourceFetchError('missing export slot')
+        if failure == 'malformed':
+            bad = io.BytesIO()
+            with zipfile.ZipFile(bad, 'w') as archive:
+                archive.writestr('20260802001500.export.CSV', 'malformed\n')
+            return bad.getvalue()
+        return stream.getvalue()
+
+    monkeypatch.setattr(gdelt, 'fetch_bytes', fetch)
+    command = ['backfill', '--source', 'gdelt', '--days', '1']
+
+    def checkpoint():
+        return graph.read('MATCH (s:Source {source_id:"gdelt"}) '
+                          'RETURN s.last_success_at AS at', {}, 30)[0]['at'].to_native()
+
+    for day in (0, 1):
+        requested.clear()
+        result = runner.invoke(app, command)
+        assert result.exit_code == 0, result.output
+        assert len(requested) == 96
+        start = anchor + timedelta(days=day, minutes=15)
+        end = anchor + timedelta(days=day + 1)
+        assert requested[0] == gdelt.FILE_URL_TEMPLATE.format(slot=start)
+        assert requested[-1] == gdelt.FILE_URL_TEMPLATE.format(slot=end)
+        assert checkpoint() == end
+        assert f'since {(anchor + timedelta(days=day)).isoformat()}' in result.output
+
+    before = checkpoint()
+    for failure_mode in ('missing', 'malformed'):
+        failure = failure_mode
+        requested.clear()
+        result = runner.invoke(app, command)
+        assert result.exit_code != 0
+        assert checkpoint() == before
+        assert graph.read('MATCH (l:AdvisoryLock) RETURN count(l) AS c', {}, 30)[0]['c'] == 0
+    failure = None
+    requested.clear()
+    result = runner.invoke(app, command)
+    assert result.exit_code == 0, result.output
+    assert checkpoint() == anchor + timedelta(days=3)
+    assert requested[0] == gdelt.FILE_URL_TEMPLATE.format(
+        slot=before + timedelta(minutes=15))
+    runs = graph.read('MATCH (r:IngestionRun {source_id:"gdelt"}) '
+                      'RETURN r.window_from AS start, r.errors AS errors, '
+                      'r.finished_at AS finished ORDER BY r.started_at', {}, 30)
+    assert [r['errors'] > 0 for r in runs] == [False, False, True, True, False]
+    assert all(r['finished'] is not None for r in runs)
+    assert all(r['start'].to_native() == before for r in runs[2:])

@@ -1,7 +1,8 @@
 # src/limes/cli/backfill.py | v1.0.0 | introduced by WP-28
 """Backfill over an explicit time window with passive cost accounting.
 
-The optional legacy --budget flag is ignored; --days fixes the requested window.
+The optional legacy --budget flag is ignored. GDELT consumes an older checkpoint
+before the requested fresh window, one bounded prefix per submission.
 """
 
 from __future__ import annotations
@@ -26,8 +27,7 @@ def backfill_source(
         None, "--budget", min=0, help="Deprecated compatibility option; ignored"
     ),
 ) -> None:
-    """Backfill a source over the last `--days` days under an explicit
-    budget envelope (Doc 1 §9.2)."""
+    """Backfill the requested days, or GDELT's oldest outstanding bounded prefix."""
     from limes.cli.main import adapter_kind, run_with_lock
     from limes.composition import build_run_context
 
@@ -48,7 +48,7 @@ def backfill_source(
             RunSpec(source_id=source, mode="backfill", since=since, budget_eur=envelope),
         )
         typer.echo(
-            f"backfill {source} (since {since.isoformat()}): "
+            f"backfill {source} (since {(record.window_from or since).isoformat()}): "
             f"{record.records_fetched} records, {record.assertions_written} assertions "
             f"written, {record.assertions_skipped} skipped, {record.errors} errors, "
             f"cost EUR {record.cost_eur}"
