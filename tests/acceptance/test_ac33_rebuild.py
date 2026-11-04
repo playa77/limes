@@ -108,6 +108,9 @@ def test_ac33_rebuild_with_unchanged_triple_issues_zero_paid_calls(
         try:
             with respx.mock as router:
                 respx.get(CATALOGUE_URL).mock(return_value=Response(200, json=CATALOGUE))
+                respx.get(CATALOGUE_URL.replace("/models", "/embeddings/models")).mock(
+                    return_value=Response(200, json=CATALOGUE)
+                )
                 respx.post(COMPLETIONS_URL).mock(
                     return_value=Response(
                         200,

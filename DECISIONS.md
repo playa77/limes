@@ -5,6 +5,24 @@ reversibility: **R1** reversible in under an hour, **R2** bounded recoverable
 cost, **R3** one-way door. Written when each decision is made, latest first.
 Nothing here is a status report; unlogged decisions are unmade decisions.
 
+## 2026-11-04 — D-92 (R1) — BE-51 dedicated embedding credential
+
+The user requests this package before further ingestion work. Keep chat's current
+credential and workspace restrictions; embeddings require a separate masked secret
+and never fall back to chat authentication. Authenticate the embedding catalogue
+with that credential and isolate prices by role. Report bounded policy reasons
+without raw messages/secrets. Model pins, 1024 dimensions, indexes and thresholds
+remain unchanged. First embedding use validates key presence before network.
+Acceptance and Hermes deployment steps are in
+[EMBEDDING_CREDENTIALS](docs/EMBEDDING_CREDENTIALS.md). No production/paid run,
+publication, merge or deployment is requested by this implementation task.
+
+Publication update (2026-11-04): the user explicitly requested preparing and
+opening a PR for BE-51, authorizing staging, commit and push. Publish as a draft
+with the confirmed runtime-stack disk-exhaustion blocker preserved. Runtime/test
+source remains identical to the frozen candidate; publication does not establish
+full qualification. Merge, deployment and paid production probes remain separate.
+
 ## 2026-10-31 — D-91 (R1) — BE-50 adaptive OSM acquisition
 
 The user requests action on the remaining acquisition gap. Deliver adaptive

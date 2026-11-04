@@ -27,11 +27,24 @@ owned by the operator, without world-read permission or root-owned bind mounts.
 Existing volumes must already be owned by UID 7474; an administrator must migrate
 older root-owned volumes from a verified backup before startup. Fresh named
 volumes inherit the image directory ownership. Set `LIMES_OPENROUTER_API_KEY`
-privately in `config/secrets.env`. Set `LIMES_BUNDESTAG_DIP_API_KEY` there for
+privately in `config/secrets.env` for chat roles. Set
+`LIMES_EMBEDDING_OPENROUTER_API_KEY` to a separate embeddings-workspace key;
+embedding requests and `GET /embeddings/models` never use the chat key. Missing
+embedding credentials fail at first embedding use, before any HTTP request.
+Keep the chat workspace guardrails unchanged; the embeddings workspace should
+allow only the selected embedding model and its serving providers. Embedding
+prices come from the embedding catalogue, with the existing logged fallback
+when that catalogue or price is unavailable. Set `LIMES_BUNDESTAG_DIP_API_KEY` there for
 Bundestag DIP (sent as a header, excluded from source URLs). Public test keys
 expire and must be replaced; no key is committed. Keep tokens out
 of history, CLI arguments and logs. Use independent consumer, operator and backup
 tokens. Back up configuration securely; it is untracked and excluded from images.
+
+After any host edit of `config/*.env`, preserve mode 600 and reapply
+`setfacl -m u:7474:r` to each edited file before explicitly restarting services.
+File-replacing editors can discard the ACL and cause dotenv permission failures.
+Do not put keys in shell arguments or tracked files. See
+[BE-51 deployment](EMBEDDING_CREDENTIALS.md) for the operator handoff.
 
 `settings.env` contains tuning; `models.env` contains initial catalogue-validated
 pins; `secrets.env` contains credentials. Empty env values are unset. In containers,

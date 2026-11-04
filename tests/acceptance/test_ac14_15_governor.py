@@ -99,6 +99,9 @@ def _inference_run(
         try:
             with respx.mock:
                 respx.get(CATALOGUE_URL).mock(return_value=Response(200, json=CATALOGUE))
+                respx.get(CATALOGUE_URL.replace("/models", "/embeddings/models")).mock(
+                    return_value=Response(200, json=CATALOGUE)
+                )
                 respx.post(COMPLETIONS_URL).mock(
                     return_value=Response(
                         200,

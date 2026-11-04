@@ -114,6 +114,7 @@ def _settings(neo4j_instance: Neo4jInstance, tmp_path: Path, **overrides) -> Set
         baseline_path=tmp_path / "baseline.json",
         archive_path=tmp_path / "archive",
         openrouter_api_key="sk-test",
+        embedding_openrouter_api_key="sk-embedding-test",
         openrouter_base_url=BASE_URL,
         extraction_model=EXTRACTION_MODEL,
         embedding_model=EMBED_MODEL,
@@ -218,6 +219,9 @@ def _mock_transport(
             }
         ]
     respx.get(CATALOGUE_URL).mock(return_value=Response(200, json=CATALOGUE))
+    respx.get(CATALOGUE_URL.replace("/models", "/embeddings/models")).mock(
+        return_value=Response(200, json=CATALOGUE)
+    )
     respx.post(COMPLETIONS_URL).mock(
         return_value=Response(
             200,
@@ -477,6 +481,9 @@ def test_reextract_retracts_superseded_and_relinks(
 
     with respx.mock:
         respx.get(CATALOGUE_URL).mock(return_value=Response(200, json=CATALOGUE))
+        respx.get(CATALOGUE_URL.replace("/models", "/embeddings/models")).mock(
+            return_value=Response(200, json=CATALOGUE)
+        )
         respx.post(COMPLETIONS_URL).mock(side_effect=_completions)
         respx.post(EMBEDDINGS_URL).mock(
             side_effect=lambda request: Response(

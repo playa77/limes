@@ -116,6 +116,7 @@ def _settings(**overrides) -> Settings:
         baseline_path="/tmp/baseline.json",
         archive_path="/tmp/archive",
         openrouter_api_key="sk-test",
+        embedding_openrouter_api_key="sk-embedding-test",
         openrouter_base_url=BASE_URL,
         embedding_model=EMBED_MODEL,
         adjudication_model=ADJUDICATE_MODEL,
@@ -394,6 +395,9 @@ def test_ac17_routes_across_all_four_bands(driver: GraphDriver, ontology, tmp_pa
 
     with respx.mock:
         respx.get(CATALOGUE_URL).mock(return_value=Response(200, json=CATALOGUE))
+        respx.get(CATALOGUE_URL.replace("/models", "/embeddings/models")).mock(
+            return_value=Response(200, json=CATALOGUE)
+        )
         respx.post(EMBED_URL).mock(side_effect=_embed_handler(vectors))
         respx.post(COMPLETIONS_URL).mock(
             side_effect=_adjudication_handler(
@@ -487,6 +491,9 @@ def test_ac17_margin_below_threshold_adjudicates(driver: GraphDriver, ontology, 
 
     with respx.mock:
         respx.get(CATALOGUE_URL).mock(return_value=Response(200, json=CATALOGUE))
+        respx.get(CATALOGUE_URL.replace("/models", "/embeddings/models")).mock(
+            return_value=Response(200, json=CATALOGUE)
+        )
         respx.post(EMBED_URL).mock(side_effect=_embed_handler(vectors))
         respx.post(COMPLETIONS_URL).mock(
             side_effect=_adjudication_handler(
@@ -628,6 +635,9 @@ def test_ac43_conversion_mentions_and_stats(driver: GraphDriver, ontology, tmp_p
 
     with respx.mock:
         respx.get(CATALOGUE_URL).mock(return_value=Response(200, json=CATALOGUE))
+        respx.get(CATALOGUE_URL.replace("/models", "/embeddings/models")).mock(
+            return_value=Response(200, json=CATALOGUE)
+        )
         respx.post(EMBED_URL).mock(side_effect=_embed_handler(vectors))
         respx.post(COMPLETIONS_URL).mock(
             side_effect=_adjudication_handler(
