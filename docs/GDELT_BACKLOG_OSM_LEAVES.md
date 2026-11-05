@@ -87,10 +87,11 @@ GDELT, Overpass, OpenRouter acquisition or production writes were used here.
 
 ## Merge and accounting boundaries
 
-BE-54 remains on its independent branch. Its D-95 and OI-32 identifiers are
-reserved; BE-55 uses D-96 and OI-33 to avoid ledger collisions. Both branches
-edit shared specification/roadmap/ledger files; preserve both additions on merge.
-BE-55 does not import BE-54 implementation, prompt/schema changes or acceptance.
+BE-54 was developed independently and merged into main through PR #23. PR #24
+was reconciled with that main on 2026-11-05, preserving both packages' ledger,
+specification and acceptance records. BE-55 uses D-96 and OI-33; BE-54 retains
+D-95 and OI-32. The reconciled branch includes BE-54 prompt/schema 1.2.0 through
+main ancestry; each original frozen candidate report still qualifies its own source.
 No CI lanes or required statuses change; existing qualification remains fail-closed.
 Local suites run sequentially on the disposable executor; existing CI isolates
 independent lanes on separate runners. The workflow ships the whole parent in one

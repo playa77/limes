@@ -354,8 +354,8 @@ def test_ontology_constrained_wire_schema_and_versioned_prompt():
 
     client = FakeClient([("[]", 1, 1)])
     settings = _settings()
-    assert Settings.model_fields["extraction_prompt_version"].default == "1.1.0"
-    assert Settings.model_fields["extraction_schema_version"].default == "1.1.0"
+    assert Settings.model_fields["extraction_prompt_version"].default == "1.2.0"
+    assert Settings.model_fields["extraction_schema_version"].default == "1.2.0"
     OpenRouterExtractor(settings, client).extract(PASSAGES, ONTOLOGY, "2.1.0", "2.1.0")
     schema = client.calls[0]["json_schema"]
     assert "zero-based Python Unicode" in client.calls[0]["messages"][0]["content"]
@@ -394,3 +394,73 @@ def test_ollama_uses_same_ontology_schema_and_requested_prompt():
     payload = json.loads(route.calls[0].request.content)
     assert payload["format"] == response_schema_for_version("2.1.0", ONTOLOGY)
     assert "zero-based Python Unicode" in payload["messages"][0]["content"]
+
+
+def test_observed_second_assertion_overflow_is_rejected_without_repair():
+    """Synthetic transcript with the observed signature, not recovered source text."""
+    from jsonschema import Draft202012Validator
+
+    bad = {**ADOPTED_ITEM, "evidence_start": 547, "evidence_end": 631}
+    raw = json.dumps([ADOPTED_ITEM, bad])
+    client = FakeClient([(raw, 10, 10)])
+    result = OpenRouterExtractor(_settings(), client).extract(
+        PASSAGES, ONTOLOGY, "1.2.0", "1.2.0")
+    assert result.raw_response == raw
+    assert len(result.assertions) == 1
+    assert result.assertions[0].evidence_start == 100
+    assert result.assertions[0].evidence_end == 158
+    assert result.parse_errors == [
+        "EVIDENCE_SPAN_MISMATCH: item 1: span 547:631 outside passage 0"]
+    validator = Draft202012Validator(client.calls[0]["json_schema"])
+    assert validator.is_valid([ADOPTED_ITEM, ADOPTED_ITEM])
+    assert not validator.is_valid([ADOPTED_ITEM, bad])
+
+
+def test_geometry_contract_is_shared_and_scoped_to_each_batch():
+    from jsonschema import Draft202012Validator
+
+    from limes.extraction.schema import response_schema_for_version
+
+    # Emoji, combining accent, newline and umlaut distinguish Python code points
+    # from UTF-8 bytes/UTF-16 units; document origins are deliberately unrelated.
+    text = "😀e\u0301\nDie Bundesregierung änderte das Gesetz."
+    passages = [
+        Passage(index=0, text=text, doc_start=700, doc_end=700 + len(text)),
+        Passage(index=1, text=TEXT, doc_start=900, doc_end=900 + len(TEXT)),
+    ]
+    item = {**ADOPTED_ITEM, "evidence_start": 4, "evidence_end": 43}
+    raw = json.dumps([item])
+    client = FakeClient([(raw, 1, 1), ("[]", 1, 1)])
+    settings = _settings(extraction_max_passages_per_call=1)
+    result = OpenRouterExtractor(settings, client).extract(
+        passages, ONTOLOGY, "1.2.0", "1.2.0")
+    assert result.parse_errors == []
+    assert result.assertions[0].evidence_start == 704
+    assert result.assertions[0].evidence_end == 743
+    with respx.mock:
+        route = respx.post("http://localhost:11434/api/chat").mock(
+            side_effect=[Response(200, json={"message": {"content": raw}}),
+                         Response(200, json={"message": {"content": "[]"}})])
+        local = OllamaExtractor(settings).extract(passages, ONTOLOGY, "1.2.0", "1.2.0")
+    assert local.assertions == result.assertions
+    for index, call in enumerate(client.calls):
+        payload = json.loads(route.calls[index].request.content)
+        assert payload["format"] == call["json_schema"]
+        assert payload["messages"] == call["messages"]
+        content = call["messages"][0]["content"]
+        # Exactly one actual outer block (the prose also names the delimiters).
+        assert content.count("\n<PASSAGES>\n") == 1
+        length = 43 if index == 0 else len(TEXT)
+        assert f"[{index}] length={length} Unicode characters; local offsets 0:{length}" in content
+        assert f"<PASSAGE_TEXT>\n{passages[index].text}\n</PASSAGE_TEXT>" in content
+        schema = call["json_schema"]
+        Draft202012Validator.check_schema(schema)
+        validator = Draft202012Validator(schema)
+        valid = {**ADOPTED_ITEM, "passage_index": index, "evidence_end": length}
+        assert validator.is_valid([valid])
+        assert not validator.is_valid([{**valid, "evidence_end": length + 1}])
+        assert not validator.is_valid([{**valid, "evidence_start": length + 1}])
+        assert not validator.is_valid([{**valid, "passage_index": 1 - index}])
+    # The shorter passage cannot borrow a longer passage's upper bound in a batch.
+    combined = Draft202012Validator(response_schema_for_version("1.2.0", ONTOLOGY, passages))
+    assert not combined.is_valid([{**ADOPTED_ITEM, "evidence_end": 44}])

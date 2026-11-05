@@ -370,11 +370,20 @@ merged, reconciliation onto live main `06bbfb47134e` passes authoritative integr
 qualification (1,348 cases). Operator availability and nationwide coverage remain
 unmeasured. See VERIFICATION.
 
-### BE-54 — extraction span geometry (independent branch)
+### BE-54 — feeds extraction evidence-span conformance, iteration two
 
-Reserved for the existing `codex/be-54-extraction-span-geometry` branch addressing
-supplied feed evidence-span failures. Not in this main baseline; implementation
-and acceptance are not claimed by BE-55. Preserve that branch's separate work.
+Selected on `codex/be-54-extraction-span-geometry` from verified live main
+`029f2fceea1d`. [Full checklist](EXTRACTION_SPAN_GEOMETRY.md): trace exact passage
+coordinates, version explicit lengths and per-passage wire bounds, preserve strict
+rejection/archive/checkpoints, regress the observed second-item overflow, qualify
+one frozen candidate and commit locally without push. Model/reasoning pins and
+ontology remain operator-owned/unchanged. Live quality remains OI-32/operator.
+
+BE-54 disposition: complete local implementation acceptance and one full frozen
+candidate pass (1,350 cumulative cases, zero failures/errors/skips). Strict parser
+behavior is preserved; generation has explicit per-passage bounds. OI-32 retains
+operator pin/redeploy/live conformance measurement. Delivery is one local commit,
+without push, deployment or paid verification. See VERIFICATION.
 
 ### BE-55 — GDELT backlog addressing and OSM per-leaf failures
 
@@ -391,4 +400,6 @@ BE-55 local disposition: all six checklist items and the authoritative frozen
 candidate pass (1,355 cumulative cases, seven new cases), including the isolated
 runtime stack and unchanged source manifest. See VERIFICATION. No external
 coverage, deployment or acquisition success is inferred; OI-33 retains those
-obligations. One full parent commit; no push requested or performed.
+obligations. Original implementation was one full parent commit. On 2026-11-05,
+PR #24 conflict resolution reconciles the branch with merged BE-54 from PR #23;
+original frozen qualification evidence remains scoped to its recorded source.

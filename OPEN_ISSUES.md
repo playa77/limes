@@ -23,6 +23,8 @@ closure sections; “open” is not a statement that every old symptom still exi
 | Issue | Current state | Owner/package | Remaining obligation or closure evidence |
 |---|---|---|---|
 | OI-33 | BE-55 locally accepted; external coverage open | BE-55 / operator | [Recovery contract](docs/GDELT_BACKLOG_OSM_LEAVES.md): all six items pass; 1,355 frozen candidate cases including runtime stack. Checkpoint-anchored GDELT submissions and durable OSM failed leaves. Deployed historical gap anchor and live nationwide acquisition remain operator evidence, never inferred from tests. |
+
+| OI-32 | BE-54 locally qualified; live conformance open | BE-54 / operator | [Geometry acceptance](docs/EXTRACTION_SPAN_GEOMETRY.md): observed item 1 overflow; versioned generation bounds retain deterministic rejection. Full candidate passes 1,350 cumulative cases. Operator must pin 1.2.0, redeploy and measure feeds. |
 | OI-31 | BE-53 locally implemented and qualified; operator coverage open | BE-53 / operator | [Policy and acceptance](docs/OSM_TRANSPORT_POLICY.md): dead feed removed; OSM timeout/mirrors/bounded transport splits; 1,348 integrated candidate cases pass including runtime stack; standalone independence was also qualified before PR #21 merged. Live capacity and extraction quality remain open. |
 | OI-30 | BE-52 locally accepted; external measurement/ownership open | BE-52 / operator | [Acceptance](docs/INGEST_SOURCE_REPAIR.md) and [candidate](docs/VERIFICATION.md): 1,337 passing cases, including runtime stack. Partial feeds/checkpoints, ontology conformance and attempt diagnostics verified with mocks/disposable graph; update explicit pins to 1.1.0. Deployed quality, upstream availability and dead-URL ownership remain open. |
 | OI-29 | Implemented; supplied embedding probe passed; historical candidate failed | BE-51 / Hermes deployment | [Acceptance](docs/EMBEDDING_CREDENTIALS.md): dedicated credential, no fallback, role pricing and guardrail diagnostics; 1,327 cases pass, runtime-stack creation fails with confirmed executor disk exhaustion. The supplied 4ef67c8 VPS report observes a successful embedding probe; feeds still failed. BE-52 now qualifies the current descendant on a larger runner; the original frozen BE-51 report remains failed. |
@@ -794,3 +796,18 @@ sibling I/O, complete-before-load, legacy-cursor resume, cap/pending survival an
 recovery. Seven new distinct cases; cumulative passes are not coverage count.
 Operator acquisition/corpus coverage remains open. No automatic historical
 checkpoint rewind is introduced; the supplied already-skipped gap is not closed.
+
+## 2026-11-04 — OI-32 feeds evidence geometry, iteration two
+
+Supplied deployed `029f2fce` report: prompt/schema 1.1.0 feeds wrote 96 assertions
+with six rejections; recovery wrote 13 with one record error. The observed
+`EVIDENCE_SPAN_MISMATCH: item 1: span 547:631 outside passage 0` stays an error.
+BE-54 owns the generation geometry repair and offline qualification;
+operator owns effective pin/redeployment and live conformance measurement.
+[Acceptance and evidence boundaries](docs/EXTRACTION_SPAN_GEOMETRY.md).
+
+BE-54 local acceptance: full frozen `work/be54/candidate-final/report.json` passes
+all 1,350 cumulative cases, with two new distinct regressions and no failures/errors/
+skips. Shared guards and source stability pass. OI-32 remains open solely for
+operator-effective 1.2.0 deployment and a measured feeds run; deterministic
+rejection/archive remain required even after that measurement. See VERIFICATION.

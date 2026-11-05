@@ -13,8 +13,8 @@ generic schema error (Doc 2 §8.7.3).
 JSON → schema → ontology → offset mapping → evidence-span check. The evidence
 span check (AC-13) is the zero-cost catch for the most common extraction
 failure — a plausible assertion attached to the wrong sentence. Returned
-offsets are passage-local; they are mapped to document offsets through each
-passage's `doc_start` before the check runs on the document slice.
+offsets are passage-local; bounds and surfaces are checked on passage.text
+before adding the passage's `doc_start` to produce document offsets.
 
 Rejection reasons are stable prefixes so the pipeline can count by reason:
 `SCHEMA`, `UNKNOWN_RELATION`, `UNKNOWN_TYPE`, `ONTOLOGY_REJECTED`,
@@ -37,7 +37,7 @@ from limes.ontology.model import Ontology
 from limes.types import ExtractedAssertion, Mention, Passage
 
 SCHEMA_VERSION = "2.1.0"
-SUPPORTED_SCHEMA_VERSIONS = {"1.0.0", "1.1.0", "2.0.0", SCHEMA_VERSION}
+SUPPORTED_SCHEMA_VERSIONS = {"1.0.0", "1.1.0", "1.2.0", "2.0.0", SCHEMA_VERSION}
 
 _EXTRACTION_MENTION_SCHEMA: dict[str, Any] = {
     "type": "object",
@@ -96,17 +96,19 @@ def schema_for_version(version: str) -> dict[str, Any]:
         "properties": dict(EXTRACTION_SCHEMA["properties"]),
         "required": list(EXTRACTION_SCHEMA["required"]),
     }
-    if version in {"1.0.0", "1.1.0"}:
+    if version in {"1.0.0", "1.1.0", "1.2.0"}:
         schema["properties"].pop("qualifiers", None)
     else:
         schema["required"].append("qualifiers")
     return schema
 
 
-def response_schema_for_version(version: str, ontology: Ontology | None = None) -> dict[str, Any]:
+def response_schema_for_version(
+    version: str, ontology: Ontology | None = None, passages: list[Passage] | None = None,
+) -> dict[str, Any]:
     """Wire contract for a complete response; schema_for_version validates one item."""
     item = deepcopy(schema_for_version(version))
-    if version in {"1.1.0", "2.1.0"}:
+    if version in {"1.1.0", "1.2.0", "2.1.0"}:
         if ontology is None:
             raise ValueError("ontology-constrained extraction schema requires the loaded ontology")
         properties = item["properties"]
@@ -129,6 +131,19 @@ def response_schema_for_version(version: str, ontology: Ontology | None = None) 
             }
             for name in sorted(ontology.relation_types)
         ]
+    if version == "1.2.0":
+        if not passages:
+            raise ValueError("passage-bounded extraction schema requires a nonempty batch")
+        # A branch binds the index to its own length, never the longest passage
+        # or document/prompt length. The parser remains an independent barrier.
+        item["oneOf"] = [
+            {"properties": {
+                "passage_index": {"const": passage.index},
+                "evidence_start": {"maximum": len(passage.text)},
+                "evidence_end": {"maximum": len(passage.text)},
+            }}
+            for passage in passages
+        ]
     return {"type": "array", "items": item}
 
 
@@ -142,7 +157,7 @@ def parse_extraction_response(
 
     Returns `(assertions, errors)`; every rejected item is represented by one
     error string, never dropped silently. The evidence-span check runs on the
-    mapped document span: the span must contain the subject surface or the
+    exact passage-local slice: the span must contain the subject surface or the
     object surface, case-insensitively (AC-13's literal reading).
     """
     parsed = _parse_json(raw)

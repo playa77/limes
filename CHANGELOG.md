@@ -16,6 +16,15 @@
   fails incomplete acquisition before graph loading. Explicit re-runs reuse
   acquired leaves; old cursors default the new failed-leaf map to empty.
 
+## 2026-11-04 — BE-54 extraction span geometry
+
+- Add prompt/schema 1.2.0 with explicit passage-local Unicode lengths and
+  per-batch index/offset upper bounds in both extraction transports; defaults and
+  public settings example select 1.2.0. Historical contracts remain supported.
+- Preserve independent deterministic rejection, raw archives and checkpoint/cache
+  failure semantics. Operator must update explicit settings pins and redeploy;
+  reduced live rejection rates remain unmeasured.
+
 ## 2026-10-31 — BE-48 second full-ingest repair
 
 ## 2026-10-31 — BE-50 adaptive OSM acquisition

@@ -93,8 +93,11 @@ class OllamaExtractor:
         output_tokens = 0
         raw_responses: list[str] = []
         for batch in batches:
-            messages = build_extraction_messages(batch, prompt_text, ontology_serialized)
-            response = self._chat(messages, schema_version, ontology)
+            messages = build_extraction_messages(
+                batch, prompt_text, ontology_serialized,
+                bounded_geometry=prompt_version == "1.2.0",
+            )
+            response = self._chat(messages, schema_version, ontology, batch)
             raw = _content_of(response)
             batch_input = int(response.get("prompt_eval_count", 0))
             batch_output = int(response.get("eval_count", 0))
@@ -116,7 +119,7 @@ class OllamaExtractor:
 
     def _chat(
         self, messages: list[dict[str, str]], schema_version: str = "1.0.0",
-        ontology: Ontology | None = None
+        ontology: Ontology | None = None, passages: list[Passage] | None = None,
     ) -> dict[str, Any]:
         """One local chat call with the §11 retry policy (inference calls are
         retried like any other); no governor, no ledger."""
@@ -124,7 +127,7 @@ class OllamaExtractor:
             "model": self._model_id,
             "messages": messages,
             "stream": False,
-            "format": response_schema_for_version(schema_version, ontology),
+            "format": response_schema_for_version(schema_version, ontology, passages),
             "options": {"temperature": 0},
         }
         url = f"{self._base_url}/api/chat"
