@@ -5,6 +5,17 @@ reversibility: **R1** reversible in under an hour, **R2** bounded recoverable
 cost, **R3** one-way door. Written when each decision is made, latest first.
 Nothing here is a status report; unlogged decisions are unmade decisions.
 
+## 2026-11-04 — D-95 (R1) — BE-54 passage-bounded extraction geometry
+
+Deliver one full BE-54 on `codex/be-54-extraction-span-geometry` from live
+`029f2fceea1d`; local commit authorized, no push. Prompt/schema 1.2.0 introduces
+explicit Unicode passage lengths and batch-specific index/offset wire bounds.
+Preserve the independent parser, raw rejection archive, retryable failures and
+checkpoint contract. Historical versions retain their serialization and schemas.
+The supplied logs prove an overflow, not the model's exact internal coordinates.
+No paid/live verification: deployed conformance requires an operator pin update,
+redeploy and measured feeds rerun. [Acceptance](docs/EXTRACTION_SPAN_GEOMETRY.md).
+
 ## 2026-11-04 — D-94 (R1) — BE-53 feed removal and full OSM transport package
 
 Owner selects REMOVE for the HTTP 410 EUobserver feed and FULL PACKAGE for OSM:

@@ -364,7 +364,7 @@ def test_document_with_rejected_extraction_is_retryable_and_counted(tmp_path):
     # advance the checkpoint or create a success cache marker.
     rejections = [
         "ONTOLOGY_REJECTED: item 0: Country -[ACTOR_IN]-> Event",
-        "EVIDENCE_SPAN_MISMATCH: item 1: unsupported span",
+        "EVIDENCE_SPAN_MISMATCH: item 1: span 547:631 outside passage 0",
         "ONTOLOGY_REJECTED: item 2: Country -[TARGET_OF]-> Event",
     ]
     extractor = FakeExtractor(parse_errors=rejections)

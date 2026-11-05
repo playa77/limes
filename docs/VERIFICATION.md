@@ -1,6 +1,58 @@
 # Verification and acceptance evidence
 
 
+## 2026-11-04 — BE-54 extraction span geometry, iteration two
+
+Complete local implementation acceptance and full frozen candidate pass on
+`codex/be-54-extraction-span-geometry`, verified live main `029f2fceea1d`.
+[Acceptance mapping, diagnosis and operator obligations](EXTRACTION_SPAN_GEOMETRY.md).
+The operator poll file resides at the report root rather than evidence/; its
+11 concatenated snapshots show four copies of one unique second-item rejection,
+not independently evidenced failures across documents.
+
+Authoritative report: `work/be54/candidate-final/report.json`, status passed.
+Exact source manifest: `work/be54/candidate-final/source.json`, SHA-256
+`d1856c62694cef500c05e2e4d63ffbe1d77b81ed2320de2d17454b61d750393b`.
+All 444 manifest files match the review checkout before/after qualification;
+subsequent edits are handwritten documentation only. Public settings-example hash
+(outside the runner manifest):
+`fd3b00bf863032f37cbda5194ff1b7de54369a26924a189dab863130485e82c5`.
+
+| Lane | Passed cases | Lane elapsed seconds |
+|---|---:|---:|
+| unit | 938 | 163.646 |
+| desktop | 147 | 11.020 |
+| integration | 176 | 384.717 |
+| acceptance | 85 | 91.715 |
+| desktop-integration | 3 | 48.570 |
+| runtime-stack | 1 | 126.220 |
+
+All **1,350 cumulative cases** pass with zero failures/errors/skips. Two new tests
+cover the observed overflow and shared Unicode/batch geometry; existing archive
+and provenance cases are updated. Baseline, lint/types, docs/generated drift,
+C1–C9/G1–G4, whitespace and final source stability pass. Full candidate validation
+latency: **828.681 seconds**; implementation effort and merge delay
+are not inferred. Existing deprecation/runpy warnings remain visible in logs.
+
+Affected development checks: 58 unit cases (36.03 s), nine disposable feeds graph
+cases (50.00 s), shared guards, lint and types passed before final qualification.
+The candidate began its static/unit lanes while the affected graph run finished;
+its own graph lane ran later, sequentially with the remaining full suites.
+Earlier development attempts stopped before collection for missing libEGL, then
+failed one new fixture's incorrect 44-character expectation; corrected to the
+independently counted 43 before freeze. The ignored BE-53 Qt library bundle and
+canonical frozen venv were reused; see the handoff for invocation.
+
+Change accounting against main (additions/deletions/net): handwritten runtime
+Python **44/15/+29**; versioned handwritten prompt **58/0/+58**; tests/helpers
+**76/6/+70**; public configuration example **2/2/0**. Other changes are handwritten
+documentation. No generated files, fixture data, ontology, dependency, model pin,
+reasoning setting, CI workflow or existing settings/secrets file changed.
+No paid provider call, source acquisition, production data mutation, deployment,
+push or merge occurred. Prompt/schema 1.2.0 is locally qualified; live rejection
+rates remain OI-32/operator evidence, requiring explicit pins and redeployment.
+
+
 ## 2026-11-04 — BE-53 authoritative integrated candidate
 
 Complete local acceptance and qualification pass after reconciliation onto live

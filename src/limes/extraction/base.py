@@ -149,6 +149,7 @@ def build_extraction_messages(
     passages: list[Passage],
     prompt_template: str,
     ontology_serialized: str,
+    *, bounded_geometry: bool = False,
 ) -> list[dict[str, str]]:
     """The single user message for one batch: the instruction portion with
     the ontology serialized in, and the passages inside the explicit data
@@ -158,6 +159,13 @@ def build_extraction_messages(
     the document's full passage list, not the batch's.
     """
     block = "\n\n".join(f"[{passage.index}]\n{passage.text}" for passage in passages)
+    if bounded_geometry:
+        block = "\n\n".join(
+            f"[{passage.index}] length={len(passage.text)} Unicode characters; "
+            f"local offsets 0:{len(passage.text)}\n"
+            f"<PASSAGE_TEXT>\n{passage.text}\n</PASSAGE_TEXT>"
+            for passage in passages
+        )
     content = prompt_template.replace("{ontology}", ontology_serialized).replace(
         "{passages}", f"{PASSAGES_OPEN}\n{block}\n{PASSAGES_CLOSE}"
     )

@@ -85,12 +85,15 @@ class OpenRouterExtractor:
         output_tokens = 0
         raw_responses: list[str] = []
         for batch in batches:
-            messages = build_extraction_messages(batch, prompt_text, ontology_serialized)
+            messages = build_extraction_messages(
+                batch, prompt_text, ontology_serialized,
+                bounded_geometry=prompt_version == "1.2.0",
+            )
             raw, batch_input, batch_output = self._client.complete(
                 messages,
                 self.model_id,
                 "extraction",
-                json_schema=response_schema_for_version(schema_version, ontology),
+                json_schema=response_schema_for_version(schema_version, ontology, batch),
             )
             batch_assertions, batch_errors = parse_extraction_response(
                 raw, passages, ontology, schema_version

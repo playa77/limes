@@ -369,3 +369,18 @@ standalone candidate pass (1,339 cases including runtime stack). After PR #21
 merged, reconciliation onto live main `06bbfb47134e` passes authoritative integrated
 qualification (1,348 cases). Operator availability and nationwide coverage remain
 unmeasured. See VERIFICATION.
+
+### BE-54 — feeds extraction evidence-span conformance, iteration two
+
+Selected on `codex/be-54-extraction-span-geometry` from verified live main
+`029f2fceea1d`. [Full checklist](EXTRACTION_SPAN_GEOMETRY.md): trace exact passage
+coordinates, version explicit lengths and per-passage wire bounds, preserve strict
+rejection/archive/checkpoints, regress the observed second-item overflow, qualify
+one frozen candidate and commit locally without push. Model/reasoning pins and
+ontology remain operator-owned/unchanged. Live quality remains OI-32/operator.
+
+BE-54 disposition: complete local implementation acceptance and one full frozen
+candidate pass (1,350 cumulative cases, zero failures/errors/skips). Strict parser
+behavior is preserved; generation has explicit per-passage bounds. OI-32 retains
+operator pin/redeploy/live conformance measurement. Delivery is one local commit,
+without push, deployment or paid verification. See VERIFICATION.
