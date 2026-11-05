@@ -21,6 +21,14 @@ if TYPE_CHECKING:
     from limes.pipeline.run import RunSpec
 
 
+def checkpoint_anchored_backfill(spec: RunSpec, source_node: SourceRecord | None) -> bool:
+    """Only GDELT's rolling backfill surface opts into oldest-prefix addressing."""
+    return (spec.mode == "backfill" and spec.source_id == "gdelt"
+            and spec.since is not None and spec.until is None
+            and source_node is not None and source_node.last_success_at is not None
+            and source_node.last_success_at < spec.since)
+
+
 def resolve_window(
     spec: RunSpec,
     adapter: SourceAdapter,
@@ -30,7 +38,8 @@ def resolve_window(
 ) -> tuple[datetime | None, datetime | None]:
     """The ingestion window `(since, until)` for one run (AC-42).
 
-    An explicit `since` in the spec always wins. Otherwise an incremental
+    An explicit `since` wins except for checkpoint-anchored GDELT backfill.
+    Otherwise an incremental
     source starts at `Source.last_success_at` — or at
     `now − LIMES_BACKFILL_DAYS_UNSTRUCTURED` when the source has never run
     — and a non-incremental source is a full load, `(None, None)`.
@@ -40,6 +49,14 @@ def resolve_window(
     production callers omit it.
     """
     if spec.since is not None:
+        # Resolve after the locked checkpoint read, never in the CLI before locking.
+        # Only GDELT opted into oldest-prefix backfill; other sources retain D-44.
+        if checkpoint_anchored_backfill(spec, source_node):
+            assert source_node is not None and source_node.last_success_at is not None
+            cutoff = source_node.last_success_at
+            # Checkpoints cover their final slot inclusively. Bound 96 NEW slots.
+            return cutoff, adapter.bound_ingest_window(  # type: ignore[attr-defined]
+                cutoff + timedelta(microseconds=1), now or datetime.now(UTC))
         return spec.since, spec.until
     if not adapter.supports_incremental:
         return None, None

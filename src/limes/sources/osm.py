@@ -69,7 +69,7 @@ from limes.sources.base import (
     payload_hash,
     topic_endpoint,
 )
-from limes.sources.osm_acquisition import OsmAcquisition, PartitionEntry
+from limes.sources.osm_acquisition import FailedLeaf, OsmAcquisition, PartitionEntry
 from limes.types import (
     Assertion,
     EntityEndpoint,
@@ -218,7 +218,7 @@ class OsmAdapter:
         Cached partitions retain original bytes and fetch instants. This is a
         collection over an acquisition interval, not a single OSM snapshot.
         Complete replay is necessary after graph-load failure; the cursor tracks
-        successful acquisition only and never implies successful loading.
+        acquired and failed leaves only and never implies successful loading.
         """
         store = self.acquisition
         if store is None:
@@ -228,7 +228,9 @@ class OsmAdapter:
         with nullcontext() if self._run_scope_active else store.locked():
             state = store.read(plan_hash)
             leaves = _leaf_queries(state.splits)
-            if not set(state.partitions) <= {key for key, _ in leaves}:
+            leaf_keys = {key for key, _ in leaves}
+            if (not (set(state.partitions) | set(state.failed_leaves)) <= leaf_keys
+                    or set(state.partitions) & set(state.failed_leaves)):
                 raise SourceFetchError("osm: acquisition cursor contains unknown partitions")
             requests = 0
             index = 0
@@ -262,18 +264,27 @@ class OsmAdapter:
                             or isinstance(transient.__cause__, httpx.ReadTimeout))
                         # Transport failures only justify splitting the original large
                         # grid cells, never progressively shrinking small children.
-                        if not eligible or "/" in partition:
-                            raise
-                    if partition.count("/") >= MAX_SPLIT_DEPTH:
-                        raise SourceFetchError(
-                            f"osm: partition {partition} exhausted subdivision depth; "
-                            "acquisition incomplete, progress retained") from exc
+                        split = eligible and "/" not in partition
+                    else:
+                        split = partition.count("/") < MAX_SPLIT_DEPTH
+                    if not split:
+                        reason = (f"partition {partition} exhausted subdivision depth: {exc}"
+                                  if isinstance(exc, OverpassCapacityError) else str(exc))
+                        state.failed_leaves[partition] = FailedLeaf(
+                            error=reason, content_hash=content_hash)
+                        store.write(state)
+                        logger.warning("osm leaf failed", partition=partition,
+                                       error=reason, error_content_hash=content_hash)
+                        index += 1
+                        continue
+                    state.failed_leaves.pop(partition, None)
                     state.splits.append(partition)
                     store.write(state)  # durable topology before requesting children
                     leaves = _leaf_queries(state.splits)
                     logger.info("osm partition subdivided", partition=partition,
                                 error_content_hash=content_hash, leaves=len(leaves))
                     continue
+                state.failed_leaves.pop(partition, None)
                 state.partitions[partition] = PartitionEntry(
                     content_hash=content_hash, fetched_at=fetched_at)
                 store.write(state)
@@ -281,8 +292,11 @@ class OsmAdapter:
                 logger.info("osm partition acquired", partition=partition,
                             completed=len(state.partitions), total=len(leaves),
                             bytes=len(payload), content_hash=content_hash)
-            if set(state.partitions) != {key for key, _ in leaves}:
-                raise SourceFetchError("osm: partition coverage is incomplete")
+            if state.failed_leaves or set(state.partitions) != {key for key, _ in leaves}:
+                reasons = "; ".join(entry.error for entry in state.failed_leaves.values())
+                raise SourceFetchError(
+                    f"osm: partition coverage is incomplete; {len(state.failed_leaves)} "
+                    f"failed leaves; progress retained for explicit resume: {reasons}")
             manifest_hash = store.manifest(state)
             seen: set[str] = set()
             for index, (partition, _) in enumerate(leaves):

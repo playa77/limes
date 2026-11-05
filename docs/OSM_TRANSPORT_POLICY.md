@@ -47,7 +47,9 @@ runtime-timeout/OOM remarks retain BE-50's three-level depth rule. The 200 logic
 fetch-call limit remains, each call with at most four physical attempts. No job
 is replayed automatically.
 
-The cursor schema and canonical root query-plan hash are unchanged, including
+BE-55 adds optional failed-leaf accounting; see the
+[current recovery contract](GDELT_BACKLOG_OSM_LEAVES.md). The BE-53 cursor schema
+and canonical root query-plan hash were unchanged, including
 when endpoints/timeout change. Existing cached leaves keep their bytes and fetch
 instants. New transport splits use the existing `splits` tree, durably persisted
 before children. A failed request has no validated response to archive. Raw record

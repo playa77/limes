@@ -5,6 +5,28 @@ reversibility: **R1** reversible in under an hour, **R2** bounded recoverable
 cost, **R3** one-way door. Written when each decision is made, latest first.
 Nothing here is a status report; unlogged decisions are unmade decisions.
 
+## 2026-11-04 — D-96 (R1) — BE-55 owner decisions A/A
+
+Deliver checkpoint-anchored oldest-prefix GDELT backfill and durable OSM per-leaf
+failure accounting on `codex/be-55-gdelt-backlog-and-osm-leaves`, live main
+`029f2fceea1d`. BE-54 remains independent on its existing branch. Rolling GDELT
+backfill consumes at most 96 new slots from an older checkpoint, excluding the
+checkpoint's already covered slot; fresh-window and other-source behavior stays.
+OSM records exhausted leaves, continues eligible siblings, then fails incomplete
+acquisition before loading. Preserve split/depth/call limits and explicit replay.
+Optional failed-leaf cursor entries default empty for old cursors; rollback to
+older strict readers requires completing or separately preserving the new cursor.
+[Acceptance and operator contract](docs/GDELT_BACKLOG_OSM_LEAVES.md).
+Commit is explicitly authorized; no push, live acquisition, deployment or merge.
+The deployed GDELT checkpoint already skipped the historical gap: implementation
+cannot reconstruct a lost anchor or certify missing coverage.
+
+Reconciliation update (2026-11-05): the user requests resolving PR #24 conflicts.
+Reconcile with current main, preserving merged BE-54 records and both original
+qualification reports. The user explicitly authorizes committing and pushing
+the resolution to PR #24's existing branch. No PR merge, deployment or production
+acquisition is included.
+
 ## 2026-11-04 — D-95 (R1) — BE-54 passage-bounded extraction geometry
 
 Deliver one full BE-54 on `codex/be-54-extraction-span-geometry` from live

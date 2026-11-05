@@ -22,6 +22,8 @@ closure sections; “open” is not a statement that every old symptom still exi
 
 | Issue | Current state | Owner/package | Remaining obligation or closure evidence |
 |---|---|---|---|
+| OI-33 | BE-55 locally accepted; external coverage open | BE-55 / operator | [Recovery contract](docs/GDELT_BACKLOG_OSM_LEAVES.md): all six items pass; 1,355 frozen candidate cases including runtime stack. Checkpoint-anchored GDELT submissions and durable OSM failed leaves. Deployed historical gap anchor and live nationwide acquisition remain operator evidence, never inferred from tests. |
+
 | OI-32 | BE-54 locally qualified; live conformance open | BE-54 / operator | [Geometry acceptance](docs/EXTRACTION_SPAN_GEOMETRY.md): observed item 1 overflow; versioned generation bounds retain deterministic rejection. Full candidate passes 1,350 cumulative cases. Operator must pin 1.2.0, redeploy and measure feeds. |
 | OI-31 | BE-53 locally implemented and qualified; operator coverage open | BE-53 / operator | [Policy and acceptance](docs/OSM_TRANSPORT_POLICY.md): dead feed removed; OSM timeout/mirrors/bounded transport splits; 1,348 integrated candidate cases pass including runtime stack; standalone independence was also qualified before PR #21 merged. Live capacity and extraction quality remain open. |
 | OI-30 | BE-52 locally accepted; external measurement/ownership open | BE-52 / operator | [Acceptance](docs/INGEST_SOURCE_REPAIR.md) and [candidate](docs/VERIFICATION.md): 1,337 passing cases, including runtime stack. Partial feeds/checkpoints, ontology conformance and attempt diagnostics verified with mocks/disposable graph; update explicit pins to 1.1.0. Deployed quality, upstream availability and dead-URL ownership remain open. |
@@ -774,6 +776,26 @@ qualify their failed frozen candidates. PR #21 owns its independent feed-failure
 handling and extraction changes. PR #21 merged during final verification; the
 shared retry-block overlap is reconciled, and the current integrated candidate
 passes all 1,348 cases. No source availability/production success is inferred.
+
+## 2026-11-04 — OI-33 BE-55 selected owner decisions
+
+The supplied deployed report observes a GDELT fresh-day job advancing the checkpoint
+past the historical gap and OSM aborting after a child retry exhaustion. BE-55
+addresses oldest-prefix backfill when the checkpoint is still older, and durable
+per-leaf acquisition failure with sibling continuation and fail-closed loading.
+Local acceptance is mapped in [recovery contract](docs/GDELT_BACKLOG_OSM_LEAVES.md).
+Existing deployed checkpoints do not prove coverage of skipped history. Operator
+re-runs, a separately reviewed lost-anchor repair and live capacity remain explicit.
+
+OI-33 local implementation closure evidence: the authoritative BE-55 frozen
+candidate passes all shared guards and 1,355 cases with unchanged source manifest
+(VERIFICATION). The actual CLI/disposable-graph regression proves consecutive
+96-new-slot windows, missing-slot/malformed-row checkpoint blocking and lock
+release. OSM regressions prove four rotated child attempts, durable failure before
+sibling I/O, complete-before-load, legacy-cursor resume, cap/pending survival and
+recovery. Seven new distinct cases; cumulative passes are not coverage count.
+Operator acquisition/corpus coverage remains open. No automatic historical
+checkpoint rewind is introduced; the supplied already-skipped gap is not closed.
 
 ## 2026-11-04 — OI-32 feeds evidence geometry, iteration two
 

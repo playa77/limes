@@ -73,14 +73,18 @@ def test_transport_split_policy_and_restart(tmp_path, monkeypatch, failure, spli
     state = json.loads(before)
     assert state['splits'] == (['0'] if split else [])
     assert state['partitions'] == {}
-    assert len(seen) == (8 if split else 1 if failure in (401, 403) else 4)
+    assert len(seen) == (20 if split else 1 if failure in (401, 403) else 4)
     # Neither repeated failure nor a tiny failed child grows the split tree.
     with respx.mock:
         respx.post(PRIMARY).mock(side_effect=fail)
         respx.post(MIRROR).mock(side_effect=fail)
         with pytest.raises(SourceFetchError):
             list(adapter.fetch(None, None))
-    assert (store.root / 'active.json').read_bytes() == before
+    resumed = json.loads((store.root / 'active.json').read_bytes())
+    assert resumed['splits'] == state['splits']
+    assert resumed['partitions'] == {}
+    assert set(resumed['failed_leaves']) == set(state['failed_leaves'])
+    assert all(entry['state'] == 'failed' for entry in resumed['failed_leaves'].values())
     with respx.mock:
         respx.post(PRIMARY).respond(200, json={'elements': []})
         records = list(adapter.fetch(None, None))
@@ -99,3 +103,52 @@ def test_osm_configuration(monkeypatch):
     assert settings.http_timeout_seconds == 60
     with pytest.raises(ValueError, match='nonempty'):
         osm.OsmAdapter(endpoints=())
+
+
+def test_failed_child_continues_siblings_and_resumes_legacy_cursor(tmp_path, monkeypatch):
+    """Four real rotated attempts fail one child; sibling responses survive restart."""
+    from limes.sources.base import payload_hash
+    from limes.sources.osm_acquisition import AcquisitionState
+
+    monkeypatch.setattr('time.sleep', lambda _: None)
+    root = osm._overpass_query('0,0,2,2')
+    monkeypatch.setattr(osm, 'OVERPASS_QUERIES', (root,))
+    children = osm._split_query(root)
+    store = OsmAcquisition(ArchiveStore(tmp_path / 'archive'), tmp_path / 'cursor')
+    plan_hash = payload_hash(json.dumps([osm.OVERPASS_URL, root]).encode())
+    # Actual old JSON shape: neither split tree nor hash is migrated.
+    with store.locked():
+        state = AcquisitionState(plan_hash=plan_hash, splits=['0'])
+        legacy = state.model_dump(mode='json', exclude={'failed_leaves'})
+        (store.root / 'active.json').write_text(json.dumps(legacy))
+    attempts = []
+
+    def respond(request):
+        from urllib.parse import parse_qs
+
+        query = parse_qs(request.content.decode())['data'][0]
+        attempts.append((str(request.url), query))
+        return httpx.Response(502 if query == children[1] else 200,
+                              json={'elements': []})
+
+    with respx.mock:
+        respx.post(PRIMARY).mock(side_effect=respond)
+        respx.post(MIRROR).mock(side_effect=respond)
+        with pytest.raises(SourceFetchError, match='1 failed leaves'):
+            list(osm.OsmAdapter(store).fetch(None, None))
+    saved = json.loads((store.root / 'active.json').read_bytes())
+    assert saved['acquisition_id'] == legacy['acquisition_id']
+    assert saved['plan_hash'] == plan_hash
+    assert saved['splits'] == ['0']
+    assert set(saved['partitions']) == {'0/0', '0/2', '0/3'}
+    assert set(saved['failed_leaves']) == {'0/1'}
+    assert [url for url, query in attempts if query == children[1]] == [
+        PRIMARY, MIRROR, PRIMARY, MIRROR]
+    assert [query for _, query in attempts][-2:] == list(children[2:])
+    attempts.clear()
+    with respx.mock:
+        respx.post(PRIMARY).mock(side_effect=lambda request: (
+            attempts.append(str(request.url)) or httpx.Response(200, json={'elements': []})))
+        records = list(osm.OsmAdapter(store).fetch(None, None))
+    assert len(attempts) == 1 and len(records) == 4
+    assert json.loads((store.root / 'active.json').read_bytes())['failed_leaves'] == {}

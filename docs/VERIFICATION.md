@@ -1,5 +1,50 @@
 # Verification and acceptance evidence
 
+## 2026-11-05 — PR #24 conflict reconciliation
+
+Reconciled BE-55 with live main `66aecffae9ee` (merged BE-54 / PR #23).
+Preserved both packages' changelog, decisions, issue dispositions, roadmap and
+original frozen verification records; replaced the stale BE-54 roadmap placeholder.
+Runtime and test files merge without conflicts. This reconciliation passes docs
+C1–C9, generated-doc drift, shared G1–G4 guards and whitespace checks.
+Focused window/OSM/schema tests: 59 passed; extractor/pipeline tests: 44 passed.
+These 103 unit passes validate the combined branch's affected behavior; they are
+not a new full frozen candidate or evidence of live source coverage. No deployment,
+production acquisition or paid call was performed. The user authorizes committing
+and pushing this reconciliation to PR #24's existing branch.
+
+## 2026-11-04 — BE-55 authoritative frozen candidate
+
+[Acceptance checklist, cursor contract and operator handoff](GDELT_BACKLOG_OSM_LEAVES.md).
+Branch `codex/be-55-gdelt-backlog-and-osm-leaves`, live base `029f2fceea1d`.
+Report `work/be55/candidate-authoritative/report.json`: passed. Source SHA-256
+`2be5d9079f8efbd5ff2f87b47bc6b34306997d76de62959d374e070f38a29d73`.
+Source stability passes after every lane; subsequent changes are handwritten docs.
+
+| Lane | Passing cases | Elapsed seconds |
+|---|---:|---:|
+| unit | 942 | 160.6 |
+| desktop | 147 | 11.383 |
+| integration | 177 | 356.149 |
+| acceptance | 85 | 83.821 |
+| desktop-integration | 3 | 36.146 |
+| runtime-stack | 1 | 103.702 |
+
+All 1,355 cumulative cases pass with zero failures/errors/skips. Seven new cases;
+no copied suites or new CI lanes. Shared baseline/lint/tools-lint/types/docs/
+generated/G1–G4/whitespace guards pass. Validation elapsed 754.095 seconds;
+implementation effort and merge latency are not inferred. Affected checks before
+freeze: 79 units, 8 graph integration cases. The new GDELT fixture initially used
+an invalid ZIP member name; corrected to the official timestamp filename. Initial
+unit startup lacked libEGL; existing ignored Qt libraries resolved it. No failed
+check was skipped. `work/be55/candidate-final/report.json` remains a failed
+preflight (renderer line length, before test lanes); wrapping/regeneration preceded
+the authoritative freeze. Exact invocation and environment are in the handoff.
+Live main remained unchanged at final recheck. Tests use mocked source/model
+transports and fixture-owned disposable graphs/runtime. No live acquisition, paid
+call, operator graph write, deployment or push. Existing deployed GDELT lost-anchor
+and upstream OSM capacity obligations remain explicit; local success is not
+historical coverage or live source qualification.
 
 ## 2026-11-04 — BE-54 extraction span geometry, iteration two
 

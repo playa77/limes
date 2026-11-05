@@ -38,7 +38,7 @@ from __future__ import annotations
 import json
 import uuid
 from contextlib import nullcontext
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from typing import TYPE_CHECKING, Literal
 
@@ -206,7 +206,12 @@ def _execute_run(spec: RunSpec, ctx: RunContext) -> IngestionRunRecord:
 
     cost_before = _recorded_spend(ctx)
     try:
-        for raw in adapter.fetch(since, until):
+        fetch_since = since
+        if window_module.checkpoint_anchored_backfill(spec, source_node):
+            assert since is not None
+            # Preserve the recorded checkpoint anchor, but exclude its consumed slot.
+            fetch_since = since + timedelta(microseconds=1)
+        for raw in adapter.fetch(fetch_since, until):
             record.records_fetched += 1
             _process_record(spec, ctx, adapter, raw, record)
         # Retire an acquisition only after complete loading, but BEFORE the

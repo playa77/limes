@@ -16,6 +16,7 @@ Updated 2026-10-28. Start with the product purpose in README, then this map.
 | What failed in the third full ingest? | [BE-49 repair](INGEST_THIRD_RUN_REPAIR.md) | Supplied deployment evidence, Wikidata defect and resumable OSM acquisition; local qualification remains distinct |
 | How are embedding credentials isolated? | [Dedicated embedding credential](EMBEDDING_CREDENTIALS.md) | BE-51 role authentication, pricing, diagnostics and operator deployment |
 | What is OSM transport and dead-feed policy? | [BE-53 policy](OSM_TRANSPORT_POLICY.md) | Timeout, mirror retries, bounded transport subdivision and cursor compatibility |
+| How are GDELT gaps and failed OSM leaves resumed? | [BE-55 recovery](GDELT_BACKLOG_OSM_LEAVES.md) | Checkpoint addressing, per-leaf cursor state and explicit resubmission |
 | How does OSM recover overloaded cells? | [Adaptive acquisition](OSM_ADAPTIVE_ACQUISITION.md) | BE-50 subdivision, resume, completeness and finite limits |
 | What failed in the second full ingest? | [BE-48 rerun repair](INGEST_RERUN_REPAIR.md) | Supplied job evidence, fixes, qualification and remaining limits |
 | What failed in the first full ingest? | [BE-47 diagnosis](INGEST_RUN_DIAGNOSIS.md) | Current source contracts, acceptance and bounded evidence; no production-success claim |
