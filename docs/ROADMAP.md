@@ -7,6 +7,24 @@ The [documentation index](INDEX.md) identifies each document's authority; the
 Historical bare WP numbers must be qualified as backend or desktop. Old counts,
 unticked archived plans and merged commits are never substituted for acceptance.
 
+## Next-session delivery — BE-56 German parliamentary members and federal officeholders (2026-11-07)
+
+Planning only; implementation is reserved for the next session. The next person
+coverage priority is every serving member of the Bundestag and all 16 state
+parliaments, including Berlin, Bremen and Hamburg, plus all serving judges in both
+Bundesverfassungsgericht Senates, regular/deputy Bundesrat members and the serving
+Bundespräsident or Bundespräsidentin. A complete current DAX board
+roster is not a prerequisite. [Implementation plan and full acceptance checklist](GERMAN_PARLIAMENT_MEMBERS.md)
+define all 21 coverage scopes, canonical people, institution-appropriate offices,
+party/group distinctions, dated provenance, migration, bounded acquisition and
+per-institution completeness evidence. Deliver as one full BE-56 package, with required
+API/desktop compatibility in the same delivery. Proposed implementation branch:
+`codex/be-56-german-parliament-members`, from freshly verified main next session.
+
+This documentation decision does not establish loaded membership or implemented
+state coverage. Current-as-of acquisition is the initial scope; exhaustive historic
+backfill is excluded. Existing ingest/operator gaps retain their recorded owners.
+
 ## Active adaptive OSM acquisition — BE-50
 
 Branch `codex/be-50-adaptive-osm-acquisition`, live base `54c6a1a3efa2`.

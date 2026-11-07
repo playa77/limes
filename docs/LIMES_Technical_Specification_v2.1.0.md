@@ -95,6 +95,7 @@ Recorded so the same ground is not re-covered. Each is resolved in the section n
 | S-28 | Cross-process reference data |
 | S-29 | Wikipedia revision-linked entity context, DE/EN, shared document processing (BE-46) |
 | S-30 | Yahoo Finance governance, shareholder structure and earnings/report metadata; identity, schema/loader/API migration and availability semantics (BE-46) |
+| S-31 | Planned BE-56: Bundestag/all 16 state parliaments, both Bundesverfassungsgericht Senates, Bundesrat regular/deputy members and Bundespräsident/in; canonical persons, institution-appropriate offices, provenance/migration and all 21 coverage scopes; implementation next session |
 
 **Out of scope:** Design Document §2.4 applies. CI already exists. Agency/news processing is core scope; no separate extractor product, event-ledger application or second vector database is included.
 
@@ -893,6 +894,35 @@ Both BE-46 adapters are registered selection-only sources; generic ingest-all ex
 Wikipedia must not be confused with the existing enrichment-only Wikidata adapter.
 German and European policy remains the scope; neither new adapter promises
 comprehensive EU-27 coverage. Core design §3.6 defines the enrichment semantics.
+
+#### 8.5.2a Planned BE-56 parliamentary and federal-officeholder contract
+
+[BE-56 implementation plan](GERMAN_PARLIAMENT_MEMBERS.md) is the detailed contract
+for Bundestag, all 16 state parliaments, all serving judges in both
+Bundesverfassungsgericht Senates, regular/deputy Bundesrat members and the serving
+Bundespräsident or Bundespräsidentin. It adds nationwide roster acquisition
+to existing DIP capability; no Landtag source or completed roster is claimed by
+the current source table. Exact official endpoints, formats and fixture evidence
+must be qualified in the next session before implementation.
+
+Persist source/chamber-scoped external person identifiers through shared resolution,
+preserving existing `bundestag_id` and canonical IDs. Link a person's mandate to an
+Office scoped by chamber/role/legislative term and then to a parliamentary PublicBody.
+Keep party and parliamentary group identities distinct; version any required new
+types, properties, keys and API/desktop mirrors together. Correct the existing DIP
+group-as-party and office-target interpretation with retained historical evidence.
+
+Separate source-provided mandate dates, term boundaries, current-roster observation,
+retrieval and recording times. Unknown appointment/resignation dates remain unknown;
+open-ended historical mandates do not certify current membership. Archive exact
+source/row evidence and expose per-chamber/term member-set reconciliation, counts,
+freshness, unresolved matches and partial failures. Use bounded resumable jobs with
+per-chamber checkpoint ownership; incomplete acquisition cannot certify national
+coverage. Extend these rules to court, Bundesrat and presidency sources: retain
+Senate assignment, regular/deputy membership and represented Land, and presidential
+tenure; use appointment/service intervals instead of legislative terms where
+appropriate. All 21 coverage scopes and migration/query/evidence behavior belong to one BE-56
+delivery; local implementation acceptance is separate from deployed acquisition.
 
 #### 8.5.3 BE-46 adapter, identity and persistence contract
 

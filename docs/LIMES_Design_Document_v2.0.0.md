@@ -202,6 +202,34 @@ Yahoo Finance supplies secondary company observations. Neither is an official
 registry or independent corroboration of underlying reused reports. Their planned
 integration is specified in §3.6; BE-46 owns implementation and acceptance.
 
+### 3.2.1 Next person coverage: German parliamentary members and federal officeholders (BE-56 / D-97)
+
+The next person-coverage goal is every serving member of the Bundestag and all
+16 German state parliaments, including Berlin's Abgeordnetenhaus and the Bremen
+and Hamburg Bürgerschaften, all serving judges of the First and Second Senates of
+the Bundesverfassungsgericht, all regular/deputy Bundesrat members, and the serving
+Bundespräsident or Bundespräsidentin. Initial coverage is the then-current roster at a
+recorded acquisition/as-of date; exhaustive historical backfill is not required.
+This goal does not depend on completing company-board coverage.
+
+Use official parliamentary rosters as primary evidence, reuse existing DIP where
+sufficient and qualify all state sources. Model canonical Person identities and
+dated mandates through Office to the parliamentary PublicBody. Distinguish parties
+from parliamentary groups, legislative terms from individual service intervals,
+and an observed current roster from an undated historical office assertion.
+Preserve source-scoped IDs, uncertain matches, original evidence and both time axes.
+Measure completeness and freshness for each of 21 coverage scopes: the 17
+parliamentary chambers, both court Senates, Bundesrat and presidency. Retain Senate
+assignment, Bundesrat member class and represented Land, and presidential tenure.
+Use institution-appropriate office intervals; judicial appointments, Bundesrat
+service and presidential tenure must not inherit fabricated legislative terms or
+party membership. Reuse canonical people across multiple institutional roles.
+
+[BE-56 plan and acceptance](GERMAN_PARLIAMENT_MEMBERS.md) specify source selection,
+existing DIP corrections, migration, acquisition, API/desktop compatibility and
+qualification. Implementation is reserved for the next session; this requirement
+is not evidence that the people have already been loaded.
+
 ### 3.3 Container Topology
 
 | Service | Purpose | Publication |

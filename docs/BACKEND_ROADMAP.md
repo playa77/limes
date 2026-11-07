@@ -6,6 +6,10 @@ The original roadmap defined WP-01–39 plus WP-25a (40 packages); WP-40 was a
 later coverage exercise. The separate desktop sequence is [DC](DESKTOP_ROADMAP.md).
 [ROADMAP](ROADMAP.md) coordinates the two tracks and the active delivery.
 
+Next-session priority selected 2026-11-07: **BE-56**, German parliamentary members
+and federal officeholders. Planning is complete; implementation is deferred to the next
+session. See the package entry and [implementation plan](GERMAN_PARLIAMENT_MEMBERS.md).
+
 ## Exact position and status vocabulary
 
 Implementation commits exist in main for **BE-01–40 and BE-25a**. This is not a
@@ -403,3 +407,24 @@ coverage, deployment or acquisition success is inferred; OI-33 retains those
 obligations. Original implementation was one full parent commit. On 2026-11-05,
 PR #24 conflict resolution reconciles the branch with merged BE-54 from PR #23;
 original frozen qualification evidence remains scoped to its recorded source.
+
+### BE-56 — German parliamentary members and federal officeholders
+
+Status: P — planned, not implemented; selected for the next session under D-97.
+[Full plan and acceptance A1–A8](GERMAN_PARLIAMENT_MEMBERS.md) cover every serving
+member of the Bundestag and all 16 state parliaments, including the city states,
+all serving judges in both Bundesverfassungsgericht Senates, all regular/deputy
+Bundesrat members and the serving Bundespräsident or Bundespräsidentin,
+at an explicit current-term acquisition/as-of date. Deliver one full package with
+source qualification, all 21 coverage scopes, canonical Person identities,
+institution-appropriate office/mandate history, distinct party/group semantics,
+DIP correction, additive migration, bounded acquisition and per-scope coverage.
+Required API/desktop compatibility belongs to this parent, not a follow-up gap.
+
+Build on BE-16 DIP, source/archive/resolver/loader and operational/query contracts;
+qualify exact official roster endpoints and fixtures before coding each format.
+Wikidata remains identity enrichment, not roster enumeration. Initial complete
+historical backfill, municipal/European Parliament coverage and completing
+DAX boards are not prerequisites. Implementation and measured deployed population
+must be reported separately. No runtime work or ingestion occurs in this planning
+session; proposed next branch is `codex/be-56-german-parliament-members`.
