@@ -1,3 +1,16 @@
+## 2026-11-07 — BE-56 parliamentary member and federal-officeholder planning
+
+- Set the next person-coverage priority to all serving Bundestag members and
+  members of all 16 state parliaments, including the city states, plus all serving
+  judges in both Bundesverfassungsgericht Senates, all regular/deputy Bundesrat
+  members and the serving Bundespräsident or Bundespräsidentin.
+- Add the next-session implementation plan, source-discovery matrix, identity and
+  mandate/party/group contracts, DIP migration needs and full acceptance checklist.
+  Cover Senate assignment, represented Land/member class and presidential tenure
+  with institution-appropriate office intervals and 21 distinct coverage scopes.
+- Reconcile design/technical specifications, backend/desktop roadmaps and index.
+  Documentation only; no roster acquisition or runtime implementation occurred.
+
 ## 2026-11-04 — BE-52 ingest source repair
 
 - Partial feed acquisition survives individual dead feeds; all-feed failure still

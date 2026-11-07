@@ -1,5 +1,37 @@
 # Verification and acceptance evidence
 
+## 2026-11-07 — BE-56 parliamentary/federal-officeholder planning documentation
+
+Documentation-only delivery on checkout branch `work`, based on live-fetched main
+`7c7be13dc74d4c8613f4507ec8b8b8f708c83955`. `python3 tools/check_git_baseline.py`
+passed before edits; publication guard was already configured as `.githooks`.
+[Next-session implementation plan](GERMAN_PARLIAMENT_MEMBERS.md) defines the full
+BE-56 package and eight uncompleted implementation acceptance items. Design and
+technical scope, both roadmaps, delivery/index navigation, D-97 and CHANGELOG
+are reconciled. The source-discovery matrix includes Bundestag, all 16 states,
+both Bundesverfassungsgericht Senates, Bundesrat regular/deputy members and the
+serving Bundespräsident/Bundespräsidentin (21 coverage scopes);
+city-state coverage, canonical identity reuse, mandate dates, party/group semantics,
+legacy DIP migration and per-scope completeness are explicit. The requested scope
+extension preserves judicial Senate assignment, represented Land/member class and
+presidential tenure without imposing parliamentary terms on other institutions.
+
+Validation: `python3 tools/check_docs.py docs/`,
+`python3 tools/generate_runtime_docs.py --check` and `git diff --check` pass.
+Reviewed the change against the fetched baseline and the existing DIP/ontology
+contracts. All changed files are handwritten documentation; no runtime, test,
+fixture or generated-file change. Runtime suites were not needed for this scope.
+Source portals are discovery references, not tested roster endpoints. No member
+acquisition, loaded-roster completeness, implementation, migration, deployment or
+paid-quality result is claimed. Implementation is reserved for the next session.
+
+Publication update: the user requests a PR for this session's documentation.
+Publication branch `codex/be-56-public-officeholder-planning` is created after a
+fresh successful baseline fetch at the same main revision. Recheck documentation,
+generated-document consistency and whitespace before committing; retain the live
+pre-push baseline hook. Staging, commit, push and PR creation are now authorized;
+runtime implementation, roster acquisition, deployment and merge remain separate.
+
 ## 2026-11-05 — PR #24 conflict reconciliation
 
 Reconciled BE-55 with live main `66aecffae9ee` (merged BE-54 / PR #23).

@@ -1,6 +1,7 @@
 # Documentation map and authority
 
-Updated 2026-10-28. Start with the product purpose in README, then this map.
+Updated 2026-11-07 for BE-56 parliamentary/federal-officeholder planning. Start with the product purpose
+in README, then this map.
 
 | Question | Authoritative document | Boundary |
 |---|---|---|
@@ -25,6 +26,7 @@ Updated 2026-10-28. Start with the product purpose in README, then this map.
 | What supports the status audit? | [Baseline audit](BASELINE_AUDIT.md), [news investigation](NEWS_REVIEW.md) | Artifact/ancestry/source evidence and limits; not competing architecture |
 | What were the original plans? | [Backend archive](archive/backend-roadmap-2026-08-01.md), [desktop archive](archive/desktop-plan-2026-09-09.md) | Historical definitions only; old commands, ceremonies and boxes are inactive |
 | What is proposed for the next version? | [GraphRAG future work](next-version/GRAPHRAG_WORK_PACKAGES.md) | Proposed packages only, after scoped ingestion stability; outside the current release sequence |
+| Which German public officeholders will be added next? | [BE-56 implementation plan](GERMAN_PARLIAMENT_MEMBERS.md) | Bundestag, all 16 state parliaments, both Bundesverfassungsgericht Senates, Bundesrat and Bundespräsident/in; next session, no loaded-coverage claim |
 
 ## Maintenance and precedence
 

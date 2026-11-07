@@ -5,6 +5,36 @@ reversibility: **R1** reversible in under an hour, **R2** bounded recoverable
 cost, **R3** one-way door. Written when each decision is made, latest first.
 Nothing here is a status report; unlogged decisions are unmade decisions.
 
+## 2026-11-07 — D-97 (R2) — Next person coverage: German parliamentary members and federal officeholders
+
+The user selects every serving member of the German Bundestag and all 16 state
+parliaments as the next group of people to add. Completing a current DAX board
+roster is not required. This session updates documentation and prepares the full
+[BE-56 implementation plan](docs/GERMAN_PARLIAMENT_MEMBERS.md); implementation is
+explicitly reserved for the next session. Initial scope is current serving members
+at recorded acquisition/as-of dates, with encountered history retained rather
+than an exhaustive historical-roster backfill. Include the three city states.
+Scope extension in the same session: the user also includes all serving judges
+in both Bundesverfassungsgericht Senates, all Bundesrat members (regular and deputy,
+distinguished explicitly), and the serving Bundespräsident or Bundespräsidentin.
+Retain Senate assignment, represented Land/member class and presidential tenure,
+using institution-appropriate offices and intervals rather than applying legislative
+terms to every role. These add four coverage scopes to the 17 parliamentary scopes.
+
+Use official roster evidence, qualify all 21 coverage scopes and reuse DIP without
+equating its historical persons with a current roster. Preserve canonical person
+IDs, mandate/term history and provenance; distinguish parliamentary groups from
+political parties and correct legacy DIP interpretation through a retained-evidence
+migration. All required API/desktop compatibility and per-chamber coverage belong
+to one full BE-56 delivery. Source qualification is implementation work; loaded
+coverage requires separate acquisition evidence. No runtime implementation,
+ingestion, staging, commit, push or deployment is requested this session.
+
+Publication update: the user subsequently requests preparing and opening a PR for
+this session's documentation, authorizing staging, commit, push and PR creation.
+Publish on `codex/be-56-public-officeholder-planning`; implementation remains
+reserved for the next session. No merge, deployment or data acquisition is included.
+
 ## 2026-11-04 — D-96 (R1) — BE-55 owner decisions A/A
 
 Deliver checkpoint-anchored oldest-prefix GDELT backfill and durable OSM per-leaf
