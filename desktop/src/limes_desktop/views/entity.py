@@ -216,6 +216,10 @@ class EntityView(QWidget):
             f"belief (recorded at): {edge.recorded_at or '?'}",
             f"evidence document: {edge.evidence_document_id or 'none'}",
         ]
+        if edge.validity_basis:
+            lines.append(f"time basis: {edge.validity_basis}")
+        if edge.roster_snapshot_id:
+            lines.append(f"roster observation: {edge.roster_snapshot_id}")
         sentence = self._originating_sentence(edge)
         if sentence is not None:
             lines.append(f"{_SENTENCE_LABEL}: “{sentence}”")

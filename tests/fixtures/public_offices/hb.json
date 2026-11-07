@@ -1,0 +1,143 @@
+{
+  "scope": "hb",
+  "institution": "Bremische Bürgerschaft (Landtag)",
+  "pages": [
+    {
+      "url": "https://www.bremische-buergerschaft.de/",
+      "final_url": "https://www.bremische-buergerschaft.de/",
+      "file": "73da1a8a02d4a108abfa428f6a320cc9b18b5d734ace48345b3893c9a88f4656.gz",
+      "sha256": "73da1a8a02d4a108abfa428f6a320cc9b18b5d734ace48345b3893c9a88f4656",
+      "retrieved_at": "2026-11-07T17:53:14.205656+00:00"
+    },
+    {
+      "url": "https://static.bremische-buergerschaft.de",
+      "final_url": "https://static.bremische-buergerschaft.de",
+      "file": "132f6aa75d467b39fe41128c530fc9ff8704ea82b3187f148781b39cdf39571b.gz",
+      "sha256": "132f6aa75d467b39fe41128c530fc9ff8704ea82b3187f148781b39cdf39571b",
+      "retrieved_at": "2026-11-07T17:53:15.179245+00:00"
+    },
+    {
+      "url": "https://static.bremische-buergerschaft.de/index46ee.html?id=358",
+      "final_url": "https://static.bremische-buergerschaft.de/index46ee.html?id=358",
+      "file": "bf1ca89a8a91cb5007a29089a162394e1bead67f519f9287ba7222044bb36a1a.gz",
+      "sha256": "bf1ca89a8a91cb5007a29089a162394e1bead67f519f9287ba7222044bb36a1a",
+      "retrieved_at": "2026-11-07T17:53:15.534841+00:00"
+    }
+  ],
+  "acquired_count": 87,
+  "expected_count": null,
+  "observed_terms": [],
+  "departed_excluded": 0,
+  "error": null,
+  "first_rows": [
+    {
+      "external_id": "hb:person:13888",
+      "name": "Bensch, Rainer",
+      "aliases": [],
+      "profile_url": "https://static.bremische-buergerschaft.de/index7ff2.html?id=358&aid=13888",
+      "role": "member",
+      "land": null,
+      "term": "abgeordnetenwatch:period:146 (Bremen 2023 - 2027)",
+      "group": "CDU",
+      "party": null,
+      "constituency": null,
+      "mandate_kind": null,
+      "service_start": null,
+      "service_end": null,
+      "source_updated_text": null,
+      "service_precision": null,
+      "bundestag_id": null,
+      "locator": "/html/body/div[2]/div/div/div[4]/div[1]/ul/li[6]/a",
+      "evidence_hash": "bf1ca89a8a91cb5007a29089a162394e1bead67f519f9287ba7222044bb36a1a",
+      "evidence_url": "https://static.bremische-buergerschaft.de/index46ee.html?id=358",
+      "profile_evidence_hash": null,
+      "profile_member_class": null,
+      "conflicts": [],
+      "leadership": [],
+      "service_evidence": []
+    },
+    {
+      "external_id": "hb:person:14088",
+      "name": "Lübke, Marco",
+      "aliases": [],
+      "profile_url": "https://static.bremische-buergerschaft.de/indexffbb.html?id=358&aid=14088",
+      "role": "member",
+      "land": null,
+      "term": "abgeordnetenwatch:period:146 (Bremen 2023 - 2027)",
+      "group": "CDU",
+      "party": null,
+      "constituency": null,
+      "mandate_kind": null,
+      "service_start": null,
+      "service_end": null,
+      "source_updated_text": null,
+      "service_precision": null,
+      "bundestag_id": null,
+      "locator": "/html/body/div[2]/div/div/div[4]/div[1]/ul/li[45]/a",
+      "evidence_hash": "bf1ca89a8a91cb5007a29089a162394e1bead67f519f9287ba7222044bb36a1a",
+      "evidence_url": "https://static.bremische-buergerschaft.de/index46ee.html?id=358",
+      "profile_evidence_hash": null,
+      "profile_member_class": null,
+      "conflicts": [],
+      "leadership": [],
+      "service_evidence": []
+    }
+  ],
+  "term_evidence": [
+    {
+      "url": "https://www.abgeordnetenwatch.de/api/v2/parliaments/10",
+      "file": "3df977a23a78e743acc3e29ba1b709c2d3dd8ad228caf6bf19b6c6aa3a1c4a68.gz",
+      "sha256": "3df977a23a78e743acc3e29ba1b709c2d3dd8ad228caf6bf19b6c6aa3a1c4a68",
+      "retrieved_at": "2026-11-07T17:56:09.591582+00:00",
+      "purpose": "secondary_term_metadata"
+    },
+    {
+      "url": "https://www.abgeordnetenwatch.de/api/v2/parliament-periods/146",
+      "file": "4322b3409c9e3cbeaa303e56bf821c193bb3d1f42b352868ef984f17dff5db57.gz",
+      "sha256": "4322b3409c9e3cbeaa303e56bf821c193bb3d1f42b352868ef984f17dff5db57",
+      "retrieved_at": "2026-11-07T17:56:10.029421+00:00",
+      "purpose": "secondary_term_metadata"
+    }
+  ],
+  "secondary_term": {
+    "id": 146,
+    "entity_type": "parliament_period",
+    "label": "Bremen 2023 - 2027",
+    "api_url": "https://www.abgeordnetenwatch.de/api/v2/parliament-periods/146",
+    "abgeordnetenwatch_url": "https://www.abgeordnetenwatch.de/bremen",
+    "parliament": {
+      "id": 10,
+      "entity_type": "parliament",
+      "label": "Bremen",
+      "api_url": "https://www.abgeordnetenwatch.de/api/v2/parliaments/10",
+      "abgeordnetenwatch_url": "https://www.abgeordnetenwatch.de/bremen"
+    },
+    "previous_period": {
+      "id": 145,
+      "entity_type": "parliament_period",
+      "label": "Bremen Wahl 2023",
+      "api_url": "https://www.abgeordnetenwatch.de/api/v2/parliament-periods/145",
+      "abgeordnetenwatch_url": "https://www.abgeordnetenwatch.de/bremen/bremen-wahl-2023"
+    },
+    "type": "legislature",
+    "election_date": null,
+    "start_date_period": "2023-06-29",
+    "end_date_period": "2027-06-01"
+  },
+  "usage": {
+    "attribution": "Bremische Bürgerschaft (Landtag)",
+    "licence_assumption": "No blanket open licence assumed; issuer attribution retained; image assets are not acquired.",
+    "terms_status": "No separate usage link is exposed in the pinned directory; retain official source attribution."
+  },
+  "qualification_date": "2026-11-07",
+  "credential_requirement": "Public HTTPS GET; no operator credential required",
+  "update_semantics": "Dated retrieval/current-directory observation; original bytes retained. Provider update times are unknown unless explicitly exposed.",
+  "historical_count": 0,
+  "profile_errors": [],
+  "profile_conflicts": [],
+  "check_basis": "official_directory_set;secondary_term_metadata",
+  "source_updates": [
+    "Official linked export: https://static.bremische-buergerschaft.de/abgdb/MdBB_2026-10-221fd1.csv?format=csv; directory update time is not supplied."
+  ],
+  "qualified_term": "abgeordnetenwatch:period:146 (Bremen 2023 - 2027)"
+}

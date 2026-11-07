@@ -1,0 +1,132 @@
+{
+  "scope": "th",
+  "institution": "Thüringer Landtag",
+  "pages": [
+    {
+      "url": "https://www.thueringer-landtag.de/abgeordnete/abgeordnete-fraktionen-sitzordnung/",
+      "final_url": "https://www.thueringer-landtag.de/abgeordnete/abgeordnete-fraktionen-sitzordnung/",
+      "file": "33ed61bbee5430e2217f23ecc8adc6f4069a605b3398174627d17de0bba275e9.gz",
+      "sha256": "33ed61bbee5430e2217f23ecc8adc6f4069a605b3398174627d17de0bba275e9",
+      "retrieved_at": "2026-11-07T17:53:23.119867+00:00"
+    }
+  ],
+  "acquired_count": 88,
+  "expected_count": null,
+  "observed_terms": [],
+  "departed_excluded": 0,
+  "error": null,
+  "first_rows": [
+    {
+      "external_id": "https://www.thueringer-landtag.de/abgeordnete/abgeordnete-fraktionen-sitzordnung/abgeordnetendetails/abgeordneter/alexander-kaestner/",
+      "name": "Alexander Kästner",
+      "aliases": [],
+      "profile_url": "https://www.thueringer-landtag.de/abgeordnete/abgeordnete-fraktionen-sitzordnung/abgeordnetendetails/abgeordneter/alexander-kaestner/",
+      "role": "member",
+      "land": null,
+      "term": "abgeordnetenwatch:period:156 (Thüringen 2024 - 2029)",
+      "group": "Thüringen.Gerecht",
+      "party": null,
+      "constituency": null,
+      "mandate_kind": null,
+      "service_start": null,
+      "service_end": null,
+      "source_updated_text": null,
+      "service_precision": null,
+      "bundestag_id": null,
+      "locator": "/html/body/main/div[3]/div[1]/div[2]/dl/dd[4]/div/ul/li[6]/div/div[1]/a",
+      "evidence_hash": "33ed61bbee5430e2217f23ecc8adc6f4069a605b3398174627d17de0bba275e9",
+      "evidence_url": "https://www.thueringer-landtag.de/abgeordnete/abgeordnete-fraktionen-sitzordnung/",
+      "profile_evidence_hash": null,
+      "profile_member_class": null,
+      "conflicts": [],
+      "leadership": [],
+      "service_evidence": []
+    },
+    {
+      "external_id": "https://www.thueringer-landtag.de/abgeordnete/abgeordnete-fraktionen-sitzordnung/abgeordnetendetails/abgeordneter/andreas-buehl/",
+      "name": "Andreas Bühl",
+      "aliases": [],
+      "profile_url": "https://www.thueringer-landtag.de/abgeordnete/abgeordnete-fraktionen-sitzordnung/abgeordnetendetails/abgeordneter/andreas-buehl/",
+      "role": "member",
+      "land": null,
+      "term": "abgeordnetenwatch:period:156 (Thüringen 2024 - 2029)",
+      "group": "CDU",
+      "party": null,
+      "constituency": null,
+      "mandate_kind": null,
+      "service_start": null,
+      "service_end": null,
+      "source_updated_text": null,
+      "service_precision": null,
+      "bundestag_id": null,
+      "locator": "/html/body/main/div[3]/div[1]/div[2]/dl/dd[2]/div/ul/li[1]/div/div[1]/a",
+      "evidence_hash": "33ed61bbee5430e2217f23ecc8adc6f4069a605b3398174627d17de0bba275e9",
+      "evidence_url": "https://www.thueringer-landtag.de/abgeordnete/abgeordnete-fraktionen-sitzordnung/",
+      "profile_evidence_hash": null,
+      "profile_member_class": null,
+      "conflicts": [],
+      "leadership": [],
+      "service_evidence": []
+    }
+  ],
+  "term_evidence": [
+    {
+      "url": "https://www.abgeordnetenwatch.de/api/v2/parliaments/15",
+      "file": "e64f00210b5a9a482565c5feb0029b84bfdca6d3650856eeb74b787764bdc3ef.gz",
+      "sha256": "e64f00210b5a9a482565c5feb0029b84bfdca6d3650856eeb74b787764bdc3ef",
+      "retrieved_at": "2026-11-07T18:09:25.849128+00:00",
+      "purpose": "secondary_term_metadata"
+    },
+    {
+      "url": "https://www.abgeordnetenwatch.de/api/v2/parliament-periods/156",
+      "file": "3d1dcd269f9d9f0af801394775fd16aa4588bea72153961a72ee431a770a8fd4.gz",
+      "sha256": "3d1dcd269f9d9f0af801394775fd16aa4588bea72153961a72ee431a770a8fd4",
+      "retrieved_at": "2026-11-07T18:09:28.606991+00:00",
+      "purpose": "secondary_term_metadata"
+    }
+  ],
+  "secondary_term": {
+    "id": 156,
+    "entity_type": "parliament_period",
+    "label": "Thüringen 2024 - 2029",
+    "api_url": "https://www.abgeordnetenwatch.de/api/v2/parliament-periods/156",
+    "abgeordnetenwatch_url": "https://www.abgeordnetenwatch.de/thueringen",
+    "parliament": {
+      "id": 15,
+      "entity_type": "parliament",
+      "label": "Thüringen",
+      "api_url": "https://www.abgeordnetenwatch.de/api/v2/parliaments/15",
+      "abgeordnetenwatch_url": "https://www.abgeordnetenwatch.de/thueringen"
+    },
+    "previous_period": {
+      "id": 152,
+      "entity_type": "parliament_period",
+      "label": "Thüringen Wahl 2024",
+      "api_url": "https://www.abgeordnetenwatch.de/api/v2/parliament-periods/152",
+      "abgeordnetenwatch_url": "https://www.abgeordnetenwatch.de/thueringen/wahl-2024"
+    },
+    "type": "legislature",
+    "election_date": null,
+    "start_date_period": "2024-09-26",
+    "end_date_period": "2029-09-30"
+  },
+  "usage": {
+    "attribution": "Thüringer Landtag",
+    "licence_assumption": "No blanket open licence assumed; issuer attribution retained; image assets are not acquired.",
+    "terms_url": "https://www.thueringer-landtag.de/impressum/",
+    "link_label": "Impressum",
+    "status": 200,
+    "file": "443fb12b3cf6817566e78d9afe567b906af22f4147a2e22021782abf5342596e.gz",
+    "sha256": "443fb12b3cf6817566e78d9afe567b906af22f4147a2e22021782abf5342596e",
+    "retrieved_at": "2026-11-07T18:50:58.918247+00:00"
+  },
+  "qualification_date": "2026-11-07",
+  "credential_requirement": "Public HTTPS GET; no operator credential required",
+  "update_semantics": "Dated retrieval/current-directory observation; original bytes retained. Provider update times are unknown unless explicitly exposed.",
+  "historical_count": 0,
+  "profile_errors": [],
+  "profile_conflicts": [],
+  "check_basis": "official_directory_set;secondary_term_metadata",
+  "source_updates": [],
+  "qualified_term": "abgeordnetenwatch:period:156 (Thüringen 2024 - 2029)"
+}

@@ -107,5 +107,9 @@ def _declared(type_name: str, key_name: str, ontology: Ontology) -> bool:
     refuse to stamp anything this function returns false for, so the check
     keeps the resolver from minting identity the loader cannot materialize
     (Doc 2 §5.6, `_key_property`)."""
+    if type_name == "Office" and key_name != "office_key":
+        # Legacy component keys remain readable for rollback, but a body alone
+        # cannot identify a role/legislative term.
+        return False
     spec = ontology.entity_types.get(type_name)
     return spec is not None and key_name in spec.identifying_keys

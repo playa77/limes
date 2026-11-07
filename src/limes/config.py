@@ -74,7 +74,7 @@ class Settings(BaseSettings):
     baseline_path: Path
     extraction_prompt_version: str = "1.2.0"
     adjudication_prompt_version: str = "1.0.0"
-    nl2cypher_prompt_version: str = "1.0.0"
+    nl2cypher_prompt_version: str = "1.1.0"
     extraction_schema_version: str = "1.2.0"
 
     # ---------- Passive accounting ----------

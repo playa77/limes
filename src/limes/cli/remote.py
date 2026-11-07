@@ -23,6 +23,7 @@ def run(
     investigation_id: str | None = None,
     after_document: str | None = None,
     selections: str | None = None,
+    identity_reviews: str | None = None,
     extract_context: bool | None = None,
     days: int | None = None,
     version: str | None = None,
@@ -44,6 +45,9 @@ def run(
                 investigation_id=investigation_id,
                 after_document=after_document,
                 selections=json.loads(selections) if selections is not None else None,
+                identity_reviews=json.loads(identity_reviews)
+                if identity_reviews is not None
+                else None,
                 extract_context=extract_context,
                 days=days,
                 version=version,

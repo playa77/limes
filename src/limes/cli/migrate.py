@@ -91,6 +91,17 @@ def _migrate(
     if stamped is None:
         typer.echo("migrate: fresh database — nothing stamped, nothing to migrate")
         return
+    if _version_tuple(stamped) <= _version_tuple(target_version):
+        # Additive schema versions may still require an explicitly declared,
+        # idempotent source-owned semantic repair. New node stamps do not prove
+        # old DIP assertions were superseded.
+        for path in sorted((ontology_path.parent / "migrations").glob("*.py")):
+            module = _load_migration_module(path)
+            if getattr(module, "TO_VERSION", None) == target_version and getattr(
+                module, "DATA_REPAIR", False
+            ):
+                module.upgrade(driver)
+                typer.echo(f"migrate: applied source-owned data repair {path.name}")
     if stamped == target_version:
         typer.echo(f"migrate: database already at {target_version}; nothing to migrate")
         return

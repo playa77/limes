@@ -9,29 +9,63 @@ AC-DC-3). Non-empty results show the collapsible coverage summary.
 
 from __future__ import annotations
 
-from PySide6.QtCore import Qt
+from collections.abc import Callable
+from html import escape
+from typing import Any
+
+from PySide6.QtCore import QObject, QRunnable, Qt, QThreadPool, Signal, Slot
 from PySide6.QtWidgets import (
     QCheckBox,
     QLabel,
+    QPushButton,
     QTableWidget,
     QTableWidgetItem,
     QVBoxLayout,
     QWidget,
 )
 
-from limes_desktop.api.models import CoverageReport, Diagnosis
+from limes_desktop.api.models import CoverageReport, Diagnosis, OfficesResponse
 from limes_desktop.state import QueryOutcomeBundle, SessionState
 
 _EMPTY_STATE_TEXT = "query emptied the result set — see hop diagnosis below"
 
 
+class _CoverageSignals(QObject):
+    completed = Signal(int, object)
+
+
+class _CoverageRead(QRunnable):
+    def __init__(self, client: Any, generation: int) -> None:
+        super().__init__()
+        self.client = client
+        self.generation = generation
+        self.signals = _CoverageSignals()
+
+    def run(self) -> None:
+        try:
+            result = self.client.public_offices(limit=1, include_members=False)
+        except Exception as exc:
+            result = exc
+        self.signals.completed.emit(self.generation, result)
+
+
 class CoveragePanel(QWidget):
     """Coverage summary + hop-level diagnosis empty state (FR-DC-034)."""
 
-    def __init__(self, state: SessionState, parent: QWidget | None = None) -> None:
+    def __init__(
+        self,
+        state: SessionState,
+        parent: QWidget | None = None,
+        client_factory: Callable[[], Any] | None = None,
+    ) -> None:
         super().__init__(parent)
         self._state = state
         self._diagnosis: Diagnosis | None = None
+        self._client_factory = client_factory
+        self._offices: OfficesResponse | None = None
+        self._offices_task: _CoverageRead | None = None
+        self._offices_generation = 0
+        state.connection_changed.connect(self._offices_connection_changed)
 
         self.diagnosis_table = QTableWidget(0, 3, self)
         self.diagnosis_table.setHorizontalHeaderLabels(["hop", "relation", "graph-wide count"])
@@ -60,6 +94,21 @@ class CoveragePanel(QWidget):
         layout.addWidget(self._empty_label)
         layout.addWidget(self.diagnosis_table)
         layout.addWidget(self.summary_widget)
+        self.offices_button = QPushButton("Public office coverage", self)
+        self.offices_button.setVisible(client_factory is not None)
+        self.offices_button.clicked.connect(self._load_offices)
+        self.offices_table = QTableWidget(0, 5, self)
+        self.offices_table.setHorizontalHeaderLabels(
+            ["Institution", "Status", "Loaded / acquired", "Observed", "Diagnosis"]
+        )
+        self.offices_table.setVisible(False)
+        self.offices_table.cellDoubleClicked.connect(self._select_office_snapshot)
+        self.offices_note = QLabel("", self)
+        self.offices_note.setWordWrap(True)
+        self.offices_note.setTextFormat(Qt.TextFormat.PlainText)
+        layout.addWidget(self.offices_button)
+        layout.addWidget(self.offices_table)
+        layout.addWidget(self.offices_note)
 
         state.result_arrived.connect(self._on_result)
 
@@ -88,8 +137,72 @@ class CoveragePanel(QWidget):
             when = refreshed if refreshed else "never"
             self._summary_rows.append((source, when))
         self._summary_label.setText(
-            "<br>".join(f"<b>{name}</b>: {value}" for name, value in self._summary_rows)
+            "<br>".join(
+                f"<b>{escape(name)}</b>: {escape(value)}" for name, value in self._summary_rows
+            )
         )
+
+    def _load_offices(self) -> None:
+        if self._client_factory is None or self._offices_task is not None:
+            return
+        self.offices_table.setRowCount(0)
+        self._offices = None
+        try:
+            client = self._client_factory()
+        except Exception as exc:
+            self.offices_note.setText(f"Public office coverage unavailable: {exc}")
+            return
+        self.offices_button.setEnabled(False)
+        self.offices_note.setText("Reading acquired public office coverage…")
+        self._offices_generation += 1
+        self._offices_task = _CoverageRead(client, self._offices_generation)
+        self._offices_task.signals.completed.connect(self._offices_finished)
+        QThreadPool.globalInstance().start(self._offices_task)
+
+    def _offices_connection_changed(self, profile: object) -> None:
+        del profile
+        self._offices_generation += 1
+        self._offices = None
+        self.offices_table.setRowCount(0)
+        self.offices_note.setText("Connection changed; refresh acquired coverage.")
+
+    @Slot(int, object)
+    def _offices_finished(self, generation: int, result: object) -> None:
+        self._offices_task = None
+        self.offices_button.setEnabled(True)
+        if generation != self._offices_generation:
+            return
+        if isinstance(result, OfficesResponse):
+            self.show_offices(result)
+        else:
+            self.offices_note.setText(f"Public office coverage unavailable: {result}")
+
+    def show_offices(self, result: OfficesResponse) -> None:
+        self._offices = result
+        self.offices_table.setVisible(True)
+        self.offices_table.setRowCount(len(result.scopes))
+        for index, scope in enumerate(result.scopes):
+            values = [
+                scope.institution,
+                scope.status,
+                f"{scope.loaded} / {scope.acquired}",
+                scope.observed_at or "unknown",
+                "; ".join(scope.diagnosis),
+            ]
+            for column, value in enumerate(values):
+                self.offices_table.setItem(index, column, QTableWidgetItem(value))
+        self.offices_note.setText(
+            f"Selection coverage: {result.coverage_status}. "
+            "Double-click an acquired scope to inspect its snapshot and evidence. "
+            + " ".join(result.diagnosis)
+        )
+
+    def _select_office_snapshot(self, row: int, column: int) -> None:
+        del column
+        if self._offices is not None and 0 <= row < len(self._offices.scopes):
+            snapshot = self._offices.scopes[row].snapshot_id
+            if snapshot:
+                self._state.set_selection(snapshot)
 
     # -- seams ----------------------------------------------------------------
 

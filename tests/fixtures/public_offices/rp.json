@@ -1,0 +1,136 @@
+{
+  "scope": "rp",
+  "institution": "Landtag Rheinland-Pfalz",
+  "pages": [
+    {
+      "url": "https://landtag-rlp.de/de/parlament/abgeordnete/abgeordnetensuche.htm",
+      "final_url": "https://landtag-rlp.de/de/parlament/abgeordnete/abgeordnetensuche.htm",
+      "file": "106d4714586e179ccd88ae9186cb4852c7ca507013829ee584a15fdc3c7d0a36.gz",
+      "sha256": "106d4714586e179ccd88ae9186cb4852c7ca507013829ee584a15fdc3c7d0a36",
+      "retrieved_at": "2026-11-07T17:53:18.756991+00:00"
+    },
+    {
+      "url": "https://api.landtag-rlp.de/api/mp/filteredList?active=active&electoralPeriodIds=11&searchTerm=",
+      "final_url": "https://api.landtag-rlp.de/api/mp/filteredList?active=active&electoralPeriodIds=11&searchTerm=",
+      "file": "eb4e5c97be8704e9466d5426767f74c94c53ecbfe1ef9278d4bc89a5c957759d.gz",
+      "sha256": "eb4e5c97be8704e9466d5426767f74c94c53ecbfe1ef9278d4bc89a5c957759d",
+      "retrieved_at": "2026-11-07T17:53:20.655555+00:00"
+    }
+  ],
+  "acquired_count": 105,
+  "expected_count": 105,
+  "observed_terms": [
+    "19. Wahlperiode"
+  ],
+  "departed_excluded": 0,
+  "error": null,
+  "first_rows": [
+    {
+      "external_id": "rp:1",
+      "name": "Doris Ahnen",
+      "aliases": [],
+      "profile_url": "https://landtag-rlp.de/de/parlament/abgeordnete/abgeordnetensuche/doris-ahnen-1",
+      "role": "member",
+      "land": null,
+      "term": "19. Wahlperiode",
+      "group": "SPD",
+      "party": null,
+      "constituency": "Mainz II",
+      "mandate_kind": "Direktmandat",
+      "service_start": "2006-05-18T00:00:00Z",
+      "service_end": null,
+      "source_updated_text": "2026-08-12T14:55:38",
+      "service_precision": "day",
+      "bundestag_id": null,
+      "locator": "/content/0",
+      "evidence_hash": "eb4e5c97be8704e9466d5426767f74c94c53ecbfe1ef9278d4bc89a5c957759d",
+      "evidence_url": "https://api.landtag-rlp.de/api/mp/filteredList?active=active&electoralPeriodIds=11&searchTerm=",
+      "profile_evidence_hash": null,
+      "profile_member_class": null,
+      "conflicts": [],
+      "leadership": [],
+      "service_evidence": []
+    },
+    {
+      "external_id": "rp:104",
+      "name": "Katharina Binz",
+      "aliases": [],
+      "profile_url": "https://landtag-rlp.de/de/parlament/abgeordnete/abgeordnetensuche/katharina-binz-104",
+      "role": "member",
+      "land": null,
+      "term": "19. Wahlperiode",
+      "group": "BÜNDNIS 90/DIE GRÜNEN",
+      "party": null,
+      "constituency": "Mainz I",
+      "mandate_kind": "Landesliste",
+      "service_start": "2026-05-18T00:00:00Z",
+      "service_end": null,
+      "source_updated_text": "2026-08-05T11:37:47",
+      "service_precision": "day",
+      "bundestag_id": null,
+      "locator": "/content/7",
+      "evidence_hash": "eb4e5c97be8704e9466d5426767f74c94c53ecbfe1ef9278d4bc89a5c957759d",
+      "evidence_url": "https://api.landtag-rlp.de/api/mp/filteredList?active=active&electoralPeriodIds=11&searchTerm=",
+      "profile_evidence_hash": null,
+      "profile_member_class": null,
+      "conflicts": [],
+      "leadership": [],
+      "service_evidence": []
+    }
+  ],
+  "term_evidence": [
+    {
+      "url": "https://www.abgeordnetenwatch.de/api/v2/parliaments/7",
+      "file": "f3936c98195492d0fdb4c78aa51f1d076344241b31c4d0d0669f259d3b2648f5.gz",
+      "sha256": "f3936c98195492d0fdb4c78aa51f1d076344241b31c4d0d0669f259d3b2648f5",
+      "retrieved_at": "2026-11-07T18:08:58.791017+00:00",
+      "purpose": "secondary_term_metadata"
+    },
+    {
+      "url": "https://www.abgeordnetenwatch.de/api/v2/parliament-periods/166",
+      "file": "77375114318000089a7d5134ec30d1c6579a156bf9cee498cee3f97742823f32.gz",
+      "sha256": "77375114318000089a7d5134ec30d1c6579a156bf9cee498cee3f97742823f32",
+      "retrieved_at": "2026-11-07T18:09:01.718366+00:00",
+      "purpose": "secondary_term_metadata"
+    }
+  ],
+  "secondary_term": {
+    "id": 166,
+    "entity_type": "parliament_period",
+    "label": "Rheinland-Pfalz 2026 - 2031",
+    "api_url": "https://www.abgeordnetenwatch.de/api/v2/parliament-periods/166",
+    "abgeordnetenwatch_url": "https://www.abgeordnetenwatch.de/rheinland-pfalz",
+    "parliament": {
+      "id": 7,
+      "entity_type": "parliament",
+      "label": "Rheinland-Pfalz",
+      "api_url": "https://www.abgeordnetenwatch.de/api/v2/parliaments/7",
+      "abgeordnetenwatch_url": "https://www.abgeordnetenwatch.de/rheinland-pfalz"
+    },
+    "previous_period": {
+      "id": 164,
+      "entity_type": "parliament_period",
+      "label": "Rheinland-Pfalz Wahl 2026",
+      "api_url": "https://www.abgeordnetenwatch.de/api/v2/parliament-periods/164",
+      "abgeordnetenwatch_url": "https://www.abgeordnetenwatch.de/rheinland-pfalz/wahl-2026"
+    },
+    "type": "legislature",
+    "election_date": null,
+    "start_date_period": "2026-05-18",
+    "end_date_period": "2031-05-31"
+  },
+  "usage": {
+    "attribution": "Landtag Rheinland-Pfalz",
+    "licence_assumption": "No blanket open licence assumed; issuer attribution retained; image assets are not acquired.",
+    "terms_status": "No separate usage link is exposed in the pinned directory; retain official source attribution."
+  },
+  "qualification_date": "2026-11-07",
+  "credential_requirement": "Public HTTPS GET; no operator credential required",
+  "update_semantics": "Dated retrieval/current-directory observation; original bytes retained. Provider update times are unknown unless explicitly exposed.",
+  "historical_count": 0,
+  "profile_errors": [],
+  "profile_conflicts": [],
+  "check_basis": "official_set_and_count",
+  "source_updates": [],
+  "qualified_term": "19. Wahlperiode"
+}

@@ -1,3 +1,16 @@
+## 2026-11-07 — BE-56 German parliamentary members and federal officeholders
+
+- Implement all 21 official current-roster mappings, bounded resumable acquisition,
+  original evidence archives and per-scope reconciliation/freshness reporting.
+- Add ontology 1.4 scoped identifiers, parliamentary groups and roster artifacts;
+  preserve canonical identity and DIP history through additive source-owned repair.
+- Expose authenticated public-office reads, audited identity review jobs and generic
+  desktop coverage/evidence navigation. Version NL query guidance as 1.1.0.
+- Qualify real source fixtures, public DIP authentication and disposable graph/API
+  behavior. See VERIFICATION for full candidate results; no production load is claimed.
+- Full acceptance remains blocked at A7: the runtime-stack fixture exceeds the
+  executor’s 8 GB disk; five test lanes / 1,397 tests and static guards pass.
+
 ## 2026-11-07 — BE-56 parliamentary member and federal-officeholder planning
 
 - Set the next person-coverage priority to all serving Bundestag members and

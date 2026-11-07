@@ -59,14 +59,17 @@ Relevant current tests are linked, not treated as proof of live acceptance.
 
 ### BE-56 compatibility — German parliamentary members and federal officeholders
 
-Planned for the next implementation session as part of the full backend BE-56
-parent. [Plan and acceptance](GERMAN_PARLIAMENT_MEMBERS.md) require generic entity,
+Implemented in the full backend BE-56 candidate; qualification is recorded in
+[VERIFICATION](VERIFICATION.md). [Plan and acceptance](GERMAN_PARLIAMENT_MEMBERS.md) require generic entity,
 query and evidence views to display people, parliament/term mandates, distinct
 party/group information and per-scope freshness/coverage. Include judicial offices
 in both Bundesverfassungsgericht Senates, regular/deputy Bundesrat membership with
 the represented Land, and the serving Bundespräsident/Bundespräsidentin. Extend API mirrors and
 generic views as necessary in that same package; no separate parliamentary app
-or desktop delivery sequence is introduced. No implementation is claimed here.
+or desktop delivery sequence is introduced. CoveragePanel now reads all 21 scopes
+asynchronously through authenticated HTTP and opens snapshot evidence through the
+generic entity flow. Connection changes discard late replies. API mirrors retain
+roster time basis and snapshot provenance; no desktop database/provider access is added.
 
 ### DC-14 — desktop correctness and explicit acceptance qualification
 

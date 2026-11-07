@@ -8,8 +8,10 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from limes.enrichment.models import EnrichmentSelection
+from limes.public_offices.models import IdentityReview
 
 Command = Literal[
+    "public-offices-identify",
     "enrich",
     "news-reextract",
     "news-refresh",
@@ -29,6 +31,9 @@ class JobRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     request_id: UUID
     command: Command
+    identity_reviews: list[IdentityReview] | None = Field(
+        default=None, min_length=1, max_length=100
+    )
     source: str | None = Field(default=None, pattern=r"^[a-z][a-z0-9_]{0,63}$")
     investigation_id: str | None = Field(default=None, pattern=r"^[a-zA-Z0-9_-]{1,64}$")
     after_document: str | None = Field(default=None, pattern=r"^[a-f0-9]{64}$")
@@ -42,6 +47,7 @@ class JobRequest(BaseModel):
     @model_validator(mode="after")
     def validate_parameters(self) -> JobRequest:
         permitted = {
+            "public-offices-identify": {"identity_reviews"},
             "enrich": {"source", "selections", "extract_context"},
             "news-reextract": {"investigation_id", "version", "after_document"},
             "news-refresh": {"investigation_id"},
@@ -53,7 +59,9 @@ class JobRequest(BaseModel):
             "evaluate": {"evaluation"},
         }.get(self.command, set())
         for field in (
-            "selections", "extract_context",
+            "identity_reviews",
+            "selections",
+            "extract_context",
             "source",
             "days",
             "version",
@@ -65,6 +73,7 @@ class JobRequest(BaseModel):
             if getattr(self, field) is not None and field not in permitted:
                 raise ValueError(f"{field} is not supported by {self.command}")
         required = {
+            "public-offices-identify": ("identity_reviews",),
             "enrich": ("source", "selections"),
             "news-reextract": ("investigation_id", "version"),
             "news-refresh": ("investigation_id",),
@@ -98,6 +107,13 @@ class JobRequest(BaseModel):
 
     def argv(self) -> list[str]:
         args = ["limes", self.command]
+        if self.identity_reviews:
+            import json
+
+            args += [
+                "--identity-reviews",
+                json.dumps([r.model_dump() for r in self.identity_reviews]),
+            ]
         if self.selections:
             import json
 

@@ -445,6 +445,7 @@ def _enrich(mention: Mention, ctx: RunContext) -> WikidataMatch | None:
 
 def observation_identity_candidates(
     driver: GraphDriver, surface: str, entity_type: str,
+    aliases: list[str] | None = None,
 ) -> list[str]:
     """Conservative deterministic resolution for secondary holder/officer observations.
 
@@ -454,6 +455,15 @@ def observation_identity_candidates(
     """
     if not surface.strip():
         return []
+    if aliases is not None:
+        rows = driver.read(
+            "MATCH (n:Entity) WHERE $type IN labels(n) AND "
+            "(toLower(n.label) IN $names OR "
+            "any(a IN coalesce(n.aliases, []) WHERE toLower(a) IN $names)) "
+            "RETURN n.entity_id AS id ORDER BY id LIMIT 11",
+            {"type": entity_type, "names": [a.casefold() for a in aliases]}, 30,
+        )
+        return [str(row["id"]) for row in rows]
     rows = driver.read(
         "MATCH (n:Entity) WHERE $type IN labels(n) AND "
         "(toLower(n.label) = toLower($name) OR "

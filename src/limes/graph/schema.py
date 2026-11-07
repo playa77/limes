@@ -41,6 +41,18 @@ logger = structlog.get_logger(__name__)
 # statement is `IF NOT EXISTS` and therefore safe in any order on a fresh
 # database and on re-runs.
 _SCHEMA_STATEMENTS: list[str] = [
+    "CREATE CONSTRAINT roster_load_check_id IF NOT EXISTS FOR (n:RosterLoadCheck) REQUIRE n.check_id IS UNIQUE",
+    "CREATE INDEX roster_load_check_snapshot IF NOT EXISTS FOR (n:RosterLoadCheck) ON (n.snapshot_id, n.checked_at)",
+    "CREATE CONSTRAINT person_identity_review_id IF NOT EXISTS FOR (n:PersonIdentityReview) REQUIRE n.request_id IS UNIQUE",
+    "CREATE INDEX person_identity_review_time IF NOT EXISTS FOR (n:PersonIdentityReview) ON (n.external_id, n.recorded_at)",
+    "CREATE CONSTRAINT public_institution_id IF NOT EXISTS FOR (n:PublicBody) REQUIRE n.institution_id IS UNIQUE",
+    "CREATE CONSTRAINT public_office_key IF NOT EXISTS FOR (n:Office) REQUIRE n.office_key IS UNIQUE",
+    "CREATE CONSTRAINT parliamentary_group_id IF NOT EXISTS FOR (n:ParliamentaryGroup) REQUIRE n.group_id IS UNIQUE",
+    "CREATE CONSTRAINT roster_snapshot_id IF NOT EXISTS FOR (n:RosterSnapshot) REQUIRE n.snapshot_id IS UNIQUE",
+    "CREATE CONSTRAINT roster_membership_id IF NOT EXISTS FOR (n:RosterMembership) REQUIRE n.membership_id IS UNIQUE",
+    "CREATE CONSTRAINT person_external_id IF NOT EXISTS FOR (n:PersonIdentifier) REQUIRE n.external_id IS UNIQUE",
+    "CREATE INDEX roster_snapshot_scope IF NOT EXISTS FOR (n:RosterSnapshot) ON (n.scope, n.observed_at)",
+    "CREATE INDEX roster_membership_snapshot IF NOT EXISTS FOR (n:RosterMembership) ON (n.snapshot_id)",
     "CREATE CONSTRAINT security_isin IF NOT EXISTS FOR (n:Security) REQUIRE n.isin IS UNIQUE",
     "CREATE CONSTRAINT listing_id IF NOT EXISTS FOR (n:SecurityListing) REQUIRE n.listing_id IS UNIQUE",
     "CREATE CONSTRAINT enrichment_check_id IF NOT EXISTS FOR (n:EnrichmentCheck) REQUIRE n.check_id IS UNIQUE",

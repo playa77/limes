@@ -162,7 +162,7 @@ class MainWindow(QMainWindow):
 
         # FR-DC-034/AC-DC-3: one shared coverage panel across all query
         # surfaces; the panel self-connects to result_arrived in __init__
-        self.coverage_panel = CoveragePanel(state)
+        self.coverage_panel = CoveragePanel(state, client_factory=client_factory)
         coverage_dock = QDockWidget("Coverage", self)
         coverage_dock.setWidget(self.coverage_panel)
         coverage_dock.setFeatures(QDockWidget.DockWidgetFeature.DockWidgetMovable)

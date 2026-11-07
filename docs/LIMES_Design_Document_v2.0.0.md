@@ -202,9 +202,9 @@ Yahoo Finance supplies secondary company observations. Neither is an official
 registry or independent corroboration of underlying reused reports. Their planned
 integration is specified in §3.6; BE-46 owns implementation and acceptance.
 
-### 3.2.1 Next person coverage: German parliamentary members and federal officeholders (BE-56 / D-97)
+### 3.2.1 German public-officeholder coverage: German parliamentary members and federal officeholders (BE-56 / D-97)
 
-The next person-coverage goal is every serving member of the Bundestag and all
+The BE-56 acquisition contract covers every serving member of the Bundestag and all
 16 German state parliaments, including Berlin's Abgeordnetenhaus and the Bremen
 and Hamburg Bürgerschaften, all serving judges of the First and Second Senates of
 the Bundesverfassungsgericht, all regular/deputy Bundesrat members, and the serving
@@ -227,8 +227,10 @@ party membership. Reuse canonical people across multiple institutional roles.
 
 [BE-56 plan and acceptance](GERMAN_PARLIAMENT_MEMBERS.md) specify source selection,
 existing DIP corrections, migration, acquisition, API/desktop compatibility and
-qualification. Implementation is reserved for the next session; this requirement
-is not evidence that the people have already been loaded.
+qualification. The D-98 implementation candidate supplies all 21 bounded source
+mappings, scoped identifiers, roster snapshots/membership evidence and coverage reads.
+[Qualified sources](BE56_SOURCES.md) and [verification](VERIFICATION.md) distinguish
+local capability from production population; no deployed loaded coverage is inferred.
 
 ### 3.3 Container Topology
 

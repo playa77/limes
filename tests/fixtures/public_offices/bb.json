@@ -1,0 +1,132 @@
+{
+  "scope": "bb",
+  "institution": "Landtag Brandenburg",
+  "pages": [
+    {
+      "url": "https://www.landtag.brandenburg.de/de/abgeordnete_fraktionen_-_gruppe/abgeordnete/abgeordnete_im_ueberblick/25777",
+      "final_url": "https://www.landtag.brandenburg.de/de/abgeordnete_fraktionen_-_gruppe/abgeordnete/abgeordnete_im_ueberblick/25777",
+      "file": "43d4ab9cf7b8713a4363fafa091418445b661d0b942e3a23c05fdf69a22cc460.gz",
+      "sha256": "43d4ab9cf7b8713a4363fafa091418445b661d0b942e3a23c05fdf69a22cc460",
+      "retrieved_at": "2026-11-07T17:53:14.840016+00:00"
+    }
+  ],
+  "acquired_count": 88,
+  "expected_count": 88,
+  "observed_terms": [],
+  "departed_excluded": 0,
+  "error": null,
+  "first_rows": [
+    {
+      "external_id": "bb:person:11222",
+      "name": "Berndt, Dr. Hans-Christoph",
+      "aliases": [],
+      "profile_url": "https://www.landtag.brandenburg.de/de/berndt_hans-christoph_(dr.)/11222",
+      "role": "member",
+      "land": null,
+      "term": "abgeordnetenwatch:period:158 (Brandenburg 2024 - 2029)",
+      "group": "AfD-Fraktion",
+      "party": null,
+      "constituency": "Wahlkreis 28 (Dahme-Spreewald III)",
+      "mandate_kind": null,
+      "service_start": null,
+      "service_end": null,
+      "source_updated_text": null,
+      "service_precision": null,
+      "bundestag_id": null,
+      "locator": "/html/body/div/div/main/div[3]/section[2]/div[2]/table/tbody/tr[3]/td[1]/a",
+      "evidence_hash": "43d4ab9cf7b8713a4363fafa091418445b661d0b942e3a23c05fdf69a22cc460",
+      "evidence_url": "https://www.landtag.brandenburg.de/de/abgeordnete_fraktionen_-_gruppe/abgeordnete/abgeordnete_im_ueberblick/25777",
+      "profile_evidence_hash": null,
+      "profile_member_class": null,
+      "conflicts": [],
+      "leadership": [],
+      "service_evidence": []
+    },
+    {
+      "external_id": "bb:person:11226",
+      "name": "Drenske, Peter",
+      "aliases": [],
+      "profile_url": "https://www.landtag.brandenburg.de/de/drenske_peter/11226",
+      "role": "member",
+      "land": null,
+      "term": "abgeordnetenwatch:period:158 (Brandenburg 2024 - 2029)",
+      "group": "AfD-Fraktion",
+      "party": null,
+      "constituency": "Wahlkreis 36 (Elbe-Elster I)",
+      "mandate_kind": null,
+      "service_start": null,
+      "service_end": null,
+      "source_updated_text": null,
+      "service_precision": null,
+      "bundestag_id": null,
+      "locator": "/html/body/div/div/main/div[3]/section[4]/div[2]/table/tbody/tr[3]/td[1]/a",
+      "evidence_hash": "43d4ab9cf7b8713a4363fafa091418445b661d0b942e3a23c05fdf69a22cc460",
+      "evidence_url": "https://www.landtag.brandenburg.de/de/abgeordnete_fraktionen_-_gruppe/abgeordnete/abgeordnete_im_ueberblick/25777",
+      "profile_evidence_hash": null,
+      "profile_member_class": null,
+      "conflicts": [],
+      "leadership": [],
+      "service_evidence": []
+    }
+  ],
+  "term_evidence": [
+    {
+      "url": "https://www.abgeordnetenwatch.de/api/v2/parliaments/16",
+      "file": "91a0ef7763b36edd9af59e1d59f9b287efd0b8446d4483341499afba672472d7.gz",
+      "sha256": "91a0ef7763b36edd9af59e1d59f9b287efd0b8446d4483341499afba672472d7",
+      "retrieved_at": "2026-11-07T17:56:09.504134+00:00",
+      "purpose": "secondary_term_metadata"
+    },
+    {
+      "url": "https://www.abgeordnetenwatch.de/api/v2/parliament-periods/158",
+      "file": "94a6c63c177b801fa949a5ea6ce793b4d8d33138c4ba0def2a9ae562ffaf4603.gz",
+      "sha256": "94a6c63c177b801fa949a5ea6ce793b4d8d33138c4ba0def2a9ae562ffaf4603",
+      "retrieved_at": "2026-11-07T17:56:09.960505+00:00",
+      "purpose": "secondary_term_metadata"
+    }
+  ],
+  "secondary_term": {
+    "id": 158,
+    "entity_type": "parliament_period",
+    "label": "Brandenburg 2024 - 2029",
+    "api_url": "https://www.abgeordnetenwatch.de/api/v2/parliament-periods/158",
+    "abgeordnetenwatch_url": "https://www.abgeordnetenwatch.de/brandenburg",
+    "parliament": {
+      "id": 16,
+      "entity_type": "parliament",
+      "label": "Brandenburg",
+      "api_url": "https://www.abgeordnetenwatch.de/api/v2/parliaments/16",
+      "abgeordnetenwatch_url": "https://www.abgeordnetenwatch.de/brandenburg"
+    },
+    "previous_period": {
+      "id": 154,
+      "entity_type": "parliament_period",
+      "label": "Brandenburg Wahl 2024",
+      "api_url": "https://www.abgeordnetenwatch.de/api/v2/parliament-periods/154",
+      "abgeordnetenwatch_url": "https://www.abgeordnetenwatch.de/brandenburg/wahl-2024"
+    },
+    "type": "legislature",
+    "election_date": null,
+    "start_date_period": "2024-10-17",
+    "end_date_period": "2029-10-22"
+  },
+  "usage": {
+    "attribution": "Landtag Brandenburg",
+    "licence_assumption": "No blanket open licence assumed; issuer attribution retained; image assets are not acquired.",
+    "terms_url": "https://www.landtag.brandenburg.de/de/bb1.c.162497.de",
+    "link_label": "Impressum",
+    "status": 200,
+    "file": "7bea32bd766ce87524ac598351f2fb6e0d5ec69dae1f1d0a6bfe48ae5991824f.gz",
+    "sha256": "7bea32bd766ce87524ac598351f2fb6e0d5ec69dae1f1d0a6bfe48ae5991824f",
+    "retrieved_at": "2026-11-07T18:50:53.297774+00:00"
+  },
+  "qualification_date": "2026-11-07",
+  "credential_requirement": "Public HTTPS GET; no operator credential required",
+  "update_semantics": "Dated retrieval/current-directory observation; original bytes retained. Provider update times are unknown unless explicitly exposed.",
+  "historical_count": 0,
+  "profile_errors": [],
+  "profile_conflicts": [],
+  "check_basis": "official_set_and_count;secondary_term_metadata",
+  "source_updates": [],
+  "qualified_term": "abgeordnetenwatch:period:158 (Brandenburg 2024 - 2029)"
+}

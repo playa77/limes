@@ -1,0 +1,1303 @@
+{
+  "scope": "br",
+  "institution": "Bundesrat",
+  "pages": [
+    {
+      "url": "https://www.bundesrat.de/DE/bundesrat/mitglieder/mitglieder-node.html",
+      "final_url": "https://www.bundesrat.de/DE/bundesrat/mitglieder/mitglieder-node.html",
+      "file": "e19f7ab0fbd3fe29381bb958abe41008e9c62d2454c75760c0c8fa6a63e8f15f.gz",
+      "sha256": "e19f7ab0fbd3fe29381bb958abe41008e9c62d2454c75760c0c8fa6a63e8f15f",
+      "retrieved_at": "2026-11-07T17:54:29.139797+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/DE/bundesrat/mitglieder/mitglieder-node.html?param1=state-3&param3=Alle",
+      "final_url": "https://www.bundesrat.de/DE/bundesrat/mitglieder/mitglieder-node.html?param1=state-3&param3=Alle",
+      "file": "7e8cb12ee9c9d2d8ac4ef68068093bbab0491424f9b9dda4829c76297d560945.gz",
+      "sha256": "7e8cb12ee9c9d2d8ac4ef68068093bbab0491424f9b9dda4829c76297d560945",
+      "retrieved_at": "2026-11-07T17:54:29.716127+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/DE/bundesrat/mitglieder/mitglieder-node.html?param1=state-2&param3=Alle",
+      "final_url": "https://www.bundesrat.de/DE/bundesrat/mitglieder/mitglieder-node.html?param1=state-2&param3=Alle",
+      "file": "b76886356f80ff422af1f6bbcb782b899283de135c5f83b05475a0b8275a8dd0.gz",
+      "sha256": "b76886356f80ff422af1f6bbcb782b899283de135c5f83b05475a0b8275a8dd0",
+      "retrieved_at": "2026-11-07T17:54:30.287990+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/DE/bundesrat/mitglieder/mitglieder-node.html?param1=state-4&param3=Alle",
+      "final_url": "https://www.bundesrat.de/DE/bundesrat/mitglieder/mitglieder-node.html?param1=state-4&param3=Alle",
+      "file": "a947909ecb420659bacc8a89f2655516090476dba295d4aaae937b1ac79a00de.gz",
+      "sha256": "a947909ecb420659bacc8a89f2655516090476dba295d4aaae937b1ac79a00de",
+      "retrieved_at": "2026-11-07T17:54:30.856981+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/DE/bundesrat/mitglieder/mitglieder-node.html?param1=state-5&param3=Alle",
+      "final_url": "https://www.bundesrat.de/DE/bundesrat/mitglieder/mitglieder-node.html?param1=state-5&param3=Alle",
+      "file": "485f6033b09d989baacc79740af07d769986054c0796a0092b3eefa78c99bd98.gz",
+      "sha256": "485f6033b09d989baacc79740af07d769986054c0796a0092b3eefa78c99bd98",
+      "retrieved_at": "2026-11-07T17:54:31.399279+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/DE/bundesrat/mitglieder/mitglieder-node.html?param1=state-6&param3=Alle",
+      "final_url": "https://www.bundesrat.de/DE/bundesrat/mitglieder/mitglieder-node.html?param1=state-6&param3=Alle",
+      "file": "e3e1f00789270c8b556a2c49de91e1ea846a6a3816a5ff3b66ad400e2ed583db.gz",
+      "sha256": "e3e1f00789270c8b556a2c49de91e1ea846a6a3816a5ff3b66ad400e2ed583db",
+      "retrieved_at": "2026-11-07T17:54:31.986575+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/DE/bundesrat/mitglieder/mitglieder-node.html?param1=state-7&param3=Alle",
+      "final_url": "https://www.bundesrat.de/DE/bundesrat/mitglieder/mitglieder-node.html?param1=state-7&param3=Alle",
+      "file": "2b169b579f27c4ab6d6bbf22682e228863d5d57466e4133ac5ee3bd79d9c8b27.gz",
+      "sha256": "2b169b579f27c4ab6d6bbf22682e228863d5d57466e4133ac5ee3bd79d9c8b27",
+      "retrieved_at": "2026-11-07T17:54:32.529524+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/DE/bundesrat/mitglieder/mitglieder-node.html?param1=state-8&param3=Alle",
+      "final_url": "https://www.bundesrat.de/DE/bundesrat/mitglieder/mitglieder-node.html?param1=state-8&param3=Alle",
+      "file": "fcbe446d7cacdf0ce8dbe94f2d1bc7fbe32d723d830c9f24d96061f559213e44.gz",
+      "sha256": "fcbe446d7cacdf0ce8dbe94f2d1bc7fbe32d723d830c9f24d96061f559213e44",
+      "retrieved_at": "2026-11-07T17:54:32.940726+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/DE/bundesrat/mitglieder/mitglieder-node.html?param1=state-9&param3=Alle",
+      "final_url": "https://www.bundesrat.de/DE/bundesrat/mitglieder/mitglieder-node.html?param1=state-9&param3=Alle",
+      "file": "200a1c51e72164fef3df243a5051d3849c6b40ffd730c2cb5b81cca5139c8f90.gz",
+      "sha256": "200a1c51e72164fef3df243a5051d3849c6b40ffd730c2cb5b81cca5139c8f90",
+      "retrieved_at": "2026-11-07T17:54:33.415317+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/DE/bundesrat/mitglieder/mitglieder-node.html?param1=state-10&param3=Alle",
+      "final_url": "https://www.bundesrat.de/DE/bundesrat/mitglieder/mitglieder-node.html?param1=state-10&param3=Alle",
+      "file": "13251b086883e1fa81f7297601df140960f2c8f52db108547949e415744ba3d5.gz",
+      "sha256": "13251b086883e1fa81f7297601df140960f2c8f52db108547949e415744ba3d5",
+      "retrieved_at": "2026-11-07T17:54:33.847051+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/DE/bundesrat/mitglieder/mitglieder-node.html?param1=state-11&param3=Alle",
+      "final_url": "https://www.bundesrat.de/DE/bundesrat/mitglieder/mitglieder-node.html?param1=state-11&param3=Alle",
+      "file": "f12d17513db7fec4e86fcaf57de293b16e7d778e77d62053e23f511a3704e3b1.gz",
+      "sha256": "f12d17513db7fec4e86fcaf57de293b16e7d778e77d62053e23f511a3704e3b1",
+      "retrieved_at": "2026-11-07T17:54:34.491124+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/DE/bundesrat/mitglieder/mitglieder-node.html?param1=state-12&param3=Alle",
+      "final_url": "https://www.bundesrat.de/DE/bundesrat/mitglieder/mitglieder-node.html?param1=state-12&param3=Alle",
+      "file": "8591270a2fdd20876def263cf9edf357f1790dafc64bfdbe69e277ecf5c33a79.gz",
+      "sha256": "8591270a2fdd20876def263cf9edf357f1790dafc64bfdbe69e277ecf5c33a79",
+      "retrieved_at": "2026-11-07T17:54:35.064539+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/DE/bundesrat/mitglieder/mitglieder-node.html?param1=state-13&param3=Alle",
+      "final_url": "https://www.bundesrat.de/DE/bundesrat/mitglieder/mitglieder-node.html?param1=state-13&param3=Alle",
+      "file": "a87fb55905bfc5e3d9e2d343ec5f278b82f71defb063ae078e4f829262bbdfbf.gz",
+      "sha256": "a87fb55905bfc5e3d9e2d343ec5f278b82f71defb063ae078e4f829262bbdfbf",
+      "retrieved_at": "2026-11-07T17:54:35.646549+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/DE/bundesrat/mitglieder/mitglieder-node.html?param1=state-14&param3=Alle",
+      "final_url": "https://www.bundesrat.de/DE/bundesrat/mitglieder/mitglieder-node.html?param1=state-14&param3=Alle",
+      "file": "4f24aa334db59d50a0124465ea1d51511d182d89cf99238ccbf9d5b9cac0a479.gz",
+      "sha256": "4f24aa334db59d50a0124465ea1d51511d182d89cf99238ccbf9d5b9cac0a479",
+      "retrieved_at": "2026-11-07T17:54:36.076831+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/DE/bundesrat/mitglieder/mitglieder-node.html?param1=state-15&param3=Alle",
+      "final_url": "https://www.bundesrat.de/DE/bundesrat/mitglieder/mitglieder-node.html?param1=state-15&param3=Alle",
+      "file": "84ce1e4e909420bf65401bbfdc220f205b6dc5570f5ec853df95bef4b4c0ee39.gz",
+      "sha256": "84ce1e4e909420bf65401bbfdc220f205b6dc5570f5ec853df95bef4b4c0ee39",
+      "retrieved_at": "2026-11-07T17:54:36.492329+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/DE/bundesrat/mitglieder/mitglieder-node.html?param1=state-16&param3=Alle",
+      "final_url": "https://www.bundesrat.de/DE/bundesrat/mitglieder/mitglieder-node.html?param1=state-16&param3=Alle",
+      "file": "69442e4d7f37bb246f17eea5b7d18519e9bd77a591a03f1d031a0db0aaef1a9d.gz",
+      "sha256": "69442e4d7f37bb246f17eea5b7d18519e9bd77a591a03f1d031a0db0aaef1a9d",
+      "retrieved_at": "2026-11-07T17:54:37.017706+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/DE/bundesrat/mitglieder/mitglieder-node.html?param1=state-17&param3=Alle",
+      "final_url": "https://www.bundesrat.de/DE/bundesrat/mitglieder/mitglieder-node.html?param1=state-17&param3=Alle",
+      "file": "55fe79d00ccff51c97ec2ff4c042fd9588a32bdde0f7bd46f66a55350970faa4.gz",
+      "sha256": "55fe79d00ccff51c97ec2ff4c042fd9588a32bdde0f7bd46f66a55350970faa4",
+      "retrieved_at": "2026-11-07T17:54:37.412871+00:00"
+    }
+  ],
+  "acquired_count": 180,
+  "expected_count": null,
+  "observed_terms": [],
+  "departed_excluded": 0,
+  "error": null,
+  "first_rows": [
+    {
+      "external_id": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/bb/crumbach-robert.html",
+      "name": "Robert Crumbach",
+      "aliases": [],
+      "profile_url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/bb/crumbach-robert.html",
+      "role": "deputy",
+      "land": "Brandenburg",
+      "term": null,
+      "group": null,
+      "party": "SPD",
+      "constituency": null,
+      "mandate_kind": null,
+      "service_start": null,
+      "service_end": null,
+      "source_updated_text": null,
+      "service_precision": null,
+      "bundestag_id": null,
+      "locator": "/html/body/div[2]/div[1]/div/main/div[2]/div[1]/div[3]/div/div/ul/li[7]/div/div[1]/h2/a",
+      "evidence_hash": "485f6033b09d989baacc79740af07d769986054c0796a0092b3eefa78c99bd98",
+      "evidence_url": "https://www.bundesrat.de/DE/bundesrat/mitglieder/mitglieder-node.html?param1=state-5&param3=Alle",
+      "profile_evidence_hash": "8752a34c83a6e5bc8b4904eebd772b301e6774276116bb537cf41a47353f159a",
+      "profile_member_class": "deputy",
+      "conflicts": [],
+      "leadership": [],
+      "service_evidence": [
+        {
+          "statement": "Stellvertretendes Mitglied des Bundesrates für das Land Brandenburg",
+          "locator": "//main//li"
+        },
+        {
+          "statement": "Mitglied des Bundesrates vom 11.12.2024 bis 18.03.2026, seit diesem Tage Stellvertretendes Mitglied des Bundesrates.",
+          "locator": "/html/body/div[2]/div[1]/div/main/div[2]/div[1]/div[2]/div/div/div[1]/div/p[5]"
+        }
+      ]
+    },
+    {
+      "external_id": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/bb/grimm-benjamin.html",
+      "name": "Dr. Benjamin Grimm",
+      "aliases": [],
+      "profile_url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/bb/grimm-benjamin.html",
+      "role": "deputy",
+      "land": "Brandenburg",
+      "term": null,
+      "group": null,
+      "party": "SPD",
+      "constituency": null,
+      "mandate_kind": null,
+      "service_start": "2024-12-11T00:00:00Z",
+      "service_end": null,
+      "source_updated_text": null,
+      "service_precision": "day",
+      "bundestag_id": null,
+      "locator": "/html/body/div[2]/div[1]/div/main/div[2]/div[1]/div[3]/div/div/ul/li[5]/div/div[1]/h2/a",
+      "evidence_hash": "485f6033b09d989baacc79740af07d769986054c0796a0092b3eefa78c99bd98",
+      "evidence_url": "https://www.bundesrat.de/DE/bundesrat/mitglieder/mitglieder-node.html?param1=state-5&param3=Alle",
+      "profile_evidence_hash": "4cd13e9bf4bb5548bc2f70cf542b7df1084be75071982091a3d3d89512d1043d",
+      "profile_member_class": "deputy",
+      "conflicts": [],
+      "leadership": [],
+      "service_evidence": [
+        {
+          "statement": "Stellvertretendes Mitglied des Bundesrates für das Land Brandenburg",
+          "locator": "//main//li"
+        },
+        {
+          "statement": "Stellvertretendes Mitglied des Bundesrates seit 11.12.2024.",
+          "locator": "/html/body/div[2]/div[1]/div/main/div[2]/div[1]/div[2]/div/div/div[1]/div/p[5]"
+        }
+      ]
+    }
+  ],
+  "profile_evidence": [
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/bw/oezdemir-cem.html",
+      "sha256": "ea78ad6fa202290ad983918aa59d51c7c3476700c555356016dfd3eb8f063949",
+      "file": "ea78ad6fa202290ad983918aa59d51c7c3476700c555356016dfd3eb8f063949.gz",
+      "retrieved_at": "2026-11-07T18:09:39.300943+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/bw/hagel-manuel.html",
+      "sha256": "5d7af25a0705b64396a6f724a451544ca9b0ec48613e3479931f3efe7fe56e26",
+      "file": "5d7af25a0705b64396a6f724a451544ca9b0ec48613e3479931f3efe7fe56e26.gz",
+      "retrieved_at": "2026-11-07T18:09:39.882370+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/bw/olschowski-petra.html",
+      "sha256": "11a710db9cd5a8a02bbb0b11a645cb7b8687edf40e85a7e1b6b71d1222fdf36f",
+      "file": "11a710db9cd5a8a02bbb0b11a645cb7b8687edf40e85a7e1b6b71d1222fdf36f.gz",
+      "retrieved_at": "2026-11-07T18:09:40.539171+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/bw/hoffmeister-kraut-nicole.html",
+      "sha256": "f4b7dca10e12b9a3f79705c3a7f9a6c2829eafb9d2bb7c9104071f9ad6563886",
+      "file": "f4b7dca10e12b9a3f79705c3a7f9a6c2829eafb9d2bb7c9104071f9ad6563886.gz",
+      "retrieved_at": "2026-11-07T18:09:41.220143+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/bw/razavi-nicole.html",
+      "sha256": "d4227ede1e21887e101d932e830cf7e9043f39716bf07352e127b4236e2ee7e6",
+      "file": "d4227ede1e21887e101d932e830cf7e9043f39716bf07352e127b4236e2ee7e6.gz",
+      "retrieved_at": "2026-11-07T18:09:41.965992+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/bw/hoogvliet-rudolf.html",
+      "sha256": "82ec21f160074ef5b6ccd5ca7336a28e51815db8366980bba35b7e407b070918",
+      "file": "82ec21f160074ef5b6ccd5ca7336a28e51815db8366980bba35b7e407b070918.gz",
+      "retrieved_at": "2026-11-07T18:09:42.554100+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/bw/bayaz-danyal.html",
+      "sha256": "ee9d68034117e81859e6b28b82665b4fa82f6d2237539728cc008daa8d004161",
+      "file": "ee9d68034117e81859e6b28b82665b4fa82f6d2237539728cc008daa8d004161.gz",
+      "retrieved_at": "2026-11-07T18:09:43.120137+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/bw/jung-andreas.html",
+      "sha256": "094d1af8d07e8aed20e8b7fc6a84a3a162115ebb2e924132d20e96cf0f29a6bc",
+      "file": "094d1af8d07e8aed20e8b7fc6a84a3a162115ebb2e924132d20e96cf0f29a6bc.gz",
+      "retrieved_at": "2026-11-07T18:09:43.504604+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/bw/walker-thekla.html",
+      "sha256": "140c0858d91593c56b2112b876b1f480622e18377a403b7b3491d6b24bb62ee2",
+      "file": "140c0858d91593c56b2112b876b1f480622e18377a403b7b3491d6b24bb62ee2.gz",
+      "retrieved_at": "2026-11-07T18:09:44.198642+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/bw/hildenbrand-oliver.html",
+      "sha256": "00d733f616efbe1520d24c9f678e4c2560a045502be795af640763389e4d28f9",
+      "file": "00d733f616efbe1520d24c9f678e4c2560a045502be795af640763389e4d28f9.gz",
+      "retrieved_at": "2026-11-07T18:09:44.637484+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/bw/oppelt-moritz.html",
+      "sha256": "9421bc85939dfc3f5474edb3f8a38b73a64bcc3a932533858ad51aa2c3f6aedf",
+      "file": "9421bc85939dfc3f5474edb3f8a38b73a64bcc3a932533858ad51aa2c3f6aedf.gz",
+      "retrieved_at": "2026-11-07T18:09:45.024542+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/bw/gentges-marion.html",
+      "sha256": "1bd7b4f626f92377ea902b4031d4b1d318966aed9bd33a78f300febac84264d6",
+      "file": "1bd7b4f626f92377ea902b4031d4b1d318966aed9bd33a78f300febac84264d6.gz",
+      "retrieved_at": "2026-11-07T18:09:45.711406+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/bw/schopper-theresa.html",
+      "sha256": "10cfb8523b5a3a307bc83023f3ad6808ab72d8992db3bd37695222f060fac6d3",
+      "file": "10cfb8523b5a3a307bc83023f3ad6808ab72d8992db3bd37695222f060fac6d3.gz",
+      "retrieved_at": "2026-11-07T18:09:46.267209+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/bw/lorek-siegfried.html",
+      "sha256": "a544aac1371b749b8f4fe7972fd9c44a9d998599fcbc95736e824658c45e2673",
+      "file": "a544aac1371b749b8f4fe7972fd9c44a9d998599fcbc95736e824658c45e2673.gz",
+      "retrieved_at": "2026-11-07T18:09:46.824619+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/by/soeder-markus.html",
+      "sha256": "f128f8e8a5ba105b0d3f7b23cb66c4c18c9780bcda22aa39aed92240de64fd8f",
+      "file": "f128f8e8a5ba105b0d3f7b23cb66c4c18c9780bcda22aa39aed92240de64fd8f.gz",
+      "retrieved_at": "2026-11-07T18:09:47.525115+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/by/aiwanger-hubert.html",
+      "sha256": "e5133070930bf1a0b06f2c2f41447ec234a091a6ead4d2138c9b36cf97323110",
+      "file": "e5133070930bf1a0b06f2c2f41447ec234a091a6ead4d2138c9b36cf97323110.gz",
+      "retrieved_at": "2026-11-07T18:09:48.092883+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/by/scharf-ulrike.html",
+      "sha256": "5a22dd187efc56053ab96fd41d2f2de4deef11de749421373ff3bedfb15ce72a",
+      "file": "5a22dd187efc56053ab96fd41d2f2de4deef11de749421373ff3bedfb15ce72a.gz",
+      "retrieved_at": "2026-11-07T18:09:48.658215+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/by/herrmann-florian.html",
+      "sha256": "fc8e8d054e8cc0b27125fc2170983e900878545b368c893d408fb318fa695a7d",
+      "file": "fc8e8d054e8cc0b27125fc2170983e900878545b368c893d408fb318fa695a7d.gz",
+      "retrieved_at": "2026-11-07T18:09:49.374259+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/by/glauber-thorsten.html",
+      "sha256": "b6ba3e8d21a57a6235d1a3d95c14e9e646f586f57539488926968343222570c8",
+      "file": "b6ba3e8d21a57a6235d1a3d95c14e9e646f586f57539488926968343222570c8.gz",
+      "retrieved_at": "2026-11-07T18:09:50.006315+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/by/schmid-josef.html",
+      "sha256": "3596e403db1aca0f8e54144bdb768eca350e1949f4763b5b11156be6422a9286",
+      "file": "3596e403db1aca0f8e54144bdb768eca350e1949f4763b5b11156be6422a9286.gz",
+      "retrieved_at": "2026-11-07T18:09:50.387531+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/by/herrmann-joachim.html",
+      "sha256": "88cd20ce11e71e886d6f07050af7f33df2c9ab7a7dade1ffb0ee139392c79472",
+      "file": "88cd20ce11e71e886d6f07050af7f33df2c9ab7a7dade1ffb0ee139392c79472.gz",
+      "retrieved_at": "2026-11-07T18:09:51.182292+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/by/bernreiter-christian.html",
+      "sha256": "2a7f578e1bf9e5c167a0e8a9454593b248106322527a14af31e2955eb50e5bbc",
+      "file": "2a7f578e1bf9e5c167a0e8a9454593b248106322527a14af31e2955eb50e5bbc.gz",
+      "retrieved_at": "2026-11-07T18:09:51.896569+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/by/stolz-anna.html",
+      "sha256": "47c68833e87ed5728f669455a4ab063b94069d035ea3f90bb64f31e4a78448e9",
+      "file": "47c68833e87ed5728f669455a4ab063b94069d035ea3f90bb64f31e4a78448e9.gz",
+      "retrieved_at": "2026-11-07T18:09:52.251516+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/by/blume-markus.html",
+      "sha256": "9c7a41746b2cd4dba8eb71a0040168df87e62c3614e39297b0b29ceb311d271b",
+      "file": "9c7a41746b2cd4dba8eb71a0040168df87e62c3614e39297b0b29ceb311d271b.gz",
+      "retrieved_at": "2026-11-07T18:09:52.667825+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/by/fueracker-albert.html",
+      "sha256": "a3d63d1a05076ae91d3c1c4fd945fad64e47142a5bc643b837f1390c44f2edf4",
+      "file": "a3d63d1a05076ae91d3c1c4fd945fad64e47142a5bc643b837f1390c44f2edf4.gz",
+      "retrieved_at": "2026-11-07T18:09:53.253017+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/by/kaniber-michaela.html",
+      "sha256": "db311c64fbef7bbab53f0dd61c687a1c2e284a55d1cf7436f2b813141cae00c7",
+      "file": "db311c64fbef7bbab53f0dd61c687a1c2e284a55d1cf7436f2b813141cae00c7.gz",
+      "retrieved_at": "2026-11-07T18:09:53.746705+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/by/gerlach-judith.html",
+      "sha256": "fe3f50c9c7c5124d41ab4064886922ff51bdf0d02cd0132effb0f6ebaaa22932",
+      "file": "fe3f50c9c7c5124d41ab4064886922ff51bdf0d02cd0132effb0f6ebaaa22932.gz",
+      "retrieved_at": "2026-11-07T18:09:54.415473+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/by/mehring-fabian.html",
+      "sha256": "5e4ab72b5d4b1766f4136615d009aaa3ddf74e5746a84aec5171cd0e2bab25e1",
+      "file": "5e4ab72b5d4b1766f4136615d009aaa3ddf74e5746a84aec5171cd0e2bab25e1.gz",
+      "retrieved_at": "2026-11-07T18:09:54.765304+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/by/knoll-manuel.html",
+      "sha256": "90e1f4aa14f6893a47cd192f5b042033790c8a510bc814f92c35ad09dd4576f9",
+      "file": "90e1f4aa14f6893a47cd192f5b042033790c8a510bc814f92c35ad09dd4576f9.gz",
+      "retrieved_at": "2026-11-07T18:09:55.144773+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/by/gotthardt-tobias.html",
+      "sha256": "aa20d899932856b3d45675e9e90554ca899e88b0bc03ce9221e3943ecdc92a06",
+      "file": "aa20d899932856b3d45675e9e90554ca899e88b0bc03ce9221e3943ecdc92a06.gz",
+      "retrieved_at": "2026-11-07T18:09:55.625165+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/by/kirchner-sandro.html",
+      "sha256": "8c619e8d94fa91bd63e7901903f444872fc49adcab1d5322b7917b4a30ae128b",
+      "file": "8c619e8d94fa91bd63e7901903f444872fc49adcab1d5322b7917b4a30ae128b.gz",
+      "retrieved_at": "2026-11-07T18:09:56.113912+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/by/schoeffel-martin.html",
+      "sha256": "fe5fb98b3b7d5991d10c86635f2a9ab95a8a77fff999191c890180f080591e54",
+      "file": "fe5fb98b3b7d5991d10c86635f2a9ab95a8a77fff999191c890180f080591e54.gz",
+      "retrieved_at": "2026-11-07T18:09:56.501475+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/be/wegner-kai.html",
+      "sha256": "3aa0a6f43d32ebb96e5b9d0d0aab61191e36d25ff815572026377a611d399e86",
+      "file": "3aa0a6f43d32ebb96e5b9d0d0aab61191e36d25ff815572026377a611d399e86.gz",
+      "retrieved_at": "2026-11-07T18:09:57.102718+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/be/giffey-franziska.html",
+      "sha256": "ec0bbdcacc19033e7cef23aa1503df3c7be61c66314b4d69c1720519c8bed9ea",
+      "file": "ec0bbdcacc19033e7cef23aa1503df3c7be61c66314b4d69c1720519c8bed9ea.gz",
+      "retrieved_at": "2026-11-07T18:09:57.870906+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/be/evers-stefan.html",
+      "sha256": "524ea8d07c8ef30717f4d34a08983b3ecb2fff721e0f4abb82a81a7e1cea30c0",
+      "file": "524ea8d07c8ef30717f4d34a08983b3ecb2fff721e0f4abb82a81a7e1cea30c0.gz",
+      "retrieved_at": "2026-11-07T18:09:58.321245+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/be/kiziltepe-cansel.html",
+      "sha256": "f6c55bb457fec7c2931cbd74de953013347eef667b523087f5b47f99ddc62ba5",
+      "file": "f6c55bb457fec7c2931cbd74de953013347eef667b523087f5b47f99ddc62ba5.gz",
+      "retrieved_at": "2026-11-07T18:09:59.066510+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/be/spranger-iris.html",
+      "sha256": "7ce7b2857e88583c694ef3ca91545a06f5658ae687ed016f323cecd9bccd5607",
+      "file": "7ce7b2857e88583c694ef3ca91545a06f5658ae687ed016f323cecd9bccd5607.gz",
+      "retrieved_at": "2026-11-07T18:09:59.517153+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/be/bonde-ute.html",
+      "sha256": "468d40c4593890e9c87aedd1eb6d27e96e639a29fd134454058f361750794f0c",
+      "file": "468d40c4593890e9c87aedd1eb6d27e96e639a29fd134454058f361750794f0c.gz",
+      "retrieved_at": "2026-11-07T18:09:59.937203+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/be/gaebler-christian.html",
+      "sha256": "f34d890ea40423a74483318282023e2d2bd1e6b012a80fa6ce750453f434ebb8",
+      "file": "f34d890ea40423a74483318282023e2d2bd1e6b012a80fa6ce750453f434ebb8.gz",
+      "retrieved_at": "2026-11-07T18:10:00.523247+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/be/guenther-wuensch-katharina.html",
+      "sha256": "dfee0314b6ebb658d53bc52087a100c1c26d145d617510580e9dbd633f65b6e1",
+      "file": "dfee0314b6ebb658d53bc52087a100c1c26d145d617510580e9dbd633f65b6e1.gz",
+      "retrieved_at": "2026-11-07T18:10:01.021597+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/be/czyborra-ina.html",
+      "sha256": "e7cd4d8a5fe5a0e60a1228c7e0c5252298ef6ab6df570847fb2c9d32ec952fc0",
+      "file": "e7cd4d8a5fe5a0e60a1228c7e0c5252298ef6ab6df570847fb2c9d32ec952fc0.gz",
+      "retrieved_at": "2026-11-07T18:10:01.690637+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/be/badenberg-felor.html",
+      "sha256": "70a4c7664492f938d1389eee16cee490ceb93246e024cebd9493f8ff739ac847",
+      "file": "70a4c7664492f938d1389eee16cee490ceb93246e024cebd9493f8ff739ac847.gz",
+      "retrieved_at": "2026-11-07T18:10:02.422989+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/bb/woidke-dietmar.html",
+      "sha256": "4396cbf498b60a6085a4f5bc22a4fbfa1c9c6af314dfd7ff8eb58cb37bec2300",
+      "file": "4396cbf498b60a6085a4f5bc22a4fbfa1c9c6af314dfd7ff8eb58cb37bec2300.gz",
+      "retrieved_at": "2026-11-07T18:10:03.195263+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/bb/redmann-jan.html",
+      "sha256": "23a0ec9246581364688b06aa15b10ee1d776ab3469cda5fed9198f25e132c5d0",
+      "file": "23a0ec9246581364688b06aa15b10ee1d776ab3469cda5fed9198f25e132c5d0.gz",
+      "retrieved_at": "2026-11-07T18:10:04.097017+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/bb/mittelstaedt-hanka.html",
+      "sha256": "2a4ce9e2c6b7d77cff4ab6e944e54ce86f0aa707c3fafeb87179454716aeb6bc",
+      "file": "2a4ce9e2c6b7d77cff4ab6e944e54ce86f0aa707c3fafeb87179454716aeb6bc.gz",
+      "retrieved_at": "2026-11-07T18:10:04.703018+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/bb/hoffmann-gordon.html",
+      "sha256": "c1bbdd63fc29165fd4ec35b17c07d0780cda70e552eef3a626f28ab8cb2e2f5b",
+      "file": "c1bbdd63fc29165fd4ec35b17c07d0780cda70e552eef3a626f28ab8cb2e2f5b.gz",
+      "retrieved_at": "2026-11-07T18:10:05.380882+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/bb/schneider-kathrin.html",
+      "sha256": "7cda26cbf7e36ed3014a29c88aaa15be624c89571e7db2a3f7dd678acf0159fc",
+      "file": "7cda26cbf7e36ed3014a29c88aaa15be624c89571e7db2a3f7dd678acf0159fc.gz",
+      "retrieved_at": "2026-11-07T18:10:05.882896+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/bb/schuele-manja.html",
+      "sha256": "c072c038b0420f88e9971d8398bcb217853fcab66ee1522a0457511617ce1405",
+      "file": "c072c038b0420f88e9971d8398bcb217853fcab66ee1522a0457511617ce1405.gz",
+      "retrieved_at": "2026-11-07T18:10:06.425008+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/bb/klement-martina.html",
+      "sha256": "47891725c4dbd70ebd1477a85592e5198d3bc1191475a340232bd92c94b76b6e",
+      "file": "47891725c4dbd70ebd1477a85592e5198d3bc1191475a340232bd92c94b76b6e.gz",
+      "retrieved_at": "2026-11-07T18:10:06.813476+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/bb/keller-daniel.html",
+      "sha256": "673461d17c163c243a97633860989fae6f5ebe5e77180bfc6bc440e2ef43a315",
+      "file": "673461d17c163c243a97633860989fae6f5ebe5e77180bfc6bc440e2ef43a315.gz",
+      "retrieved_at": "2026-11-07T18:10:07.197335+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/bb/grimm-benjamin.html",
+      "sha256": "4cd13e9bf4bb5548bc2f70cf542b7df1084be75071982091a3d3d89512d1043d",
+      "file": "4cd13e9bf4bb5548bc2f70cf542b7df1084be75071982091a3d3d89512d1043d.gz",
+      "retrieved_at": "2026-11-07T18:10:07.679716+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/bb/wilke-rene.html",
+      "sha256": "54ce1076051a19c6a188244eb7adf609ddbf78df9790bdc201cc9db9955a96fe",
+      "file": "54ce1076051a19c6a188244eb7adf609ddbf78df9790bdc201cc9db9955a96fe.gz",
+      "retrieved_at": "2026-11-07T18:10:08.209709+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/bb/crumbach-robert.html",
+      "sha256": "8752a34c83a6e5bc8b4904eebd772b301e6774276116bb537cf41a47353f159a",
+      "file": "8752a34c83a6e5bc8b4904eebd772b301e6774276116bb537cf41a47353f159a.gz",
+      "retrieved_at": "2026-11-07T18:10:08.766654+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/hb/bovenschulte-andreas.html",
+      "sha256": "31ca19259680460498617c2d511f7a72f5cbc8d99b32bb4c32f8e98683592c59",
+      "file": "31ca19259680460498617c2d511f7a72f5cbc8d99b32bb4c32f8e98683592c59.gz",
+      "retrieved_at": "2026-11-07T18:10:09.530280+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/hb/fecker-bjoern.html",
+      "sha256": "84ca8168e6818fd143c60282bb9efa24cca9bb505b084e4577de03d6a1bc6a64",
+      "file": "84ca8168e6818fd143c60282bb9efa24cca9bb505b084e4577de03d6a1bc6a64.gz",
+      "retrieved_at": "2026-11-07T18:10:10.257419+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/hb/boehning-nancy.html",
+      "sha256": "52d2f870fb781c2a8182ab2f3b4dbeafeb7387d82eb4e0d89257e1e28942262f",
+      "file": "52d2f870fb781c2a8182ab2f3b4dbeafeb7387d82eb4e0d89257e1e28942262f.gz",
+      "retrieved_at": "2026-11-07T18:10:10.695446+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/hb/hoegl-eva.html",
+      "sha256": "3491324a700a5ef72ede18129b1e3b938ca193c27dae25f7a06250dfffd9eec5",
+      "file": "3491324a700a5ef72ede18129b1e3b938ca193c27dae25f7a06250dfffd9eec5.gz",
+      "retrieved_at": "2026-11-07T18:10:11.153779+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/hb/bernhard-claudia.html",
+      "sha256": "f97ead07a242dbe9bab0eccd933dca24e9a2a919f60dad2fb86220d9192688db",
+      "file": "f97ead07a242dbe9bab0eccd933dca24e9a2a919f60dad2fb86220d9192688db.gz",
+      "retrieved_at": "2026-11-07T18:10:11.780471+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/hb/schilling-claudia.html",
+      "sha256": "46dc57b575b91e509d4e8dddf4328ae41d24a5c9b418e80097fa40248238835b",
+      "file": "46dc57b575b91e509d4e8dddf4328ae41d24a5c9b418e80097fa40248238835b.gz",
+      "retrieved_at": "2026-11-07T18:10:12.420990+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/hb/vogt-kristina.html",
+      "sha256": "a5a3ee30996286b21b74a266e5184e13dfca679d22f1838cdb2e21c65a3e5565",
+      "file": "a5a3ee30996286b21b74a266e5184e13dfca679d22f1838cdb2e21c65a3e5565.gz",
+      "retrieved_at": "2026-11-07T18:10:13.002006+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/hb/uensal-oezlem.html",
+      "sha256": "982be16420313dea11ad9c9e3bee087739445b11cbefedbe89d71c232aed8676",
+      "file": "982be16420313dea11ad9c9e3bee087739445b11cbefedbe89d71c232aed8676.gz",
+      "retrieved_at": "2026-11-07T18:10:13.731590+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/hb/rackles-mark.html",
+      "sha256": "61494e01aae1554190f0497f7ee92542fbd26c3add30e914df413cf117092866",
+      "file": "61494e01aae1554190f0497f7ee92542fbd26c3add30e914df413cf117092866.gz",
+      "retrieved_at": "2026-11-07T18:10:14.082516+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/hb/mueller-henrike.html",
+      "sha256": "811d31d8363967ca9c9dbb715c8b61f3738be43ae6c641491d3b5995d8bcdb2e",
+      "file": "811d31d8363967ca9c9dbb715c8b61f3738be43ae6c641491d3b5995d8bcdb2e.gz",
+      "retrieved_at": "2026-11-07T18:10:14.589188+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/hh/tschentscher-peter.html",
+      "sha256": "cf468c7104a21b843884895caf2ae05d983dbcb872ade23917bc3f17a37ff006",
+      "file": "cf468c7104a21b843884895caf2ae05d983dbcb872ade23917bc3f17a37ff006.gz",
+      "retrieved_at": "2026-11-07T18:10:15.205299+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/hh/fegebank-katharina.html",
+      "sha256": "c8c76892b3082ba32c9b447f1fbc8e9278cd6cf875b0b6624215079877026354",
+      "file": "c8c76892b3082ba32c9b447f1fbc8e9278cd6cf875b0b6624215079877026354.gz",
+      "retrieved_at": "2026-11-07T18:10:15.833142+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/hh/dressel-andreas.html",
+      "sha256": "99dbbc97094459ef862ae35ecd915273e86baac8a7ba3cf978b9d7221834e18e",
+      "file": "99dbbc97094459ef862ae35ecd915273e86baac8a7ba3cf978b9d7221834e18e.gz",
+      "retrieved_at": "2026-11-07T18:10:16.448862+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/hh/leonhard-melanie.html",
+      "sha256": "ed55dc35bc3c27562c9d471853fb6ba4dace80a9ed294b5fa0a6e4a27ebf6d6d",
+      "file": "ed55dc35bc3c27562c9d471853fb6ba4dace80a9ed294b5fa0a6e4a27ebf6d6d.gz",
+      "retrieved_at": "2026-11-07T18:10:16.863316+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/hh/grote-andy.html",
+      "sha256": "4aae01777d29d8b45c7835b49b6f9997b88e740727cebec34f79cf23e1065998",
+      "file": "4aae01777d29d8b45c7835b49b6f9997b88e740727cebec34f79cf23e1065998.gz",
+      "retrieved_at": "2026-11-07T18:10:17.316219+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/hh/brosda-carsten.html",
+      "sha256": "7bb12b34429fea738dc8d23873019a9a730b955e8b6e0bce05046e47440133c8",
+      "file": "7bb12b34429fea738dc8d23873019a9a730b955e8b6e0bce05046e47440133c8.gz",
+      "retrieved_at": "2026-11-07T18:10:17.672153+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/hh/tjarks-anjes.html",
+      "sha256": "803c554b3705a1d7d38c3bf3bb4919995a3224a9bc807fbcead68cd2ef6a3da3",
+      "file": "803c554b3705a1d7d38c3bf3bb4919995a3224a9bc807fbcead68cd2ef6a3da3.gz",
+      "retrieved_at": "2026-11-07T18:10:18.044204+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/hh/gallina-anna.html",
+      "sha256": "6453a2d74538e92f7b1a7a8d5c348548ac4a5cab4b007ee8b4595b2721c582ae",
+      "file": "6453a2d74538e92f7b1a7a8d5c348548ac4a5cab4b007ee8b4595b2721c582ae.gz",
+      "retrieved_at": "2026-11-07T18:10:18.682337+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/hh/schlotzhauer-melanie.html",
+      "sha256": "b0be669b1e2320f3c12edfb2f98040c50ce389fd4343ea4ad66f73c921e689d7",
+      "file": "b0be669b1e2320f3c12edfb2f98040c50ce389fd4343ea4ad66f73c921e689d7.gz",
+      "retrieved_at": "2026-11-07T18:10:19.282618+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/hh/pein-karen.html",
+      "sha256": "ec5197226560bed9ebda0166039a6abfbb4375608e04aea830b1acc2ec28a9f1",
+      "file": "ec5197226560bed9ebda0166039a6abfbb4375608e04aea830b1acc2ec28a9f1.gz",
+      "retrieved_at": "2026-11-07T18:10:19.973436+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/hh/bekeris-ksenija.html",
+      "sha256": "fa4f5757d43206bd4fb6dc1be2cecef7dc06c8f7799c376e4d87071dc3097311",
+      "file": "fa4f5757d43206bd4fb6dc1be2cecef7dc06c8f7799c376e4d87071dc3097311.gz",
+      "retrieved_at": "2026-11-07T18:10:20.455916+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/hh/blumenthal-maryam.html",
+      "sha256": "64b1fb58580525ee933ad945d6e2e68de1de2c2f7afd8a0ca5b86c208bcf817e",
+      "file": "64b1fb58580525ee933ad945d6e2e68de1de2c2f7afd8a0ca5b86c208bcf817e.gz",
+      "retrieved_at": "2026-11-07T18:10:20.831037+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/he/rhein-boris.html",
+      "sha256": "bd9fa2ffa99f0314e6302e67dd4464b15e7c454ed300ec69432e13e8c6f4fe84",
+      "file": "bd9fa2ffa99f0314e6302e67dd4464b15e7c454ed300ec69432e13e8c6f4fe84.gz",
+      "retrieved_at": "2026-11-07T18:10:21.477679+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/he/pentz-manfred.html",
+      "sha256": "e648204cac64dd20fd18a4c7e579ce07e0145ed0a2841409a7bf6ec87e9a0e11",
+      "file": "e648204cac64dd20fd18a4c7e579ce07e0145ed0a2841409a7bf6ec87e9a0e11.gz",
+      "retrieved_at": "2026-11-07T18:10:22.247317+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/he/mansoori-kaweh.html",
+      "sha256": "b252ab4b22ac349559e56f15635916b54eb8707c68828c4652d749a6a3245f54",
+      "file": "b252ab4b22ac349559e56f15635916b54eb8707c68828c4652d749a6a3245f54.gz",
+      "retrieved_at": "2026-11-07T18:10:22.827533+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/he/lorz-ralph-alexander.html",
+      "sha256": "17a37b5775a4007af6cc0ca9c91c47f993a864103e242266d93508e1a770d316",
+      "file": "17a37b5775a4007af6cc0ca9c91c47f993a864103e242266d93508e1a770d316.gz",
+      "retrieved_at": "2026-11-07T18:10:23.544183+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/he/gremmels-timon.html",
+      "sha256": "70d3c41bca0174869709178258e95e70308eaa4f9bcbea64506f5609de28635b",
+      "file": "70d3c41bca0174869709178258e95e70308eaa4f9bcbea64506f5609de28635b.gz",
+      "retrieved_at": "2026-11-07T18:10:24.160678+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/he/sinemus-kristina.html",
+      "sha256": "ed023d0e02f81da2d88b1835287f2fc4c455e8091c0abd7e3cc4dc23689b5223",
+      "file": "ed023d0e02f81da2d88b1835287f2fc4c455e8091c0abd7e3cc4dc23689b5223.gz",
+      "retrieved_at": "2026-11-07T18:10:24.864244+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/he/hofmann-heike.html",
+      "sha256": "b1f05f8985ec8043533c5f7c24dc021511f11b8812c0d52b0c190ec5214486ad",
+      "file": "b1f05f8985ec8043533c5f7c24dc021511f11b8812c0d52b0c190ec5214486ad.gz",
+      "retrieved_at": "2026-11-07T18:10:25.527847+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/he/poseck-roman.html",
+      "sha256": "36be63099056517486e9850b7bd15989781913e7ade99dcbadabc4b956e84791",
+      "file": "36be63099056517486e9850b7bd15989781913e7ade99dcbadabc4b956e84791.gz",
+      "retrieved_at": "2026-11-07T18:10:26.048423+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/he/stolz-diana.html",
+      "sha256": "7776ac2fec136bee26efa15c77a73b5f55c24e4fca1d34ff0b8024db01aba1e0",
+      "file": "7776ac2fec136bee26efa15c77a73b5f55c24e4fca1d34ff0b8024db01aba1e0.gz",
+      "retrieved_at": "2026-11-07T18:10:26.690543+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/he/jung-ingmar.html",
+      "sha256": "fdba93601cceb789135f418251ef012d648591bc65d25d2e810c4b0830458336",
+      "file": "fdba93601cceb789135f418251ef012d648591bc65d25d2e810c4b0830458336.gz",
+      "retrieved_at": "2026-11-07T18:10:27.189582+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/he/schwarz-armin.html",
+      "sha256": "89c9126c60deaab2d3c140295b2867ca31abc22b6c240a81ad8a298a42ab009c",
+      "file": "89c9126c60deaab2d3c140295b2867ca31abc22b6c240a81ad8a298a42ab009c.gz",
+      "retrieved_at": "2026-11-07T18:10:27.755735+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/he/heinz-christian.html",
+      "sha256": "9b7d3bf1245356322b94835720deaef6805183f158b8fe3011432d2e204a8c73",
+      "file": "9b7d3bf1245356322b94835720deaef6805183f158b8fe3011432d2e204a8c73.gz",
+      "retrieved_at": "2026-11-07T18:10:28.438520+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/mv/schwesig-manuela.html",
+      "sha256": "8b13e93460afc42dad071648450f282b655faf454ef1e2fe1c170747ea1ea131",
+      "file": "8b13e93460afc42dad071648450f282b655faf454ef1e2fe1c170747ea1ea131.gz",
+      "retrieved_at": "2026-11-07T18:10:29.137556+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/mv/oldenburg-simone.html",
+      "sha256": "1db8f9e4bddc5f32b6920fc47e20481f2754c897de35969bd31e65d042f32a9b",
+      "file": "1db8f9e4bddc5f32b6920fc47e20481f2754c897de35969bd31e65d042f32a9b.gz",
+      "retrieved_at": "2026-11-07T18:10:29.625299+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/mv/martin-bettina.html",
+      "sha256": "de07d326923b4f74e29286471868750f01ef35bd4a46e526602916fc3dfb0ca5",
+      "file": "de07d326923b4f74e29286471868750f01ef35bd4a46e526602916fc3dfb0ca5.gz",
+      "retrieved_at": "2026-11-07T18:10:30.230634+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/mv/bernhardt-jacqueline.html",
+      "sha256": "203b6a272b7ae0f6e0a8964145f2f36e587faee636f5ea32baace52517e9113d",
+      "file": "203b6a272b7ae0f6e0a8964145f2f36e587faee636f5ea32baace52517e9113d.gz",
+      "retrieved_at": "2026-11-07T18:10:30.876200+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/mv/drese-stefanie.html",
+      "sha256": "10abf2abc3d6ecc446e9883ad3bee6bc68ff19cd71ab48b923cd8f88e14c8a35",
+      "file": "10abf2abc3d6ecc446e9883ad3bee6bc68ff19cd71ab48b923cd8f88e14c8a35.gz",
+      "retrieved_at": "2026-11-07T18:10:31.534348+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/mv/geue-heiko.html",
+      "sha256": "722d1223d0a625c3893ddb2ee4e21ab5e57a0433fc45fc5bb702bd4efb8e96d2",
+      "file": "722d1223d0a625c3893ddb2ee4e21ab5e57a0433fc45fc5bb702bd4efb8e96d2.gz",
+      "retrieved_at": "2026-11-07T18:10:32.116518+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/mv/blank-wolfgang.html",
+      "sha256": "5f93a2460e7b369be502bcbab2478088e2fbee50580a67931217f7e02a195a0d",
+      "file": "5f93a2460e7b369be502bcbab2478088e2fbee50580a67931217f7e02a195a0d.gz",
+      "retrieved_at": "2026-11-07T18:10:32.525510+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/mv/backhaus-till.html",
+      "sha256": "45083435c2e11ebcd6606887b8fd2cb4487ceb5191eef767a066d5c8ede6bfbb",
+      "file": "45083435c2e11ebcd6606887b8fd2cb4487ceb5191eef767a066d5c8ede6bfbb.gz",
+      "retrieved_at": "2026-11-07T18:10:33.367824+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/mv/pegel-christian.html",
+      "sha256": "ccb4538a73e70190f1da767e4c56170e5c4398959a24b775a3a6f824a977eca1",
+      "file": "ccb4538a73e70190f1da767e4c56170e5c4398959a24b775a3a6f824a977eca1.gz",
+      "retrieved_at": "2026-11-07T18:10:33.900098+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/ni/lies-olaf.html",
+      "sha256": "167da197ac978246c31a21059302568edcf4ffa8dd64464d5d2d8a896889d7ab",
+      "file": "167da197ac978246c31a21059302568edcf4ffa8dd64464d5d2d8a896889d7ab.gz",
+      "retrieved_at": "2026-11-07T18:10:34.718566+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/ni/hamburg-julia-willie.html",
+      "sha256": "00adc717109eec500d8eee97bc0000ee22360eaa676c455d1d1cab95ace0cce9",
+      "file": "00adc717109eec500d8eee97bc0000ee22360eaa676c455d1d1cab95ace0cce9.gz",
+      "retrieved_at": "2026-11-07T18:10:35.327831+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/ni/behrens-daniela.html",
+      "sha256": "d3bd3a4a69f4d9d785f1f71b9a1c66656e0d2ef053ef7c6f6a7f11c3477e45f5",
+      "file": "d3bd3a4a69f4d9d785f1f71b9a1c66656e0d2ef053ef7c6f6a7f11c3477e45f5.gz",
+      "retrieved_at": "2026-11-07T18:10:36.046366+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/ni/wahlmann-kathrin.html",
+      "sha256": "34e86de922d2dd9e29e30b029a9f750e19834a75447f89509a7f71d4a6968d36",
+      "file": "34e86de922d2dd9e29e30b029a9f750e19834a75447f89509a7f71d4a6968d36.gz",
+      "retrieved_at": "2026-11-07T18:10:36.719124+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/ni/meyer-christian.html",
+      "sha256": "0e810b82397bc49da02f69f4bb3fa5549df302ec3098fa48d7f78690c350b60f",
+      "file": "0e810b82397bc49da02f69f4bb3fa5549df302ec3098fa48d7f78690c350b60f.gz",
+      "retrieved_at": "2026-11-07T18:10:37.452561+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/ni/philippi-andreas.html",
+      "sha256": "f3644d8af3fc124768a58efc230509ec417af188faf241a98d741657c5e2ca9b",
+      "file": "f3644d8af3fc124768a58efc230509ec417af188faf241a98d741657c5e2ca9b.gz",
+      "retrieved_at": "2026-11-07T18:10:38.140677+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/ni/heere-gerald.html",
+      "sha256": "d43feb0ca837b359c93c931f291328391c994ff22ab2b6e2d8646221759fc285",
+      "file": "d43feb0ca837b359c93c931f291328391c994ff22ab2b6e2d8646221759fc285.gz",
+      "retrieved_at": "2026-11-07T18:10:38.724480+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/ni/mohrs-falko.html",
+      "sha256": "175f926d13db555121f34ae288240710316d8765817cfba783cf7fb940a93653",
+      "file": "175f926d13db555121f34ae288240710316d8765817cfba783cf7fb940a93653.gz",
+      "retrieved_at": "2026-11-07T18:10:39.138657+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/ni/staudte-miriam.html",
+      "sha256": "6749ce552319f94e4f6366cbddcc8c1ed152d2bb987a750d24d764d12becad67",
+      "file": "6749ce552319f94e4f6366cbddcc8c1ed152d2bb987a750d24d764d12becad67.gz",
+      "retrieved_at": "2026-11-07T18:10:39.627865+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/ni/tonne-grant-hendrik.html",
+      "sha256": "cde2f7942246cf6fdf039e5432c4bd86bd1dd06d4651dc86d402ab213a1efe49",
+      "file": "cde2f7942246cf6fdf039e5432c4bd86bd1dd06d4651dc86d402ab213a1efe49.gz",
+      "retrieved_at": "2026-11-07T18:10:40.265271+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/ni/walter-melanie.html",
+      "sha256": "5fe33b802a649a38ee8c5b079d33c7895be977068dca63f340df3ecb7ae0c132",
+      "file": "5fe33b802a649a38ee8c5b079d33c7895be977068dca63f340df3ecb7ae0c132.gz",
+      "retrieved_at": "2026-11-07T18:10:40.690517+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/nw/wuest-hendrik.html",
+      "sha256": "fc91d9c2dc8679bb11a6a2ffbee507276650b2ca872554c787d211d2742e95c5",
+      "file": "fc91d9c2dc8679bb11a6a2ffbee507276650b2ca872554c787d211d2742e95c5.gz",
+      "retrieved_at": "2026-11-07T18:10:41.305729+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/nw/neubaur-mona.html",
+      "sha256": "e64c02551e81540ae7a616f32819d1ea7621688b84d7ad8ba9313c1b9710fd2b",
+      "file": "e64c02551e81540ae7a616f32819d1ea7621688b84d7ad8ba9313c1b9710fd2b.gz",
+      "retrieved_at": "2026-11-07T18:10:41.825520+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/nw/optendrenk-marcus.html",
+      "sha256": "7810e14f27872cde5c975f03725e7dcf7079350800f0848e14c646990232bf67",
+      "file": "7810e14f27872cde5c975f03725e7dcf7079350800f0848e14c646990232bf67.gz",
+      "retrieved_at": "2026-11-07T18:10:42.226350+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/nw/scharrenbach-ina.html",
+      "sha256": "2a08cbf5176ead1342bbf947fcb60e5161ecce3bde2a737e3a263e7761b28b91",
+      "file": "2a08cbf5176ead1342bbf947fcb60e5161ecce3bde2a737e3a263e7761b28b91.gz",
+      "retrieved_at": "2026-11-07T18:10:42.720416+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/nw/liminski-nathanael.html",
+      "sha256": "0c0a103476326b24c6c2fe611ea075fbb5b9fbd75604f53b8c5c1c8e9d3c0deb",
+      "file": "0c0a103476326b24c6c2fe611ea075fbb5b9fbd75604f53b8c5c1c8e9d3c0deb.gz",
+      "retrieved_at": "2026-11-07T18:10:43.407268+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/nw/krischer-oliver.html",
+      "sha256": "1e7b9213208faa95d7bbc05b676895b1f6e4bef8774bda7d5b6f09bf655751e1",
+      "file": "1e7b9213208faa95d7bbc05b676895b1f6e4bef8774bda7d5b6f09bf655751e1.gz",
+      "retrieved_at": "2026-11-07T18:10:44.112205+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/nw/reul-herbert.html",
+      "sha256": "36f0c314d2d14f3d3926bc311a195eb28b0c517c9d05f3e4fad5c7391c1bffe8",
+      "file": "36f0c314d2d14f3d3926bc311a195eb28b0c517c9d05f3e4fad5c7391c1bffe8.gz",
+      "retrieved_at": "2026-11-07T18:10:44.537254+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/nw/laumann-karl-josef.html",
+      "sha256": "1e3cccd21c6bfe863b773986f70f7f2f2297682e3d0230efbdc4b18c917fb473",
+      "file": "1e3cccd21c6bfe863b773986f70f7f2f2297682e3d0230efbdc4b18c917fb473.gz",
+      "retrieved_at": "2026-11-07T18:10:45.253283+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/nw/feller-dorothee.html",
+      "sha256": "6aafcd878eddb76f29f16713df85114ec7c24dc46fc7af5499c6e8824b39188c",
+      "file": "6aafcd878eddb76f29f16713df85114ec7c24dc46fc7af5499c6e8824b39188c.gz",
+      "retrieved_at": "2026-11-07T18:10:45.653894+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/nw/gorissen-silke.html",
+      "sha256": "4ccc98208040e59f92e29c54dc7f90d8157399e4ccb7f9089cb5493d9cdac8d7",
+      "file": "4ccc98208040e59f92e29c54dc7f90d8157399e4ccb7f9089cb5493d9cdac8d7.gz",
+      "retrieved_at": "2026-11-07T18:10:46.299743+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/nw/brandes-ina.html",
+      "sha256": "80d0d03019ded9d3c98f341da7c7324483192747a6b081ea0c31776cc1085d29",
+      "file": "80d0d03019ded9d3c98f341da7c7324483192747a6b081ea0c31776cc1085d29.gz",
+      "retrieved_at": "2026-11-07T18:10:46.891623+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/nw/limbach-benjamin.html",
+      "sha256": "e57a622da03c414c83a3cfb3c8a13de86e46776c081a123a5c192e21ae3d258b",
+      "file": "e57a622da03c414c83a3cfb3c8a13de86e46776c081a123a5c192e21ae3d258b.gz",
+      "retrieved_at": "2026-11-07T18:10:47.542464+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/nw/schaeffer-verena.html",
+      "sha256": "ffab841a467596832473621e2398a01f1923cc3100501882fd3dd96e70c7e525",
+      "file": "ffab841a467596832473621e2398a01f1923cc3100501882fd3dd96e70c7e525.gz",
+      "retrieved_at": "2026-11-07T18:10:48.088024+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/rp/schnieder-gordon.html",
+      "sha256": "a55e93afad4fcdd26c40129fc3f4561d2fd6373d776b308c47b3e5e6f9217781",
+      "file": "a55e93afad4fcdd26c40129fc3f4561d2fd6373d776b308c47b3e5e6f9217781.gz",
+      "retrieved_at": "2026-11-07T18:10:48.614303+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/rp/baetzing-lichtenthaeler-sabine.html",
+      "sha256": "88ffd2f9be21ab13fb1a036c44224e89a475b6c1e442d71ed935976393fad555",
+      "file": "88ffd2f9be21ab13fb1a036c44224e89a475b6c1e442d71ed935976393fad555.gz",
+      "retrieved_at": "2026-11-07T18:10:49.114865+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/rp/klein-marcus.html",
+      "sha256": "3aaa92db7acc9e242756c678162406807efee913285f64187a6984b5284093ad",
+      "file": "3aaa92db7acc9e242756c678162406807efee913285f64187a6984b5284093ad.gz",
+      "retrieved_at": "2026-11-07T18:10:49.501706+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/rp/ahnen-doris.html",
+      "sha256": "14b523a4cd3ffb7b547cc5b6c671881f1e6afb5ff55518528457d3686c78a3bf",
+      "file": "14b523a4cd3ffb7b547cc5b6c671881f1e6afb5ff55518528457d3686c78a3bf.gz",
+      "retrieved_at": "2026-11-07T18:10:50.062169+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/rp/ebling-michael.html",
+      "sha256": "bd7bf4b690f7ef4e064d37174e21bad9fa76437d4a79b61676fab58fd3210e54",
+      "file": "bd7bf4b690f7ef4e064d37174e21bad9fa76437d4a79b61676fab58fd3210e54.gz",
+      "retrieved_at": "2026-11-07T18:10:50.512548+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/rp/eiling-huetig-ute.html",
+      "sha256": "65f24aa9b8b50826e18cbdb2754e71087749732c70ff8c721163c48791069f80",
+      "file": "65f24aa9b8b50826e18cbdb2754e71087749732c70ff8c721163c48791069f80.gz",
+      "retrieved_at": "2026-11-07T18:10:50.950128+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/rp/hoch-clemens.html",
+      "sha256": "25525225b04a3df1e154dfb0f75292f1c2fee3c720221de713b76ed5bb662d8e",
+      "file": "25525225b04a3df1e154dfb0f75292f1c2fee3c720221de713b76ed5bb662d8e.gz",
+      "retrieved_at": "2026-11-07T18:10:51.527446+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/rp/martin-helmut.html",
+      "sha256": "716852cca7df1287a0b8596efb9a1b24f8d20ec20777e882336c32b1d052d7c7",
+      "file": "716852cca7df1287a0b8596efb9a1b24f8d20ec20777e882336c32b1d052d7c7.gz",
+      "retrieved_at": "2026-11-07T18:10:51.889117+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/rp/schneider-christine.html",
+      "sha256": "3ff5d06d17324e5d6ee6e109ef10ba75caca44e9630bfdba85d59ff8c76ffaa1",
+      "file": "3ff5d06d17324e5d6ee6e109ef10ba75caca44e9630bfdba85d59ff8c76ffaa1.gz",
+      "retrieved_at": "2026-11-07T18:10:52.274677+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/rp/schwickert-achim.html",
+      "sha256": "fb97c445a2c5c6e2937ad25a416bb397e3d2a247cc52cb78d624bea3fb1b8197",
+      "file": "fb97c445a2c5c6e2937ad25a416bb397e3d2a247cc52cb78d624bea3fb1b8197.gz",
+      "retrieved_at": "2026-11-07T18:10:52.620012+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/rp/teuber-sven.html",
+      "sha256": "e56657a73f6a7ad61e017bea106e7b94b8a229565ff3691ebe95597710dd9ca7",
+      "file": "e56657a73f6a7ad61e017bea106e7b94b8a229565ff3691ebe95597710dd9ca7.gz",
+      "retrieved_at": "2026-11-07T18:10:52.986079+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/sl/rehlinger-anke.html",
+      "sha256": "6ac11cf2907e9dbf1e528c49b364c57f68b95cc470e7ecaac68c07ac72d546a1",
+      "file": "6ac11cf2907e9dbf1e528c49b364c57f68b95cc470e7ecaac68c07ac72d546a1.gz",
+      "retrieved_at": "2026-11-07T18:10:53.608925+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/sl/barke-juergen.html",
+      "sha256": "aedc7478f810faaf08011faff94cfe9fd83ee8cc5a20610531b037b33708695a",
+      "file": "aedc7478f810faaf08011faff94cfe9fd83ee8cc5a20610531b037b33708695a.gz",
+      "retrieved_at": "2026-11-07T18:10:54.164428+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/sl/bischoff-thorsten.html",
+      "sha256": "0e3b256549dd36e4cd9975ccbf2e7a6f1022820c2aa997e5723355a50cefed39",
+      "file": "0e3b256549dd36e4cd9975ccbf2e7a6f1022820c2aa997e5723355a50cefed39.gz",
+      "retrieved_at": "2026-11-07T18:10:54.525526+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/sl/weizsaecker-jakob-von.html",
+      "sha256": "ca5fd97fc3f1a6c886469a6a29c2562732475e7acae6b507e4137e4887b480f0",
+      "file": "ca5fd97fc3f1a6c886469a6a29c2562732475e7acae6b507e4137e4887b480f0.gz",
+      "retrieved_at": "2026-11-07T18:10:55.071134+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/sl/jost-reinhold.html",
+      "sha256": "d9381b6a2d4df460bd54d4f0632dfe5e0915f03da708b752772ffcf0b6f0bff6",
+      "file": "d9381b6a2d4df460bd54d4f0632dfe5e0915f03da708b752772ffcf0b6f0bff6.gz",
+      "retrieved_at": "2026-11-07T18:10:55.448609+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/sl/jung-magnus.html",
+      "sha256": "8fd96217202e45311f8c93519a86cb44d70138979b9176478cfe7a3589fb1e0c",
+      "file": "8fd96217202e45311f8c93519a86cb44d70138979b9176478cfe7a3589fb1e0c.gz",
+      "retrieved_at": "2026-11-07T18:10:56.064217+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/sl/streichert-clivot-christine.html",
+      "sha256": "40ee327aecc35f0618881881a13d46487239ceedcd2e42149164b7a728ba1525",
+      "file": "40ee327aecc35f0618881881a13d46487239ceedcd2e42149164b7a728ba1525.gz",
+      "retrieved_at": "2026-11-07T18:10:56.652260+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/sl/berg-petra.html",
+      "sha256": "121a3c10887f074e3975580e13da6b72c031d0913ffbbcdaced06c6d603be91f",
+      "file": "121a3c10887f074e3975580e13da6b72c031d0913ffbbcdaced06c6d603be91f.gz",
+      "retrieved_at": "2026-11-07T18:10:57.350589+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/sl/lindemann-david.html",
+      "sha256": "da18269eb9edfa56ea610843ccb29bbf2708921522534c29c5a4a1c83441e5a2",
+      "file": "da18269eb9edfa56ea610843ccb29bbf2708921522534c29c5a4a1c83441e5a2.gz",
+      "retrieved_at": "2026-11-07T18:10:57.741390+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/sn/kretschmer-michael.html",
+      "sha256": "699a40ccf94de840c3a3ee1a5362d41a162e8c0ffd272e60d8fa1e439044d6da",
+      "file": "699a40ccf94de840c3a3ee1a5362d41a162e8c0ffd272e60d8fa1e439044d6da.gz",
+      "retrieved_at": "2026-11-07T18:10:58.318241+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/sn/koepping-petra.html",
+      "sha256": "44e8b9e79a7ce653afd2b2cf1628ebe97e9997b517858c275556406586811006",
+      "file": "44e8b9e79a7ce653afd2b2cf1628ebe97e9997b517858c275556406586811006.gz",
+      "retrieved_at": "2026-11-07T18:10:58.879963+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/sn/panter-dirk.html",
+      "sha256": "ad9e2094bb39ef20f50663d7b5c3e35c167fb880bbdcdc76340981095c04d406",
+      "file": "ad9e2094bb39ef20f50663d7b5c3e35c167fb880bbdcdc76340981095c04d406.gz",
+      "retrieved_at": "2026-11-07T18:10:59.302176+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/sn/handschuh-andreas.html",
+      "sha256": "b1990e006138777760d9af024f2d9f7e1a927532f4d27d0c82f6092c00e95c5c",
+      "file": "b1990e006138777760d9af024f2d9f7e1a927532f4d27d0c82f6092c00e95c5c.gz",
+      "retrieved_at": "2026-11-07T18:10:59.714857+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/sn/schuster-armin.html",
+      "sha256": "3cfdd598373a0d2c3dbf84857e398d543cf7765d59e0629594e5026a69380956",
+      "file": "3cfdd598373a0d2c3dbf84857e398d543cf7765d59e0629594e5026a69380956.gz",
+      "retrieved_at": "2026-11-07T18:11:00.361568+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/sn/piwarz-christian.html",
+      "sha256": "292727c4e2671b2d40a1333d51ee4b6dbba17d879ea0d07ecb056aec7f57fbe2",
+      "file": "292727c4e2671b2d40a1333d51ee4b6dbba17d879ea0d07ecb056aec7f57fbe2.gz",
+      "retrieved_at": "2026-11-07T18:11:00.902991+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/sn/clemens-conrad.html",
+      "sha256": "cf4c0985bdc44b3c6d8fce5fc7760fb3433de7bef318c72fb005134f9a31c250",
+      "file": "cf4c0985bdc44b3c6d8fce5fc7760fb3433de7bef318c72fb005134f9a31c250.gz",
+      "retrieved_at": "2026-11-07T18:11:01.307040+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/sn/geiert-constanze.html",
+      "sha256": "e23bdaf4c7b29380f13c8effa39072021e1b13f59ff73889578280d46f4b43b2",
+      "file": "e23bdaf4c7b29380f13c8effa39072021e1b13f59ff73889578280d46f4b43b2.gz",
+      "retrieved_at": "2026-11-07T18:11:01.880343+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/sn/breitenbuch-georg-ludwig-von.html",
+      "sha256": "60bc45c4ef68c54f294c94f83e6192b48965376d1254a8f00fce924be7cbd515",
+      "file": "60bc45c4ef68c54f294c94f83e6192b48965376d1254a8f00fce924be7cbd515.gz",
+      "retrieved_at": "2026-11-07T18:11:02.492032+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/sn/gemkow-sebastian.html",
+      "sha256": "437290e8a4193a529a1337d443a6c884bdc3dfa1acc902f97af0f35da9d2b170",
+      "file": "437290e8a4193a529a1337d443a6c884bdc3dfa1acc902f97af0f35da9d2b170.gz",
+      "retrieved_at": "2026-11-07T18:11:03.303315+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/sn/klepsch-barbara.html",
+      "sha256": "2752ffa103475649e0f7dba3e3a7ab1e828abae6e7ea2b9bc81869f7f932df28",
+      "file": "2752ffa103475649e0f7dba3e3a7ab1e828abae6e7ea2b9bc81869f7f932df28.gz",
+      "retrieved_at": "2026-11-07T18:11:03.903215+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/sn/kraushaar-regina.html",
+      "sha256": "8915e51750d7ded9f6ddb11d628feb408127fd42b13cb807391b0eb8ec0ddeef",
+      "file": "8915e51750d7ded9f6ddb11d628feb408127fd42b13cb807391b0eb8ec0ddeef.gz",
+      "retrieved_at": "2026-11-07T18:11:04.457127+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/st/schulze-sven.html",
+      "sha256": "b7f5117c9eaf2cc210002ee5f2c46eb33d94e185a4b625ebd2241a949b66c6e5",
+      "file": "b7f5117c9eaf2cc210002ee5f2c46eb33d94e185a4b625ebd2241a949b66c6e5.gz",
+      "retrieved_at": "2026-11-07T18:11:05.133833+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/st/willingmann-armin.html",
+      "sha256": "9fb594d6011df70db0d910cc803193868384be01e01d5216c8292de9327d6b6f",
+      "file": "9fb594d6011df70db0d910cc803193868384be01e01d5216c8292de9327d6b6f.gz",
+      "retrieved_at": "2026-11-07T18:11:05.872249+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/st/hueskens-lydia.html",
+      "sha256": "1775eaccc03c768ed172bb6c97808fa93a9250d2dd9ae7f2f719fc222bae9069",
+      "file": "1775eaccc03c768ed172bb6c97808fa93a9250d2dd9ae7f2f719fc222bae9069.gz",
+      "retrieved_at": "2026-11-07T18:11:06.433920+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/st/richter-michael.html",
+      "sha256": "c26650cb2aa7ec9d6252635d0e86d6880917beb8f6e31206b5766fc906bbbba3",
+      "file": "c26650cb2aa7ec9d6252635d0e86d6880917beb8f6e31206b5766fc906bbbba3.gz",
+      "retrieved_at": "2026-11-07T18:11:06.931261+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/st/grimm-benne-petra.html",
+      "sha256": "fd44049c7252c99920807e994af6aed0ee23f6d23e145055af4ca7ec88eacd35",
+      "file": "fd44049c7252c99920807e994af6aed0ee23f6d23e145055af4ca7ec88eacd35.gz",
+      "retrieved_at": "2026-11-07T18:11:07.396368+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/st/weidinger-franziska.html",
+      "sha256": "9e73f529a596dd257c30d99f2872f378cbdde885280ac1e224926d9cbe11fb7c",
+      "file": "9e73f529a596dd257c30d99f2872f378cbdde885280ac1e224926d9cbe11fb7c.gz",
+      "retrieved_at": "2026-11-07T18:11:08.031672+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/st/zieschang-tamara.html",
+      "sha256": "f9ead84ff45f6258de0f851ba48923bea88a135c87bc53084edcf167c9422dcb",
+      "file": "f9ead84ff45f6258de0f851ba48923bea88a135c87bc53084edcf167c9422dcb.gz",
+      "retrieved_at": "2026-11-07T18:11:08.484315+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/st/riedel-jan.html",
+      "sha256": "5bdcf55405ae5f8d0dcd44bc9a880db77f83d43dff7b76fadb0d4a9e26518af5",
+      "file": "5bdcf55405ae5f8d0dcd44bc9a880db77f83d43dff7b76fadb0d4a9e26518af5.gz",
+      "retrieved_at": "2026-11-07T18:11:08.841855+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/sh/guenther-daniel.html",
+      "sha256": "d62d430d26dec2b840deb8f63a2780d8ea44c14b9f304460fa146c066887ba69",
+      "file": "d62d430d26dec2b840deb8f63a2780d8ea44c14b9f304460fa146c066887ba69.gz",
+      "retrieved_at": "2026-11-07T18:11:09.423458+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/sh/toure-aminata.html",
+      "sha256": "63e56d66c6d96f04a35352ede00c0db064997a916dcfa4fe9dbe42f98786892e",
+      "file": "63e56d66c6d96f04a35352ede00c0db064997a916dcfa4fe9dbe42f98786892e.gz",
+      "retrieved_at": "2026-11-07T18:11:10.081424+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/sh/finke-magdalena.html",
+      "sha256": "ff47f6b2a978db3ea6a720b5522f1ba72a696f64a087999e6946fe4694e32912",
+      "file": "ff47f6b2a978db3ea6a720b5522f1ba72a696f64a087999e6946fe4694e32912.gz",
+      "retrieved_at": "2026-11-07T18:11:10.444581+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/sh/goldschmidt-tobias.html",
+      "sha256": "31e86073ba85a7d4d044fd4cba8d8e2c71b2e4d584230d7c13a25aa6f765c55f",
+      "file": "31e86073ba85a7d4d044fd4cba8d8e2c71b2e4d584230d7c13a25aa6f765c55f.gz",
+      "retrieved_at": "2026-11-07T18:11:11.116497+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/sh/schroedter-dirk.html",
+      "sha256": "c04d74eec9b122695ce9e20378b8e6771dd89da162ceb0b8118228f0f713af84",
+      "file": "c04d74eec9b122695ce9e20378b8e6771dd89da162ceb0b8118228f0f713af84.gz",
+      "retrieved_at": "2026-11-07T18:11:11.522526+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/sh/decken-kerstin-von-der.html",
+      "sha256": "b47f0f4aaf36a5d8d3528cefac3574490565b9d2ed47f3a6f06f58f25ad074e8",
+      "file": "b47f0f4aaf36a5d8d3528cefac3574490565b9d2ed47f3a6f06f58f25ad074e8.gz",
+      "retrieved_at": "2026-11-07T18:11:12.175274+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/sh/madsen-claus-ruhe.html",
+      "sha256": "4759b7f3c22d3b11c6dae0379df2001dabfc6ab542cb8321f85a02cf47cc2180",
+      "file": "4759b7f3c22d3b11c6dae0379df2001dabfc6ab542cb8321f85a02cf47cc2180.gz",
+      "retrieved_at": "2026-11-07T18:11:12.786653+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/sh/schmachtenberg-cornelia.html",
+      "sha256": "f9cc3877853e5d56407771f83c755ec952f82df6f255f6806263df2e30f8fc55",
+      "file": "f9cc3877853e5d56407771f83c755ec952f82df6f255f6806263df2e30f8fc55.gz",
+      "retrieved_at": "2026-11-07T18:11:13.156293+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/sh/schneider-silke.html",
+      "sha256": "67adb2d55938f86bb7b469bd66a17c817addfc46f329124fb20b118c0c230e33",
+      "file": "67adb2d55938f86bb7b469bd66a17c817addfc46f329124fb20b118c0c230e33.gz",
+      "retrieved_at": "2026-11-07T18:11:13.564798+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/sh/stenke-dorit.html",
+      "sha256": "8570ecacd4a9c8f225a3007680e27498002987cd05c3542827f9c32e1de095fa",
+      "file": "8570ecacd4a9c8f225a3007680e27498002987cd05c3542827f9c32e1de095fa.gz",
+      "retrieved_at": "2026-11-07T18:11:14.024490+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/th/voigt-mario.html",
+      "sha256": "134a3a247406eb46ceeea4d94d5d0f4bba43ef84c60e90f1bd964e5e34967c29",
+      "file": "134a3a247406eb46ceeea4d94d5d0f4bba43ef84c60e90f1bd964e5e34967c29.gz",
+      "retrieved_at": "2026-11-07T18:11:14.988427+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/th/wolf-katja.html",
+      "sha256": "a07000be2aa2bb98833cc120c55d9952cbecd062dcfcac51fe6e647c830a8e05",
+      "file": "a07000be2aa2bb98833cc120c55d9952cbecd062dcfcac51fe6e647c830a8e05.gz",
+      "retrieved_at": "2026-11-07T18:11:15.610024+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/th/maier-georg.html",
+      "sha256": "de554d6b7b946db748309f955cdd47c3bc130a4fd710589515d9f34c9a8c27a4",
+      "file": "de554d6b7b946db748309f955cdd47c3bc130a4fd710589515d9f34c9a8c27a4.gz",
+      "retrieved_at": "2026-11-07T18:11:16.239490+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/th/gruhner-stefan.html",
+      "sha256": "2026cbc85529767f75fa565c32ba2fd2fbbc9b7cb4e231e97c07d32c1671cb05",
+      "file": "2026cbc85529767f75fa565c32ba2fd2fbbc9b7cb4e231e97c07d32c1671cb05.gz",
+      "retrieved_at": "2026-11-07T18:11:16.913403+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/th/tischner-christian.html",
+      "sha256": "385213a9d554110580ca7814b6be8f643beb51c86b13a381af397d7acab0fee1",
+      "file": "385213a9d554110580ca7814b6be8f643beb51c86b13a381af397d7acab0fee1.gz",
+      "retrieved_at": "2026-11-07T18:11:17.266083+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/th/boos-john-colette.html",
+      "sha256": "da535364b03f173ad181d91cce4be4a859461bd0ea2204fbd4ddb6daacf47f0b",
+      "file": "da535364b03f173ad181d91cce4be4a859461bd0ea2204fbd4ddb6daacf47f0b.gz",
+      "retrieved_at": "2026-11-07T18:11:17.862448+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/th/meissner-beate.html",
+      "sha256": "e48fd9c9309e7f8c5c4b255b4c8f6bf447743b0843666b1b7ddede5d754b9efc",
+      "file": "e48fd9c9309e7f8c5c4b255b4c8f6bf447743b0843666b1b7ddede5d754b9efc.gz",
+      "retrieved_at": "2026-11-07T18:11:18.461239+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/th/kummer-tilo.html",
+      "sha256": "01f809ed81c776b8daf94ddf8ed51bce375e97d39674507f924b544383b7d17d",
+      "file": "01f809ed81c776b8daf94ddf8ed51bce375e97d39674507f924b544383b7d17d.gz",
+      "retrieved_at": "2026-11-07T18:11:19.009921+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/th/schuetz-steffen.html",
+      "sha256": "b3178cb65a982ab918d2dd66ee5a9f392b71f1d953258e86ca71bc6db23890b9",
+      "file": "b3178cb65a982ab918d2dd66ee5a9f392b71f1d953258e86ca71bc6db23890b9.gz",
+      "retrieved_at": "2026-11-07T18:11:19.595746+00:00"
+    },
+    {
+      "url": "https://www.bundesrat.de/SharedDocs/personen/DE/laender/th/schenk-katharina.html",
+      "sha256": "88b8045cd8044519a96f6343bd4627276bd28908f05c8322ab843c602c51db55",
+      "file": "88b8045cd8044519a96f6343bd4627276bd28908f05c8322ab843c602c51db55.gz",
+      "retrieved_at": "2026-11-07T18:11:20.115142+00:00"
+    }
+  ],
+  "profile_errors": [],
+  "usage": {
+    "attribution": "Bundesrat",
+    "licence_assumption": "No blanket open licence assumed; issuer attribution retained; image assets are not acquired.",
+    "terms_url": "https://www.bundesrat.de/DE/service-navi/impressum/impressum-node.html",
+    "link_label": "Impressum",
+    "status": 200,
+    "file": "3f49fe89d405ced8cb8220d3c772df3f89535951a6e6b915b8bbea1115865c50.gz",
+    "sha256": "3f49fe89d405ced8cb8220d3c772df3f89535951a6e6b915b8bbea1115865c50",
+    "retrieved_at": "2026-11-07T18:50:53.944576+00:00"
+  },
+  "qualification_date": "2026-11-07",
+  "credential_requirement": "Public HTTPS GET; no operator credential required",
+  "update_semantics": "Dated retrieval/current-directory observation; original bytes retained. Provider update times are unknown unless explicitly exposed.",
+  "historical_count": 0,
+  "profile_conflicts": [],
+  "check_basis": "official_directory_set",
+  "source_updates": [],
+  "qualified_term": null
+}

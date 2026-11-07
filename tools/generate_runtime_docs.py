@@ -312,11 +312,36 @@ qualification inferred. German and European policy remains the scope.
 [technical specification §8.5.3](LIMES_Technical_Specification_v2.1.0.md),
 [BE-46](BACKEND_ROADMAP.md) and [verification](VERIFICATION.md) retain acceptance
 and qualification boundaries. Comprehensive EU-27 coverage remains deferred.
+
+## German public-officeholder acquisition (BE-56)
+
+Ontology 1.4 adds scoped PersonIdentifier, ParliamentaryGroup, RosterSnapshot and
+RosterMembership artifacts. All 21 official source mappings use bounded structured
+jobs, original evidence archives and per-source resumable cursors. Observed rosters
+are separate from actual personal service dates and historical DIP participation.
+Authenticated GET /public-offices reports missing/failed/partial/stale scopes and
+member-set reconciliation; desktop coverage/evidence views consume this HTTP surface.
+[Implementation/handoff](GERMAN_PARLIAMENT_MEMBERS.md), [qualified sources](BE56_SOURCES.md)
+and [verification](VERIFICATION.md) distinguish capability from production population.
 """
     operations = f"""# LIMES configuration, access and releases
 
 {notice}
 {snapshot}
+
+## Public-officeholder jobs
+
+Submit ingest for `public_offices_<scope>` using the 21 scope codes in
+[the BE-56 handoff](GERMAN_PARLIAMENT_MEMBERS.md). Preserve a pre-migration backup;
+run the declared 1.4 ontology/DIP data repair explicitly. Historical DIP persons
+never certify current membership. The runtime DIP key remains configured through
+LIMES_BUNDESTAG_DIP_API_KEY; [public key source/validation](BE56_SOURCES.md) is dated
+and does not replace credential configuration. Set nl2cypher_prompt_version=1.1.0
+for roster-aware query generation; old explicit pins remain available.
+Identity reviews require an archived evidence hash, explicit existing canonical
+Person, scoped identifier, note and immutable request_id. They are operator writes;
+coverage reads acquire no data. Fixture qualification does not certify production
+population, independent legal seat counts or perpetual source availability.
 
 ## Reviewed enrichment jobs
 
@@ -397,6 +422,7 @@ replays work. Output and status are operator-only. A timeout does not imply roll
 | migrate | `--version X.Y.Z` |
 | backup | none |
 | stamp-embeddings | none |
+| public-offices-identify | `--identity-reviews JSON` (1–100 evidence-backed reviews) |
 
 Make operational targets call the same HTTP remote CLI; only `up`/`down` administer
 Docker. `make select-models STAGE=measured` and `make evaluate EVALUATION=resolution`

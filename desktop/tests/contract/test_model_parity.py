@@ -16,6 +16,7 @@ import limes.enrichment.models as api_enrichment
 import limes.news.developments as api_developments
 import limes.news.models as api_news
 import limes.operations.models as api_operations
+import limes.public_offices.models as api_offices
 
 # Every mirrored model the client consumes, including nested ones
 # (NlqOutcome -> GraphResult -> EntityRef/EdgeRef; EntityDetail -> EntityRef;
@@ -23,6 +24,8 @@ import limes.operations.models as api_operations
 # change anywhere on the API surface trips this test. Router view models are
 # passed as classes; the core models by name for the parity message.
 MIRRORED: list[tuple[type, str]] = [
+    (api_offices.ScopeCoverage, "ScopeCoverage"),
+    (api_offices.OfficesResponse, "OfficesResponse"),
     (api_enrichment.EnrichmentResponse, "EnrichmentResponse"),
     (api_developments.DevelopmentEvidence, "DevelopmentEvidence"),
     (api_developments.DevelopmentView, "DevelopmentView"),

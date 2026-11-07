@@ -149,3 +149,14 @@ qualification inferred. German and European policy remains the scope.
 [technical specification §8.5.3](LIMES_Technical_Specification_v2.1.0.md),
 [BE-46](BACKEND_ROADMAP.md) and [verification](VERIFICATION.md) retain acceptance
 and qualification boundaries. Comprehensive EU-27 coverage remains deferred.
+
+## German public-officeholder acquisition (BE-56)
+
+Ontology 1.4 adds scoped PersonIdentifier, ParliamentaryGroup, RosterSnapshot and
+RosterMembership artifacts. All 21 official source mappings use bounded structured
+jobs, original evidence archives and per-source resumable cursors. Observed rosters
+are separate from actual personal service dates and historical DIP participation.
+Authenticated GET /public-offices reports missing/failed/partial/stale scopes and
+member-set reconciliation; desktop coverage/evidence views consume this HTTP surface.
+[Implementation/handoff](GERMAN_PARLIAMENT_MEMBERS.md), [qualified sources](BE56_SOURCES.md)
+and [verification](VERIFICATION.md) distinguish capability from production population.

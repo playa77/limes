@@ -37,6 +37,8 @@ class EdgeRef:
     relation: str
     subject_id: str
     object_id: str
+    validity_basis: str | None = None
+    roster_snapshot_id: str | None = None
     source_id: str | None = None
     source_trust: float | None = None
     confidence: float | None = None
@@ -68,6 +70,8 @@ class EdgeRef:
             relation=str(d["relation"]),
             subject_id=str(d["subject_id"]),
             object_id=str(d["object_id"]),
+            validity_basis=d.get("validity_basis"),
+            roster_snapshot_id=d.get("roster_snapshot_id"),
             source_id=d.get("source_id"),
             source_trust=d.get("source_trust"),
             confidence=d.get("confidence"),
@@ -447,6 +451,7 @@ class QueryOutcome:
 class OperationRequest:
     request_id: str
     command: str
+    identity_reviews: list[dict[str, Any]] | None = None
     selections: list[dict[str, Any]] | None = None
     extract_context: bool | None = None
     source: str | None = None
@@ -608,3 +613,45 @@ class EnrichmentResponse:
     @classmethod
     def from_api(cls, d: dict[str, Any]) -> Self:
         return cls(**d)
+
+
+@dataclass(frozen=True, slots=True)
+class ScopeCoverage:
+    scope: str
+    institution: str
+    snapshot_id: str | None = None
+    status: str = "missing"
+    observed_at: str | None = None
+    term: str | None = None
+    expected: int | None = None
+    acquired: int = 0
+    loaded: int = 0
+    distinct_persons: int = 0
+    unresolved: int = 0
+    failed_rows: int | None = None
+    stale: bool | None = None
+    check_basis: str | None = None
+    diagnosis: list[str] = field(default_factory=list)
+
+    @classmethod
+    def from_api(cls, d: dict[str, Any]) -> Self:
+        return cls(**d)
+
+
+@dataclass(frozen=True, slots=True)
+class OfficesResponse:
+    coverage_status: str = "partial"
+    scopes: list[ScopeCoverage] = field(default_factory=list)
+    members: list[dict[str, Any]] = field(default_factory=list)
+    truncated: bool = False
+    diagnosis: list[str] = field(default_factory=list)
+
+    @classmethod
+    def from_api(cls, d: dict[str, Any]) -> Self:
+        return cls(
+            coverage_status=str(d.get("coverage_status", "partial")),
+            scopes=[ScopeCoverage.from_api(s) for s in d.get("scopes", [])],
+            members=list(d.get("members", [])),
+            truncated=bool(d.get("truncated")),
+            diagnosis=list(d.get("diagnosis", [])),
+        )

@@ -46,6 +46,7 @@ from limes.graph.driver import GraphDriver
 from limes.graph.embeddings import normalize_embedding
 from limes.ontology.model import Ontology
 from limes.ontology.validator import validate_assertions
+from limes.public_offices.models import IdentityReview
 from limes.sources.base import hash_entity_id
 from limes.types import Assertion, DocumentPayload, EntityEndpoint, LookupRow, ValidationError
 
@@ -263,8 +264,15 @@ def validate_entity_properties(endpoints: list[EntityEndpoint], ontology: Ontolo
 def _entity_properties(endpoint: EntityEndpoint, ontology: Ontology) -> dict[str, Any]:
     """Only declared, typed properties; immutable on re-merge like the source version."""
     specs = {p.name: p.type for p in ontology.entity_types[endpoint.type].properties}
-    protected = {"entity_id", "label", "aliases", "ontology_version", "created_at",
-                 "label_embedding", *ontology.entity_types[endpoint.type].identifying_keys}
+    protected = {
+        "entity_id",
+        "label",
+        "aliases",
+        "ontology_version",
+        "created_at",
+        "label_embedding",
+        *ontology.entity_types[endpoint.type].identifying_keys,
+    }
     checked: dict[str, Any] = {}
     for key, value in endpoint.properties.items():
         if key in protected:
@@ -276,8 +284,12 @@ def _entity_properties(endpoint: EntityEndpoint, ontology: Ontology) -> dict[str
         valid = value is None or (
             (kind == "string" and isinstance(value, str))
             or (kind == "integer" and isinstance(value, int) and not isinstance(value, bool))
-            or (kind == "float" and isinstance(value, (int, float))
-                and not isinstance(value, bool) and math.isfinite(value))
+            or (
+                kind == "float"
+                and isinstance(value, (int, float))
+                and not isinstance(value, bool)
+                and math.isfinite(value)
+            )
             or (kind == "boolean" and isinstance(value, bool))
             or (kind == "datetime" and isinstance(value, datetime) and value.tzinfo is not None)
         )
@@ -297,6 +309,8 @@ def _relationship_properties(assertion: Assertion, temporal: bool) -> dict[str, 
     validity = assertion.validity
     props: dict[str, Any] = {
         "assertion_id": assertion.assertion_id,
+        "validity_basis": provenance.validity_basis,
+        "roster_snapshot_id": provenance.roster_snapshot_id,
         "valid_from": validity.valid_from,
         "recorded_at": validity.recorded_at,
         "retracted_at": validity.retracted_at,
@@ -393,7 +407,7 @@ def _load_batch(
                 },
             )
         )
-        if relation_spec.temporal:
+        if relation_spec.temporal and assertion.provenance.validity_basis != "roster_observation":
             statements.append(
                 (
                     queries.close_interval(assertion.relation),
@@ -622,13 +636,105 @@ def save_event_match_review(
     )
 
 
-
-def save_enrichment_check(driver: GraphDriver, snapshot_id: str, manifest_hash: str,
-                          checked_at: datetime) -> int:
+def save_enrichment_check(
+    driver: GraphDriver, snapshot_id: str, manifest_hash: str, checked_at: datetime
+) -> int:
     """Acquisition history is distinct from immutable source versions and factual edges."""
-    return driver.write_batch([(
-        "MERGE (c:EnrichmentCheck {check_id:$id}) ON CREATE SET "
-        "c.snapshot_id=$snapshot, c.manifest_hash=$manifest, c.checked_at=$at",
-        {"id": hash_entity_id("source-check", snapshot_id, manifest_hash),
-         "snapshot": snapshot_id, "manifest": manifest_hash, "at": checked_at},
-    )]).nodes_created
+    return driver.write_batch(
+        [
+            (
+                "MERGE (c:EnrichmentCheck {check_id:$id}) ON CREATE SET "
+                "c.snapshot_id=$snapshot, c.manifest_hash=$manifest, c.checked_at=$at",
+                {
+                    "id": hash_entity_id("source-check", snapshot_id, manifest_hash),
+                    "snapshot": snapshot_id,
+                    "manifest": manifest_hash,
+                    "at": checked_at,
+                },
+            )
+        ]
+    ).nodes_created
+
+
+def review_person_identity(driver: GraphDriver, review: IdentityReview) -> None:
+    """Bounded audited identity binding; original persons/assertions remain history.
+
+    The operator job verifies archive existence before this transactional write.
+    Lock the acquired identifier so concurrent ingestion/reviews cannot interleave
+    two canonical decisions. A request ID is immutable and replayable.
+    """
+    import hashlib
+
+    material = review.model_dump_json()
+    digest = hashlib.sha256(material.encode()).hexdigest()
+    at = datetime.now(UTC)
+    with driver._driver.session(default_access_mode="WRITE") as session:
+        with session.begin_transaction() as tx:
+            existing = list(
+                tx.run(
+                    "MATCH (r:PersonIdentityReview {request_id:$request}) "
+                    "RETURN r.digest AS digest",
+                    request=review.request_id,
+                )
+            )
+            if existing:
+                if existing[0]["digest"] != digest:
+                    raise GraphWriteError(
+                        "identity review request ID already has a different decision"
+                    )
+                return
+            rows = list(
+                tx.run(
+                    "MATCH (i:PersonIdentifier {external_id:$external}), "
+                    "(p:Person {entity_id:$person}) SET i.identity_review_lock=$request "
+                    "RETURN i.entity_id AS identifier",
+                    external=review.external_id,
+                    person=review.person_id,
+                    request=review.request_id,
+                )
+            )
+            if len(rows) != 1:
+                raise GraphWriteError(
+                    "identity review requires an acquired identifier and existing Person"
+                )
+            tx.run(
+                "MATCH (i:PersonIdentifier {external_id:$external}), "
+                "(p:Person {entity_id:$person}) "
+                "CREATE (a:PersonIdentityReview {request_id:$request, external_id:$external, "
+                "person_id:$person, evidence_hash:$evidence, note:$note, "
+                "recorded_at:$at, digest:$digest}) "
+                "SET i.canonical_person_id=$person, i.reviewed_at=$at "
+                "WITH i,p OPTIONAL MATCH (i)-[old:IDENTIFIES]->() WHERE old.retracted_at IS NULL "
+                "SET old.retracted_at=$at "
+                "WITH DISTINCT i,p CREATE (i)-[r:IDENTIFIES]->(p) "
+                "SET r.assertion_id=$request, r.source_id='operator_identity_review', "
+                "r.source_trust=1.0, r.confidence=1.0, r.recorded_at=$at, r.valid_from=$at, "
+                "r.validity_basis='reviewed_identity', r.evidence_document_id=$evidence "
+                "REMOVE i.identity_review_lock",
+                external=review.external_id,
+                person=review.person_id,
+                request=review.request_id,
+                evidence=review.evidence_hash,
+                note=review.note,
+                at=at,
+                digest=digest,
+            ).consume()
+            tx.commit()
+
+
+def save_roster_check(driver: GraphDriver, snapshot_id: str, run_id: str) -> None:
+    """A successful replay may qualify an immutable snapshot first loaded by a failed run."""
+    driver.write_batch(
+        [
+            (
+                "MERGE (c:RosterLoadCheck {check_id:$id}) ON CREATE SET "
+                "c.snapshot_id=$snapshot, c.run_id=$run, c.checked_at=$at",
+                {
+                    "id": hash_entity_id("roster-check", snapshot_id, run_id),
+                    "snapshot": snapshot_id,
+                    "run": run_id,
+                    "at": datetime.now(UTC),
+                },
+            )
+        ]
+    )

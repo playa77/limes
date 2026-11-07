@@ -23,6 +23,7 @@ from limes.errors import SourceFetchError
 from limes.sources.base import SourceAdapter
 
 if TYPE_CHECKING:
+    from limes.public_offices.acquisition import Acquisition
     from limes.sources.osm_acquisition import OsmAcquisition
 
 logger = structlog.get_logger(__name__)
@@ -66,6 +67,7 @@ class SourceRegistry:
 def build_default_registry(
     *, bundestag_dip_api_key: str = "", osm_acquisition: OsmAcquisition | None = None,
     osm_http_timeout_seconds: int = 180, osm_overpass_endpoints: tuple[str, ...] | None = None,
+    offices_acquisition: Acquisition | None = None,
 ) -> SourceRegistry:
     """The authoritative list of live sources (Doc 2 §8.5.1).
 
@@ -75,6 +77,12 @@ def build_default_registry(
     `NotImplementedError` (§8.5.2), and the CLI's `ingest-all` skips them.
     """
     registry = SourceRegistry()
+
+    from limes.public_offices.catalogue import SCOPES
+    from limes.sources.public_offices import PublicOfficesAdapter
+
+    for scope in SCOPES:
+        registry.register(PublicOfficesAdapter(scope, offices_acquisition))
 
     from limes.sources.news import NewsAdapter
 

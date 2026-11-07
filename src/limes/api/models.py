@@ -67,6 +67,8 @@ class EdgeRef(BaseModel):
     the provenance panel (WP-36) has everything client-side (AC-28)."""
 
     relation: str
+    validity_basis: str | None = None
+    roster_snapshot_id: str | None = None
     subject_id: str
     object_id: str
     source_id: str | None = None
@@ -320,6 +322,8 @@ def edge_ref(rel: Relationship) -> EdgeRef:
         evidence_start=_int_or_none(props.get("evidence_start")),
         evidence_end=_int_or_none(props.get("evidence_end")),
         evidence_channel=_str_or_none(props.get("evidence_channel")),
+        validity_basis=_str_or_none(props.get("validity_basis")),
+        roster_snapshot_id=_str_or_none(props.get("roster_snapshot_id")),
         evidence_member=_str_or_none(props.get("evidence_member")),
         evidence_manifest_hash=_str_or_none(props.get("evidence_manifest_hash")),
         evidence_row=_int_or_none(props.get("evidence_row")),

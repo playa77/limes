@@ -6,9 +6,9 @@ The original roadmap defined WP-01–39 plus WP-25a (40 packages); WP-40 was a
 later coverage exercise. The separate desktop sequence is [DC](DESKTOP_ROADMAP.md).
 [ROADMAP](ROADMAP.md) coordinates the two tracks and the active delivery.
 
-Next-session priority selected 2026-11-07: **BE-56**, German parliamentary members
-and federal officeholders. Planning is complete; implementation is deferred to the next
-session. See the package entry and [implementation plan](GERMAN_PARLIAMENT_MEMBERS.md).
+Current implementation candidate (2026-11-07): **BE-56**, German parliamentary members
+and federal officeholders. See the package entry, [implementation contract](GERMAN_PARLIAMENT_MEMBERS.md)
+and [qualification evidence](VERIFICATION.md). Deployed population is a separate operator obligation.
 
 ## Exact position and status vocabulary
 
@@ -410,7 +410,9 @@ original frozen qualification evidence remains scoped to its recorded source.
 
 ### BE-56 — German parliamentary members and federal officeholders
 
-Status: P — planned, not implemented; selected for the next session under D-97.
+Status: implementation present under D-98; A7 full qualification is blocked by
+the environment’s 8 GB disk capacity. Five lanes / 1,397 tests and static guards
+pass; exact evidence and the remaining runtime-stack obligation are in VERIFICATION.
 [Full plan and acceptance A1–A8](GERMAN_PARLIAMENT_MEMBERS.md) cover every serving
 member of the Bundestag and all 16 state parliaments, including the city states,
 all serving judges in both Bundesverfassungsgericht Senates, all regular/deputy
@@ -426,5 +428,7 @@ qualify exact official roster endpoints and fixtures before coding each format.
 Wikidata remains identity enrichment, not roster enumeration. Initial complete
 historical backfill, municipal/European Parliament coverage and completing
 DAX boards are not prerequisites. Implementation and measured deployed population
-must be reported separately. No runtime work or ingestion occurs in this planning
-session; proposed next branch is `codex/be-56-german-parliament-members`.
+must be reported separately. Implementation branch is `codex/be-56-german-parliament-members`, based on live-verified
+main `d967bae244dc`. All 21 mappings, retained-evidence DIP repair, coverage API and
+generic desktop compatibility are implemented. No production ingestion or deployment
+is performed. Source qualification and public DIP authentication are in [BE56_SOURCES](BE56_SOURCES.md).

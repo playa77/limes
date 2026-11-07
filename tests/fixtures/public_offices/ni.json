@@ -1,0 +1,288 @@
+{
+  "scope": "ni",
+  "institution": "Niedersächsischer Landtag",
+  "pages": [
+    {
+      "url": "https://www.landtag-niedersachsen.de/abgeordnete-suche-nach-alphabet/",
+      "final_url": "https://www.landtag-niedersachsen.de/abgeordnete-suche-nach-alphabet/",
+      "file": "789deaa41e507f68f41225c6d38c53a147d0ed033d0794a7b06aac0fde62381b.gz",
+      "sha256": "789deaa41e507f68f41225c6d38c53a147d0ed033d0794a7b06aac0fde62381b",
+      "retrieved_at": "2026-11-07T17:54:29.031913+00:00"
+    },
+    {
+      "url": "https://www.landtag-niedersachsen.de/abgeordnete-suche-nach-alphabet/?tx_nltparliament_alphabetlist%5Baction%5D=alphabetList&tx_nltparliament_alphabetlist%5Bcontroller%5D=Person&tx_nltparliament_alphabetlist%5Bletter%5D=A&cHash=e70129ef7925e589622d081dec29078a",
+      "final_url": "https://www.landtag-niedersachsen.de/abgeordnete-suche-nach-alphabet/?tx_nltparliament_alphabetlist%5Baction%5D=alphabetList&tx_nltparliament_alphabetlist%5Bcontroller%5D=Person&tx_nltparliament_alphabetlist%5Bletter%5D=A&cHash=e70129ef7925e589622d081dec29078a",
+      "file": "789deaa41e507f68f41225c6d38c53a147d0ed033d0794a7b06aac0fde62381b.gz",
+      "sha256": "789deaa41e507f68f41225c6d38c53a147d0ed033d0794a7b06aac0fde62381b",
+      "retrieved_at": "2026-11-07T17:54:29.755491+00:00"
+    },
+    {
+      "url": "https://www.landtag-niedersachsen.de/abgeordnete-suche-nach-alphabet/?tx_nltparliament_alphabetlist%5Baction%5D=alphabetList&tx_nltparliament_alphabetlist%5Bcontroller%5D=Person&tx_nltparliament_alphabetlist%5Bletter%5D=B&cHash=41c4ece00b95bab0599edf704d3fb2c3",
+      "final_url": "https://www.landtag-niedersachsen.de/abgeordnete-suche-nach-alphabet/?tx_nltparliament_alphabetlist%5Baction%5D=alphabetList&tx_nltparliament_alphabetlist%5Bcontroller%5D=Person&tx_nltparliament_alphabetlist%5Bletter%5D=B&cHash=41c4ece00b95bab0599edf704d3fb2c3",
+      "file": "44ee6ea2c4f79ff40adaf6361942f736129f01a6ec06f9fc0846dfd58c6d2088.gz",
+      "sha256": "44ee6ea2c4f79ff40adaf6361942f736129f01a6ec06f9fc0846dfd58c6d2088",
+      "retrieved_at": "2026-11-07T17:54:29.964119+00:00"
+    },
+    {
+      "url": "https://www.landtag-niedersachsen.de/abgeordnete-suche-nach-alphabet/?tx_nltparliament_alphabetlist%5Baction%5D=alphabetList&tx_nltparliament_alphabetlist%5Bcontroller%5D=Person&tx_nltparliament_alphabetlist%5Bletter%5D=C&cHash=c0163e271774a2c3d81f52b71db38202",
+      "final_url": "https://www.landtag-niedersachsen.de/abgeordnete-suche-nach-alphabet/?tx_nltparliament_alphabetlist%5Baction%5D=alphabetList&tx_nltparliament_alphabetlist%5Bcontroller%5D=Person&tx_nltparliament_alphabetlist%5Bletter%5D=C&cHash=c0163e271774a2c3d81f52b71db38202",
+      "file": "46f7bb994f3c8bb9374e0852eb8c0f5edbc58479823e961b39270f8ff76b729b.gz",
+      "sha256": "46f7bb994f3c8bb9374e0852eb8c0f5edbc58479823e961b39270f8ff76b729b",
+      "retrieved_at": "2026-11-07T17:54:30.322186+00:00"
+    },
+    {
+      "url": "https://www.landtag-niedersachsen.de/abgeordnete-suche-nach-alphabet/?tx_nltparliament_alphabetlist%5Baction%5D=alphabetList&tx_nltparliament_alphabetlist%5Bcontroller%5D=Person&tx_nltparliament_alphabetlist%5Bletter%5D=D&cHash=9b5bbb2ab677af61383f000a8948f593",
+      "final_url": "https://www.landtag-niedersachsen.de/abgeordnete-suche-nach-alphabet/?tx_nltparliament_alphabetlist%5Baction%5D=alphabetList&tx_nltparliament_alphabetlist%5Bcontroller%5D=Person&tx_nltparliament_alphabetlist%5Bletter%5D=D&cHash=9b5bbb2ab677af61383f000a8948f593",
+      "file": "82b8c92d389a1c41ea2932fcef321658a684ec9a541fdd7147110fe06ef8e572.gz",
+      "sha256": "82b8c92d389a1c41ea2932fcef321658a684ec9a541fdd7147110fe06ef8e572",
+      "retrieved_at": "2026-11-07T17:54:30.529136+00:00"
+    },
+    {
+      "url": "https://www.landtag-niedersachsen.de/abgeordnete-suche-nach-alphabet/?tx_nltparliament_alphabetlist%5Baction%5D=alphabetList&tx_nltparliament_alphabetlist%5Bcontroller%5D=Person&tx_nltparliament_alphabetlist%5Bletter%5D=E&cHash=0f4107068076b8a6bbf078b085c1fc0e",
+      "final_url": "https://www.landtag-niedersachsen.de/abgeordnete-suche-nach-alphabet/?tx_nltparliament_alphabetlist%5Baction%5D=alphabetList&tx_nltparliament_alphabetlist%5Bcontroller%5D=Person&tx_nltparliament_alphabetlist%5Bletter%5D=E&cHash=0f4107068076b8a6bbf078b085c1fc0e",
+      "file": "08d68a06dda628b09c8d3b6c7abcd64e8d62fdc66f90f62a6a025fd7a233d15d.gz",
+      "sha256": "08d68a06dda628b09c8d3b6c7abcd64e8d62fdc66f90f62a6a025fd7a233d15d",
+      "retrieved_at": "2026-11-07T17:54:30.726762+00:00"
+    },
+    {
+      "url": "https://www.landtag-niedersachsen.de/abgeordnete-suche-nach-alphabet/?tx_nltparliament_alphabetlist%5Baction%5D=alphabetList&tx_nltparliament_alphabetlist%5Bcontroller%5D=Person&tx_nltparliament_alphabetlist%5Bletter%5D=F&cHash=00e09cfd21e8362dc88948f47a697951",
+      "final_url": "https://www.landtag-niedersachsen.de/abgeordnete-suche-nach-alphabet/?tx_nltparliament_alphabetlist%5Baction%5D=alphabetList&tx_nltparliament_alphabetlist%5Bcontroller%5D=Person&tx_nltparliament_alphabetlist%5Bletter%5D=F&cHash=00e09cfd21e8362dc88948f47a697951",
+      "file": "59185f7141dd40fe5cc62ab20079b09f6ec8d281295637f9a470e9b6b6d8dc60.gz",
+      "sha256": "59185f7141dd40fe5cc62ab20079b09f6ec8d281295637f9a470e9b6b6d8dc60",
+      "retrieved_at": "2026-11-07T17:54:31.073781+00:00"
+    },
+    {
+      "url": "https://www.landtag-niedersachsen.de/abgeordnete-suche-nach-alphabet/?tx_nltparliament_alphabetlist%5Baction%5D=alphabetList&tx_nltparliament_alphabetlist%5Bcontroller%5D=Person&tx_nltparliament_alphabetlist%5Bletter%5D=G&cHash=60ab7f9718be0805668bb89d41792b94",
+      "final_url": "https://www.landtag-niedersachsen.de/abgeordnete-suche-nach-alphabet/?tx_nltparliament_alphabetlist%5Baction%5D=alphabetList&tx_nltparliament_alphabetlist%5Bcontroller%5D=Person&tx_nltparliament_alphabetlist%5Bletter%5D=G&cHash=60ab7f9718be0805668bb89d41792b94",
+      "file": "d138ad26a91806621207a2ab7589eeeb689db69166b127344dcfbc9933989a10.gz",
+      "sha256": "d138ad26a91806621207a2ab7589eeeb689db69166b127344dcfbc9933989a10",
+      "retrieved_at": "2026-11-07T17:54:31.271785+00:00"
+    },
+    {
+      "url": "https://www.landtag-niedersachsen.de/abgeordnete-suche-nach-alphabet/?tx_nltparliament_alphabetlist%5Baction%5D=alphabetList&tx_nltparliament_alphabetlist%5Bcontroller%5D=Person&tx_nltparliament_alphabetlist%5Bletter%5D=H&cHash=2d68de5bdb1f5662b91c965f9857916c",
+      "final_url": "https://www.landtag-niedersachsen.de/abgeordnete-suche-nach-alphabet/?tx_nltparliament_alphabetlist%5Baction%5D=alphabetList&tx_nltparliament_alphabetlist%5Bcontroller%5D=Person&tx_nltparliament_alphabetlist%5Bletter%5D=H&cHash=2d68de5bdb1f5662b91c965f9857916c",
+      "file": "f2c8bd4316fdc6b8b8fbea62bdb838be2a2255709ec72abf2a2308a7a11ad415.gz",
+      "sha256": "f2c8bd4316fdc6b8b8fbea62bdb838be2a2255709ec72abf2a2308a7a11ad415",
+      "retrieved_at": "2026-11-07T17:54:31.471791+00:00"
+    },
+    {
+      "url": "https://www.landtag-niedersachsen.de/abgeordnete-suche-nach-alphabet/?tx_nltparliament_alphabetlist%5Baction%5D=alphabetList&tx_nltparliament_alphabetlist%5Bcontroller%5D=Person&tx_nltparliament_alphabetlist%5Bletter%5D=J&cHash=91a996498ae125f799c27611a12172a7",
+      "final_url": "https://www.landtag-niedersachsen.de/abgeordnete-suche-nach-alphabet/?tx_nltparliament_alphabetlist%5Baction%5D=alphabetList&tx_nltparliament_alphabetlist%5Bcontroller%5D=Person&tx_nltparliament_alphabetlist%5Bletter%5D=J&cHash=91a996498ae125f799c27611a12172a7",
+      "file": "14a961d9e2fd174557c7bdbaaddda17003f276b11c03d802746290a13b918868.gz",
+      "sha256": "14a961d9e2fd174557c7bdbaaddda17003f276b11c03d802746290a13b918868",
+      "retrieved_at": "2026-11-07T17:54:32.473642+00:00"
+    },
+    {
+      "url": "https://www.landtag-niedersachsen.de/abgeordnete-suche-nach-alphabet/?tx_nltparliament_alphabetlist%5Baction%5D=alphabetList&tx_nltparliament_alphabetlist%5Bcontroller%5D=Person&tx_nltparliament_alphabetlist%5Bletter%5D=K&cHash=bad353973a1873be23abae2a4315322c",
+      "final_url": "https://www.landtag-niedersachsen.de/abgeordnete-suche-nach-alphabet/?tx_nltparliament_alphabetlist%5Baction%5D=alphabetList&tx_nltparliament_alphabetlist%5Bcontroller%5D=Person&tx_nltparliament_alphabetlist%5Bletter%5D=K&cHash=bad353973a1873be23abae2a4315322c",
+      "file": "cb8c3604a1920460bff0d527d070e8f3bd2eac20e4ebdba6c8f85750a35b4bcf.gz",
+      "sha256": "cb8c3604a1920460bff0d527d070e8f3bd2eac20e4ebdba6c8f85750a35b4bcf",
+      "retrieved_at": "2026-11-07T17:54:32.672889+00:00"
+    },
+    {
+      "url": "https://www.landtag-niedersachsen.de/abgeordnete-suche-nach-alphabet/?tx_nltparliament_alphabetlist%5Baction%5D=alphabetList&tx_nltparliament_alphabetlist%5Bcontroller%5D=Person&tx_nltparliament_alphabetlist%5Bletter%5D=L&cHash=71ac7c38f6c73fd6d99e7289b0f190f5",
+      "final_url": "https://www.landtag-niedersachsen.de/abgeordnete-suche-nach-alphabet/?tx_nltparliament_alphabetlist%5Baction%5D=alphabetList&tx_nltparliament_alphabetlist%5Bcontroller%5D=Person&tx_nltparliament_alphabetlist%5Bletter%5D=L&cHash=71ac7c38f6c73fd6d99e7289b0f190f5",
+      "file": "6f3ef5f7f486098e9a8b68cd58b8c79e2cfcfed8cc8f6a558dbc74cb9011862c.gz",
+      "sha256": "6f3ef5f7f486098e9a8b68cd58b8c79e2cfcfed8cc8f6a558dbc74cb9011862c",
+      "retrieved_at": "2026-11-07T17:54:33.731556+00:00"
+    },
+    {
+      "url": "https://www.landtag-niedersachsen.de/abgeordnete-suche-nach-alphabet/?tx_nltparliament_alphabetlist%5Baction%5D=alphabetList&tx_nltparliament_alphabetlist%5Bcontroller%5D=Person&tx_nltparliament_alphabetlist%5Bletter%5D=M&cHash=26dcfbc4348a1c74238e46d7a055184c",
+      "final_url": "https://www.landtag-niedersachsen.de/abgeordnete-suche-nach-alphabet/?tx_nltparliament_alphabetlist%5Baction%5D=alphabetList&tx_nltparliament_alphabetlist%5Bcontroller%5D=Person&tx_nltparliament_alphabetlist%5Bletter%5D=M&cHash=26dcfbc4348a1c74238e46d7a055184c",
+      "file": "652b0dcf57e2e2023f520f3c6f0b9cd937d64f4967ada093ee0c14e889894100.gz",
+      "sha256": "652b0dcf57e2e2023f520f3c6f0b9cd937d64f4967ada093ee0c14e889894100",
+      "retrieved_at": "2026-11-07T17:54:34.773587+00:00"
+    },
+    {
+      "url": "https://www.landtag-niedersachsen.de/abgeordnete-suche-nach-alphabet/?tx_nltparliament_alphabetlist%5Baction%5D=alphabetList&tx_nltparliament_alphabetlist%5Bcontroller%5D=Person&tx_nltparliament_alphabetlist%5Bletter%5D=N&cHash=2a17db7ce10008dd2447953d6b6ca50c",
+      "final_url": "https://www.landtag-niedersachsen.de/abgeordnete-suche-nach-alphabet/?tx_nltparliament_alphabetlist%5Baction%5D=alphabetList&tx_nltparliament_alphabetlist%5Bcontroller%5D=Person&tx_nltparliament_alphabetlist%5Bletter%5D=N&cHash=2a17db7ce10008dd2447953d6b6ca50c",
+      "file": "8310471e92ea679022f686bac8db8309590e922f13e2d8c0c9c2da03caaf0261.gz",
+      "sha256": "8310471e92ea679022f686bac8db8309590e922f13e2d8c0c9c2da03caaf0261",
+      "retrieved_at": "2026-11-07T17:54:34.972881+00:00"
+    },
+    {
+      "url": "https://www.landtag-niedersachsen.de/abgeordnete-suche-nach-alphabet/?tx_nltparliament_alphabetlist%5Baction%5D=alphabetList&tx_nltparliament_alphabetlist%5Bcontroller%5D=Person&tx_nltparliament_alphabetlist%5Bletter%5D=O&cHash=8e84ff5d7fb07f360a8b8d3c38818508",
+      "final_url": "https://www.landtag-niedersachsen.de/abgeordnete-suche-nach-alphabet/?tx_nltparliament_alphabetlist%5Baction%5D=alphabetList&tx_nltparliament_alphabetlist%5Bcontroller%5D=Person&tx_nltparliament_alphabetlist%5Bletter%5D=O&cHash=8e84ff5d7fb07f360a8b8d3c38818508",
+      "file": "7ebfcc139e3a0b5a9c52174d178983418065216e33b2eb1b4a726b4d21e354c4.gz",
+      "sha256": "7ebfcc139e3a0b5a9c52174d178983418065216e33b2eb1b4a726b4d21e354c4",
+      "retrieved_at": "2026-11-07T17:54:35.175843+00:00"
+    },
+    {
+      "url": "https://www.landtag-niedersachsen.de/abgeordnete-suche-nach-alphabet/?tx_nltparliament_alphabetlist%5Baction%5D=alphabetList&tx_nltparliament_alphabetlist%5Bcontroller%5D=Person&tx_nltparliament_alphabetlist%5Bletter%5D=P&cHash=a6866896a6dcb27da776f41078fe22eb",
+      "final_url": "https://www.landtag-niedersachsen.de/abgeordnete-suche-nach-alphabet/?tx_nltparliament_alphabetlist%5Baction%5D=alphabetList&tx_nltparliament_alphabetlist%5Bcontroller%5D=Person&tx_nltparliament_alphabetlist%5Bletter%5D=P&cHash=a6866896a6dcb27da776f41078fe22eb",
+      "file": "6c2b5752152e4d029823a3ebc5e95560175f64019c81083ad20e65d464fc8ce6.gz",
+      "sha256": "6c2b5752152e4d029823a3ebc5e95560175f64019c81083ad20e65d464fc8ce6",
+      "retrieved_at": "2026-11-07T17:54:36.222769+00:00"
+    },
+    {
+      "url": "https://www.landtag-niedersachsen.de/abgeordnete-suche-nach-alphabet/?tx_nltparliament_alphabetlist%5Baction%5D=alphabetList&tx_nltparliament_alphabetlist%5Bcontroller%5D=Person&tx_nltparliament_alphabetlist%5Bletter%5D=R&cHash=ab5fb8b18289d2b95ec5cff3068f4a10",
+      "final_url": "https://www.landtag-niedersachsen.de/abgeordnete-suche-nach-alphabet/?tx_nltparliament_alphabetlist%5Baction%5D=alphabetList&tx_nltparliament_alphabetlist%5Bcontroller%5D=Person&tx_nltparliament_alphabetlist%5Bletter%5D=R&cHash=ab5fb8b18289d2b95ec5cff3068f4a10",
+      "file": "896dd1a5cc5aa72c3d5fc170c3c45f6b7d37dd5b6e637d494d0630f96791232d.gz",
+      "sha256": "896dd1a5cc5aa72c3d5fc170c3c45f6b7d37dd5b6e637d494d0630f96791232d",
+      "retrieved_at": "2026-11-07T17:54:37.233361+00:00"
+    },
+    {
+      "url": "https://www.landtag-niedersachsen.de/abgeordnete-suche-nach-alphabet/?tx_nltparliament_alphabetlist%5Baction%5D=alphabetList&tx_nltparliament_alphabetlist%5Bcontroller%5D=Person&tx_nltparliament_alphabetlist%5Bletter%5D=S&cHash=b1adf703eaacf6e7fb3a787e7a1b168c",
+      "final_url": "https://www.landtag-niedersachsen.de/abgeordnete-suche-nach-alphabet/?tx_nltparliament_alphabetlist%5Baction%5D=alphabetList&tx_nltparliament_alphabetlist%5Bcontroller%5D=Person&tx_nltparliament_alphabetlist%5Bletter%5D=S&cHash=b1adf703eaacf6e7fb3a787e7a1b168c",
+      "file": "a93482abf3bf92e7a15f615e571909b17bc7e930755868e0b33db2c98bf689b8.gz",
+      "sha256": "a93482abf3bf92e7a15f615e571909b17bc7e930755868e0b33db2c98bf689b8",
+      "retrieved_at": "2026-11-07T17:54:38.433823+00:00"
+    },
+    {
+      "url": "https://www.landtag-niedersachsen.de/abgeordnete-suche-nach-alphabet/?tx_nltparliament_alphabetlist%5Baction%5D=alphabetList&tx_nltparliament_alphabetlist%5Bcontroller%5D=Person&tx_nltparliament_alphabetlist%5Bletter%5D=T&cHash=4bf46f4ea757ab363c5ed386d544a1f6",
+      "final_url": "https://www.landtag-niedersachsen.de/abgeordnete-suche-nach-alphabet/?tx_nltparliament_alphabetlist%5Baction%5D=alphabetList&tx_nltparliament_alphabetlist%5Bcontroller%5D=Person&tx_nltparliament_alphabetlist%5Bletter%5D=T&cHash=4bf46f4ea757ab363c5ed386d544a1f6",
+      "file": "7873e0950dc37ebced2543a3e1564b174aa529f62779257b39b7cc685f22d43f.gz",
+      "sha256": "7873e0950dc37ebced2543a3e1564b174aa529f62779257b39b7cc685f22d43f",
+      "retrieved_at": "2026-11-07T17:54:39.456849+00:00"
+    },
+    {
+      "url": "https://www.landtag-niedersachsen.de/abgeordnete-suche-nach-alphabet/?tx_nltparliament_alphabetlist%5Baction%5D=alphabetList&tx_nltparliament_alphabetlist%5Bcontroller%5D=Person&tx_nltparliament_alphabetlist%5Bletter%5D=U&cHash=b93f2a7f79a77a3c9269cd8a96c4d0c5",
+      "final_url": "https://www.landtag-niedersachsen.de/abgeordnete-suche-nach-alphabet/?tx_nltparliament_alphabetlist%5Baction%5D=alphabetList&tx_nltparliament_alphabetlist%5Bcontroller%5D=Person&tx_nltparliament_alphabetlist%5Bletter%5D=U&cHash=b93f2a7f79a77a3c9269cd8a96c4d0c5",
+      "file": "5cfcabd8cf959ac3f4f92ad09e6afae1881bb3b5d6c50d62cdff8b0925800ad4.gz",
+      "sha256": "5cfcabd8cf959ac3f4f92ad09e6afae1881bb3b5d6c50d62cdff8b0925800ad4",
+      "retrieved_at": "2026-11-07T17:54:40.494307+00:00"
+    },
+    {
+      "url": "https://www.landtag-niedersachsen.de/abgeordnete-suche-nach-alphabet/?tx_nltparliament_alphabetlist%5Baction%5D=alphabetList&tx_nltparliament_alphabetlist%5Bcontroller%5D=Person&tx_nltparliament_alphabetlist%5Bletter%5D=V&cHash=f5f2f4ab4c284f92481f389d5524697b",
+      "final_url": "https://www.landtag-niedersachsen.de/abgeordnete-suche-nach-alphabet/?tx_nltparliament_alphabetlist%5Baction%5D=alphabetList&tx_nltparliament_alphabetlist%5Bcontroller%5D=Person&tx_nltparliament_alphabetlist%5Bletter%5D=V&cHash=f5f2f4ab4c284f92481f389d5524697b",
+      "file": "de5c667868ba591ff84112074b8f02bf588a8fdb4c6eef418499b1f85343ba68.gz",
+      "sha256": "de5c667868ba591ff84112074b8f02bf588a8fdb4c6eef418499b1f85343ba68",
+      "retrieved_at": "2026-11-07T17:54:41.581311+00:00"
+    },
+    {
+      "url": "https://www.landtag-niedersachsen.de/abgeordnete-suche-nach-alphabet/?tx_nltparliament_alphabetlist%5Baction%5D=alphabetList&tx_nltparliament_alphabetlist%5Bcontroller%5D=Person&tx_nltparliament_alphabetlist%5Bletter%5D=W&cHash=20533c7ae032d33cadf2dc3ee0c802b6",
+      "final_url": "https://www.landtag-niedersachsen.de/abgeordnete-suche-nach-alphabet/?tx_nltparliament_alphabetlist%5Baction%5D=alphabetList&tx_nltparliament_alphabetlist%5Bcontroller%5D=Person&tx_nltparliament_alphabetlist%5Bletter%5D=W&cHash=20533c7ae032d33cadf2dc3ee0c802b6",
+      "file": "cf1705fe76501fe090572b18c41edfc9eb6d9c300bf8a1d44040232d29aee8e3.gz",
+      "sha256": "cf1705fe76501fe090572b18c41edfc9eb6d9c300bf8a1d44040232d29aee8e3",
+      "retrieved_at": "2026-11-07T17:54:42.738777+00:00"
+    },
+    {
+      "url": "https://www.landtag-niedersachsen.de/abgeordnete-suche-nach-alphabet/?tx_nltparliament_alphabetlist%5Baction%5D=alphabetList&tx_nltparliament_alphabetlist%5Bcontroller%5D=Person&tx_nltparliament_alphabetlist%5Bletter%5D=Z&cHash=bd4f4ce61e3467e84a38ec71bd9009c0",
+      "final_url": "https://www.landtag-niedersachsen.de/abgeordnete-suche-nach-alphabet/?tx_nltparliament_alphabetlist%5Baction%5D=alphabetList&tx_nltparliament_alphabetlist%5Bcontroller%5D=Person&tx_nltparliament_alphabetlist%5Bletter%5D=Z&cHash=bd4f4ce61e3467e84a38ec71bd9009c0",
+      "file": "ce3d5a53d28f54f5874f840e542e310e625b6045f665e44dd65d5649aefb8d0b.gz",
+      "sha256": "ce3d5a53d28f54f5874f840e542e310e625b6045f665e44dd65d5649aefb8d0b",
+      "retrieved_at": "2026-11-07T17:54:43.736189+00:00"
+    }
+  ],
+  "acquired_count": 146,
+  "expected_count": null,
+  "observed_terms": [
+    "19"
+  ],
+  "departed_excluded": 7,
+  "error": null,
+  "first_rows": [
+    {
+      "external_id": "https://www.landtag-niedersachsen.de/abgeordnete-und-fraktionen/abgeordnete/details/alexander-saade/",
+      "name": "Saade, Alexander",
+      "aliases": [],
+      "profile_url": "https://www.landtag-niedersachsen.de/abgeordnete-und-fraktionen/abgeordnete/details/alexander-saade/",
+      "role": "member",
+      "land": null,
+      "term": "19",
+      "group": "SPD",
+      "party": null,
+      "constituency": null,
+      "mandate_kind": null,
+      "service_start": null,
+      "service_end": null,
+      "source_updated_text": null,
+      "service_precision": null,
+      "bundestag_id": null,
+      "locator": "/html/body/main/div[5]/div[2]/ul/li[1]/div/div[2]/a",
+      "evidence_hash": "a93482abf3bf92e7a15f615e571909b17bc7e930755868e0b33db2c98bf689b8",
+      "evidence_url": "https://www.landtag-niedersachsen.de/abgeordnete-suche-nach-alphabet/?tx_nltparliament_alphabetlist%5Baction%5D=alphabetList&tx_nltparliament_alphabetlist%5Bcontroller%5D=Person&tx_nltparliament_alphabetlist%5Bletter%5D=S&cHash=b1adf703eaacf6e7fb3a787e7a1b168c",
+      "profile_evidence_hash": null,
+      "profile_member_class": null,
+      "conflicts": [],
+      "leadership": [],
+      "service_evidence": []
+    },
+    {
+      "external_id": "https://www.landtag-niedersachsen.de/abgeordnete-und-fraktionen/abgeordnete/details/alexander-wille/",
+      "name": "Wille, Alexander",
+      "aliases": [],
+      "profile_url": "https://www.landtag-niedersachsen.de/abgeordnete-und-fraktionen/abgeordnete/details/alexander-wille/",
+      "role": "member",
+      "land": null,
+      "term": "19",
+      "group": "CDU",
+      "party": null,
+      "constituency": null,
+      "mandate_kind": null,
+      "service_start": null,
+      "service_end": null,
+      "source_updated_text": null,
+      "service_precision": null,
+      "bundestag_id": null,
+      "locator": "/html/body/main/div[5]/div[2]/ul/li[7]/div/div[2]/a",
+      "evidence_hash": "cf1705fe76501fe090572b18c41edfc9eb6d9c300bf8a1d44040232d29aee8e3",
+      "evidence_url": "https://www.landtag-niedersachsen.de/abgeordnete-suche-nach-alphabet/?tx_nltparliament_alphabetlist%5Baction%5D=alphabetList&tx_nltparliament_alphabetlist%5Bcontroller%5D=Person&tx_nltparliament_alphabetlist%5Bletter%5D=W&cHash=20533c7ae032d33cadf2dc3ee0c802b6",
+      "profile_evidence_hash": null,
+      "profile_member_class": null,
+      "conflicts": [],
+      "leadership": [],
+      "service_evidence": []
+    }
+  ],
+  "term_evidence": [
+    {
+      "url": "https://www.abgeordnetenwatch.de/api/v2/parliaments/12",
+      "file": "eae3edddec9e37253a5d4dbc53f2e4b0cb62b360c80249d993182cd7c951b549.gz",
+      "sha256": "eae3edddec9e37253a5d4dbc53f2e4b0cb62b360c80249d993182cd7c951b549",
+      "retrieved_at": "2026-11-07T18:08:47.951632+00:00",
+      "purpose": "secondary_term_metadata"
+    },
+    {
+      "url": "https://www.abgeordnetenwatch.de/api/v2/parliament-periods/143",
+      "file": "8f166499028e1643e0a837f8af387cfdf2ade6dbc38593d6280de9eed3d6cebe.gz",
+      "sha256": "8f166499028e1643e0a837f8af387cfdf2ade6dbc38593d6280de9eed3d6cebe",
+      "retrieved_at": "2026-11-07T18:08:50.604002+00:00",
+      "purpose": "secondary_term_metadata"
+    }
+  ],
+  "secondary_term": {
+    "id": 143,
+    "entity_type": "parliament_period",
+    "label": "Niedersachsen 2022 - 2027",
+    "api_url": "https://www.abgeordnetenwatch.de/api/v2/parliament-periods/143",
+    "abgeordnetenwatch_url": "https://www.abgeordnetenwatch.de/niedersachsen",
+    "parliament": {
+      "id": 12,
+      "entity_type": "parliament",
+      "label": "Niedersachsen",
+      "api_url": "https://www.abgeordnetenwatch.de/api/v2/parliaments/12",
+      "abgeordnetenwatch_url": "https://www.abgeordnetenwatch.de/niedersachsen"
+    },
+    "previous_period": {
+      "id": 142,
+      "entity_type": "parliament_period",
+      "label": "Niedersachsen Wahl 2022",
+      "api_url": "https://www.abgeordnetenwatch.de/api/v2/parliament-periods/142",
+      "abgeordnetenwatch_url": "https://www.abgeordnetenwatch.de/niedersachsen/wahl-2022"
+    },
+    "type": "legislature",
+    "election_date": null,
+    "start_date_period": "2022-11-08",
+    "end_date_period": "2027-11-18"
+  },
+  "usage": {
+    "attribution": "Niedersächsischer Landtag",
+    "licence_assumption": "No blanket open licence assumed; issuer attribution retained; image assets are not acquired.",
+    "terms_url": "https://www.landtag-niedersachsen.de/impressum/",
+    "link_label": "Impressum",
+    "status": 200,
+    "file": "19d5c7d114f672264c831dc350ce8aa65d77463bbb57be9367eb0e933b203789.gz",
+    "sha256": "19d5c7d114f672264c831dc350ce8aa65d77463bbb57be9367eb0e933b203789",
+    "retrieved_at": "2026-11-07T18:50:57.273600+00:00"
+  },
+  "qualification_date": "2026-11-07",
+  "credential_requirement": "Public HTTPS GET; no operator credential required",
+  "update_semantics": "Dated retrieval/current-directory observation; original bytes retained. Provider update times are unknown unless explicitly exposed.",
+  "historical_count": 0,
+  "profile_errors": [],
+  "profile_conflicts": [],
+  "check_basis": "official_directory_set",
+  "source_updates": [],
+  "qualified_term": "19"
+}

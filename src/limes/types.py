@@ -44,6 +44,8 @@ class Provenance(BaseModel):
     """Where an assertion came from and how much it is trusted."""
 
     source_id: str
+    validity_basis: str | None = None
+    roster_snapshot_id: str | None = None
     source_trust: float
     confidence: float
     extractor_model: str | None = None

@@ -1,4 +1,4 @@
-version: "1.3.0"
+version: "1.4.0"
 supertypes: [Agent, Place, Artifact]
 entity_types:
   - name: NewsDocument
@@ -64,11 +64,13 @@ entity_types:
       - {name: bundestag_id, type: string, required: false}
   - name: PublicBody
     supertype: Agent
-    identifying_keys: [wikidata_qid, ted_buyer_id]
+    identifying_keys: [wikidata_qid, ted_buyer_id, institution_id]
     properties:
       - {name: label, type: string, required: true}
       - {name: wikidata_qid, type: string, required: false, unique: true}
       - {name: ted_buyer_id, type: string, required: false}
+      - {name: institution_id, type: string, required: false, unique: true}
+      - {name: jurisdiction, type: string, required: false}
   - name: Corporation
     supertype: Agent
     identifying_keys: [lei, german_register_number, wikidata_qid]
@@ -161,12 +163,17 @@ entity_types:
       - {name: source_event_id, type: string, required: false}
       - {name: occurred_at, type: datetime, required: false}
   - name: Office
-    identifying_keys: [body_id, office_title, valid_from]
+    identifying_keys: [body_id, office_title, valid_from, office_key]
     properties:
       - {name: label, type: string, required: true}
       - {name: body_id, type: string, required: false}
       - {name: office_title, type: string, required: false}
       - {name: valid_from, type: datetime, required: false}
+      - {name: office_key, type: string, required: false}
+      - {name: scope, type: string, required: false}
+      - {name: term, type: string, required: false}
+      - {name: role, type: string, required: false}
+      - {name: represented_land, type: string, required: false}
   - name: Topic
     identifying_keys: [vocabulary, code]
     properties:
@@ -293,7 +300,86 @@ entity_types:
       - {name: symbol, type: string, required: false}
       - {name: exchange, type: string, required: false}
       - {name: provider, type: string, required: false}
+  - name: ParliamentaryGroup
+    supertype: Agent
+    identifying_keys: [group_id]
+    properties:
+      - {name: label, type: string, required: true}
+      - {name: group_id, type: string, required: false, unique: true}
+      - {name: scope, type: string, required: false}
+      - {name: term, type: string, required: false}
+  - name: PersonIdentifier
+    supertype: Artifact
+    identifying_keys: [external_id]
+    properties:
+      - {name: label, type: string, required: true}
+      - {name: external_id, type: string, required: false, unique: true}
+      - {name: canonical_person_id, type: string, required: false}
+      - {name: reviewed_at, type: datetime, required: false}
+  - name: RosterSnapshot
+    supertype: Artifact
+    identifying_keys: [snapshot_id]
+    properties:
+      - {name: label, type: string, required: true}
+      - {name: snapshot_id, type: string, required: false, unique: true}
+      - {name: scope, type: string, required: false}
+      - {name: term, type: string, required: false}
+      - {name: observed_at, type: datetime, required: false}
+      - {name: source_id, type: string, required: false}
+      - {name: expected_ids, type: string, required: false}
+      - {name: expected_count, type: integer, required: false}
+      - {name: check_basis, type: string, required: false}
+      - {name: consistent, type: boolean, required: false}
+      - {name: manifest_hash, type: string, required: false}
+      - {name: run_id, type: string, required: false}
+      - {name: source_updates, type: string, required: false}
+  - name: RosterMembership
+    supertype: Artifact
+    identifying_keys: [membership_id]
+    properties:
+      - {name: label, type: string, required: true}
+      - {name: membership_id, type: string, required: false, unique: true}
+      - {name: is_current, type: boolean, required: false}
+      - {name: scope, type: string, required: false}
+      - {name: snapshot_id, type: string, required: false}
+      - {name: person_id, type: string, required: false}
+      - {name: office_id, type: string, required: false}
+      - {name: external_id, type: string, required: false}
+      - {name: profile_url, type: string, required: false}
+      - {name: term, type: string, required: false}
+      - {name: role, type: string, required: false}
+      - {name: represented_land, type: string, required: false}
+      - {name: group_label, type: string, required: false}
+      - {name: party_label, type: string, required: false}
+      - {name: constituency, type: string, required: false}
+      - {name: mandate_kind, type: string, required: false}
+      - {name: time_basis, type: string, required: false}
+      - {name: source_id, type: string, required: false}
+      - {name: evidence_hash, type: string, required: false}
+      - {name: evidence_url, type: string, required: false}
+      - {name: evidence_locator, type: string, required: false}
+      - {name: identity_status, type: string, required: false}
+      - {name: identity_candidates, type: string, required: false}
+      - {name: service_start, type: datetime, required: false}
+      - {name: service_end, type: datetime, required: false}
+      - {name: source_updated_text, type: string, required: false}
+      - {name: service_precision, type: string, required: false}
+      - {name: observed_at, type: datetime, required: false}
+      - {name: profile_evidence_hash, type: string, required: false}
+      - {name: leadership, type: string, required: false}
+      - {name: service_evidence, type: string, required: false}
+      - {name: profile_member_class, type: string, required: false}
+      - {name: conflicts, type: string, required: false}
 relation_types:
+  - {name: PART_OF_BODY, domain: [PublicBody], range: [PublicBody], temporal: false}
+  - {name: IDENTIFIES, domain: [PersonIdentifier], range: [Person], temporal: false}
+  - {name: HAS_ROSTER_MEMBER, domain: [RosterSnapshot], range: [RosterMembership], temporal: false}
+  - {name: ROSTER_PERSON, domain: [RosterMembership], range: [Person], temporal: false}
+  - {name: ROSTER_OFFICE, domain: [RosterMembership], range: [Office], temporal: false}
+  - {name: MEMBER_OF_GROUP, domain: [Person], range: [ParliamentaryGroup], temporal: true}
+  - {name: GROUP_AT, domain: [ParliamentaryGroup], range: [PublicBody], temporal: false}
+  - {name: PARTICIPATED_IN_TERM, domain: [Person], range: [Office], temporal: false}
+  - {name: GROUP_EVIDENCE, domain: [Person], range: [ParliamentaryGroup], temporal: false}
   - {name: MEMBER_OF, domain: [Person, Corporation, Country], range: [PoliticalParty, InterestGroup, PublicBody, IGO], temporal: true}
   - {name: HOLDS_OFFICE, domain: [Person], range: [Office], temporal: true}
   - {name: OFFICE_AT, domain: [Office], range: [PublicBody, IGO, Corporation, PoliticalParty], temporal: true}

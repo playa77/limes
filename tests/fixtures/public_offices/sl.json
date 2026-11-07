@@ -1,0 +1,131 @@
+{
+  "scope": "sl",
+  "institution": "Landtag des Saarlandes",
+  "pages": [
+    {
+      "url": "https://www.landtag-saar.de/abgeordnete-und-fraktionen/abgeordnete/",
+      "final_url": "https://www.landtag-saar.de/abgeordnete-und-fraktionen/abgeordnete/",
+      "file": "f21d7ef014772ad6666fa41105ef883e59a42f8d9c9eb71a0ccb3ff718e664c3.gz",
+      "sha256": "f21d7ef014772ad6666fa41105ef883e59a42f8d9c9eb71a0ccb3ff718e664c3",
+      "retrieved_at": "2026-11-07T17:53:20.558405+00:00"
+    }
+  ],
+  "acquired_count": 49,
+  "expected_count": null,
+  "observed_terms": [],
+  "departed_excluded": 0,
+  "error": null,
+  "first_rows": [
+    {
+      "external_id": "https://www.landtag-saar.de/abgeordnete-und-fraktionen/abgeordnete/detail/alexandra-becker/6545/",
+      "name": "Alexandra Becker",
+      "aliases": [],
+      "profile_url": "https://www.landtag-saar.de/abgeordnete-und-fraktionen/abgeordnete/detail/alexandra-becker/6545/",
+      "role": "member",
+      "land": null,
+      "term": "abgeordnetenwatch:period:137 (Saarland 2022 - 2027)",
+      "group": "SPD",
+      "party": null,
+      "constituency": null,
+      "mandate_kind": null,
+      "service_start": null,
+      "service_end": null,
+      "source_updated_text": null,
+      "service_precision": null,
+      "bundestag_id": null,
+      "locator": "/html/body/main/div[2]/div/div/div[3]/div/div/div[2]/div/div/div[5]/div/div[2]/div/a",
+      "evidence_hash": "f21d7ef014772ad6666fa41105ef883e59a42f8d9c9eb71a0ccb3ff718e664c3",
+      "evidence_url": "https://www.landtag-saar.de/abgeordnete-und-fraktionen/abgeordnete/",
+      "profile_evidence_hash": null,
+      "profile_member_class": null,
+      "conflicts": [],
+      "leadership": [],
+      "service_evidence": []
+    },
+    {
+      "external_id": "https://www.landtag-saar.de/abgeordnete-und-fraktionen/abgeordnete/detail/alwin-theobald/1375/",
+      "name": "Alwin Theobald",
+      "aliases": [],
+      "profile_url": "https://www.landtag-saar.de/abgeordnete-und-fraktionen/abgeordnete/detail/alwin-theobald/1375/",
+      "role": "member",
+      "land": null,
+      "term": "abgeordnetenwatch:period:137 (Saarland 2022 - 2027)",
+      "group": "CDU",
+      "party": null,
+      "constituency": null,
+      "mandate_kind": null,
+      "service_start": null,
+      "service_end": null,
+      "source_updated_text": null,
+      "service_precision": null,
+      "bundestag_id": null,
+      "locator": "/html/body/main/div[2]/div/div/div[3]/div/div/div[2]/div/div/div[42]/div/div[2]/div/a",
+      "evidence_hash": "f21d7ef014772ad6666fa41105ef883e59a42f8d9c9eb71a0ccb3ff718e664c3",
+      "evidence_url": "https://www.landtag-saar.de/abgeordnete-und-fraktionen/abgeordnete/",
+      "profile_evidence_hash": null,
+      "profile_member_class": null,
+      "conflicts": [],
+      "leadership": [],
+      "service_evidence": []
+    }
+  ],
+  "term_evidence": [
+    {
+      "url": "https://www.abgeordnetenwatch.de/api/v2/parliaments/14",
+      "file": "2d68f635f8812835418e740ab0b525729be28c8ce8cea280fbfa3a203e85048b.gz",
+      "sha256": "2d68f635f8812835418e740ab0b525729be28c8ce8cea280fbfa3a203e85048b",
+      "retrieved_at": "2026-11-07T18:09:04.613344+00:00",
+      "purpose": "secondary_term_metadata"
+    },
+    {
+      "url": "https://www.abgeordnetenwatch.de/api/v2/parliament-periods/137",
+      "file": "7e4fe233826fb31c60a80b7de3826b55a45c5593fde3d9e9382a3f9b8093e20d.gz",
+      "sha256": "7e4fe233826fb31c60a80b7de3826b55a45c5593fde3d9e9382a3f9b8093e20d",
+      "retrieved_at": "2026-11-07T18:09:07.280814+00:00",
+      "purpose": "secondary_term_metadata"
+    }
+  ],
+  "secondary_term": {
+    "id": 137,
+    "entity_type": "parliament_period",
+    "label": "Saarland 2022 - 2027",
+    "api_url": "https://www.abgeordnetenwatch.de/api/v2/parliament-periods/137",
+    "abgeordnetenwatch_url": "https://www.abgeordnetenwatch.de/saarland",
+    "parliament": {
+      "id": 14,
+      "entity_type": "parliament",
+      "label": "Saarland",
+      "api_url": "https://www.abgeordnetenwatch.de/api/v2/parliaments/14",
+      "abgeordnetenwatch_url": "https://www.abgeordnetenwatch.de/saarland"
+    },
+    "previous_period": {
+      "id": 173,
+      "entity_type": "parliament_period",
+      "label": "Saarland Wahl 2022",
+      "api_url": "https://www.abgeordnetenwatch.de/api/v2/parliament-periods/173"
+    },
+    "type": "legislature",
+    "election_date": null,
+    "start_date_period": "2022-04-25",
+    "end_date_period": "2027-03-27"
+  },
+  "usage": {
+    "attribution": "Landtag des Saarlandes",
+    "licence_assumption": "No blanket open licence assumed; issuer attribution retained; image assets are not acquired.",
+    "terms_url": "https://www.landtag-saar.de/impressum/",
+    "link_label": "Impressum",
+    "status": 200,
+    "file": "8cd1ba7b36e9fd213900c72cbe2950238a30bc0338bc58a73bee65cddba66ab9.gz",
+    "sha256": "8cd1ba7b36e9fd213900c72cbe2950238a30bc0338bc58a73bee65cddba66ab9",
+    "retrieved_at": "2026-11-07T18:50:58.898866+00:00"
+  },
+  "qualification_date": "2026-11-07",
+  "credential_requirement": "Public HTTPS GET; no operator credential required",
+  "update_semantics": "Dated retrieval/current-directory observation; original bytes retained. Provider update times are unknown unless explicitly exposed.",
+  "historical_count": 0,
+  "profile_errors": [],
+  "profile_conflicts": [],
+  "check_basis": "official_directory_set;secondary_term_metadata",
+  "source_updates": [],
+  "qualified_term": "abgeordnetenwatch:period:137 (Saarland 2022 - 2027)"
+}

@@ -5,6 +5,34 @@ reversibility: **R1** reversible in under an hour, **R2** bounded recoverable
 cost, **R3** one-way door. Written when each decision is made, latest first.
 Nothing here is a status report; unlogged decisions are unmade decisions.
 
+## 2026-11-07 — D-98 (R2) — Implement full BE-56 with observed rosters and conservative identity
+
+The user requests implementation of PR #25 and its full A1–A8 plan, after updating
+from live GitHub. Fast-forwarded main from `7c7be13` to `d967bae244dc`; implementation
+branch is `codex/be-56-german-parliament-members`. Completion criteria were recorded
+before coding in `work/be56/SESSION.md`. BE-41 is accepted; existing source/archive,
+resolution, bitemporal assertions and authenticated operator/query contracts are reused.
+
+Implement all 21 scopes together with ontology 1.4, retained-evidence DIP repair,
+bounded resumable acquisition, per-scope reconciliation and generic HTTP/desktop
+compatibility. Current roster observations never invent personal service dates or
+political-party membership. Exact identifiers reuse canonical people; name-only
+similarities remain review candidates. Evidence-backed explicit identity reviews
+are bounded audited operator jobs and retain prior bindings and belief history.
+
+The user's public-DIP-key clarification prompted public source discovery and a
+successful official API validation. [Source register](docs/BE56_SOURCES.md) records
+the public reference, stated expiry and validation date without committing a key.
+No paid inference, production population, migration, deployment, staging, commit,
+push or PR publication is requested by this implementation instruction. Public
+fixture acquisition and disposable local qualification are implementation evidence.
+
+Publication update: the user subsequently requests preparing and opening a PR for
+this session’s implementation, authorizing staging, commit, push and PR creation.
+Publish the full BE-56 diff as a draft with A7 explicitly open. The user confirms
+that a larger executor filesystem is unavailable; no acceptance waiver, merge,
+deployment or production data run is authorized.
+
 ## 2026-11-07 — D-97 (R2) — Next person coverage: German parliamentary members and federal officeholders
 
 The user selects every serving member of the German Bundestag and all 16 state

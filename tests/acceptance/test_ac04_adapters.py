@@ -1,5 +1,5 @@
 # tests/acceptance/test_ac04_adapters.py | v1.0.0 | introduced by WP-39
-"""AC-04: all thirteen adapters produce the expected record set from
+"""AC-04: all registered adapters produce the expected record set from
 recorded fixtures, with correct deterministic keys and source attribution.
 
 The per-adapter exact record sets are asserted by the adapter unit suites
@@ -23,6 +23,8 @@ from pathlib import Path
 import pytest
 
 from limes.ontology.registry import load_ontology
+from limes.public_offices.catalogue import SCOPES
+from limes.public_offices.models import Snapshot
 from limes.sources import (
     bundestag_dip,
     eurlex,
@@ -61,6 +63,7 @@ EXPECTED_SOURCE_IDS = [
     "wikipedia",
     "yahoo_finance",
 ]
+EXPECTED_SOURCE_IDS = sorted(EXPECTED_SOURCE_IDS + ["public_offices_" + s.code for s in SCOPES])
 
 
 def _csv_record(path: str, content_type: str, url: str) -> RawRecord:
@@ -240,6 +243,29 @@ def _records_for(source_id: str) -> list[RawRecord]:
         from tests.fixtures.enrichment_data import record
 
         return [record("wikipedia", "de") if source_id == "wikipedia" else record()]
+    if source_id.startswith("public_offices_"):
+        scope = source_id.removeprefix("public_offices_")
+        manifest = json.loads((FIXTURES / "public_offices" / f"{scope}.json").read_text())
+        # Official fixture excerpts exercise attribution/key contracts here;
+        # the complete original roster sets are qualified in test_public_offices.
+        rows = manifest["first_rows"]
+        snapshot = Snapshot(
+            scope=scope,
+            observed_at=FETCHED_AT,
+            consistent=True,
+            term=manifest.get("qualified_term"),
+            members=rows,
+            expected_ids=[row["external_id"] for row in rows],
+            expected_count=len(rows),
+            check_basis="attribution_fixture_excerpt",
+            pages=manifest["pages"],
+        )
+        return [RawRecord(
+            payload=snapshot.model_dump_json().encode(),
+            content_type="application/json",
+            source_url=manifest["pages"][0]["url"],
+            fetched_at=FETCHED_AT,
+        )]
     if source_id == "news":
         return []  # Investigation-driven transport is covered by test_news_pipeline.
     if source_id == "wikidata":

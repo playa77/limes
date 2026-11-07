@@ -216,6 +216,7 @@ from limes.cli.enrichment import enrich  # noqa: E402
 from limes.cli.evaluate import evaluate  # noqa: E402
 from limes.cli.ingest import ingest_all, ingest_source  # noqa: E402
 from limes.cli.migrate import migrate  # noqa: E402
+from limes.cli.public_offices import identify  # noqa: E402
 from limes.cli.reextract import reextract_source  # noqa: E402
 from limes.cli.select_models import select_models  # noqa: E402
 
@@ -227,6 +228,7 @@ app.command("reextract")(_run(reextract_source))
 app.command("select-models")(_run(select_models))
 app.command("evaluate")(_run(evaluate))
 app.command("migrate")(_run(migrate))
+app.command("public-offices-identify")(_run(identify))
 app.command("backup")(_run(backup))
 
 

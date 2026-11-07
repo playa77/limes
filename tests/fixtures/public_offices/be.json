@@ -1,0 +1,132 @@
+{
+  "scope": "be",
+  "institution": "Abgeordnetenhaus von Berlin",
+  "pages": [
+    {
+      "url": "https://www.parlament-berlin.de/das-parlament/abgeordnete/alphabetische-suche",
+      "final_url": "https://www.parlament-berlin.de/das-parlament/abgeordnete/alphabetische-suche",
+      "file": "f519df0db1372ae1f9752b495520124886fac0bc6a8a364f304d05bc87842d63.gz",
+      "sha256": "f519df0db1372ae1f9752b495520124886fac0bc6a8a364f304d05bc87842d63",
+      "retrieved_at": "2026-11-07T17:53:15.995257+00:00"
+    }
+  ],
+  "acquired_count": 153,
+  "expected_count": null,
+  "observed_terms": [],
+  "departed_excluded": 0,
+  "error": null,
+  "first_rows": [
+    {
+      "external_id": "https://www.parlament-berlin.de/Abgeordnete/Carsten-Ubbelohde",
+      "name": "Ubbelohde, Carsten",
+      "aliases": [],
+      "profile_url": "https://www.parlament-berlin.de/Abgeordnete/Carsten-Ubbelohde",
+      "role": "member",
+      "land": null,
+      "term": "abgeordnetenwatch:period:176 (Berlin 2026 - 2031)",
+      "group": "AfD-Fraktion",
+      "party": null,
+      "constituency": null,
+      "mandate_kind": null,
+      "service_start": null,
+      "service_end": null,
+      "source_updated_text": null,
+      "service_precision": null,
+      "bundestag_id": null,
+      "locator": "/html/body/div/div[2]/div[2]/main/div/section[22]/basic-toggle/div/ul/li[1]/a",
+      "evidence_hash": "f519df0db1372ae1f9752b495520124886fac0bc6a8a364f304d05bc87842d63",
+      "evidence_url": "https://www.parlament-berlin.de/das-parlament/abgeordnete/alphabetische-suche",
+      "profile_evidence_hash": null,
+      "profile_member_class": null,
+      "conflicts": [],
+      "leadership": [],
+      "service_evidence": []
+    },
+    {
+      "external_id": "https://www.parlament-berlin.de/Abgeordnete/Maja-Lasi%C4%87",
+      "name": "Lasić, Dr. Maja",
+      "aliases": [],
+      "profile_url": "https://www.parlament-berlin.de/Abgeordnete/Maja-Lasi%C4%87",
+      "role": "member",
+      "land": null,
+      "term": "abgeordnetenwatch:period:176 (Berlin 2026 - 2031)",
+      "group": "Fraktion der SPD",
+      "party": null,
+      "constituency": null,
+      "mandate_kind": null,
+      "service_start": null,
+      "service_end": null,
+      "source_updated_text": null,
+      "service_precision": null,
+      "bundestag_id": null,
+      "locator": "/html/body/div/div[2]/div[2]/main/div/section[12]/basic-toggle/div/ul/li[1]/a",
+      "evidence_hash": "f519df0db1372ae1f9752b495520124886fac0bc6a8a364f304d05bc87842d63",
+      "evidence_url": "https://www.parlament-berlin.de/das-parlament/abgeordnete/alphabetische-suche",
+      "profile_evidence_hash": null,
+      "profile_member_class": null,
+      "conflicts": [],
+      "leadership": [],
+      "service_evidence": []
+    }
+  ],
+  "term_evidence": [
+    {
+      "url": "https://www.abgeordnetenwatch.de/api/v2/parliaments/2",
+      "file": "2424a870dbfa5f8d743a29b256f1de5fdc10b14aac939b6b9e78a715241b66a0.gz",
+      "sha256": "2424a870dbfa5f8d743a29b256f1de5fdc10b14aac939b6b9e78a715241b66a0",
+      "retrieved_at": "2026-11-07T17:56:09.613771+00:00",
+      "purpose": "secondary_term_metadata"
+    },
+    {
+      "url": "https://www.abgeordnetenwatch.de/api/v2/parliament-periods/176",
+      "file": "7cc272d7079441875a5a335aa9d936b96b44b7e5aede28fdd5026a7e55a4ce65.gz",
+      "sha256": "7cc272d7079441875a5a335aa9d936b96b44b7e5aede28fdd5026a7e55a4ce65",
+      "retrieved_at": "2026-11-07T17:56:10.308622+00:00",
+      "purpose": "secondary_term_metadata"
+    }
+  ],
+  "secondary_term": {
+    "id": 176,
+    "entity_type": "parliament_period",
+    "label": "Berlin 2026 - 2031",
+    "api_url": "https://www.abgeordnetenwatch.de/api/v2/parliament-periods/176",
+    "abgeordnetenwatch_url": "https://www.abgeordnetenwatch.de/berlin",
+    "parliament": {
+      "id": 2,
+      "entity_type": "parliament",
+      "label": "Berlin",
+      "api_url": "https://www.abgeordnetenwatch.de/api/v2/parliaments/2",
+      "abgeordnetenwatch_url": "https://www.abgeordnetenwatch.de/berlin"
+    },
+    "previous_period": {
+      "id": 167,
+      "entity_type": "parliament_period",
+      "label": "Berlin Wahl 2026",
+      "api_url": "https://www.abgeordnetenwatch.de/api/v2/parliament-periods/167",
+      "abgeordnetenwatch_url": "https://www.abgeordnetenwatch.de/berlin/wahl-2026"
+    },
+    "type": "legislature",
+    "election_date": null,
+    "start_date_period": "2026-10-29",
+    "end_date_period": "2031-10-30"
+  },
+  "usage": {
+    "attribution": "Abgeordnetenhaus von Berlin",
+    "licence_assumption": "No blanket open licence assumed; issuer attribution retained; image assets are not acquired.",
+    "terms_url": "https://www.parlament-berlin.de/impressum",
+    "link_label": "Impressum",
+    "status": 200,
+    "file": "2d96b28a079ee563fbc333bef2572920cdb11a57438cdf8b4a0ad91ca5c55288.gz",
+    "sha256": "2d96b28a079ee563fbc333bef2572920cdb11a57438cdf8b4a0ad91ca5c55288",
+    "retrieved_at": "2026-11-07T18:50:53.966067+00:00"
+  },
+  "qualification_date": "2026-11-07",
+  "credential_requirement": "Public HTTPS GET; no operator credential required",
+  "update_semantics": "Dated retrieval/current-directory observation; original bytes retained. Provider update times are unknown unless explicitly exposed.",
+  "historical_count": 0,
+  "profile_errors": [],
+  "profile_conflicts": [],
+  "check_basis": "official_directory_set;secondary_term_metadata",
+  "source_updates": [],
+  "qualified_term": "abgeordnetenwatch:period:176 (Berlin 2026 - 2031)"
+}

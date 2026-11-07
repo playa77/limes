@@ -60,7 +60,7 @@ logger = structlog.get_logger(__name__)
 # One place to bump on migration (WP-31); the loader stamps nodes with the
 # *loaded* ontology's version, so a stale constant here only mislabels
 # assertions, never nodes.
-ONTOLOGY_VERSION = "1.3.0"
+ONTOLOGY_VERSION = "1.4.0"
 
 # §11 retry policy, as module constants matching the §4.2 defaults: adapters
 # are constructed without Settings (build_default_registry takes none), so the

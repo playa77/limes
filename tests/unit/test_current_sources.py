@@ -62,7 +62,7 @@ def test_current_rr_financial_consolidation_not_ownership():
         assert assertion.object.entity_id == "lei:" + row["Relationship.EndNode.NodeID"]
         assert assertion.validity.valid_from < NOW
         assert assertion.provenance.evidence_member == "gleif-rr.csv"
-        assert assertion.provenance.ontology_version == "1.3.0"
+        assert assertion.provenance.ontology_version == "1.4.0"
 
 
 def test_offene_actual_unwrapped_rows_use_individual_historical_vintage():
