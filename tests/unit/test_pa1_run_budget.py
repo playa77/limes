@@ -7,10 +7,7 @@ error is a `SourceFetchError` subclass so the abort-and-durable-close path of
 from __future__ import annotations
 
 import time
-from contextlib import contextmanager
-from datetime import UTC, datetime
 from types import SimpleNamespace
-from typing import Any
 
 import httpx
 import pytest

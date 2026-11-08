@@ -10,14 +10,13 @@ import time
 from types import SimpleNamespace
 from uuid import uuid4
 
-import pytest
 from fastapi.testclient import TestClient
 from pydantic import SecretStr
 
 from limes.api.main import create_app
+from limes.operations import worker
 from limes.operations.models import Job, JobRequest
 from limes.operations.store import JobStore
-from limes.operations import worker
 
 
 def request(command: str = "backup", **kwargs) -> JobRequest:

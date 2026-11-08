@@ -4,16 +4,14 @@
 from __future__ import annotations
 
 import uuid
-from uuid import uuid4
 
 import httpx
-import pytest
 import respx
 from typer.testing import CliRunner
 
 from limes.cli.main import app
 from limes.operations.client import OperationsClient
-from limes.operations.models import Job, JobRequest
+from limes.operations.models import Job
 
 runner = CliRunner()
 

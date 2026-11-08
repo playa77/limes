@@ -45,7 +45,10 @@ def test_two_contenders_on_one_host_serialize(tmp_path, monkeypatch):
                 order.append("second-in")
 
     t1, t2 = threading.Thread(target=first), threading.Thread(target=second)
-    t1.start(); t2.start()  # noqa: E701 (confident two-statement lines)
+    t1.start()
+    t2.start()
+    # joining the contender first: its 0.5s bounded wait must expire while
+    # the first holder keeps the slot
     t2.join(timeout=10)
     assert "second-in" not in order  # bounded wait expired without the slot
     release.set()

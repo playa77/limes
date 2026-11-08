@@ -680,7 +680,7 @@ def _acquire_host_slot(directory: Path, cap: int, deadline: float, key: str):
         if time.monotonic() >= deadline:
             raise SourceFetchError(
                 f"host concurrency slot for {key} stayed busy past the "
-                f"{os.environ.get('LIMES_HOST_SLOT_WAIT_SECONDS', str(HOST_SLOT_WAIT_SECONDS))}s wait"
+                f"{os.environ.get('LIMES_HOST_SLOT_WAIT_SECONDS', '10')}s wait"
             )
         time.sleep(0.05)
 
