@@ -47,6 +47,13 @@ class OperationsClient:
         response.raise_for_status()
         return Job.model_validate(response.json())
 
+    def cancel(self, key: UUID) -> Job:
+        """PA-1 R4: request cancellation; a running job answers 202 and
+        terminates within the worker poll cadence."""
+        response = self.client.post(f"/operations/jobs/{key}/cancel")
+        response.raise_for_status()
+        return Job.model_validate(response.json())
+
     def wait(self, key: UUID, output: Callable[[str], None] = print) -> Job:
         previous = ""
         while True:
