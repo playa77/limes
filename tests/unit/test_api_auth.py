@@ -30,7 +30,7 @@ def settings(tmp_path, token=TOKEN):
 @pytest.fixture
 def app(tmp_path, monkeypatch):
     driver = SimpleNamespace(read=lambda *args: [{"one": 1}], close=lambda: None)
-    monkeypatch.setattr("limes.api.main.GraphDriver", lambda *args: driver)
+    monkeypatch.setattr("limes.api.main.GraphDriver", lambda *args, **kwargs: driver)
     monkeypatch.setattr("limes.api.main.provision", lambda *args: None)
     return create_app(settings(tmp_path))
 

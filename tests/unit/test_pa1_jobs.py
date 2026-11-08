@@ -227,7 +227,7 @@ def _settings(tmp_path):
 
 def _patch_app(monkeypatch, loaded) -> None:
     driver = SimpleNamespace(read=lambda *args: [{"one": 1}], close=lambda: None)
-    monkeypatch.setattr("limes.api.main.GraphDriver", lambda *args: driver)
+    monkeypatch.setattr("limes.api.main.GraphDriver", lambda *args, **kwargs: driver)
     monkeypatch.setattr("limes.api.main.provision", lambda *args: None)
 
 

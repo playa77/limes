@@ -26,15 +26,19 @@ uniform across the source layer:
 
 from __future__ import annotations
 
+import fcntl
 import hashlib
 import logging
 import math
+import os
 import time
 from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import UTC, datetime
 from email.utils import parsedate_to_datetime
+from pathlib import Path
 from typing import Any, Literal, Protocol, runtime_checkable
+from urllib.parse import urlsplit
 
 import httpx
 import structlog
@@ -466,7 +470,9 @@ def request_with_retry(
         attempts += 1
         if read_timeout_s is not None:
             log.info("source HTTP attempt", endpoint=attempt_url, attempt=attempts)
-        with httpx.Client(
+        # PA-1 R5: one host slot per request, held until the response body
+        # is consumed — never released mid-stream.
+        with host_slot(attempt_url), httpx.Client(
             timeout=httpx.Timeout(timeout_s, read=read_timeout_s or timeout_s),
             follow_redirects=follow_redirects,
             headers=headers,
@@ -540,6 +546,8 @@ def request_with_retry(
                     url=attempt_url, status_code=response.status_code,
                     response_body=response.content
                 )
+            if max_bytes is None:
+                response.read()  # body consumed inside the host slot (PA-1 R5)
             if _scope is not None:
                 _scope.record_success()
             return response
@@ -628,3 +636,66 @@ def now_utc() -> datetime:
     """The current UTC instant, timezone-aware. Adapters use this for
     `fetched_at` and, in the absence of a source-stated date, `valid_from`."""
     return datetime.now(UTC)
+
+
+# ---------------- PA-1 R5: cross-process per-host netiquette slots ----------------
+
+HOST_SLOT_DIR = "/data/host-slots"
+HOST_SLOT_WAIT_SECONDS = 10
+
+
+def _host_key(url: str) -> str:
+    """The netiquette key for a URL: overpass mirrors share one cap, every
+    explicit override matches its domain suffix, everything else is per-host."""
+    hostname = urlsplit(url).hostname or "unknown"
+    if "overpass" in hostname:
+        return "overpass"
+    return hostname
+
+
+def _host_cap(key: str) -> int:
+    for suffix, cap in HOST_CONCURRENCY_OVERRIDES.items():
+        if key == suffix or key.endswith("." + suffix) or (suffix in key and suffix == "overpass"):
+            return cap
+    return int(os.environ.get("LIMES_HOST_CONCURRENCY_DEFAULT", "2"))
+
+
+def _acquire_host_slot(directory: Path, cap: int, deadline: float, key: str):
+    while True:
+        for index in range(cap):
+            handle = (directory / f"{index}.lock").open("a")
+            try:
+                fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except OSError:
+                handle.close()
+                continue
+            return handle
+        if time.monotonic() >= deadline:
+            raise SourceFetchError(
+                f"host concurrency slot for {key} stayed busy past the "
+                f"{os.environ.get('LIMES_HOST_SLOT_WAIT_SECONDS', str(HOST_SLOT_WAIT_SECONDS))}s wait"
+            )
+        time.sleep(0.05)
+
+
+@contextmanager
+def host_slot(url: str) -> Iterator:
+    """PA-1 R5: acquire one per-host flock slot for a single HTTP request.
+
+    Slots live at `$LIMES_HOST_SLOT_DIR/<key>/<i>.lock` (default
+    `/data/host-slots`), counted to the host's cap (explicit override or
+    `LIMES_HOST_CONCURRENCY_DEFAULT`). The bounded `LIMES_HOST_SLOT_WAIT_SECONDS`
+    wait expires into a `SourceFetchError` — kernel crash semantics release
+    the lock if a holder dies.
+    """
+    key = _host_key(url)
+    cap = _host_cap(key)
+    directory = Path(os.environ.get("LIMES_HOST_SLOT_DIR", HOST_SLOT_DIR)) / key
+    directory.mkdir(parents=True, exist_ok=True)
+    wait = float(os.environ.get("LIMES_HOST_SLOT_WAIT_SECONDS", str(HOST_SLOT_WAIT_SECONDS)))
+    handle = _acquire_host_slot(directory, cap, time.monotonic() + wait, key)
+    try:
+        yield
+    finally:
+        fcntl.flock(handle, fcntl.LOCK_UN)
+        handle.close()

@@ -26,7 +26,7 @@ def ops_client(tmp_path, monkeypatch):
         }
     )
     driver = SimpleNamespace(read=lambda *args: [{"one": 1}], close=lambda: None)
-    monkeypatch.setattr("limes.api.main.GraphDriver", lambda *args: driver)
+    monkeypatch.setattr("limes.api.main.GraphDriver", lambda *args, **kwargs: driver)
     monkeypatch.setattr("limes.api.main.provision", lambda *args: None)
     with TestClient(create_app(loaded)) as client:
         yield client
