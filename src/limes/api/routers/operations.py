@@ -66,6 +66,9 @@ def cancel(job_id: UUID, jobs: Annotated[JobStore, Depends(store)]) -> Job:
         raise HTTPException(404, "job not found")
     if result.status == "cancelled":
         return result  # queued cancel is already terminal
+    if result.status in TERMINAL_STATUSES:
+        # Terminal in the float between `get` and flag persist: no-op + record.
+        return cast(Job, JSONResponse(status_code=409, content=result.model_dump(mode="json")))
     return cast(Job, JSONResponse(status_code=202, content=result.model_dump(mode="json")))
 
 

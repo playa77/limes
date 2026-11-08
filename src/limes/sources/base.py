@@ -34,6 +34,7 @@ import os
 import time
 from collections.abc import Iterator
 from contextlib import contextmanager
+from contextvars import ContextVar
 from datetime import UTC, datetime
 from email.utils import parsedate_to_datetime
 from pathlib import Path
@@ -86,29 +87,33 @@ class _RunBudget:
         self.failures = 0
 
 
-_scope: _RunBudget | None = None
+_scope: ContextVar[_RunBudget | None] = ContextVar("limes_source_run_budget", default=None)
 
 
 @contextmanager
 def source_run_scope(deadline: float | None, transport_attempts: int | None):
-    """Bind the PA-1 R3 budget for one source run; remove it again on exit."""
-    global _scope
-    previous = _scope
-    _scope = _RunBudget(deadline, transport_attempts)
+    """Bind the PA-1 R3 budget for one source run; remove it again on exit.
+
+    A ContextVar (not a module global) keeps concurrent in-process timelines
+    from bleeding failure counts across runs.
+    """
+    token = _scope.set(_RunBudget(deadline, transport_attempts))
     try:
-        yield _scope
+        yield _scope.get()
     finally:
-        _scope = previous
+        _scope.reset(token)
 
 
 def run_consecutive_failures() -> int:
     """Consecutive failed HTTP attempts inside the active run (0 without one)."""
-    return _scope.failures if _scope is not None else 0
+    scope = _scope.get()
+    return scope.failures if scope is not None else 0
 
 
 def run_time_left() -> float | None:
     """Seconds left in the active run budget (None without one)."""
-    return None if _scope is None or _scope.deadline is None else _scope.deadline - time.monotonic()
+    scope = _scope.get()
+    return None if scope is None or scope.deadline is None else scope.deadline - time.monotonic()
 
 # The ontology artifact version the adapters emit against (ontology/ontology.yaml).
 # One place to bump on migration (WP-31); the loader stamps nodes with the
@@ -441,16 +446,17 @@ def request_with_retry(
     endpoints = (url, *fallback_urls)
 
     def _budget_failure(step: str, detail: str) -> None:
-        if _scope is None:
+        scope = _scope.get()
+        if scope is None:
             return
-        _scope.record_failure()
+        scope.record_failure()
         logger.warning(
             "source transport attempt failed; budget consumed",
             url=url,
             step=step,
             detail=detail,
-            consecutive_failures=_scope.failures,
-            budget_attempts=_scope.transport_attempts,
+            consecutive_failures=scope.failures,
+            budget_attempts=scope.transport_attempts,
         )
 
     @retry(
@@ -462,7 +468,8 @@ def request_with_retry(
     )
     def _call() -> httpx.Response:
         nonlocal attempts, endpoint_index
-        if _scope is not None and _scope.deadline is not None and time.monotonic() >= _scope.deadline:
+        scope = _scope.get()
+        if scope is not None and scope.deadline is not None and time.monotonic() >= scope.deadline:
             raise SourceRunBudgetExceeded(
                 "source run budget elapsed; refusing another HTTP attempt"
             )
@@ -548,8 +555,8 @@ def request_with_retry(
                 )
             if max_bytes is None:
                 response.read()  # body consumed inside the host slot (PA-1 R5)
-            if _scope is not None:
-                _scope.record_success()
+            if scope is not None:
+                scope.record_success()
             return response
 
     try:

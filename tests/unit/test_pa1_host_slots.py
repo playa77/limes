@@ -81,27 +81,32 @@ def test_overpass_hosts_share_one_cap(tmp_path, monkeypatch):
 
 
 def test_requests_honor_slots_and_release(tmp_path, monkeypatch):
-    _slot_env(monkeypatch, tmp_path, cap=1, wait=5)
-    monkeypatch.setattr("time.sleep", lambda _: None)
+    """Real-serialization evidence through the request path (review F12):
+    cap=1 with a slow handler forces requests to queue, so the wall time of
+    four same-host requests must exceed one request's duration."""
+    _slot_env(monkeypatch, tmp_path, cap=1, wait=10)
     results: list[str] = []
     errors: list[Exception] = []
 
     def handler(request: httpx.Request) -> Response:
-        time.sleep(0.3)  # longer than the acquisition spacing
+        time.sleep(0.4)
         return Response(200, content=b"ok")
 
     def hit(url: str) -> None:
         try:
-            results.append(source_base.fetch_bytes(url))
+            results.append(source_base.fetch_bytes(url).decode())
         except Exception as exc:  # noqa: BLE001  (test surface)
             errors.append(exc)
 
     with respx.mock:
         respx.get("https://polite.test/").mock(side_effect=handler)
         threads = [threading.Thread(target=hit, args=("https://polite.test/",)) for _ in range(4)]
+        started = time.monotonic()
         for thread in threads:
             thread.start()
         for thread in threads:
             thread.join(timeout=30)
+        elapsed = time.monotonic() - started
     assert not errors, errors
-    assert results == [b"ok"] * 4
+    assert results == ["ok"] * 4
+    assert elapsed >= 4 * 0.4 * 0.75  # serialized, not fan-out parallel

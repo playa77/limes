@@ -32,8 +32,25 @@ _RETRYABLE = (SessionExpired, TransientError)
 
 
 def gate_path_for_jobs(jobs_path: Path) -> Path:
-    """PA-1 R2: the cross-process graph write gate file on the worker volume."""
-    return jobs_path.parent.parent / "write-gate.lock"
+    """PA-1 R2: the cross-process graph write gate file, on the shared `jobs`
+    named volume (mounted rw in both api and worker containers; the `/data`
+    root itself is per-container, so the gate must live one level down)."""
+    return jobs_path.parent / "write-gate.lock"
+
+
+def write_gate_path_for(settings) -> Path | None:
+    """Resolve the effective gate path from settings.
+
+    `None` when `LIMES_INGEST_WRITE_GATE` is false, or when the jobs parent
+    volume does not exist on this host (a dev/test box without the compose
+    `jobs` volume runs ungated rather than failing startup; review F1/F4).
+    """
+    if not getattr(settings, "ingest_write_gate", True):
+        return None
+    path = gate_path_for_jobs(settings.jobs_path)
+    if not path.parent.is_dir():
+        return None
+    return path
 
 
 class GraphDriver:
@@ -44,6 +61,10 @@ class GraphDriver:
     writes serialize process-wide and across containers while downloads run
     freely in parallel. Reads are never gated.
     """
+
+    # Class-level default keeps duck-typed test fakes that bypass __init__
+    # (e.g. counting wrappers) ungated instead of AttributeError-ing.
+    _write_gate_path: Path | None = None
 
     def __init__(
         self,

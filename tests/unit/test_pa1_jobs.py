@@ -90,6 +90,33 @@ def test_recover_maps_running_with_cancel_request_to_failed(tmp_path):
     assert store.get(str(job.job_id)).status == "failed"
 
 
+def test_scheduler_maps_cancelled_news_jobs_to_failed(tmp_path):
+    """A cancelled news cycle acquired nothing: it must schedule as failed
+    (explicit replay), never as a succeeded skipped-ahead cycle (review F2)."""
+    from datetime import UTC, datetime
+
+    from limes.news.models import TrackingRequest
+    from limes.news.store import TrackingStore
+
+    store = TrackingStore(tmp_path / "jobs.db")
+    store.save(
+        TrackingRequest(investigation_id="case", title="Supply investigation", entity_ids=["a"])
+    )
+    now = datetime.now(UTC)
+    store.schedule(now)
+    saved = store.get_investigation("case")
+    assert saved is not None and saved.job_id
+    claimed = store.claim()
+    assert claimed is not None
+    store.request_cancel(str(claimed.job_id))
+    # worker observes the flag and closes the job as `cancelled`:
+    store.finish(str(claimed.job_id), -15, "cancelled", status="cancelled")
+    store.schedule(now)
+    after = store.get_investigation("case")
+    assert after is not None
+    assert after.status == "failed"
+
+
 def test_job_model_admits_cancelled_status():
     job = Job(
         job_id=uuid4(), request=request(), status="cancelled", created_at="", updated_at=""

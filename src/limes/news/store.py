@@ -80,7 +80,9 @@ class TrackingStore(JobStore):
                 if job.status in ("queued", "running"):
                     self._update(item.investigation_id, status=job.status)
                     continue
-                if job.status == "failed":
+                if job.status in ("failed", "cancelled"):
+                    # PA-1 R4: a cancelled cycle acquired nothing; like a failure
+                    # it needs explicit replay, never an automatic success stamp.
                     self._update(item.investigation_id, status="failed")
                     continue
                 if item.status != "succeeded":

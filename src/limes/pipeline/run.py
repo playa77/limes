@@ -194,7 +194,7 @@ def _source_budget(settings, source_id: str) -> tuple[int, int]:
 def _execute_run(spec: RunSpec, ctx: RunContext) -> IngestionRunRecord:
     """Run while the adapter's optional acquisition scope remains active."""
     adapter = ctx.registry.get(spec.source_id)
-    budget_seconds, budget_attempts = _source_budget(ctx.settings, spec.source_id)
+    started = time.monotonic()  # PA-1 R3: budget measured from run start
 
     ctx.driver.write_batch([(_SOURCE_MERGE, _source_params(adapter))])
     source_node = _read_source(ctx, spec.source_id)
@@ -234,13 +234,15 @@ def _execute_run(spec: RunSpec, ctx: RunContext) -> IngestionRunRecord:
     )
 
     cost_before = _recorded_spend(ctx)
-    started = time.monotonic()
     try:
         fetch_since = since
         if window_module.checkpoint_anchored_backfill(spec, source_node):
             assert since is not None
             # Preserve the recorded checkpoint anchor, but exclude its consumed slot.
             fetch_since = since + timedelta(microseconds=1)
+        # Inside the try scope so a malformed override aborts a run that has a
+        # durable record to close (review F8).
+        budget_seconds, budget_attempts = _source_budget(ctx.settings, spec.source_id)
         with source_run_scope(
             started + budget_seconds, budget_attempts
         ):

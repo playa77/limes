@@ -37,8 +37,11 @@ graph write batch serializes cross-process through a file-lock write gate
 (`LIMES_INGEST_WRITE_GATE`, PA-1 R2). Each source run carries a wall-clock budget
 (`LIMES_SOURCE_RUN_BUDGET_SECONDS`, default 1800) and a consecutive transport-failure
 budget (`LIMES_SOURCE_TRANSPORT_BUDGET_ATTEMPTS`, default 8, not reset by endpoint
-rotation; PA-1 R3). Per-host request slots keep parallel sources polite toward shared
-upstreams (`LIMES_HOST_CONCURRENCY_DEFAULT` = 2, heavier hosts capped at 1; PA-1 R5).
+rotation; PA-1 R3). Operators may pin a per-source wall-clock budget as
+`LIMES_SOURCE_BUDGET_GLEIF_SECONDS` (upper-cased source id; PA-1 R3). Per-host request
+slots keep parallel sources polite toward shared
+upstreams (`LIMES_HOST_CONCURRENCY_DEFAULT` = 2, heavier hosts capped at 1,
+`LIMES_HOST_SLOT_WAIT_SECONDS` = 10; PA-1 R5).
 Pending capacity is 256; output retains the last 32 KiB; default operation timeout is
 24 hours, configurable up to 7 days. Request UUIDs provide idempotent submission.
 Duplicate UUIDs with different payloads

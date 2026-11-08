@@ -61,7 +61,7 @@ def run(
             typer.echo(f"job: {job.job_id} ({job.status})")
             if wait:
                 job = client.wait(job.job_id, typer.echo)
-                if job.status == "failed":
+                if job.status in ("failed", "cancelled"):
                     raise typer.Exit(1)
         finally:
             client.close()
@@ -104,10 +104,11 @@ def cancel(
         try:
             job = client.cancel(job_id)
             typer.echo(f"job: {job.job_id} ({job.status})")
-            if job.status == "failed":
+            if job.status in ("failed", "cancelled"):
                 raise typer.Exit(1)
         finally:
             client.close()
     except (ValueError, httpx.HTTPError) as exc:
         typer.echo(f"error: {type(exc).__name__}; cannot cancel job", err=True)
         raise typer.Exit(1) from exc
+

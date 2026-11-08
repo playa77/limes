@@ -28,7 +28,10 @@ class JobStore:
                 id TEXT PRIMARY KEY, request TEXT NOT NULL, status TEXT NOT NULL,
                 created TEXT NOT NULL, updated TEXT NOT NULL,
                 output TEXT NOT NULL DEFAULT '', exit_code INTEGER)""")
-            # PA-1 R4: cancel flag, added idempotently for pre-existing volumes.
+            # PA-1 R4: cancel flag, added idempotently. Check and ALTER share
+            # one BEGIN IMMEDIATE so concurrent api/worker startups on the
+            # same volume cannot race into "duplicate column name".
+            db.execute("BEGIN IMMEDIATE")
             columns = {row["name"] for row in db.execute("PRAGMA table_info(jobs)")}
             if "cancel_requested" not in columns:
                 db.execute(

@@ -8,8 +8,6 @@ import time
 from contextlib import contextmanager
 from pathlib import Path
 
-import pytest
-
 from limes.graph.driver import GraphDriver, gate_path_for_jobs
 from limes.types import WriteResult
 
@@ -58,9 +56,11 @@ def _driver(gate_path, probe):
     return driver
 
 
-def test_gate_path_sits_on_the_worker_volume():
+def test_gate_path_sits_on_the_shared_jobs_volume():
+    # the `jobs` named volume is the only /data subtree mounted rw in both the
+    # api and worker containers — the gate must live on it (review F1)
     assert gate_path_for_jobs(Path("/data/jobs/jobs.sqlite3")).as_posix() \
-        == "/data/write-gate.lock"
+        == "/data/jobs/write-gate.lock"
 
 
 def test_concurrent_batches_serialize_under_the_gate(tmp_path):
@@ -107,13 +107,3 @@ def test_ungated_driver_does_not_create_gate_file(tmp_path):
     probe = Probe()
     _driver(None, probe).write_batch(BATCH)
     assert not any(tmp_path.iterdir())
-
-@pytest.mark.parametrize("jobs", ["/data/jobs/jobs.sqlite3"])
-def test_gate_goes_through_the_settings_key(jobs):
-    from limes.config import Settings
-
-    settings = Settings.model_construct(
-        ingest_write_gate=True, jobs_path=Path(jobs)
-    )
-    path = gate_path_for_jobs(settings.jobs_path) if settings.ingest_write_gate else None
-    assert path is not None and path.as_posix() == "/data/write-gate.lock"

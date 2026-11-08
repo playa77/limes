@@ -78,9 +78,12 @@ def execute(
         break
     reader.join(timeout=10)
     result = output.decode(errors="replace")
-    if cancel_seen or cancel.is_set():
+    # A job that exits 0 despite an outstanding cancel finished its work
+    # before the signal: record the real outcome, not an invented -15.
+    code = process.returncode if process.returncode is not None else -15
+    if (cancel_seen or cancel.is_set()) and code != 0:
         result += "\nJob cancelled by operator; inspect results before resubmitting."
-        store.finish(key, process.returncode or -15, result, status="cancelled")
+        store.finish(key, code, result, status="cancelled")
     elif interrupted:
         result += "\nWorker stopped or operation timed out; inspect results before retrying."
         store.finish(key, process.returncode or (1 if interrupted else 0), result)
@@ -99,33 +102,50 @@ def run_pool(store: JobStore, settings, stop: threading.Event) -> None:
         next_news_check = 0.0
         schedule = getattr(store, "schedule", None)
         while not stop.is_set():
-            if schedule is not None and time.monotonic() >= next_news_check:
-                try:
-                    schedule()
-                except OverflowError:
-                    pass  # Persisted cycle IDs retry submission when queue space is available.
-                next_news_check = time.monotonic() + 30
-            settings.jobs_path.with_suffix(".heartbeat").touch()
-            for future in [f for f, _ in running.items() if f.done()]:
-                job_id = running.pop(future)
-                if (exc := future.exception()) is not None:
-                    logger.error("job execution crashed", job_id=job_id, error=str(exc))
-                    store.finish(job_id, 1, "Worker execution failed; inspect server logs.")
-                events.pop(job_id, None)
-            for job_id in store.cancel_requested_ids():
-                cancel = events.get(job_id)
-                if cancel is not None and not cancel.is_set():
-                    logger.info("cancelling running job", job_id=job_id)
-                    cancel.set()
-            while len(running) < settings.job_concurrency:
-                job = store.claim()
-                if job is None:
-                    break
-                key = str(job.job_id)
-                events[key] = threading.Event()
-                future = pool.submit(execute, job, store, settings.job_timeout_seconds, stop, events[key])
-                running[future] = key
-                logger.info("job claimed", job_id=key, pool_slot=len(running))
+            # Manager-loop isolation (review F10): a transient SQLite hiccup
+            # must cost one poll cycle, never the worker process.
+            try:
+                if schedule is not None and time.monotonic() >= next_news_check:
+                    try:
+                        schedule()
+                    except OverflowError:
+                        pass  # Persisted cycle IDs retry when queue space is available.
+                    next_news_check = time.monotonic() + 30
+                settings.jobs_path.with_suffix(".heartbeat").touch()
+                for future in [f for f, _ in running.items() if f.done()]:
+                    job_id = running.pop(future)
+                    if (exc := future.exception()) is not None:
+                        logger.error("job execution crashed", job_id=job_id, error=str(exc))
+                        store.finish(job_id, 1, "Worker execution failed; inspect server logs.")
+                        logger.info(
+                            "job finished", job_id=job_id, outcome="failed", pool_slot=len(running)
+                        )
+                    else:
+                        outcome = store.get(job_id)
+                        logger.info(
+                            "job finished", job_id=job_id,
+                            outcome=outcome.status if outcome else "unknown",
+                            pool_slot=len(running),
+                        )
+                    events.pop(job_id, None)
+                for job_id in store.cancel_requested_ids():
+                    cancel = events.get(job_id)
+                    if cancel is not None and not cancel.is_set():
+                        logger.info("cancelling running job", job_id=job_id)
+                        cancel.set()
+                while len(running) < settings.job_concurrency:
+                    job = store.claim()
+                    if job is None:
+                        break
+                    key = str(job.job_id)
+                    events[key] = threading.Event()
+                    future = pool.submit(
+                        execute, job, store, settings.job_timeout_seconds, stop, events[key]
+                    )
+                    running[future] = key
+                    logger.info("job claimed", job_id=key, pool_slot=len(running))
+            except Exception as exc:  # noqa: BLE001  (worker must survive DB hiccups)
+                logger.error("worker manager loop iteration failed", error=str(exc))
             stop.wait(1)
 
 

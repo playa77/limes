@@ -42,13 +42,13 @@ def test_client_cancel_posts_the_endpoint():
 
 
 @respx.mock
-def test_client_cancel_surfaces_conflict_as_raise_for_status():
+def test_client_cancel_conflict_returns_record_not_error():
     respx.post(f"https://api.test/operations/jobs/{SERVICE_J}/cancel").return_value \
         = httpx.Response(409, json=JOB_BODY)
     client = OperationsClient("https://api.test", "operator-token")
-    with pytest.raises(httpx.HTTPError):
-        client.cancel(uuid.UUID(SERVICE_J))
+    result = client.cancel(uuid.UUID(SERVICE_J))
     client.close()
+    assert result.status == "cancelled"  # documented no-op, not an HTTP error
 
 
 def test_remote_cli_cancel_commands(monkeypatch):
@@ -79,10 +79,37 @@ def test_remote_cli_cancel_commands(monkeypatch):
             "https://api.test",
         ],
     )
-    assert result.exit_code == 0, result.output
+    assert result.exit_code == 1, result.output  # cancelled ends the wait abnormally
     assert endpoints == ["/operations/jobs/00000000-0000-0000-0000-000000000004"]
 
 
-def test_job_request_json_covers_cancelled_status():
-    request = JobRequest(request_id=uuid4(), command="backup")
-    assert request.command == "backup"  # submission semantics unchanged (non-goal)
+def test_cancelled_job_round_trips_through_the_model():
+    job = Job.model_validate(JOB_BODY)
+    encoded = job.model_dump_json()
+    assert '"status":"cancelled"' in encoded
+
+
+def test_client_wait_returns_on_cancelled(monkeypatch):
+    import httpx as _httpx
+    import respx as _respx
+
+    url = f"https://api.test/operations/jobs/{JOB_BODY['job_id']}"
+    with _respx.mock:
+        _respx.get(url).return_value = _httpx.Response(200, json=JOB_BODY)
+        client = OperationsClient("https://api.test", "operator-token")
+        result = client.wait(uuid.UUID(JOB_BODY["job_id"]), output=lambda *_: None)
+        client.close()
+    assert result.status == "cancelled"
+
+
+def test_client_cancel_idempotent_on_conflict():
+    import httpx as _httpx
+    import respx as _respx
+
+    url = f"https://api.test/operations/jobs/{JOB_BODY['job_id']}"
+    with _respx.mock:
+        _respx.post(f"{url}/cancel").return_value = _httpx.Response(409, json=JOB_BODY)
+        client = OperationsClient("https://api.test", "operator-token")
+        result = client.cancel(uuid.UUID(JOB_BODY["job_id"]))
+        client.close()
+    assert result.status == "cancelled"  # the documented no-op, not an error
