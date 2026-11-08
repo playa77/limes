@@ -61,7 +61,7 @@ def run(
             typer.echo(f"job: {job.job_id} ({job.status})")
             if wait:
                 job = client.wait(job.job_id, typer.echo)
-                if job.status == "failed":
+                if job.status in ("failed", "cancelled"):
                     raise typer.Exit(1)
         finally:
             client.close()
@@ -91,3 +91,24 @@ def status(
     except (ValueError, httpx.HTTPError) as exc:
         typer.echo(f"error: {type(exc).__name__}; cannot read job status", err=True)
         raise typer.Exit(1) from exc
+
+
+@app.command()
+def cancel(
+    job_id: UUID,
+    url: str = typer.Option("http://127.0.0.1:8000", envvar="LIMES_REMOTE_URL"),
+) -> None:
+    """PA-1: stop one queued or running job; never silently replayed later."""
+    try:
+        client = OperationsClient(url, os.environ.get("LIMES_OPERATOR_TOKEN", ""))
+        try:
+            job = client.cancel(job_id)
+            typer.echo(f"job: {job.job_id} ({job.status})")
+            if job.status in ("failed", "cancelled"):
+                raise typer.Exit(1)
+        finally:
+            client.close()
+    except (ValueError, httpx.HTTPError) as exc:
+        typer.echo(f"error: {type(exc).__name__}; cannot cancel job", err=True)
+        raise typer.Exit(1) from exc
+

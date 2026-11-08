@@ -14,5 +14,7 @@
   "operations_authentication": "operator-bearer",
   "backup_transport": "private-http",
   "job_replay": "manual",
-  "deployment": "immutable-image-ids"
+  "deployment": "immutable-image-ids",
+  "job_concurrency_default": 4,
+  "write_gate": true
 }

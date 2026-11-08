@@ -29,6 +29,13 @@ class SourceFetchError(LimesError):
     unknown source (AC-38)."""
 
 
+class SourceRunBudgetExceeded(SourceFetchError):
+    """PA-1 R3: a source run blew its per-run wall-clock or consecutive
+    transport-failure budget. Subclasses `SourceFetchError` so the existing
+    abort path (durable record closed, checkpoint untouched, replayable)
+    applies unchanged."""
+
+
 class SourceParseError(LimesError):
     """Record-level: a fetched payload could not be parsed. The record is
     counted and skipped, never silently dropped."""

@@ -141,7 +141,8 @@ class JobRequest(BaseModel):
 class Job(BaseModel):
     job_id: UUID
     request: JobRequest
-    status: Literal["queued", "running", "succeeded", "failed"]
+    # PA-1 R4: `cancelled` is a terminal state distinct from consumer abort/failed.
+    status: Literal["queued", "running", "succeeded", "failed", "cancelled"]
     created_at: str
     updated_at: str
     output: str = ""

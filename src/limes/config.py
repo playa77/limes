@@ -115,6 +115,9 @@ class Settings(BaseSettings):
     )
     http_timeout_seconds: int = 60
     http_max_retries: int = 4
+    # PA-1 R3: per-source run budgets (the "no more 5-hour stalls" fix).
+    source_run_budget_seconds: int = Field(default=1800, ge=1, le=86400)
+    source_transport_budget_attempts: int = Field(default=8, ge=1, le=1000)
 
     # ---------- Service ----------
     model_pins_path: Path = Path("/data/models/models.env")
@@ -125,6 +128,11 @@ class Settings(BaseSettings):
     backup_base_url: str = "http://neo4j:9001"
     jobs_path: Path = Path("/data/jobs/jobs.sqlite3")
     job_timeout_seconds: int = Field(default=86400, ge=60, le=604800)
+    # PA-1 R1: concurrent operation jobs inside one worker process (parallel
+    # source acquisition); graph writes stay serial (R2 write gate).
+    job_concurrency: int = Field(default=4, ge=1, le=16)
+    # PA-1 R2: cross-process graph write gate (serial DB, parallel downloads).
+    ingest_write_gate: bool = True
     api_base_url: str = "http://api:8000"
     log_level: str = "INFO"
     log_format: Literal["json", "console"] = "json"

@@ -26,7 +26,7 @@ def ops_client(tmp_path, monkeypatch):
         }
     )
     driver = SimpleNamespace(read=lambda *args: [{"one": 1}], close=lambda: None)
-    monkeypatch.setattr("limes.api.main.GraphDriver", lambda *args: driver)
+    monkeypatch.setattr("limes.api.main.GraphDriver", lambda *args, **kwargs: driver)
     monkeypatch.setattr("limes.api.main.provision", lambda *args: None)
     with TestClient(create_app(loaded)) as client:
         yield client
@@ -121,7 +121,7 @@ def test_worker_reports_real_exit_code_and_caps_output(tmp_path, monkeypatch):
             "print('x' * 100000); raise SystemExit(7)",
         ],
     )
-    execute(job, store, 5, Event())
+    execute(job, store, 5, Event(), Event())
     result = store.get(str(job.job_id))
     assert result.status == "failed" and result.exit_code == 7
     assert len(result.output) <= OUTPUT_LIMIT

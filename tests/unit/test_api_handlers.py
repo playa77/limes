@@ -63,7 +63,7 @@ def offline_startup(monkeypatch: pytest.MonkeyPatch):
     # Unit handler tests must not wait on a live driver's connection retries.
     monkeypatch.setattr(
         "limes.api.main.GraphDriver",
-        lambda *args: _RaiseDriver(ServiceUnavailable("database unreachable")),
+        lambda *args, **kwargs: _RaiseDriver(ServiceUnavailable("database unreachable")),
     )
     monkeypatch.setattr("limes.api.main.provision", lambda *args: None)
 

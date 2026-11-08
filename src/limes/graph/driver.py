@@ -11,6 +11,10 @@ and the query paths build their own Cypher on top.
 
 from __future__ import annotations
 
+import fcntl
+from collections.abc import Iterator
+from contextlib import contextmanager
+from pathlib import Path
 from typing import Any
 
 from neo4j import GraphDatabase, ManagedTransaction
@@ -28,15 +32,69 @@ from limes.types import PlanSummary, WriteResult
 _RETRYABLE = (SessionExpired, TransientError)
 
 
-class GraphDriver:
-    """Thin wrapper over the Neo4j driver with read/write session separation."""
+def gate_path_for_jobs(jobs_path: Path) -> Path:
+    """PA-1 R2: the cross-process graph write gate file, on the shared `jobs`
+    named volume (mounted rw in both api and worker containers; the `/data`
+    root itself is per-container, so the gate must live one level down)."""
+    return jobs_path.parent / "write-gate.lock"
 
-    def __init__(self, uri: str, user: str, password: str, database: str) -> None:
+
+def write_gate_path_for(settings: Any) -> Path | None:
+    """Resolve the effective gate path from settings.
+
+    `None` when `LIMES_INGEST_WRITE_GATE` is false, or when the jobs parent
+    volume does not exist on this host (a dev/test box without the compose
+    `jobs` volume runs ungated rather than failing startup; review F1/F4).
+    """
+    if not getattr(settings, "ingest_write_gate", True):
+        return None
+    path = gate_path_for_jobs(settings.jobs_path)
+    if not path.parent.is_dir():
+        return None
+    return path
+
+
+class GraphDriver:
+    """Thin wrapper over the Neo4j driver with read/write session separation.
+
+    When constructed with a `write_gate_path`, every `write_batch` transaction
+    is fenced by a cross-process `fcntl.flock` on that file (PA-1 R2): graph
+    writes serialize process-wide and across containers while downloads run
+    freely in parallel. Reads are never gated.
+    """
+
+    # Class-level default keeps duck-typed test fakes that bypass __init__
+    # (e.g. counting wrappers) ungated instead of AttributeError-ing.
+    _write_gate_path: Path | None = None
+
+    def __init__(
+        self,
+        uri: str,
+        user: str,
+        password: str,
+        database: str,
+        write_gate_path: Path | None = None,
+    ) -> None:
         self._database = database
+        self._write_gate_path = write_gate_path
         self._driver = GraphDatabase.driver(uri, auth=(user, password))
 
     def close(self) -> None:
         self._driver.close()
+
+    @contextmanager
+    def _write_gate(self) -> Iterator[None]:
+        if self._write_gate_path is None:
+            yield
+            return
+        path = self._write_gate_path
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("a") as lock:
+            fcntl.flock(lock, fcntl.LOCK_EX)
+            try:
+                yield
+            finally:
+                fcntl.flock(lock, fcntl.LOCK_UN)
 
     def read(self, cypher: str, params: dict[str, Any], timeout_s: int) -> list[dict[str, Any]]:
         """Execute `cypher` in a read-access-mode session and return rows as
@@ -54,9 +112,11 @@ class GraphDriver:
     def write_batch(self, statements: list[tuple[str, dict[str, Any]]]) -> WriteResult:
         """Execute all `(cypher, params)` statements in one transaction.
         Retried once on transient errors; a persistent failure surfaces as
-        `GraphWriteError`."""
+        `GraphWriteError`. Under a write gate, the transaction is fenced
+        cross-process (PA-1 R2): acquired around `execute_write`, never held
+        across network or inference phases."""
         try:
-            with self._driver.session(
+            with self._write_gate(), self._driver.session(
                 database=self._database, default_access_mode="WRITE"
             ) as session:
                 result = session.execute_write(self._run_statements, statements)

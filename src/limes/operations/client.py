@@ -47,6 +47,16 @@ class OperationsClient:
         response.raise_for_status()
         return Job.model_validate(response.json())
 
+    def cancel(self, key: UUID) -> Job:
+        """PA-1 R4: request cancellation; a running job answers 202 and
+        terminates within the worker poll cadence. The documented 409 no-op
+        on an already-terminal job returns its current record, not an error."""
+        response = self.client.post(f"/operations/jobs/{key}/cancel")
+        if response.status_code == 409:
+            return Job.model_validate(response.json())
+        response.raise_for_status()
+        return Job.model_validate(response.json())
+
     def wait(self, key: UUID, output: Callable[[str], None] = print) -> Job:
         previous = ""
         while True:
@@ -56,6 +66,6 @@ class OperationsClient:
                     job.output[len(previous) :] if job.output.startswith(previous) else job.output
                 )
                 previous = job.output
-            if job.status in {"succeeded", "failed"}:
+            if job.status in {"succeeded", "failed", "cancelled"}:
                 return job
             time.sleep(1)

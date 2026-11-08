@@ -26,13 +26,20 @@ uniform across the source layer:
 
 from __future__ import annotations
 
+import fcntl
 import hashlib
 import logging
 import math
+import os
+import time
 from collections.abc import Iterator
+from contextlib import contextmanager
+from contextvars import ContextVar
 from datetime import UTC, datetime
 from email.utils import parsedate_to_datetime
-from typing import Any, Literal, Protocol, runtime_checkable
+from pathlib import Path
+from typing import Any, Literal, Protocol, TextIO, runtime_checkable
+from urllib.parse import urlsplit
 
 import httpx
 import structlog
@@ -44,7 +51,7 @@ from tenacity import (
     wait_exponential_jitter,
 )
 
-from limes.errors import SourceFetchError
+from limes.errors import SourceFetchError, SourceRunBudgetExceeded
 from limes.types import (
     Assertion,
     EntityEndpoint,
@@ -55,6 +62,60 @@ from limes.types import (
 )
 
 logger = structlog.get_logger(__name__)
+
+
+class _RunBudget:
+    """PA-1 R3 run-scoped budget: a wall-clock deadline and the consecutive
+    failed-attempt cap for one source run. lives on the module scope set by
+    `source_run_scope` from `pipeline/run.py` (one run per subprocess thread)."""
+
+    def __init__(self, deadline: float | None, transport_attempts: int | None) -> None:
+        self.deadline = deadline
+        self.transport_attempts = transport_attempts
+        self.failures = 0
+
+    def record_failure(self) -> None:
+        self.failures += 1
+        if self.transport_attempts and self.failures >= self.transport_attempts:
+            raise SourceRunBudgetExceeded(
+                "source transport budget exhausted after "
+                f"{self.failures} consecutive failed HTTP attempts "
+                "(endpoint rotation does not reset this budget)"
+            )
+
+    def record_success(self) -> None:
+        self.failures = 0
+
+
+_scope: ContextVar[_RunBudget | None] = ContextVar("limes_source_run_budget", default=None)
+
+
+@contextmanager
+def source_run_scope(
+    deadline: float | None, transport_attempts: int | None
+) -> Iterator[_RunBudget | None]:
+    """Bind the PA-1 R3 budget for one source run; remove it again on exit.
+
+    A ContextVar (not a module global) keeps concurrent in-process timelines
+    from bleeding failure counts across runs.
+    """
+    token = _scope.set(_RunBudget(deadline, transport_attempts))
+    try:
+        yield _scope.get()
+    finally:
+        _scope.reset(token)
+
+
+def run_consecutive_failures() -> int:
+    """Consecutive failed HTTP attempts inside the active run (0 without one)."""
+    scope = _scope.get()
+    return scope.failures if scope is not None else 0
+
+
+def run_time_left() -> float | None:
+    """Seconds left in the active run budget (None without one)."""
+    scope = _scope.get()
+    return None if scope is None or scope.deadline is None else scope.deadline - time.monotonic()
 
 # The ontology artifact version the adapters emit against (ontology/ontology.yaml).
 # One place to bump on migration (WP-31); the loader stamps nodes with the
@@ -70,6 +131,15 @@ HTTP_MAX_ATTEMPTS = 4
 
 # Statuses that are retried per §11: 429 and 5xx. Never other 4xx.
 RETRYABLE_STATUSES = frozenset({429, 500, 502, 503, 504})
+
+# PA-1 R5 netiquette caps: slots per upstream host across concurrent sources.
+HOST_CONCURRENCY_OVERRIDES: dict[str, int] = {
+    "abgeordnetenwatch.de": 1,
+    "ted.europa.eu": 1,
+    "webgate.ec.europa.eu": 1,
+    "overpass": 1,  # matches any overpass host by substring
+    "bundestag.de": 1,
+}
 
 # A user agent that names the project; several sources (FSD, GISCO) are picky
 # about UA strings and rate-limit anonymous scraping.
@@ -377,6 +447,20 @@ def request_with_retry(
     endpoint_index = 0
     endpoints = (url, *fallback_urls)
 
+    def _budget_failure(step: str, detail: str) -> None:
+        scope = _scope.get()
+        if scope is None:
+            return
+        scope.record_failure()
+        logger.warning(
+            "source transport attempt failed; budget consumed",
+            url=url,
+            step=step,
+            detail=detail,
+            consecutive_failures=scope.failures,
+            budget_attempts=scope.transport_attempts,
+        )
+
     @retry(
         stop=stop_after_attempt(HTTP_MAX_ATTEMPTS),
         wait=_retry_wait,
@@ -386,11 +470,18 @@ def request_with_retry(
     )
     def _call() -> httpx.Response:
         nonlocal attempts, endpoint_index
+        scope = _scope.get()
+        if scope is not None and scope.deadline is not None and time.monotonic() >= scope.deadline:
+            raise SourceRunBudgetExceeded(
+                "source run budget elapsed; refusing another HTTP attempt"
+            )
         attempt_url = endpoints[endpoint_index % len(endpoints)]
         attempts += 1
         if read_timeout_s is not None:
             log.info("source HTTP attempt", endpoint=attempt_url, attempt=attempts)
-        with httpx.Client(
+        # PA-1 R5: one host slot per request, held until the response body
+        # is consumed — never released mid-stream.
+        with host_slot(attempt_url), httpx.Client(
             timeout=httpx.Timeout(timeout_s, read=read_timeout_s or timeout_s),
             follow_redirects=follow_redirects,
             headers=headers,
@@ -434,6 +525,7 @@ def request_with_retry(
                     error_type=type(exc).__name__,
                 )
                 endpoint_index += 1
+                _budget_failure("transport", type(exc).__name__)
                 raise TransientFailure(str(exc)) from exc
             delay = _retry_after_seconds(response.headers.get("Retry-After"))
             log.info(
@@ -447,6 +539,7 @@ def request_with_retry(
             )
             if response.status_code in RETRYABLE_STATUSES:
                 # Keep operator jobs bounded without violating a server cooldown.
+                _budget_failure("retryable_status", f"HTTP {response.status_code}")
                 if delay is not None and delay > 300:
                     raise RetryExhausted(
                         attempts, url,
@@ -462,6 +555,10 @@ def request_with_retry(
                     url=attempt_url, status_code=response.status_code,
                     response_body=response.content
                 )
+            if max_bytes is None:
+                response.read()  # body consumed inside the host slot (PA-1 R5)
+            if scope is not None:
+                scope.record_success()
             return response
 
     try:
@@ -548,3 +645,68 @@ def now_utc() -> datetime:
     """The current UTC instant, timezone-aware. Adapters use this for
     `fetched_at` and, in the absence of a source-stated date, `valid_from`."""
     return datetime.now(UTC)
+
+
+# ---------------- PA-1 R5: cross-process per-host netiquette slots ----------------
+
+HOST_SLOT_DIR = "/data/host-slots"
+HOST_SLOT_WAIT_SECONDS = 10
+
+
+def _host_key(url: str) -> str:
+    """The netiquette key for a URL: overpass mirrors share one cap, every
+    explicit override matches its domain suffix, everything else is per-host."""
+    hostname = urlsplit(url).hostname or "unknown"
+    if "overpass" in hostname:
+        return "overpass"
+    return hostname
+
+
+def _host_cap(key: str) -> int:
+    for suffix, cap in HOST_CONCURRENCY_OVERRIDES.items():
+        if key == suffix or key.endswith("." + suffix) or (suffix in key and suffix == "overpass"):
+            return cap
+    return int(os.environ.get("LIMES_HOST_CONCURRENCY_DEFAULT", "2"))
+
+
+def _acquire_host_slot(
+    directory: Path, cap: int, deadline: float, key: str
+) -> TextIO:
+    while True:
+        for index in range(cap):
+            handle = (directory / f"{index}.lock").open("a")
+            try:
+                fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except OSError:
+                handle.close()
+                continue
+            return handle
+        if time.monotonic() >= deadline:
+            raise SourceFetchError(
+                f"host concurrency slot for {key} stayed busy past the "
+                f"{os.environ.get('LIMES_HOST_SLOT_WAIT_SECONDS', '10')}s wait"
+            )
+        time.sleep(0.05)
+
+
+@contextmanager
+def host_slot(url: str) -> Iterator[None]:
+    """PA-1 R5: acquire one per-host flock slot for a single HTTP request.
+
+    Slots live at `$LIMES_HOST_SLOT_DIR/<key>/<i>.lock` (default
+    `/data/host-slots`), counted to the host's cap (explicit override or
+    `LIMES_HOST_CONCURRENCY_DEFAULT`). The bounded `LIMES_HOST_SLOT_WAIT_SECONDS`
+    wait expires into a `SourceFetchError` — kernel crash semantics release
+    the lock if a holder dies.
+    """
+    key = _host_key(url)
+    cap = _host_cap(key)
+    directory = Path(os.environ.get("LIMES_HOST_SLOT_DIR", HOST_SLOT_DIR)) / key
+    directory.mkdir(parents=True, exist_ok=True)
+    wait = float(os.environ.get("LIMES_HOST_SLOT_WAIT_SECONDS", str(HOST_SLOT_WAIT_SECONDS)))
+    handle = _acquire_host_slot(directory, cap, time.monotonic() + wait, key)
+    try:
+        yield
+    finally:
+        fcntl.flock(handle, fcntl.LOCK_UN)
+        handle.close()

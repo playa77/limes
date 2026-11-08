@@ -64,7 +64,7 @@ EU-27 coverage is deferred to a possible later version.
 
 ## Architecture and runtime
 
-<!-- limes-runtime: {"services":["api","neo4j","worker"],"api_publication":"127.0.0.1:8000:8000","database_published":false,"api_authentication":"bearer","desktop_credentials":"session-only","budget_enforcement":false,"service_user":"7474:7474","host_docker_socket":false,"operations_authentication":"operator-bearer","backup_transport":"private-http","job_replay":"manual","deployment":"immutable-image-ids"} -->
+<!-- limes-runtime: {"services":["api","neo4j","worker"],"api_publication":"127.0.0.1:8000:8000","database_published":false,"api_authentication":"bearer","desktop_credentials":"session-only","budget_enforcement":false,"service_user":"7474:7474","host_docker_socket":false,"operations_authentication":"operator-bearer","backup_transport":"private-http","job_replay":"manual","deployment":"immutable-image-ids","job_concurrency_default":4,"write_gate":true} -->
 
 | Runtime fact | Current contract |
 |---|---|
@@ -79,6 +79,8 @@ EU-27 coverage is deferred to a possible later version.
 | Host Docker socket | Absent |
 | Backup control | Private authenticated HTTP |
 | Deployment | Recorded immutable image IDs |
+| Job concurrency default | 4 |
+| Graph write gate | enabled |
 
 The [core design](docs/LIMES_Design_Document_v2.0.0.md) and
 [technical specification](docs/LIMES_Technical_Specification_v2.1.0.md) define the

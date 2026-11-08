@@ -36,6 +36,8 @@ gate the document out on retry and lose its assertions permanently.
 from __future__ import annotations
 
 import json
+import os
+import time
 import uuid
 from contextlib import nullcontext
 from datetime import UTC, datetime, timedelta
@@ -51,6 +53,7 @@ from limes.errors import (
     GraphWriteError,
     SourceFetchError,
     SourceParseError,
+    SourceRunBudgetExceeded,
 )
 from limes.extraction.cache import put as cache_put
 from limes.graph.loader import load, news_claim_id, retract, save_claims, save_document
@@ -58,7 +61,12 @@ from limes.ontology.validator import validate_assertions
 from limes.pipeline import window as window_module
 from limes.pipeline.gate import gate_document
 from limes.resolution.resolve import resolve_assertions
-from limes.sources.base import SourceAdapter, deterministic_assertion_id, hash_entity_id
+from limes.sources.base import (
+    SourceAdapter,
+    deterministic_assertion_id,
+    hash_entity_id,
+    source_run_scope,
+)
 from limes.types import (
     Assertion,
     IngestionRunRecord,
@@ -68,6 +76,7 @@ from limes.types import (
 )
 
 if TYPE_CHECKING:
+    from limes.config import Settings
     from limes.resolution.resolve import RunContext
 
 logger = structlog.get_logger(__name__)
@@ -163,9 +172,30 @@ def execute_run(spec: RunSpec, ctx: RunContext) -> IngestionRunRecord:
         return _execute_run(spec, ctx)
 
 
+def _source_budget(settings: Settings, source_id: str) -> tuple[int, int]:
+    """PA-1 R3: (wall-clock seconds, consecutive-attempt cap) for one run.
+
+    Operators may pin a per-source floor/override as
+    `LIMES_SOURCE_BUDGET_<ID>_SECONDS` (upper-cased source id, e.g.
+    `LIMES_SOURCE_BUDGET_GLEIF_SECONDS`); the generic run budget applies
+    otherwise. Attempt caps are global by design.
+    """
+    override = os.environ.get(f"LIMES_SOURCE_BUDGET_{source_id.upper()}_SECONDS")
+    seconds = settings.source_run_budget_seconds
+    if override:
+        try:
+            seconds = int(override)
+        except ValueError as exc:
+            raise SourceRunBudgetExceeded(
+                f"invalid {f'LIMES_SOURCE_BUDGET_{source_id.upper()}_SECONDS'}: {override}"
+            ) from exc
+    return seconds, settings.source_transport_budget_attempts
+
+
 def _execute_run(spec: RunSpec, ctx: RunContext) -> IngestionRunRecord:
     """Run while the adapter's optional acquisition scope remains active."""
     adapter = ctx.registry.get(spec.source_id)
+    started = time.monotonic()  # PA-1 R3: budget measured from run start
 
     ctx.driver.write_batch([(_SOURCE_MERGE, _source_params(adapter))])
     source_node = _read_source(ctx, spec.source_id)
@@ -211,9 +241,22 @@ def _execute_run(spec: RunSpec, ctx: RunContext) -> IngestionRunRecord:
             assert since is not None
             # Preserve the recorded checkpoint anchor, but exclude its consumed slot.
             fetch_since = since + timedelta(microseconds=1)
-        for raw in adapter.fetch(fetch_since, until):
-            record.records_fetched += 1
-            _process_record(spec, ctx, adapter, raw, record)
+        # Inside the try scope so a malformed override aborts a run that has a
+        # durable record to close (review F8).
+        budget_seconds, budget_attempts = _source_budget(ctx.settings, spec.source_id)
+        with source_run_scope(
+            started + budget_seconds, budget_attempts
+        ):
+            for raw in adapter.fetch(fetch_since, until):
+                # PA-1 R3: wall-clock budget checked every streaming iteration;
+                # exhausted budget aborts the run in seconds, not hours.
+                if time.monotonic() - started >= budget_seconds:
+                    raise SourceRunBudgetExceeded(
+                        f"source run budget of {budget_seconds}s elapsed for "
+                        f"{spec.source_id}; acquisition aborts cleanly"
+                    )
+                record.records_fetched += 1
+                _process_record(spec, ctx, adapter, raw, record)
         # Retire an acquisition only after complete loading, but BEFORE the
         # success checkpoint: a crash between these steps must trigger a fresh
         # acquisition rather than certify an old collection as freshly fetched.

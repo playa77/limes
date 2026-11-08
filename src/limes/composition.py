@@ -22,7 +22,7 @@ from limes.cost.recorder import CostRecorder
 from limes.extraction.base import Extractor
 from limes.extraction.openrouter import OpenRouterExtractor
 from limes.extraction.openrouter_client import OpenRouterClient
-from limes.graph.driver import GraphDriver
+from limes.graph.driver import GraphDriver, write_gate_path_for
 from limes.graph.embeddings import normalize_embedding
 from limes.graph.schema import provision
 from limes.ontology.model import Ontology
@@ -62,6 +62,9 @@ def build_run_context(
         settings.neo4j_user,
         settings.neo4j_password,
         settings.neo4j_database,
+        # PA-1 R2: every run's graph writes are gated cross-process so
+        # concurrent source runs serialize transaction-by-transaction.
+        write_gate_path=write_gate_path_for(settings),
     )
     provision(driver, ontology, settings.embedding_dimensions)
     from limes.sources.osm_acquisition import OsmAcquisition
