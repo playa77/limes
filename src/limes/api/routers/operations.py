@@ -3,15 +3,16 @@
 from __future__ import annotations
 
 from secrets import compare_digest
-from typing import Annotated
+from typing import Annotated, cast
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import JSONResponse
 
 from limes.api.deps import get_settings
 from limes.config import Settings
 from limes.operations.models import Job, JobRequest
-from limes.operations.store import JobStore
+from limes.operations.store import TERMINAL_STATUSES, JobStore
 
 
 def require_operator(
@@ -46,6 +47,26 @@ def status(job_id: UUID, jobs: Annotated[JobStore, Depends(store)]) -> Job:
     if job is None:
         raise HTTPException(404, "job not found")
     return job
+
+
+@router.post("/jobs/{job_id}/cancel", response_model=Job)
+def cancel(job_id: UUID, jobs: Annotated[JobStore, Depends(store)]) -> Job:
+    """PA-1 R4: cancel one queued (immediately `cancelled`) or running job.
+
+    A terminal job is a no-op answered with 409 and its current record;
+    a running job returns 202 with the operating worker to observe the flag.
+    """
+    current = jobs.get(str(job_id))
+    if current is None:
+        raise HTTPException(404, "job not found")
+    if current.status in TERMINAL_STATUSES:
+        return cast(Job, JSONResponse(status_code=409, content=current.model_dump(mode="json")))
+    result = jobs.request_cancel(str(job_id))
+    if result is None:
+        raise HTTPException(404, "job not found")
+    if result.status == "cancelled":
+        return result  # queued cancel is already terminal
+    return cast(Job, JSONResponse(status_code=202, content=result.model_dump(mode="json")))
 
 
 @router.get("/capabilities")

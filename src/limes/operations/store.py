@@ -12,6 +12,8 @@ from limes.operations.models import Job, JobRequest
 
 OUTPUT_LIMIT = 32768
 
+TERMINAL_STATUSES: frozenset[str] = frozenset({"succeeded", "failed", "cancelled"})
+
 
 def output_tail(value: str) -> str:
     return value.encode()[-OUTPUT_LIMIT:].decode(errors="ignore")
@@ -26,6 +28,12 @@ class JobStore:
                 id TEXT PRIMARY KEY, request TEXT NOT NULL, status TEXT NOT NULL,
                 created TEXT NOT NULL, updated TEXT NOT NULL,
                 output TEXT NOT NULL DEFAULT '', exit_code INTEGER)""")
+            # PA-1 R4: cancel flag, added idempotently for pre-existing volumes.
+            columns = {row["name"] for row in db.execute("PRAGMA table_info(jobs)")}
+            if "cancel_requested" not in columns:
+                db.execute(
+                    "ALTER TABLE jobs ADD COLUMN cancel_requested INTEGER NOT NULL DEFAULT 0"
+                )
 
     @contextmanager
     def connection(self) -> Iterator[sqlite3.Connection]:
@@ -91,18 +99,56 @@ class JobStore:
             )
         return self.get(row["id"])
 
-    def finish(self, key: str, code: int, output: str) -> None:
+    def finish(self, key: str, code: int, output: str, status: str | None = None) -> None:
+        if status is None:
+            status = "succeeded" if code == 0 else "failed"
         with self.connection() as db:
             db.execute(
                 "UPDATE jobs SET status=?, exit_code=?, output=?, updated=? WHERE id=?",
                 (
-                    "succeeded" if code == 0 else "failed",
+                    status,
                     code,
                     output_tail(output),
                     self.now(),
                     key,
                 ),
             )
+
+    def request_cancel(self, key: str) -> Job | None:
+        """PA-1 R4: terminate a queued job immediately or flag a running one.
+
+        Idempotent on the cancel flag. Returns the current record, `None` for
+        an unknown id; a terminal record is returned unchanged (409 at the
+        API).
+        """
+        with self.connection() as db:
+            db.execute("BEGIN IMMEDIATE")
+            row = db.execute("SELECT status FROM jobs WHERE id = ?", (key,)).fetchone()
+            if row is None:
+                return None
+            if row["status"] not in TERMINAL_STATUSES:
+                if row["status"] == "queued":
+                    db.execute(
+                        "UPDATE jobs SET status='cancelled',"
+                        " output=CASE WHEN output='' THEN 'Cancelled while queued.'"
+                        " ELSE output || char(10) || 'Cancelled while queued.' END,"
+                        " updated=? WHERE id=?",
+                        (self.now(), key),
+                    )
+                else:
+                    db.execute(
+                        "UPDATE jobs SET cancel_requested=1, updated=? WHERE id=?",
+                        (self.now(), key),
+                    )
+        return self.get(key)
+
+    def cancel_requested_ids(self) -> set[str]:
+        """Running jobs the operator asked to cancel (PA-1 worker observation)."""
+        with self.connection() as db:
+            rows = db.execute(
+                "SELECT id FROM jobs WHERE status = 'running' AND cancel_requested = 1"
+            ).fetchall()
+        return {row[0] for row in rows}
 
     def output(self, key: str, output: str) -> None:
         with self.connection() as db:
