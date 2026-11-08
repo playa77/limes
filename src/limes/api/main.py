@@ -58,7 +58,7 @@ from limes.errors import (
     OntologyError,
     QueryPlanRejected,
 )
-from limes.graph.driver import GraphDriver
+from limes.graph.driver import GraphDriver, gate_path_for_jobs
 from limes.graph.schema import provision
 from limes.ontology.registry import load_ontology
 
@@ -85,6 +85,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             loaded.neo4j_user,
             loaded.neo4j_password,
             loaded.neo4j_database,
+            # PA-1 R2: entity/review writes through the API also honor the
+            # cross-process write gate.
+            write_gate_path=(
+                gate_path_for_jobs(loaded.jobs_path) if loaded.ingest_write_gate else None
+            ),
         )
         try:
             provision(driver, ontology_model, loaded.embedding_dimensions)

@@ -128,6 +128,8 @@ class Settings(BaseSettings):
     # PA-1 R1: concurrent operation jobs inside one worker process (parallel
     # source acquisition); graph writes stay serial (R2 write gate).
     job_concurrency: int = Field(default=4, ge=1, le=16)
+    # PA-1 R2: cross-process graph write gate (serial DB, parallel downloads).
+    ingest_write_gate: bool = True
     api_base_url: str = "http://api:8000"
     log_level: str = "INFO"
     log_format: Literal["json", "console"] = "json"
