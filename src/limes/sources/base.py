@@ -29,7 +29,9 @@ from __future__ import annotations
 import hashlib
 import logging
 import math
+import time
 from collections.abc import Iterator
+from contextlib import contextmanager
 from datetime import UTC, datetime
 from email.utils import parsedate_to_datetime
 from typing import Any, Literal, Protocol, runtime_checkable
@@ -44,7 +46,7 @@ from tenacity import (
     wait_exponential_jitter,
 )
 
-from limes.errors import SourceFetchError
+from limes.errors import SourceFetchError, SourceRunBudgetExceeded
 from limes.types import (
     Assertion,
     EntityEndpoint,
@@ -55,6 +57,54 @@ from limes.types import (
 )
 
 logger = structlog.get_logger(__name__)
+
+
+class _RunBudget:
+    """PA-1 R3 run-scoped budget: a wall-clock deadline and the consecutive
+    failed-attempt cap for one source run. lives on the module scope set by
+    `source_run_scope` from `pipeline/run.py` (one run per subprocess thread)."""
+
+    def __init__(self, deadline: float | None, transport_attempts: int | None) -> None:
+        self.deadline = deadline
+        self.transport_attempts = transport_attempts
+        self.failures = 0
+
+    def record_failure(self) -> None:
+        self.failures += 1
+        if self.transport_attempts and self.failures >= self.transport_attempts:
+            raise SourceRunBudgetExceeded(
+                "source transport budget exhausted after "
+                f"{self.failures} consecutive failed HTTP attempts "
+                "(endpoint rotation does not reset this budget)"
+            )
+
+    def record_success(self) -> None:
+        self.failures = 0
+
+
+_scope: _RunBudget | None = None
+
+
+@contextmanager
+def source_run_scope(deadline: float | None, transport_attempts: int | None):
+    """Bind the PA-1 R3 budget for one source run; remove it again on exit."""
+    global _scope
+    previous = _scope
+    _scope = _RunBudget(deadline, transport_attempts)
+    try:
+        yield _scope
+    finally:
+        _scope = previous
+
+
+def run_consecutive_failures() -> int:
+    """Consecutive failed HTTP attempts inside the active run (0 without one)."""
+    return _scope.failures if _scope is not None else 0
+
+
+def run_time_left() -> float | None:
+    """Seconds left in the active run budget (None without one)."""
+    return None if _scope is None or _scope.deadline is None else _scope.deadline - time.monotonic()
 
 # The ontology artifact version the adapters emit against (ontology/ontology.yaml).
 # One place to bump on migration (WP-31); the loader stamps nodes with the
@@ -70,6 +120,15 @@ HTTP_MAX_ATTEMPTS = 4
 
 # Statuses that are retried per §11: 429 and 5xx. Never other 4xx.
 RETRYABLE_STATUSES = frozenset({429, 500, 502, 503, 504})
+
+# PA-1 R5 netiquette caps: slots per upstream host across concurrent sources.
+HOST_CONCURRENCY_OVERRIDES: dict[str, int] = {
+    "abgeordnetenwatch.de": 1,
+    "ted.europa.eu": 1,
+    "webgate.ec.europa.eu": 1,
+    "overpass": 1,  # matches any overpass host by substring
+    "bundestag.de": 1,
+}
 
 # A user agent that names the project; several sources (FSD, GISCO) are picky
 # about UA strings and rate-limit anonymous scraping.
@@ -377,6 +436,19 @@ def request_with_retry(
     endpoint_index = 0
     endpoints = (url, *fallback_urls)
 
+    def _budget_failure(step: str, detail: str) -> None:
+        if _scope is None:
+            return
+        _scope.record_failure()
+        logger.warning(
+            "source transport attempt failed; budget consumed",
+            url=url,
+            step=step,
+            detail=detail,
+            consecutive_failures=_scope.failures,
+            budget_attempts=_scope.transport_attempts,
+        )
+
     @retry(
         stop=stop_after_attempt(HTTP_MAX_ATTEMPTS),
         wait=_retry_wait,
@@ -386,6 +458,10 @@ def request_with_retry(
     )
     def _call() -> httpx.Response:
         nonlocal attempts, endpoint_index
+        if _scope is not None and _scope.deadline is not None and time.monotonic() >= _scope.deadline:
+            raise SourceRunBudgetExceeded(
+                "source run budget elapsed; refusing another HTTP attempt"
+            )
         attempt_url = endpoints[endpoint_index % len(endpoints)]
         attempts += 1
         if read_timeout_s is not None:
@@ -434,6 +510,7 @@ def request_with_retry(
                     error_type=type(exc).__name__,
                 )
                 endpoint_index += 1
+                _budget_failure("transport", type(exc).__name__)
                 raise TransientFailure(str(exc)) from exc
             delay = _retry_after_seconds(response.headers.get("Retry-After"))
             log.info(
@@ -447,6 +524,7 @@ def request_with_retry(
             )
             if response.status_code in RETRYABLE_STATUSES:
                 # Keep operator jobs bounded without violating a server cooldown.
+                _budget_failure("retryable_status", f"HTTP {response.status_code}")
                 if delay is not None and delay > 300:
                     raise RetryExhausted(
                         attempts, url,
@@ -462,6 +540,8 @@ def request_with_retry(
                     url=attempt_url, status_code=response.status_code,
                     response_body=response.content
                 )
+            if _scope is not None:
+                _scope.record_success()
             return response
 
     try:

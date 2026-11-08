@@ -115,6 +115,9 @@ class Settings(BaseSettings):
     )
     http_timeout_seconds: int = 60
     http_max_retries: int = 4
+    # PA-1 R3: per-source run budgets (the "no more 5-hour stalls" fix).
+    source_run_budget_seconds: int = Field(default=1800, ge=1, le=86400)
+    source_transport_budget_attempts: int = Field(default=8, ge=1, le=1000)
 
     # ---------- Service ----------
     model_pins_path: Path = Path("/data/models/models.env")
