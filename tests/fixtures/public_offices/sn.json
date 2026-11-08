@@ -1,0 +1,132 @@
+{
+  "scope": "sn",
+  "institution": "Sächsischer Landtag",
+  "pages": [
+    {
+      "url": "https://www.landtag.sachsen.de/de/abgeordnete/abgeordnetensuche/suche-nach-alphabet.cshtml",
+      "final_url": "https://www.landtag.sachsen.de/de/abgeordnete/abgeordnetensuche/suche-nach-alphabet.cshtml",
+      "file": "5e311fdbf515b25dff79270d3e4ac897791a6acba9cc36feb45ffa44605a6d50.gz",
+      "sha256": "5e311fdbf515b25dff79270d3e4ac897791a6acba9cc36feb45ffa44605a6d50",
+      "retrieved_at": "2026-11-07T17:53:23.646213+00:00"
+    }
+  ],
+  "acquired_count": 120,
+  "expected_count": null,
+  "observed_terms": [],
+  "departed_excluded": 0,
+  "error": null,
+  "first_rows": [
+    {
+      "external_id": "sn:person:1055",
+      "name": "Beger, Mario",
+      "aliases": [],
+      "profile_url": "https://www.landtag.sachsen.de/de/abgeordnete/abgeordnetensuche/abgeordneter/1055",
+      "role": "member",
+      "land": null,
+      "term": "abgeordnetenwatch:period:157 (Sachsen 2024 - 2029)",
+      "group": "AfD",
+      "party": null,
+      "constituency": null,
+      "mandate_kind": null,
+      "service_start": null,
+      "service_end": null,
+      "source_updated_text": null,
+      "service_precision": null,
+      "bundestag_id": null,
+      "locator": "/html/body/div[2]/main/div[4]/div[2]/div/div/div[2]/article[2]/a",
+      "evidence_hash": "5e311fdbf515b25dff79270d3e4ac897791a6acba9cc36feb45ffa44605a6d50",
+      "evidence_url": "https://www.landtag.sachsen.de/de/abgeordnete/abgeordnetensuche/suche-nach-alphabet.cshtml",
+      "profile_evidence_hash": null,
+      "profile_member_class": null,
+      "conflicts": [],
+      "leadership": [],
+      "service_evidence": []
+    },
+    {
+      "external_id": "sn:person:1058",
+      "name": "Hütter, Carsten",
+      "aliases": [],
+      "profile_url": "https://www.landtag.sachsen.de/de/abgeordnete/abgeordnetensuche/abgeordneter/1058",
+      "role": "member",
+      "land": null,
+      "term": "abgeordnetenwatch:period:157 (Sachsen 2024 - 2029)",
+      "group": "AfD",
+      "party": null,
+      "constituency": null,
+      "mandate_kind": null,
+      "service_start": null,
+      "service_end": null,
+      "source_updated_text": null,
+      "service_precision": null,
+      "bundestag_id": null,
+      "locator": "/html/body/div[2]/main/div[4]/div[2]/div/div/div[8]/article[10]/a",
+      "evidence_hash": "5e311fdbf515b25dff79270d3e4ac897791a6acba9cc36feb45ffa44605a6d50",
+      "evidence_url": "https://www.landtag.sachsen.de/de/abgeordnete/abgeordnetensuche/suche-nach-alphabet.cshtml",
+      "profile_evidence_hash": null,
+      "profile_member_class": null,
+      "conflicts": [],
+      "leadership": [],
+      "service_evidence": []
+    }
+  ],
+  "term_evidence": [
+    {
+      "url": "https://www.abgeordnetenwatch.de/api/v2/parliaments/17",
+      "file": "9b1a7a9157423b8a4f48e4f5ea6f9e2be365e0ca3a65d4e4d74db8449730f923.gz",
+      "sha256": "9b1a7a9157423b8a4f48e4f5ea6f9e2be365e0ca3a65d4e4d74db8449730f923",
+      "retrieved_at": "2026-11-07T18:09:09.907877+00:00",
+      "purpose": "secondary_term_metadata"
+    },
+    {
+      "url": "https://www.abgeordnetenwatch.de/api/v2/parliament-periods/157",
+      "file": "519eee1d420f00e4159a5d5e8f04efa912f327901f9419842d2e50bcfa31f51e.gz",
+      "sha256": "519eee1d420f00e4159a5d5e8f04efa912f327901f9419842d2e50bcfa31f51e",
+      "retrieved_at": "2026-11-07T18:09:12.583397+00:00",
+      "purpose": "secondary_term_metadata"
+    }
+  ],
+  "secondary_term": {
+    "id": 157,
+    "entity_type": "parliament_period",
+    "label": "Sachsen 2024 - 2029",
+    "api_url": "https://www.abgeordnetenwatch.de/api/v2/parliament-periods/157",
+    "abgeordnetenwatch_url": "https://www.abgeordnetenwatch.de/sachsen",
+    "parliament": {
+      "id": 17,
+      "entity_type": "parliament",
+      "label": "Sachsen",
+      "api_url": "https://www.abgeordnetenwatch.de/api/v2/parliaments/17",
+      "abgeordnetenwatch_url": "https://www.abgeordnetenwatch.de/sachsen"
+    },
+    "previous_period": {
+      "id": 153,
+      "entity_type": "parliament_period",
+      "label": "Sachsen Wahl 2024",
+      "api_url": "https://www.abgeordnetenwatch.de/api/v2/parliament-periods/153",
+      "abgeordnetenwatch_url": "https://www.abgeordnetenwatch.de/sachsen/wahl-2024"
+    },
+    "type": "legislature",
+    "election_date": null,
+    "start_date_period": "2024-10-01",
+    "end_date_period": "2029-09-30"
+  },
+  "usage": {
+    "attribution": "Sächsischer Landtag",
+    "licence_assumption": "No blanket open licence assumed; issuer attribution retained; image assets are not acquired.",
+    "terms_url": "https://www.landtag.sachsen.de/de/impressum.cshtml",
+    "link_label": "Impressum",
+    "status": 200,
+    "file": "c0b307614a4abceefc334324abcdb2db2b541d6952ea082c13851e4490983ee7.gz",
+    "sha256": "c0b307614a4abceefc334324abcdb2db2b541d6952ea082c13851e4490983ee7",
+    "retrieved_at": "2026-11-07T18:50:58.843794+00:00"
+  },
+  "qualification_date": "2026-11-07",
+  "credential_requirement": "Public HTTPS GET; no operator credential required",
+  "update_semantics": "Dated retrieval/current-directory observation; original bytes retained. Provider update times are unknown unless explicitly exposed.",
+  "historical_count": 0,
+  "profile_errors": [],
+  "profile_conflicts": [],
+  "check_basis": "official_directory_set;secondary_term_metadata",
+  "source_updates": [],
+  "qualified_term": "abgeordnetenwatch:period:157 (Sachsen 2024 - 2029)"
+}

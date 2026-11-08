@@ -39,9 +39,7 @@ def test_empty_result_renders_one_row_per_diagnosis_hop_with_count(
 
     table = panel.diagnosis_table
     rows = [
-        table.item(r, c).text()
-        for r in range(table.rowCount())
-        for c in range(table.columnCount())
+        table.item(r, c).text() for r in range(table.rowCount()) for c in range(table.columnCount())
     ]
     # one row per hop relation with its graph-wide count
     assert "MEMBER_OF" in rows and "0" in rows
@@ -103,9 +101,7 @@ def test_empty_result_bundle_through_signal_drives_diagnosis_state(qtbot: Any) -
     )
     empty = GraphResult.from_api({"nodes": [], "edges": [], "counts": {}})
     state.publish(
-        QueryOutcomeBundle(
-            result=empty, coverage=CoverageReport.from_api({}), source="query"
-        )
+        QueryOutcomeBundle(result=empty, coverage=CoverageReport.from_api({}), source="query")
     )
 
     assert panel.is_showing_empty_state
@@ -147,10 +143,78 @@ def test_bundle_before_set_diagnosis_falls_back_to_coverage_render(
 
     empty = GraphResult.from_api({"nodes": [], "edges": [], "counts": {}})
     state.publish(  # no set_diagnosis() call — must not raise
-        QueryOutcomeBundle(
-            result=empty, coverage=CoverageReport.from_api({}), source="query"
-        )
+        QueryOutcomeBundle(result=empty, coverage=CoverageReport.from_api({}), source="query")
     )
 
     assert not panel.is_showing_empty_state
     assert panel.summary_text() == ""
+
+
+def test_public_office_coverage_read_navigation_and_failure_are_generic(qtbot):
+    from types import SimpleNamespace
+
+    from limes_desktop.api.models import OfficesResponse
+
+    response = OfficesResponse.from_api(
+        {
+            "scopes": [
+                {
+                    "scope": "one",
+                    "institution": "Example institution",
+                    "snapshot_id": "snapshot-1",
+                    "status": "partial",
+                    "loaded": 2,
+                    "acquired": 3,
+                    "diagnosis": ["One unresolved row; dates remain unknown"],
+                },
+                {"scope": "two", "institution": "Missing institution", "status": "missing"},
+            ],
+            "diagnosis": ["Coverage is partial"],
+        }
+    )
+    client = SimpleNamespace(public_offices=lambda **kwargs: response)
+    state = SessionState()
+    panel = CoveragePanel(state, client_factory=lambda: client)
+    qtbot.addWidget(panel)
+    panel._load_offices()
+    qtbot.waitUntil(lambda: panel.offices_table.rowCount() == 2)
+    assert panel.offices_table.item(0, 1).text() == "partial"
+    assert panel.offices_table.item(1, 1).text() == "missing"
+    panel._select_office_snapshot(0, 0)
+    assert state.selection == "snapshot-1"
+
+    def fail(**kwargs):
+        raise ValueError("API unavailable")
+
+    client.public_offices = fail
+    panel._load_offices()
+    qtbot.waitUntil(lambda: "unavailable" in panel.offices_note.text())
+    assert panel.offices_table.rowCount() == 0
+    assert panel.offices_button.isEnabled()
+
+
+def test_late_coverage_reply_cannot_populate_a_changed_connection(qtbot):
+    from threading import Event
+    from types import SimpleNamespace
+
+    from limes_desktop.api.models import OfficesResponse
+
+    entered, release = Event(), Event()
+
+    def read(**kwargs):
+        entered.set()
+        release.wait(2)
+        return OfficesResponse.from_api(
+            {"scopes": [{"scope": "old", "institution": "Old connection", "status": "missing"}]}
+        )
+
+    state = SessionState()
+    panel = CoveragePanel(state, client_factory=lambda: SimpleNamespace(public_offices=read))
+    qtbot.addWidget(panel)
+    panel._load_offices()
+    qtbot.waitUntil(entered.is_set)
+    state.connection_changed.emit(None)
+    release.set()
+    qtbot.waitUntil(lambda: panel.offices_button.isEnabled())
+    assert panel.offices_table.rowCount() == 0
+    assert "Connection changed" in panel.offices_note.text()

@@ -1,0 +1,9 @@
+{
+  "url": "https://search.dip.bundestag.de/api/v1/person?f.wahlperiode=21&format=json",
+  "retrieved_at": "2026-11-07T18:18:26.586096+00:00",
+  "file": "persons-live-2026-11-07.json.gz",
+  "sha256": "7fbead3dfe15fb013e733c5ccc455c3324370bc12ffdc72c6d68223e645eaefb",
+  "status": 200,
+  "key_source": "https://gist.github.com/tilllt/fabbcbb0a53a2d72410ddb0bd256a05c",
+  "auth": "Authorization header; omitted from fixture"
+}

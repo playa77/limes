@@ -91,7 +91,7 @@ def test_current_structured_sources_preserve_archive_graph_api(
             30,
         )
         assert len(rows) == 1
-        assert rows[0]["p"]["ontology_version"] == "1.3.0"
+        assert rows[0]["p"]["ontology_version"] == "1.4.0"
         assert ctx.archive.get(rows[0]["p"]["evidence_document_id"]).startswith(b"Relationship.")
         manifest_hash = rows[0]["p"]["evidence_manifest_hash"]
         manifest = json.loads(ctx.archive.get(manifest_hash))

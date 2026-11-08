@@ -1,0 +1,132 @@
+{
+  "scope": "nw",
+  "institution": "Landtag Nordrhein-Westfalen",
+  "pages": [
+    {
+      "url": "https://www.landtag.nrw.de/home/der-landtag/abgeordnete-und--fraktionen/die-abgeordneten/abgeordnetensuche/liste-aller-abgeordneten.html",
+      "final_url": "https://www.landtag.nrw.de/home/der-landtag/abgeordnete-und--fraktionen/die-abgeordneten/abgeordnetensuche/liste-aller-abgeordneten.html",
+      "file": "c6c3c6f318f7ef34c4a8ebcf5ad7f5090ed2898527326e0d7e90e7a080d85a23.gz",
+      "sha256": "c6c3c6f318f7ef34c4a8ebcf5ad7f5090ed2898527326e0d7e90e7a080d85a23",
+      "retrieved_at": "2026-11-07T17:53:19.175284+00:00"
+    }
+  ],
+  "acquired_count": 195,
+  "expected_count": null,
+  "observed_terms": [],
+  "departed_excluded": 0,
+  "error": null,
+  "first_rows": [
+    {
+      "external_id": "nw:person:01124",
+      "name": "Reul, Herbert",
+      "aliases": [],
+      "profile_url": "https://www.landtag.nrw.de/home/der-landtag/abgeordnete-und--fraktionen/die-abgeordneten/abgeordnetensuche/abgeordnetendetail.html?k=01124",
+      "role": "member",
+      "land": null,
+      "term": "abgeordnetenwatch:period:139 (Nordrhein-Westfalen 2022 - 2027)",
+      "group": "CDU",
+      "party": null,
+      "constituency": null,
+      "mandate_kind": null,
+      "service_start": null,
+      "service_end": null,
+      "source_updated_text": null,
+      "service_precision": null,
+      "bundestag_id": null,
+      "locator": "/html/body/main/section[2]/div/div/div/div/figure/table/tbody/tr[136]/td[1]/a",
+      "evidence_hash": "c6c3c6f318f7ef34c4a8ebcf5ad7f5090ed2898527326e0d7e90e7a080d85a23",
+      "evidence_url": "https://www.landtag.nrw.de/home/der-landtag/abgeordnete-und--fraktionen/die-abgeordneten/abgeordnetensuche/liste-aller-abgeordneten.html",
+      "profile_evidence_hash": null,
+      "profile_member_class": null,
+      "conflicts": [],
+      "leadership": [],
+      "service_evidence": []
+    },
+    {
+      "external_id": "nw:person:01322",
+      "name": "Tarner, Hedwig",
+      "aliases": [],
+      "profile_url": "https://www.landtag.nrw.de/home/der-landtag/abgeordnete-und--fraktionen/die-abgeordneten/abgeordnetensuche/abgeordnetendetail.html?k=01322",
+      "role": "member",
+      "land": null,
+      "term": "abgeordnetenwatch:period:139 (Nordrhein-Westfalen 2022 - 2027)",
+      "group": "GRÜNE",
+      "party": null,
+      "constituency": null,
+      "mandate_kind": null,
+      "service_start": null,
+      "service_end": null,
+      "source_updated_text": null,
+      "service_precision": null,
+      "bundestag_id": null,
+      "locator": "/html/body/main/section[2]/div/div/div/div/figure/table/tbody/tr[169]/td[1]/a",
+      "evidence_hash": "c6c3c6f318f7ef34c4a8ebcf5ad7f5090ed2898527326e0d7e90e7a080d85a23",
+      "evidence_url": "https://www.landtag.nrw.de/home/der-landtag/abgeordnete-und--fraktionen/die-abgeordneten/abgeordnetensuche/liste-aller-abgeordneten.html",
+      "profile_evidence_hash": null,
+      "profile_member_class": null,
+      "conflicts": [],
+      "leadership": [],
+      "service_evidence": []
+    }
+  ],
+  "term_evidence": [
+    {
+      "url": "https://www.abgeordnetenwatch.de/api/v2/parliaments/4",
+      "file": "0d88c164cc78c931be7312355e9ef23992c902a5f809df676c58dd8e7c31a35a.gz",
+      "sha256": "0d88c164cc78c931be7312355e9ef23992c902a5f809df676c58dd8e7c31a35a",
+      "retrieved_at": "2026-11-07T18:08:53.252386+00:00",
+      "purpose": "secondary_term_metadata"
+    },
+    {
+      "url": "https://www.abgeordnetenwatch.de/api/v2/parliament-periods/139",
+      "file": "533447aef7b6af861d642b3de11641bb1cb3936b9617df924bbc4ada390ec17b.gz",
+      "sha256": "533447aef7b6af861d642b3de11641bb1cb3936b9617df924bbc4ada390ec17b",
+      "retrieved_at": "2026-11-07T18:08:56.156643+00:00",
+      "purpose": "secondary_term_metadata"
+    }
+  ],
+  "secondary_term": {
+    "id": 139,
+    "entity_type": "parliament_period",
+    "label": "Nordrhein-Westfalen 2022 - 2027",
+    "api_url": "https://www.abgeordnetenwatch.de/api/v2/parliament-periods/139",
+    "abgeordnetenwatch_url": "https://www.abgeordnetenwatch.de/nordrhein-westfalen",
+    "parliament": {
+      "id": 4,
+      "entity_type": "parliament",
+      "label": "Nordrhein-Westfalen",
+      "api_url": "https://www.abgeordnetenwatch.de/api/v2/parliaments/4",
+      "abgeordnetenwatch_url": "https://www.abgeordnetenwatch.de/nordrhein-westfalen"
+    },
+    "previous_period": {
+      "id": 136,
+      "entity_type": "parliament_period",
+      "label": "Nordrhein-Westfalen Wahl 2022",
+      "api_url": "https://www.abgeordnetenwatch.de/api/v2/parliament-periods/136",
+      "abgeordnetenwatch_url": "https://www.abgeordnetenwatch.de/nordrhein-westfalen/wahl-2022"
+    },
+    "type": "legislature",
+    "election_date": null,
+    "start_date_period": "2022-06-01",
+    "end_date_period": "2027-05-30"
+  },
+  "usage": {
+    "attribution": "Landtag Nordrhein-Westfalen",
+    "licence_assumption": "No blanket open licence assumed; issuer attribution retained; image assets are not acquired.",
+    "terms_url": "https://www.landtag.nrw.de/home/aktuelles/zeitschrift-landtag-intern/impressum.html",
+    "link_label": "Impressum",
+    "status": 200,
+    "file": "42a527ac6185d464651f8e7399ccceeecc164a29115a66e3a323d77c82d2c347.gz",
+    "sha256": "42a527ac6185d464651f8e7399ccceeecc164a29115a66e3a323d77c82d2c347",
+    "retrieved_at": "2026-11-07T18:50:57.160895+00:00"
+  },
+  "qualification_date": "2026-11-07",
+  "credential_requirement": "Public HTTPS GET; no operator credential required",
+  "update_semantics": "Dated retrieval/current-directory observation; original bytes retained. Provider update times are unknown unless explicitly exposed.",
+  "historical_count": 0,
+  "profile_errors": [],
+  "profile_conflicts": [],
+  "check_basis": "official_directory_set;secondary_term_metadata",
+  "source_updates": [],
+  "qualified_term": "abgeordnetenwatch:period:139 (Nordrhein-Westfalen 2022 - 2027)"
+}

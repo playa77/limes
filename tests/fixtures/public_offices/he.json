@@ -1,0 +1,132 @@
+{
+  "scope": "he",
+  "institution": "Hessischer Landtag",
+  "pages": [
+    {
+      "url": "https://hessischer-landtag.de/abgeordnete",
+      "final_url": "https://hessischer-landtag.de/abgeordnete",
+      "file": "99de5fc423326d41d0cc28ca89405c2fc559aa31d4aa4a962a23ddc326b8f589.gz",
+      "sha256": "99de5fc423326d41d0cc28ca89405c2fc559aa31d4aa4a962a23ddc326b8f589",
+      "retrieved_at": "2026-11-07T17:53:17.501697+00:00"
+    }
+  ],
+  "acquired_count": 133,
+  "expected_count": null,
+  "observed_terms": [],
+  "departed_excluded": 0,
+  "error": null,
+  "first_rows": [
+    {
+      "external_id": "https://hessischer-landtag.de/abgeordnete/alexander-bauer",
+      "name": "Alexander Bauer",
+      "aliases": [],
+      "profile_url": "https://hessischer-landtag.de/abgeordnete/alexander-bauer",
+      "role": "member",
+      "land": null,
+      "term": "abgeordnetenwatch:period:150 (Hessen 2024 - 2029)",
+      "group": null,
+      "party": null,
+      "constituency": null,
+      "mandate_kind": null,
+      "service_start": null,
+      "service_end": null,
+      "source_updated_text": null,
+      "service_precision": null,
+      "bundestag_id": null,
+      "locator": "/html/body/div[2]/main/div[2]/div/div/div/div[3]/div[4]/div/div[9]/div/a",
+      "evidence_hash": "99de5fc423326d41d0cc28ca89405c2fc559aa31d4aa4a962a23ddc326b8f589",
+      "evidence_url": "https://hessischer-landtag.de/abgeordnete",
+      "profile_evidence_hash": null,
+      "profile_member_class": null,
+      "conflicts": [],
+      "leadership": [],
+      "service_evidence": []
+    },
+    {
+      "external_id": "https://hessischer-landtag.de/abgeordnete/alexander-grotov",
+      "name": "Alexander Grotov",
+      "aliases": [],
+      "profile_url": "https://hessischer-landtag.de/abgeordnete/alexander-grotov",
+      "role": "member",
+      "land": null,
+      "term": "abgeordnetenwatch:period:150 (Hessen 2024 - 2029)",
+      "group": null,
+      "party": null,
+      "constituency": null,
+      "mandate_kind": null,
+      "service_start": null,
+      "service_end": null,
+      "source_updated_text": null,
+      "service_precision": null,
+      "bundestag_id": null,
+      "locator": "/html/body/div[2]/main/div[2]/div/div/div/div[3]/div[4]/div/div[39]/div/a",
+      "evidence_hash": "99de5fc423326d41d0cc28ca89405c2fc559aa31d4aa4a962a23ddc326b8f589",
+      "evidence_url": "https://hessischer-landtag.de/abgeordnete",
+      "profile_evidence_hash": null,
+      "profile_member_class": null,
+      "conflicts": [],
+      "leadership": [],
+      "service_evidence": []
+    }
+  ],
+  "term_evidence": [
+    {
+      "url": "https://www.abgeordnetenwatch.de/api/v2/parliaments/11",
+      "file": "687212ad1dd945878b602ee5833870026c8cdd15f601df0adffe1debb82be9ff.gz",
+      "sha256": "687212ad1dd945878b602ee5833870026c8cdd15f601df0adffe1debb82be9ff",
+      "retrieved_at": "2026-11-07T18:08:36.719868+00:00",
+      "purpose": "secondary_term_metadata"
+    },
+    {
+      "url": "https://www.abgeordnetenwatch.de/api/v2/parliament-periods/150",
+      "file": "ef1fcd1680a6b593c8415255c4e774484f44ca5c3f22a9084a4d118c98cf5d4e.gz",
+      "sha256": "ef1fcd1680a6b593c8415255c4e774484f44ca5c3f22a9084a4d118c98cf5d4e",
+      "retrieved_at": "2026-11-07T18:08:39.556517+00:00",
+      "purpose": "secondary_term_metadata"
+    }
+  ],
+  "secondary_term": {
+    "id": 150,
+    "entity_type": "parliament_period",
+    "label": "Hessen 2024 - 2029",
+    "api_url": "https://www.abgeordnetenwatch.de/api/v2/parliament-periods/150",
+    "abgeordnetenwatch_url": "https://www.abgeordnetenwatch.de/hessen",
+    "parliament": {
+      "id": 11,
+      "entity_type": "parliament",
+      "label": "Hessen",
+      "api_url": "https://www.abgeordnetenwatch.de/api/v2/parliaments/11",
+      "abgeordnetenwatch_url": "https://www.abgeordnetenwatch.de/hessen"
+    },
+    "previous_period": {
+      "id": 148,
+      "entity_type": "parliament_period",
+      "label": "Hessen Wahl 2023",
+      "api_url": "https://www.abgeordnetenwatch.de/api/v2/parliament-periods/148",
+      "abgeordnetenwatch_url": "https://www.abgeordnetenwatch.de/hessen/wahl-2023"
+    },
+    "type": "legislature",
+    "election_date": null,
+    "start_date_period": "2024-01-18",
+    "end_date_period": "2029-01-31"
+  },
+  "usage": {
+    "attribution": "Hessischer Landtag",
+    "licence_assumption": "No blanket open licence assumed; issuer attribution retained; image assets are not acquired.",
+    "terms_url": "https://hessischer-landtag.de/impressum",
+    "link_label": "Impressum",
+    "status": 200,
+    "file": "e9f9fa86792843bae389480636ad69e491b03f95d2d171f1a0f65ab0202a6de3.gz",
+    "sha256": "e9f9fa86792843bae389480636ad69e491b03f95d2d171f1a0f65ab0202a6de3",
+    "retrieved_at": "2026-11-07T18:50:55.414639+00:00"
+  },
+  "qualification_date": "2026-11-07",
+  "credential_requirement": "Public HTTPS GET; no operator credential required",
+  "update_semantics": "Dated retrieval/current-directory observation; original bytes retained. Provider update times are unknown unless explicitly exposed.",
+  "historical_count": 0,
+  "profile_errors": [],
+  "profile_conflicts": [],
+  "check_basis": "official_directory_set;secondary_term_metadata",
+  "source_updates": [],
+  "qualified_term": "abgeordnetenwatch:period:150 (Hessen 2024 - 2029)"
+}

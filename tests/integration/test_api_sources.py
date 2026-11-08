@@ -10,6 +10,7 @@ from pathlib import Path
 
 import pytest
 
+from limes.public_offices.catalogue import SCOPES
 from limes.types import RawRecord
 from tests.fixtures.graph_data import make_api_client, wipe_graph
 from tests.integration.conftest import Neo4jInstance
@@ -51,7 +52,9 @@ def test_sources_returns_registry_with_trust_ranks(neo4j_instance: Neo4jInstance
         response = client.get("/sources")
         assert response.status_code == 200
         sources = {entry["source_id"]: entry for entry in response.json()}
-        assert set(sources) == REGISTERED_SOURCES
+        assert set(sources) == REGISTERED_SOURCES | {
+            "public_offices_" + scope.code for scope in SCOPES
+        }
         assert sources["gleif"]["trust_rank"] == 1.0
         assert sources["offeneregister"]["trust_rank"] == 0.3
         assert sources["feeds"]["kind"] == "unstructured"

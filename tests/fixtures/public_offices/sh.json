@@ -1,0 +1,134 @@
+{
+  "scope": "sh",
+  "institution": "Schleswig-Holsteinischer Landtag",
+  "pages": [
+    {
+      "url": "https://www.landtag.ltsh.de/abgeordnete/abgeordnete-alle/",
+      "final_url": "https://www.landtag.ltsh.de/abgeordnete/abgeordnete-alle/",
+      "file": "6e990e1427286273b855112c235748b148a0b3953b43f1273088f36271475250.gz",
+      "sha256": "6e990e1427286273b855112c235748b148a0b3953b43f1273088f36271475250",
+      "retrieved_at": "2026-11-07T17:53:22.432616+00:00"
+    }
+  ],
+  "acquired_count": 69,
+  "expected_count": 69,
+  "observed_terms": [
+    "20"
+  ],
+  "departed_excluded": 0,
+  "error": null,
+  "first_rows": [
+    {
+      "external_id": "https://e-lissh.landtag.ltsh.de/portal/browse.tt.html?type=generic5&action=link&db=lsh.samt&text=nielsen%2C+beate",
+      "name": "Nielsen, Beate",
+      "aliases": [],
+      "profile_url": "https://e-lissh.landtag.ltsh.de/portal/browse.tt.html?type=generic5&action=link&db=lsh.samt&text=nielsen%2C+beate",
+      "role": "member",
+      "land": null,
+      "term": "20",
+      "group": "CDU",
+      "party": null,
+      "constituency": null,
+      "mandate_kind": null,
+      "service_start": null,
+      "service_end": null,
+      "source_updated_text": null,
+      "service_precision": null,
+      "bundestag_id": null,
+      "locator": "/html/body/main/div/section[3]/div[1]/div/div[1]/div/p[41]/a",
+      "evidence_hash": "6e990e1427286273b855112c235748b148a0b3953b43f1273088f36271475250",
+      "evidence_url": "https://www.landtag.ltsh.de/abgeordnete/abgeordnete-alle/",
+      "profile_evidence_hash": null,
+      "profile_member_class": null,
+      "conflicts": [],
+      "leadership": [],
+      "service_evidence": []
+    },
+    {
+      "external_id": "sh:samt:1255",
+      "name": "Kalinka, Werner",
+      "aliases": [],
+      "profile_url": "http://lissh.lvn.ltsh.de/cgi-bin/starfinder/0?path=samtflmore.txt&id=fastlink&pass=&search=ID%3D1255",
+      "role": "member",
+      "land": null,
+      "term": "20",
+      "group": "CDU",
+      "party": null,
+      "constituency": null,
+      "mandate_kind": null,
+      "service_start": null,
+      "service_end": null,
+      "source_updated_text": null,
+      "service_precision": null,
+      "bundestag_id": null,
+      "locator": "/html/body/main/div/section[3]/div[1]/div/div[1]/div/p[30]/a",
+      "evidence_hash": "6e990e1427286273b855112c235748b148a0b3953b43f1273088f36271475250",
+      "evidence_url": "https://www.landtag.ltsh.de/abgeordnete/abgeordnete-alle/",
+      "profile_evidence_hash": null,
+      "profile_member_class": null,
+      "conflicts": [],
+      "leadership": [],
+      "service_evidence": []
+    }
+  ],
+  "term_evidence": [
+    {
+      "url": "https://www.abgeordnetenwatch.de/api/v2/parliaments/18",
+      "file": "92610dae4082e8d48cfe62c43470b7f7ef5246c5552828db0ae9debdb11a87ab.gz",
+      "sha256": "92610dae4082e8d48cfe62c43470b7f7ef5246c5552828db0ae9debdb11a87ab",
+      "retrieved_at": "2026-11-07T18:09:20.552782+00:00",
+      "purpose": "secondary_term_metadata"
+    },
+    {
+      "url": "https://www.abgeordnetenwatch.de/api/v2/parliament-periods/138",
+      "file": "5e26218c53a3c058540e3be2b6f5e0698243d167f60451b5cd3c1b1be3ee6a3a.gz",
+      "sha256": "5e26218c53a3c058540e3be2b6f5e0698243d167f60451b5cd3c1b1be3ee6a3a",
+      "retrieved_at": "2026-11-07T18:09:23.201662+00:00",
+      "purpose": "secondary_term_metadata"
+    }
+  ],
+  "secondary_term": {
+    "id": 138,
+    "entity_type": "parliament_period",
+    "label": "Schleswig-Holstein 2022 - 2027",
+    "api_url": "https://www.abgeordnetenwatch.de/api/v2/parliament-periods/138",
+    "abgeordnetenwatch_url": "https://www.abgeordnetenwatch.de/schleswig-holstein",
+    "parliament": {
+      "id": 18,
+      "entity_type": "parliament",
+      "label": "Schleswig-Holstein",
+      "api_url": "https://www.abgeordnetenwatch.de/api/v2/parliaments/18",
+      "abgeordnetenwatch_url": "https://www.abgeordnetenwatch.de/schleswig-holstein"
+    },
+    "previous_period": {
+      "id": 135,
+      "entity_type": "parliament_period",
+      "label": "Schleswig-Holstein Wahl 2022",
+      "api_url": "https://www.abgeordnetenwatch.de/api/v2/parliament-periods/135",
+      "abgeordnetenwatch_url": "https://www.abgeordnetenwatch.de/schleswig-holstein/wahl-2022"
+    },
+    "type": "legislature",
+    "election_date": null,
+    "start_date_period": "2022-06-07",
+    "end_date_period": "2027-05-30"
+  },
+  "usage": {
+    "attribution": "Schleswig-Holsteinischer Landtag",
+    "licence_assumption": "No blanket open licence assumed; issuer attribution retained; image assets are not acquired.",
+    "terms_url": "https://www.landtag.ltsh.de/metainfo/nutzungsbedingungen-bilder/",
+    "link_label": "Nutzungsbedingungen für Medien",
+    "status": 200,
+    "file": "08f24923c267cf6ac38ad9a67e1ce50b5516d0247c8ae29c292dd1e27f04c54f.gz",
+    "sha256": "08f24923c267cf6ac38ad9a67e1ce50b5516d0247c8ae29c292dd1e27f04c54f",
+    "retrieved_at": "2026-11-07T18:50:57.957186+00:00"
+  },
+  "qualification_date": "2026-11-07",
+  "credential_requirement": "Public HTTPS GET; no operator credential required",
+  "update_semantics": "Dated retrieval/current-directory observation; original bytes retained. Provider update times are unknown unless explicitly exposed.",
+  "historical_count": 0,
+  "profile_errors": [],
+  "profile_conflicts": [],
+  "check_basis": "official_set_and_count",
+  "source_updates": [],
+  "qualified_term": "20"
+}

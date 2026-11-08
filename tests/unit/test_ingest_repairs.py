@@ -65,8 +65,9 @@ def test_dip_registry_key_header_current_shape_and_pagination():
     assert normalized.assertions
     assert "test-secret" not in records[0].source_url
     assert "test-secret" not in str(logs)
-    office = next(a for a in normalized.assertions if a.relation == "HOLDS_OFFICE")
-    assert office.validity.valid_from == datetime(2025, 3, 25, tzinfo=UTC)
+    office = next(a for a in normalized.assertions if a.relation == "PARTICIPATED_IN_TERM")
+    assert office.validity.valid_from == records[0].fetched_at
+    assert office.provenance.validity_basis == "historical_term_reference"
 
 
 def test_dip_repeated_cursor_terminates():

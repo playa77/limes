@@ -1,0 +1,148 @@
+{
+  "scope": "bt",
+  "institution": "Deutscher Bundestag",
+  "pages": [
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien",
+      "final_url": "https://www.bundestag.de/abgeordnete/biografien",
+      "file": "84dfca3ba9f4d0694f83bd1ed363426e92671b304fabb9f7c277544cbbca16d8.gz",
+      "sha256": "84dfca3ba9f4d0694f83bd1ed363426e92671b304fabb9f7c277544cbbca16d8",
+      "retrieved_at": "2026-11-07T17:53:15.415992+00:00"
+    },
+    {
+      "url": "https://www.bundestag.de/ajax/filterlist/de/abgeordnete/biografien/1040594-1040594?all=true",
+      "final_url": "https://www.bundestag.de/ajax/filterlist/de/abgeordnete/biografien/1040594-1040594?all=true",
+      "file": "9156ddfdcc0162e4aa28a1a1fae92fc4dd9cb120f4e55c474f1bce7778351dbc.gz",
+      "sha256": "9156ddfdcc0162e4aa28a1a1fae92fc4dd9cb120f4e55c474f1bce7778351dbc",
+      "retrieved_at": "2026-11-07T17:53:20.157678+00:00"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/ausgeschiedene",
+      "final_url": "https://www.bundestag.de/abgeordnete/biografien/ausgeschiedene",
+      "file": "3077b05c68795e779bf12aeda4b400c5bad0d8f67ece184308246b4f6abd60f6.gz",
+      "sha256": "3077b05c68795e779bf12aeda4b400c5bad0d8f67ece184308246b4f6abd60f6",
+      "retrieved_at": "2026-11-07T17:53:20.927055+00:00"
+    }
+  ],
+  "acquired_count": 630,
+  "expected_count": null,
+  "observed_terms": [
+    "21"
+  ],
+  "departed_excluded": 9,
+  "error": null,
+  "first_rows": [
+    {
+      "external_id": "bt-web:1043330",
+      "name": "Abdi, Sanae",
+      "aliases": [],
+      "profile_url": "https://www.bundestag.de/abgeordnete/biografien/A/abdi_sanae-1043330",
+      "role": "member",
+      "land": null,
+      "term": "21",
+      "group": "SPD",
+      "party": null,
+      "constituency": null,
+      "mandate_kind": null,
+      "service_start": null,
+      "service_end": null,
+      "source_updated_text": null,
+      "service_precision": null,
+      "bundestag_id": null,
+      "locator": "/html/div/li[1]/article/a",
+      "evidence_hash": "9156ddfdcc0162e4aa28a1a1fae92fc4dd9cb120f4e55c474f1bce7778351dbc",
+      "evidence_url": "https://www.bundestag.de/ajax/filterlist/de/abgeordnete/biografien/1040594-1040594?all=true",
+      "profile_evidence_hash": null,
+      "profile_member_class": null,
+      "conflicts": [],
+      "leadership": [],
+      "service_evidence": []
+    },
+    {
+      "external_id": "bt-web:1043342",
+      "name": "Abraham, Knut",
+      "aliases": [],
+      "profile_url": "https://www.bundestag.de/abgeordnete/biografien/A/abraham_knut-1043342",
+      "role": "member",
+      "land": null,
+      "term": "21",
+      "group": "CDU/CSU",
+      "party": null,
+      "constituency": null,
+      "mandate_kind": null,
+      "service_start": null,
+      "service_end": null,
+      "source_updated_text": null,
+      "service_precision": null,
+      "bundestag_id": null,
+      "locator": "/html/div/li[2]/article/a",
+      "evidence_hash": "9156ddfdcc0162e4aa28a1a1fae92fc4dd9cb120f4e55c474f1bce7778351dbc",
+      "evidence_url": "https://www.bundestag.de/ajax/filterlist/de/abgeordnete/biografien/1040594-1040594?all=true",
+      "profile_evidence_hash": null,
+      "profile_member_class": null,
+      "conflicts": [],
+      "leadership": [],
+      "service_evidence": []
+    }
+  ],
+  "term_evidence": [
+    {
+      "url": "https://www.abgeordnetenwatch.de/api/v2/parliaments/5",
+      "file": "79f40933f54e456040139736f8026d08066971d8e77c019f1c13897d3878a1cd.gz",
+      "sha256": "79f40933f54e456040139736f8026d08066971d8e77c019f1c13897d3878a1cd",
+      "retrieved_at": "2026-11-07T17:56:09.488836+00:00",
+      "purpose": "secondary_term_metadata"
+    },
+    {
+      "url": "https://www.abgeordnetenwatch.de/api/v2/parliament-periods/161",
+      "file": "4c9ce20aaa6d8ca05b1ed059fcf94811db095796abc0097f3483796a9a18aa7e.gz",
+      "sha256": "4c9ce20aaa6d8ca05b1ed059fcf94811db095796abc0097f3483796a9a18aa7e",
+      "retrieved_at": "2026-11-07T17:56:10.334294+00:00",
+      "purpose": "secondary_term_metadata"
+    }
+  ],
+  "secondary_term": {
+    "id": 161,
+    "entity_type": "parliament_period",
+    "label": "Bundestag 2025 - 2029",
+    "api_url": "https://www.abgeordnetenwatch.de/api/v2/parliament-periods/161",
+    "abgeordnetenwatch_url": "https://www.abgeordnetenwatch.de/bundestag",
+    "parliament": {
+      "id": 5,
+      "entity_type": "parliament",
+      "label": "Bundestag",
+      "api_url": "https://www.abgeordnetenwatch.de/api/v2/parliaments/5",
+      "abgeordnetenwatch_url": "https://www.abgeordnetenwatch.de/bundestag"
+    },
+    "previous_period": {
+      "id": 160,
+      "entity_type": "parliament_period",
+      "label": "Bundestag Wahl 2025",
+      "api_url": "https://www.abgeordnetenwatch.de/api/v2/parliament-periods/160",
+      "abgeordnetenwatch_url": "https://www.abgeordnetenwatch.de/bundestag/bundestag-wahl-2025"
+    },
+    "type": "legislature",
+    "election_date": null,
+    "start_date_period": "2025-03-25",
+    "end_date_period": "2029-02-22"
+  },
+  "usage": {
+    "attribution": "Deutscher Bundestag",
+    "licence_assumption": "No blanket open licence assumed; issuer attribution retained; image assets are not acquired.",
+    "terms_url": "https://www.bundestag.de/services/impressum",
+    "link_label": "Impressum",
+    "status": 200,
+    "file": "a996f449f1c7b7ce8a3be5d41369f28d33d857bff66ec42c1efc7b13591b9eef.gz",
+    "sha256": "a996f449f1c7b7ce8a3be5d41369f28d33d857bff66ec42c1efc7b13591b9eef",
+    "retrieved_at": "2026-11-07T18:50:53.234598+00:00"
+  },
+  "qualification_date": "2026-11-07",
+  "credential_requirement": "Public HTTPS GET; no operator credential required",
+  "update_semantics": "Dated retrieval/current-directory observation; original bytes retained. Provider update times are unknown unless explicitly exposed.",
+  "historical_count": 9,
+  "profile_errors": [],
+  "profile_conflicts": [],
+  "check_basis": "official_directory_set",
+  "source_updates": [],
+  "qualified_term": "21"
+}

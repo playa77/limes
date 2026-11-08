@@ -19,12 +19,11 @@ from datetime import UTC, datetime
 import pytest
 import respx
 from httpx import Response
-from structlog.testing import capture_logs
 
 from limes.errors import SourceFetchError, SourceParseError
 from limes.sources.base import hash_entity_id
 from limes.sources.bundestag_dip import PERSON_URL, WAHLPERIODE_STARTS, BundestagDipAdapter
-from limes.types import EntityEndpoint, RawRecord
+from limes.types import RawRecord
 
 FIXTURES = __import__("pathlib").Path(__file__).parents[1] / "fixtures" / "bundestag_dip"
 NOW = datetime(2026, 8, 1, 12, 0, 0, tzinfo=UTC)
@@ -104,77 +103,30 @@ def test_fetch_401_raises_source_fetch_error():
             list(ADAPTER.fetch(None, None))
 
 
-def test_normalize_produces_exact_expected_records():
+def test_normalize_preserves_ids_and_corrects_historical_semantics():
     normalized = ADAPTER.normalize(_record())
-
     assert normalized.kind == "structured"
-    assert normalized.lookup_rows == []
     assert normalized.content_hash == hashlib.sha256(_payload()).hexdigest()
-
-    by_triple = {
-        (a.subject.entity_id, a.relation, a.object.entity_id): a for a in normalized.assertions
+    assert {e.entity_id for e in normalized.entities} == {PERSON_1, PERSON_2, PERSON_3}
+    participation = [a for a in normalized.assertions if a.relation == "PARTICIPATED_IN_TERM"]
+    assert {(a.subject.entity_id, a.object.entity_id) for a in participation} == {
+        (PERSON_1, _office_id(20)),
+        (PERSON_1, _office_id(21)),
+        (PERSON_2, _office_id(19)),
     }
-    expected_triples = {
-        (PERSON_1, "MEMBER_OF", SPD),
-        (PERSON_1, "HOLDS_OFFICE", _office_id(20)),
-        (_office_id(20), "OFFICE_AT", SPD),
-        (PERSON_1, "HOLDS_OFFICE", _office_id(21)),
-        (_office_id(21), "OFFICE_AT", SPD),
-        (PERSON_2, "MEMBER_OF", CDU_CSU),
-        (PERSON_2, "HOLDS_OFFICE", _office_id(19)),
-        (_office_id(19), "OFFICE_AT", CDU_CSU),
-    }
-    assert set(by_triple) == expected_triples
-    assert len(by_triple) == len(normalized.assertions)  # no duplicate triples
-
-    holds_20 = by_triple[(PERSON_1, "HOLDS_OFFICE", _office_id(20))]
-    assert holds_20.subject.label == "Saskia Weber"
-    assert holds_20.subject.type == "Person"
-    assert holds_20.subject.deterministic_key == ("bundestag_id", "11004755")
-    office_20 = holds_20.object
-    assert office_20.type == "Office"
-    assert office_20.deterministic_key == ("body_id", "BT")
-    assert office_20.label == "Mitglied des Deutschen Bundestages (Wahlperiode 20)"
-    assert office_20.aliases == [office_20.label]
-    assert holds_20.validity.valid_from == _period_start(20)
-    assert holds_20.validity.valid_to is None
-
-    # The interval is part of the office identity: period 21 is a distinct node.
-    assert _office_id(20) != _office_id(21)
-    assert by_triple[
-        (PERSON_1, "HOLDS_OFFICE", _office_id(21))
-    ].validity.valid_from == _period_start(21)
-
-    office_at_20 = by_triple[(_office_id(20), "OFFICE_AT", SPD)]
-    assert office_at_20.subject == office_20
-    assert office_at_20.object.type == "PoliticalParty"
-    assert office_at_20.object.label == "SPD"
-    assert office_at_20.validity.valid_from == _period_start(20)
-    assert office_at_20.validity.valid_to is None
-
-    membership = by_triple[(PERSON_1, "MEMBER_OF", SPD)]
-    assert membership.validity.valid_from == NOW
-
-    holds_19 = by_triple[(PERSON_2, "HOLDS_OFFICE", _office_id(19))]
-    assert holds_19.subject.label == "Martin Fischer"
-    assert holds_19.validity.valid_from == _period_start(19)
-    assert by_triple[(_office_id(19), "OFFICE_AT", CDU_CSU)].object.label == "CDU/CSU"
-
-    for assertion in normalized.assertions:
-        assert assertion.provenance.source_id == "bundestag_dip"
-        assert assertion.provenance.source_trust == 1.00
-        assert assertion.provenance.confidence == 1.0
-        assert assertion.provenance.ontology_version is not None
-        assert assertion.validity.recorded_at == NOW
-
-    assert normalized.entities == [
-        EntityEndpoint(
-            entity_id=PERSON_3,
-            type="Person",
-            label="Julia Becker",
-            deterministic_key=("bundestag_id", "11005230"),
-        )
-    ]
+    offices = {a.object.entity_id: a.object for a in participation}
+    assert offices[_office_id(20)].deterministic_key[0] == "office_key"
+    assert offices[_office_id(20)].deterministic_key != offices[_office_id(21)].deterministic_key
+    at = [a for a in normalized.assertions if a.relation == "OFFICE_AT"]
+    assert all(a.object.entity_id == "institution_id:DE:bt" for a in at)
+    groups = [a for a in normalized.assertions if a.relation == "GROUP_EVIDENCE"]
+    assert [(a.subject.entity_id, a.object.label) for a in groups] == [(PERSON_2, "CDU/CSU")]
+    assert all(a.object.type != "PoliticalParty" for a in normalized.assertions)
+    assert not any(a.relation in ("MEMBER_OF", "HOLDS_OFFICE") for a in normalized.assertions)
+    assert all(a.validity.valid_from == NOW for a in normalized.assertions)
+    assert all(
+        a.provenance.validity_basis == "historical_term_reference" for a in normalized.assertions
+    )
 
 
 def test_assertion_ids_are_deterministic_across_calls():
@@ -206,60 +158,20 @@ def test_response_without_rows_list_raises_source_parse_error():
         ADAPTER.normalize(record)
 
 
-def test_skips_are_counted_in_normalize_summary():
-    with capture_logs() as captured:
-        ADAPTER.normalize(_record())
-    summary = [e for e in captured if e.get("event") == "bundestag_dip: person file normalized"]
-    assert len(summary) == 1
-    assert summary[0]["rows"] == 3
-    assert summary[0]["persons"] == 3
-    assert summary[0]["memberships"] == 2
-    assert summary[0]["holds_office"] == 3
-    assert summary[0]["office_at"] == 3
-    assert summary[0]["no_fraktion"] == 1
-    assert summary[0]["no_wahlperioden"] == 1
-    assert summary[0]["unknown_period"] == 0
-    assert summary[0]["standalone_persons"] == 1
-
-
-def test_unknown_wahlperiode_skips_office_assertions_never_invented():
+def test_unknown_wahlperiode_retains_evidence_without_inventing_dates():
     payload = json.dumps(
         {
-            "numFound": 1,
-            "start": 0,
-            "rows": [
-                {
-                    "id": 42,
-                    "typ": "Person",
-                    "vorname": "Erika",
-                    "nachname": "Mustermann",
-                    "fraktion": "Grüne",
-                    "wahlperioden": [25],
-                    "geburtsjahr": 1980,
-                    "wkrName": None,
-                    "verstorben": None,
-                }
-            ],
-            "facets": {},
+            "documents": [
+                {"id": 42, "vorname": "Erika", "nachname": "Mustermann", "wahlperiode": [25]}
+            ]
         }
-    ).encode("utf-8")
-    record = RawRecord(
-        payload=payload,
-        content_type="application/json",
-        source_url=PERSON_URL,
-        fetched_at=NOW,
-    )
-    with capture_logs() as captured:
-        normalized = ADAPTER.normalize(record)
-    assert len(normalized.assertions) == 1  # MEMBER_OF only, no invented office
-    assert all(a.relation not in ("HOLDS_OFFICE", "OFFICE_AT") for a in normalized.assertions)
-    skips = [
-        e
-        for e in captured
-        if e.get("event") == "bundestag_dip: Wahlperiode without a known start skipped"
-    ]
-    assert len(skips) == 1
-    assert skips[0]["period"] == 25
+    ).encode()
+    record = _record().model_copy(update={"payload": payload})
+    normalized = ADAPTER.normalize(record)
+    assert normalized.errors == 0
+    assert {a.relation for a in normalized.assertions} == {"PARTICIPATED_IN_TERM", "OFFICE_AT"}
+    assert all(a.validity.valid_from == NOW for a in normalized.assertions)
+    assert all(a.validity.valid_to is None for a in normalized.assertions)
 
 
 def test_non_object_json_payload_raises_source_parse_error():
@@ -273,12 +185,10 @@ def test_non_object_json_payload_raises_source_parse_error():
         ADAPTER.normalize(record)
 
 
-def test_malformed_and_unnamed_rows_are_skipped_and_counted():
+def test_malformed_and_unnamed_rows_block_checkpoint_without_losing_valid_people():
     payload = json.dumps(
         {
-            "numFound": 4,
-            "start": 0,
-            "rows": [
+            "documents": [
                 "not an object",
                 {"id": 7},
                 {"vorname": "Ohne", "nachname": "Id"},
@@ -289,23 +199,36 @@ def test_malformed_and_unnamed_rows_are_skipped_and_counted():
                     "fraktion": "Grüne",
                     "wahlperioden": [21],
                 },
-            ],
-            "facets": {},
+            ]
         }
-    ).encode("utf-8")
-    record = RawRecord(
-        payload=payload,
-        content_type="application/json",
-        source_url=PERSON_URL,
-        fetched_at=NOW,
-    )
-    with capture_logs() as captured:
-        normalized = ADAPTER.normalize(record)
+    ).encode()
+    normalized = ADAPTER.normalize(_record().model_copy(update={"payload": payload}))
+    assert normalized.errors == 3
+    assert [e.entity_id for e in normalized.entities] == ["bundestag_id:9"]
+    assert {a.relation for a in normalized.assertions} == {
+        "PARTICIPATED_IN_TERM",
+        "OFFICE_AT",
+        "GROUP_EVIDENCE",
+        "GROUP_AT",
+    }
 
-    assert len(normalized.assertions) == 3  # MEMBER_OF + HOLDS_OFFICE + OFFICE_AT
-    assert normalized.entities == []
-    summary = [e for e in captured if e.get("event") == "bundestag_dip: person file normalized"][0]
-    assert summary["rows"] == 4
-    assert summary["persons"] == 1
-    assert summary["malformed_skipped"] == 1
-    assert summary["no_name_skipped"] == 2
+
+def test_dated_live_dip_shape_preserves_name_history_and_update_provenance():
+    import gzip
+
+    metadata = json.loads((FIXTURES / "persons-live-2026-11-07.manifest.json").read_text())
+    payload = gzip.decompress((FIXTURES / metadata["file"]).read_bytes())
+    assert hashlib.sha256(payload).hexdigest() == metadata["sha256"]
+    normalized = ADAPTER.normalize(
+        RawRecord(
+            payload=payload,
+            content_type="application/json",
+            fetched_at=NOW,
+            source_url=metadata["url"],
+        )
+    )
+    assert normalized.errors == 0
+    renamed = next(e for e in normalized.entities if e.entity_id == "bundestag_id:8257")
+    assert renamed.label == "Jan Krampe"
+    assert "Jan Köstering" in renamed.aliases
+    assert all(a.provenance.source_recorded_at is not None for a in normalized.assertions)

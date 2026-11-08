@@ -7,10 +7,9 @@ The [documentation index](INDEX.md) identifies each document's authority; the
 Historical bare WP numbers must be qualified as backend or desktop. Old counts,
 unticked archived plans and merged commits are never substituted for acceptance.
 
-## Next-session delivery — BE-56 German parliamentary members and federal officeholders (2026-11-07)
+## Implementation candidate — BE-56 German parliamentary members and federal officeholders (2026-11-07)
 
-Planning only; implementation is reserved for the next session. The next person
-coverage priority is every serving member of the Bundestag and all 16 state
+The implementation candidate covers every serving member of the Bundestag and all 16 state
 parliaments, including Berlin, Bremen and Hamburg, plus all serving judges in both
 Bundesverfassungsgericht Senates, regular/deputy Bundesrat members and the serving
 Bundespräsident or Bundespräsidentin. A complete current DAX board
@@ -18,11 +17,15 @@ roster is not a prerequisite. [Implementation plan and full acceptance checklist
 define all 21 coverage scopes, canonical people, institution-appropriate offices,
 party/group distinctions, dated provenance, migration, bounded acquisition and
 per-institution completeness evidence. Deliver as one full BE-56 package, with required
-API/desktop compatibility in the same delivery. Proposed implementation branch:
-`codex/be-56-german-parliament-members`, from freshly verified main next session.
+API/desktop compatibility in the same delivery. Implementation branch:
+`codex/be-56-german-parliament-members`, from live-verified main `d967bae244dc`.
+[Source qualification](BE56_SOURCES.md) and [verification](VERIFICATION.md) record evidence.
+A1–A6/A8 have implementation evidence; A7 remains open because the runtime-stack
+fixture exceeds this executor’s 8 GB disk. Five lanes / 1,397 tests pass; full
+local acceptance requires a complete passing candidate on sufficient storage.
 
-This documentation decision does not establish loaded membership or implemented
-state coverage. Current-as-of acquisition is the initial scope; exhaustive historic
+The candidate implements all state mappings; fixture qualification does not establish
+production loaded membership. Current-as-of acquisition is the initial scope; exhaustive historic
 backfill is excluded. Existing ingest/operator gaps retain their recorded owners.
 
 ## Active adaptive OSM acquisition — BE-50

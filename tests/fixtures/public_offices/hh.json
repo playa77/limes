@@ -1,0 +1,132 @@
+{
+  "scope": "hh",
+  "institution": "Hamburgische Bürgerschaft",
+  "pages": [
+    {
+      "url": "https://www.hamburgische-buergerschaft.de/ueber-uns/abgeordneten-uebersicht",
+      "final_url": "https://www.hamburgische-buergerschaft.de/ueber-uns/abgeordneten-uebersicht",
+      "file": "55c11c17fbd21a5506b564ad09f6de13269a7e88b8f2caf9ba6f7e7c4f5beb5c.gz",
+      "sha256": "55c11c17fbd21a5506b564ad09f6de13269a7e88b8f2caf9ba6f7e7c4f5beb5c",
+      "retrieved_at": "2026-11-07T17:53:17.032629+00:00"
+    }
+  ],
+  "acquired_count": 121,
+  "expected_count": 121,
+  "observed_terms": [],
+  "departed_excluded": 0,
+  "error": null,
+  "first_rows": [
+    {
+      "external_id": "hh:person:1028052",
+      "name": "Irene Appiah",
+      "aliases": [],
+      "profile_url": "https://www.hamburgische-buergerschaft.de/ueber-uns/abgeordneten-uebersicht/irene-appiah-1028052",
+      "role": "member",
+      "land": null,
+      "term": "abgeordnetenwatch:period:162 (Hamburg 2025 - 2029)",
+      "group": "SPD-Bürgerschaftsfraktion Hamburg",
+      "party": null,
+      "constituency": null,
+      "mandate_kind": null,
+      "service_start": null,
+      "service_end": null,
+      "source_updated_text": null,
+      "service_precision": null,
+      "bundestag_id": null,
+      "locator": "/html/body/main/div[2]/div[1]/div/div[2]/div[1]/div[2]/div/div/a",
+      "evidence_hash": "55c11c17fbd21a5506b564ad09f6de13269a7e88b8f2caf9ba6f7e7c4f5beb5c",
+      "evidence_url": "https://www.hamburgische-buergerschaft.de/ueber-uns/abgeordneten-uebersicht",
+      "profile_evidence_hash": null,
+      "profile_member_class": null,
+      "conflicts": [],
+      "leadership": [],
+      "service_evidence": []
+    },
+    {
+      "external_id": "hh:person:1033296",
+      "name": "Peggy Heitmann",
+      "aliases": [],
+      "profile_url": "https://www.hamburgische-buergerschaft.de/ueber-uns/abgeordneten-uebersicht/peggy-heitmann-1033296",
+      "role": "member",
+      "land": null,
+      "term": "abgeordnetenwatch:period:162 (Hamburg 2025 - 2029)",
+      "group": "AfD-Bürgerschaftsfraktion Hamburg",
+      "party": null,
+      "constituency": null,
+      "mandate_kind": null,
+      "service_start": null,
+      "service_end": null,
+      "source_updated_text": null,
+      "service_precision": null,
+      "bundestag_id": null,
+      "locator": "/html/body/main/div[2]/div[5]/div/div[2]/div[1]/div[3]/div/div/a",
+      "evidence_hash": "55c11c17fbd21a5506b564ad09f6de13269a7e88b8f2caf9ba6f7e7c4f5beb5c",
+      "evidence_url": "https://www.hamburgische-buergerschaft.de/ueber-uns/abgeordneten-uebersicht",
+      "profile_evidence_hash": null,
+      "profile_member_class": null,
+      "conflicts": [],
+      "leadership": [],
+      "service_evidence": []
+    }
+  ],
+  "term_evidence": [
+    {
+      "url": "https://www.abgeordnetenwatch.de/api/v2/parliaments/3",
+      "file": "f3a94b08cbd3ee6509b7cf98c22980e441a342bf91a5416a4bb6cc719019ea41.gz",
+      "sha256": "f3a94b08cbd3ee6509b7cf98c22980e441a342bf91a5416a4bb6cc719019ea41",
+      "retrieved_at": "2026-11-07T18:08:30.693772+00:00",
+      "purpose": "secondary_term_metadata"
+    },
+    {
+      "url": "https://www.abgeordnetenwatch.de/api/v2/parliament-periods/162",
+      "file": "0afd1c0a45178c7d9c62479e00a5feb75a944ce65909de174a2ae668335b54ab.gz",
+      "sha256": "0afd1c0a45178c7d9c62479e00a5feb75a944ce65909de174a2ae668335b54ab",
+      "retrieved_at": "2026-11-07T18:08:33.540226+00:00",
+      "purpose": "secondary_term_metadata"
+    }
+  ],
+  "secondary_term": {
+    "id": 162,
+    "entity_type": "parliament_period",
+    "label": "Hamburg 2025 - 2029",
+    "api_url": "https://www.abgeordnetenwatch.de/api/v2/parliament-periods/162",
+    "abgeordnetenwatch_url": "https://www.abgeordnetenwatch.de/hamburg",
+    "parliament": {
+      "id": 3,
+      "entity_type": "parliament",
+      "label": "Hamburg",
+      "api_url": "https://www.abgeordnetenwatch.de/api/v2/parliaments/3",
+      "abgeordnetenwatch_url": "https://www.abgeordnetenwatch.de/hamburg"
+    },
+    "previous_period": {
+      "id": 159,
+      "entity_type": "parliament_period",
+      "label": "Hamburg Wahl 2025",
+      "api_url": "https://www.abgeordnetenwatch.de/api/v2/parliament-periods/159",
+      "abgeordnetenwatch_url": "https://www.abgeordnetenwatch.de/hamburg/wahl-2025"
+    },
+    "type": "legislature",
+    "election_date": null,
+    "start_date_period": "2025-03-26",
+    "end_date_period": "2029-05-03"
+  },
+  "usage": {
+    "attribution": "Hamburgische Bürgerschaft",
+    "licence_assumption": "No blanket open licence assumed; issuer attribution retained; image assets are not acquired.",
+    "terms_url": "https://www.hamburgische-buergerschaft.de/impressum",
+    "link_label": "Impressum",
+    "status": 200,
+    "file": "1d5e288a6b1c5b7304c74b06d1ec6444649b1c45a088804422e3b59adaa20f33.gz",
+    "sha256": "1d5e288a6b1c5b7304c74b06d1ec6444649b1c45a088804422e3b59adaa20f33",
+    "retrieved_at": "2026-11-07T18:50:56.886035+00:00"
+  },
+  "qualification_date": "2026-11-07",
+  "credential_requirement": "Public HTTPS GET; no operator credential required",
+  "update_semantics": "Dated retrieval/current-directory observation; original bytes retained. Provider update times are unknown unless explicitly exposed.",
+  "historical_count": 0,
+  "profile_errors": [],
+  "profile_conflicts": [],
+  "check_basis": "official_set_and_count;secondary_term_metadata",
+  "source_updates": [],
+  "qualified_term": "abgeordnetenwatch:period:162 (Hamburg 2025 - 2029)"
+}

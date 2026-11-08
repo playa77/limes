@@ -97,7 +97,32 @@ def test_build_default_registry_contains_phase_two_sources():
         "wikipedia",
         "yahoo_finance",
     }
-    assert set(registry.source_ids()) == expected
+    assert set(registry.source_ids()) == expected | {
+        "public_offices_" + code
+        for code in (
+            "bt",
+            "bw",
+            "by",
+            "be",
+            "bb",
+            "hb",
+            "hh",
+            "he",
+            "mv",
+            "ni",
+            "nw",
+            "rp",
+            "sl",
+            "sn",
+            "st",
+            "sh",
+            "th",
+            "bverfg_1",
+            "bverfg_2",
+            "br",
+            "bp",
+        )
+    }
 
 
 def test_build_default_registry_trust_ranks_match_source_table():

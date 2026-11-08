@@ -1,0 +1,162 @@
+{
+  "scope": "bverfg_2",
+  "institution": "Bundesverfassungsgericht — Zweiter Senat",
+  "pages": [
+    {
+      "url": "https://www.bundesverfassungsgericht.de/DE/DasBundesverfassungsgericht/RichterinnenRichter/richterinnenRichter_node.html",
+      "final_url": "https://www.bundesverfassungsgericht.de/DE/DasBundesverfassungsgericht/RichterinnenRichter/richterinnenRichter_node.html",
+      "file": "604b3d05cd5d00f09f5a0df11b311ca1ae70f9e7a387960a606a1e3e61291bfa.gz",
+      "sha256": "604b3d05cd5d00f09f5a0df11b311ca1ae70f9e7a387960a606a1e3e61291bfa",
+      "retrieved_at": "2026-11-07T17:53:24.817226+00:00"
+    }
+  ],
+  "acquired_count": 8,
+  "expected_count": null,
+  "observed_terms": [],
+  "departed_excluded": 0,
+  "error": null,
+  "first_rows": [
+    {
+      "external_id": "https://www.bundesverfassungsgericht.de/DE/DasBundesverfassungsgericht/RichterinnenRichter/RichterinnenRichter/ZweiterSenat/Emmenegger/Emmenegger_node.html",
+      "name": "Dr. Sigrid Emmenegger",
+      "aliases": [],
+      "profile_url": "https://www.bundesverfassungsgericht.de/DE/DasBundesverfassungsgericht/RichterinnenRichter/RichterinnenRichter/ZweiterSenat/Emmenegger/Emmenegger_node.html",
+      "role": "judge",
+      "land": null,
+      "term": null,
+      "group": null,
+      "party": null,
+      "constituency": null,
+      "mandate_kind": null,
+      "service_start": null,
+      "service_end": null,
+      "source_updated_text": null,
+      "service_precision": null,
+      "bundestag_id": null,
+      "locator": "/html/body/div/div[2]/main/div/div/div[4]/div/ul/li[8]/div/a",
+      "evidence_hash": "604b3d05cd5d00f09f5a0df11b311ca1ae70f9e7a387960a606a1e3e61291bfa",
+      "evidence_url": "https://www.bundesverfassungsgericht.de/DE/DasBundesverfassungsgericht/RichterinnenRichter/richterinnenRichter_node.html",
+      "profile_evidence_hash": "152ac83eab361cf3505931ca07c6f5f2e66b60b2f49297cc32e5c00de15ebf41",
+      "profile_member_class": null,
+      "conflicts": [],
+      "leadership": [
+        "Richterin des Zweiten Senats"
+      ],
+      "service_evidence": [
+        {
+          "interval": "2009-2013",
+          "statement": "Wissenschaftliche Mitarbeiterin am Bundesverfassungsgericht, Dezernat Präsident Prof. Dr. Andreas Voßkuhle",
+          "locator": "/html/body/div/div[2]/main/div/div/div[1]/div[3]/table/tbody/tr[8]"
+        },
+        {
+          "interval": "seit Oktober 2025",
+          "statement": "Richterin des Bundesverfassungsgerichts",
+          "locator": "/html/body/div/div[2]/main/div/div/div[1]/div[3]/table/tbody/tr[13]"
+        }
+      ]
+    },
+    {
+      "external_id": "https://www.bundesverfassungsgericht.de/DE/DasBundesverfassungsgericht/RichterinnenRichter/RichterinnenRichter/ZweiterSenat/Fetzer/fetzer_node.html",
+      "name": "Dr. Rhona Fetzer",
+      "aliases": [],
+      "profile_url": "https://www.bundesverfassungsgericht.de/DE/DasBundesverfassungsgericht/RichterinnenRichter/RichterinnenRichter/ZweiterSenat/Fetzer/fetzer_node.html",
+      "role": "judge",
+      "land": null,
+      "term": null,
+      "group": null,
+      "party": null,
+      "constituency": null,
+      "mandate_kind": null,
+      "service_start": null,
+      "service_end": null,
+      "source_updated_text": null,
+      "service_precision": null,
+      "bundestag_id": null,
+      "locator": "/html/body/div/div[2]/main/div/div/div[4]/div/ul/li[4]/div/a",
+      "evidence_hash": "604b3d05cd5d00f09f5a0df11b311ca1ae70f9e7a387960a606a1e3e61291bfa",
+      "evidence_url": "https://www.bundesverfassungsgericht.de/DE/DasBundesverfassungsgericht/RichterinnenRichter/richterinnenRichter_node.html",
+      "profile_evidence_hash": "6068ff568490b891a7c0bc16deed1b5c8ff1a2ef444640bb97a853f6d15ef0f1",
+      "profile_member_class": null,
+      "conflicts": [],
+      "leadership": [
+        "Richterin des Zweiten Senats"
+      ],
+      "service_evidence": [
+        {
+          "interval": "seit Januar 2023",
+          "statement": "Richterin des Bundesverfassungsgerichts",
+          "locator": "/html/body/div/div[2]/main/div/div/div[1]/div[3]/table/tbody/tr[19]"
+        }
+      ]
+    }
+  ],
+  "profile_evidence": [
+    {
+      "url": "https://www.bundesverfassungsgericht.de/DE/DasBundesverfassungsgericht/RichterinnenRichter/RichterinnenRichter/ZweiterSenat/Kaufhold/Kaufhold_node.html",
+      "sha256": "a00cc58e53e6a2e9a849375466c3f88d4783c8dc6501bf232df7e4737b08f3e2",
+      "file": "a00cc58e53e6a2e9a849375466c3f88d4783c8dc6501bf232df7e4737b08f3e2.gz",
+      "retrieved_at": "2026-11-07T18:09:39.849873+00:00"
+    },
+    {
+      "url": "https://www.bundesverfassungsgericht.de/DE/DasBundesverfassungsgericht/RichterinnenRichter/RichterinnenRichter/ZweiterSenat/Langenfeld/langenfeld_node.html",
+      "sha256": "971cb32d9e12ae925888a0ca646b9fc7b56d7e92d0bf78e7f7231ce590aa465a",
+      "file": "971cb32d9e12ae925888a0ca646b9fc7b56d7e92d0bf78e7f7231ce590aa465a.gz",
+      "retrieved_at": "2026-11-07T18:09:40.462366+00:00"
+    },
+    {
+      "url": "https://www.bundesverfassungsgericht.de/DE/DasBundesverfassungsgericht/RichterinnenRichter/RichterinnenRichter/ZweiterSenat/Wallrabenstein/wallrabenstein_node.html",
+      "sha256": "d697192bba4c854c03d00f2e9729f1cd86cb74cb97c2abcfcb5cd82e72c3e266",
+      "file": "d697192bba4c854c03d00f2e9729f1cd86cb74cb97c2abcfcb5cd82e72c3e266.gz",
+      "retrieved_at": "2026-11-07T18:09:41.107830+00:00"
+    },
+    {
+      "url": "https://www.bundesverfassungsgericht.de/DE/DasBundesverfassungsgericht/RichterinnenRichter/RichterinnenRichter/ZweiterSenat/Fetzer/fetzer_node.html",
+      "sha256": "6068ff568490b891a7c0bc16deed1b5c8ff1a2ef444640bb97a853f6d15ef0f1",
+      "file": "6068ff568490b891a7c0bc16deed1b5c8ff1a2ef444640bb97a853f6d15ef0f1.gz",
+      "retrieved_at": "2026-11-07T18:09:41.486059+00:00"
+    },
+    {
+      "url": "https://www.bundesverfassungsgericht.de/DE/DasBundesverfassungsgericht/RichterinnenRichter/RichterinnenRichter/ZweiterSenat/Offenloch/offenloch_node.html",
+      "sha256": "c6a15810d3f3a1dd776f49f23ade205891ec57a47b3c260850036d5e43a3017c",
+      "file": "c6a15810d3f3a1dd776f49f23ade205891ec57a47b3c260850036d5e43a3017c.gz",
+      "retrieved_at": "2026-11-07T18:09:41.883920+00:00"
+    },
+    {
+      "url": "https://www.bundesverfassungsgericht.de/DE/DasBundesverfassungsgericht/RichterinnenRichter/RichterinnenRichter/ZweiterSenat/Frank/frank_node.html",
+      "sha256": "95f10694e22dc58f9a973d06b9c76ee6716200efba7c4aa4ac7b2176f41e821f",
+      "file": "95f10694e22dc58f9a973d06b9c76ee6716200efba7c4aa4ac7b2176f41e821f.gz",
+      "retrieved_at": "2026-11-07T18:09:42.194315+00:00"
+    },
+    {
+      "url": "https://www.bundesverfassungsgericht.de/DE/DasBundesverfassungsgericht/RichterinnenRichter/RichterinnenRichter/ZweiterSenat/Woeckel/woeckel_node.html",
+      "sha256": "b67296f00fc7a44f62de1fe81c811fdea0e0e36275907841dc80288966d4130e",
+      "file": "b67296f00fc7a44f62de1fe81c811fdea0e0e36275907841dc80288966d4130e.gz",
+      "retrieved_at": "2026-11-07T18:09:42.587490+00:00"
+    },
+    {
+      "url": "https://www.bundesverfassungsgericht.de/DE/DasBundesverfassungsgericht/RichterinnenRichter/RichterinnenRichter/ZweiterSenat/Emmenegger/Emmenegger_node.html",
+      "sha256": "152ac83eab361cf3505931ca07c6f5f2e66b60b2f49297cc32e5c00de15ebf41",
+      "file": "152ac83eab361cf3505931ca07c6f5f2e66b60b2f49297cc32e5c00de15ebf41.gz",
+      "retrieved_at": "2026-11-07T18:09:42.953238+00:00"
+    }
+  ],
+  "profile_errors": [],
+  "usage": {
+    "attribution": "Bundesverfassungsgericht — Zweiter Senat",
+    "licence_assumption": "No blanket open licence assumed; issuer attribution retained; image assets are not acquired.",
+    "terms_url": "https://www.bundesverfassungsgericht.de/DE/Service/Impressum/impressum_node.html",
+    "link_label": "Impressum",
+    "status": 200,
+    "file": "f3457ffff23978139ba5e2032e56353c961cc47ae35f7e5fa03aab37c6f28553.gz",
+    "sha256": "f3457ffff23978139ba5e2032e56353c961cc47ae35f7e5fa03aab37c6f28553",
+    "retrieved_at": "2026-11-07T18:50:55.224197+00:00"
+  },
+  "qualification_date": "2026-11-07",
+  "credential_requirement": "Public HTTPS GET; no operator credential required",
+  "update_semantics": "Dated retrieval/current-directory observation; original bytes retained. Provider update times are unknown unless explicitly exposed.",
+  "historical_count": 0,
+  "profile_conflicts": [],
+  "check_basis": "official_directory_set",
+  "source_updates": [],
+  "qualified_term": null
+}

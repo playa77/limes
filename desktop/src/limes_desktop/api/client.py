@@ -27,6 +27,7 @@ from limes_desktop.api.models import (
     IngestRun,
     NewsClaim,
     NewsInvestigation,
+    OfficesResponse,
     OperationJob,
     QueryOutcome,
     SavedQuery,
@@ -100,6 +101,11 @@ class ApiClient:
     def enrichment(self, entity_id: str, **filters: Any) -> EnrichmentResponse:
         return EnrichmentResponse.from_api(
             self._request("GET", f"/entity/{entity_id}/enrichment", params=filters)
+        )
+
+    def public_offices(self, **filters: Any) -> OfficesResponse:
+        return OfficesResponse.from_api(
+            self._request("GET", "/public-offices", params=filters)
         )
 
     def entity_neighbors(

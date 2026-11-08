@@ -1,0 +1,209 @@
+{
+  "scope": "by",
+  "institution": "Bayerischer Landtag",
+  "pages": [
+    {
+      "url": "https://www.bayern.landtag.de/abgeordnete/abgeordnete-von-a-z/",
+      "final_url": "https://www.bayern.landtag.de/abgeordnete/abgeordnete-von-a-z/",
+      "file": "4b174b5337660eb4a6c8b9a1c381c5a77979d48c35e57c232234f21363728c77.gz",
+      "sha256": "4b174b5337660eb4a6c8b9a1c381c5a77979d48c35e57c232234f21363728c77",
+      "retrieved_at": "2026-11-07T17:53:15.078125+00:00"
+    },
+    {
+      "url": "https://www.bayern.landtag.de/abgeordnete/abgeordnete-von-a-z/?tx_stbltabgeordnete_filter%5Bpage%5D=2&tx_stbltabgeordnete_filter%5Bperiod-time%5D=a&tx_stbltabgeordnete_filter%5Bperpage%5D=20&cHash=97047e588d28b9a005ddd07c3f703a65",
+      "final_url": "https://www.bayern.landtag.de/abgeordnete/abgeordnete-von-a-z/?tx_stbltabgeordnete_filter%5Bpage%5D=2&tx_stbltabgeordnete_filter%5Bperiod-time%5D=a&tx_stbltabgeordnete_filter%5Bperpage%5D=20&cHash=97047e588d28b9a005ddd07c3f703a65",
+      "file": "813d80b3dac471f6462fb54e92b86e4e9c644581a6ea842448a8c1cb11cdf983.gz",
+      "sha256": "813d80b3dac471f6462fb54e92b86e4e9c644581a6ea842448a8c1cb11cdf983",
+      "retrieved_at": "2026-11-07T17:53:16.051371+00:00"
+    },
+    {
+      "url": "https://www.bayern.landtag.de/abgeordnete/abgeordnete-von-a-z/?tx_stbltabgeordnete_filter%5Bpage%5D=3&tx_stbltabgeordnete_filter%5Bperiod-time%5D=a&tx_stbltabgeordnete_filter%5Bperpage%5D=20&cHash=d93eadf46d12e2bdf3ff32876c572e20",
+      "final_url": "https://www.bayern.landtag.de/abgeordnete/abgeordnete-von-a-z/?tx_stbltabgeordnete_filter%5Bpage%5D=3&tx_stbltabgeordnete_filter%5Bperiod-time%5D=a&tx_stbltabgeordnete_filter%5Bperpage%5D=20&cHash=d93eadf46d12e2bdf3ff32876c572e20",
+      "file": "34f02441fa0597c25e9d49f27ec9bafc6ab0d4b9ad4e2788bcfe1ab9678f4b13.gz",
+      "sha256": "34f02441fa0597c25e9d49f27ec9bafc6ab0d4b9ad4e2788bcfe1ab9678f4b13",
+      "retrieved_at": "2026-11-07T17:53:17.278978+00:00"
+    },
+    {
+      "url": "https://www.bayern.landtag.de/abgeordnete/abgeordnete-von-a-z/?tx_stbltabgeordnete_filter%5Bpage%5D=4&tx_stbltabgeordnete_filter%5Bperiod-time%5D=a&tx_stbltabgeordnete_filter%5Bperpage%5D=20&cHash=94edb9f80263e017cf775d2bdf05fb75",
+      "final_url": "https://www.bayern.landtag.de/abgeordnete/abgeordnete-von-a-z/?tx_stbltabgeordnete_filter%5Bpage%5D=4&tx_stbltabgeordnete_filter%5Bperiod-time%5D=a&tx_stbltabgeordnete_filter%5Bperpage%5D=20&cHash=94edb9f80263e017cf775d2bdf05fb75",
+      "file": "f8ebbcf2a9774e53ef2e677b4a729b08abce0a2dcebe5299246d4ce93c09b3e3.gz",
+      "sha256": "f8ebbcf2a9774e53ef2e677b4a729b08abce0a2dcebe5299246d4ce93c09b3e3",
+      "retrieved_at": "2026-11-07T17:53:17.984857+00:00"
+    },
+    {
+      "url": "https://www.bayern.landtag.de/abgeordnete/abgeordnete-von-a-z/?tx_stbltabgeordnete_filter%5Bpage%5D=5&tx_stbltabgeordnete_filter%5Bperiod-time%5D=a&tx_stbltabgeordnete_filter%5Bperpage%5D=20&cHash=b5db031613f285c0d2e959f9aae343e3",
+      "final_url": "https://www.bayern.landtag.de/abgeordnete/abgeordnete-von-a-z/?tx_stbltabgeordnete_filter%5Bpage%5D=5&tx_stbltabgeordnete_filter%5Bperiod-time%5D=a&tx_stbltabgeordnete_filter%5Bperpage%5D=20&cHash=b5db031613f285c0d2e959f9aae343e3",
+      "file": "ea37ebe4ec0855be19b9b055afb2c8e87085be1676280de377ff5a36230134bc.gz",
+      "sha256": "ea37ebe4ec0855be19b9b055afb2c8e87085be1676280de377ff5a36230134bc",
+      "retrieved_at": "2026-11-07T17:53:19.333282+00:00"
+    },
+    {
+      "url": "https://www.bayern.landtag.de/abgeordnete/abgeordnete-von-a-z/?tx_stbltabgeordnete_filter%5Bpage%5D=11&tx_stbltabgeordnete_filter%5Bperiod-time%5D=a&tx_stbltabgeordnete_filter%5Bperpage%5D=20&cHash=a32a008ccf2ea6009e03d842cc80a56a",
+      "final_url": "https://www.bayern.landtag.de/abgeordnete/abgeordnete-von-a-z/?tx_stbltabgeordnete_filter%5Bpage%5D=11&tx_stbltabgeordnete_filter%5Bperiod-time%5D=a&tx_stbltabgeordnete_filter%5Bperpage%5D=20&cHash=a32a008ccf2ea6009e03d842cc80a56a",
+      "file": "cbe4e759432247540236c8db0970dc250510ab2ee799f511f97010dff5b9859c.gz",
+      "sha256": "cbe4e759432247540236c8db0970dc250510ab2ee799f511f97010dff5b9859c",
+      "retrieved_at": "2026-11-07T17:53:19.886716+00:00"
+    },
+    {
+      "url": "https://www.bayern.landtag.de/abgeordnete/abgeordnete-von-a-z/?tx_stbltabgeordnete_filter%5Bpage%5D=1&tx_stbltabgeordnete_filter%5Bperiod-time%5D=a&tx_stbltabgeordnete_filter%5Bperpage%5D=20&cHash=1eec18b82a5e86d41c4ad20d36e16947",
+      "final_url": "https://www.bayern.landtag.de/abgeordnete/abgeordnete-von-a-z/?tx_stbltabgeordnete_filter%5Bpage%5D=1&tx_stbltabgeordnete_filter%5Bperiod-time%5D=a&tx_stbltabgeordnete_filter%5Bperpage%5D=20&cHash=1eec18b82a5e86d41c4ad20d36e16947",
+      "file": "f2dbeaf0410fe4833b57bdedd58801885983ce7408e035f1a1f4b1fbcc867bea.gz",
+      "sha256": "f2dbeaf0410fe4833b57bdedd58801885983ce7408e035f1a1f4b1fbcc867bea",
+      "retrieved_at": "2026-11-07T17:53:20.569458+00:00"
+    },
+    {
+      "url": "https://www.bayern.landtag.de/abgeordnete/abgeordnete-von-a-z/?tx_stbltabgeordnete_filter%5Bpage%5D=6&tx_stbltabgeordnete_filter%5Bperiod-time%5D=a&tx_stbltabgeordnete_filter%5Bperpage%5D=20&cHash=aab91eea23e823dcb48c1e7a9f7b8911",
+      "final_url": "https://www.bayern.landtag.de/abgeordnete/abgeordnete-von-a-z/?tx_stbltabgeordnete_filter%5Bpage%5D=6&tx_stbltabgeordnete_filter%5Bperiod-time%5D=a&tx_stbltabgeordnete_filter%5Bperpage%5D=20&cHash=aab91eea23e823dcb48c1e7a9f7b8911",
+      "file": "defe8990828425c8af3719b213fd1e5ae9d626c37a4a36a884feb53b52d3d3a6.gz",
+      "sha256": "defe8990828425c8af3719b213fd1e5ae9d626c37a4a36a884feb53b52d3d3a6",
+      "retrieved_at": "2026-11-07T17:53:21.645251+00:00"
+    },
+    {
+      "url": "https://www.bayern.landtag.de/abgeordnete/abgeordnete-von-a-z/?tx_stbltabgeordnete_filter%5Bpage%5D=7&tx_stbltabgeordnete_filter%5Bperiod-time%5D=a&tx_stbltabgeordnete_filter%5Bperpage%5D=20&cHash=d950f20f42c654fecb0ee597885c8d93",
+      "final_url": "https://www.bayern.landtag.de/abgeordnete/abgeordnete-von-a-z/?tx_stbltabgeordnete_filter%5Bpage%5D=7&tx_stbltabgeordnete_filter%5Bperiod-time%5D=a&tx_stbltabgeordnete_filter%5Bperpage%5D=20&cHash=d950f20f42c654fecb0ee597885c8d93",
+      "file": "7b9754bc03db18aa67dc3d87dc85520c1e1aca7a78247213f63b95e5812415ec.gz",
+      "sha256": "7b9754bc03db18aa67dc3d87dc85520c1e1aca7a78247213f63b95e5812415ec",
+      "retrieved_at": "2026-11-07T17:53:22.316140+00:00"
+    },
+    {
+      "url": "https://www.bayern.landtag.de/abgeordnete/abgeordnete-von-a-z/?tx_stbltabgeordnete_filter%5Bpage%5D=10&tx_stbltabgeordnete_filter%5Bperiod-time%5D=a&tx_stbltabgeordnete_filter%5Bperpage%5D=20&cHash=19fe48bdbb467273ed146065a7ead971",
+      "final_url": "https://www.bayern.landtag.de/abgeordnete/abgeordnete-von-a-z/?tx_stbltabgeordnete_filter%5Bpage%5D=10&tx_stbltabgeordnete_filter%5Bperiod-time%5D=a&tx_stbltabgeordnete_filter%5Bperpage%5D=20&cHash=19fe48bdbb467273ed146065a7ead971",
+      "file": "074a51af1d8faee7f81511c5d251ea5e447b3940c223a29f0d95566484411a96.gz",
+      "sha256": "074a51af1d8faee7f81511c5d251ea5e447b3940c223a29f0d95566484411a96",
+      "retrieved_at": "2026-11-07T17:53:22.870246+00:00"
+    },
+    {
+      "url": "https://www.bayern.landtag.de/abgeordnete/abgeordnete-von-a-z/?tx_stbltabgeordnete_filter%5Bpage%5D=9&tx_stbltabgeordnete_filter%5Bperiod-time%5D=a&tx_stbltabgeordnete_filter%5Bperpage%5D=20&cHash=973f50c1329bf9b92f58c006d09859b0",
+      "final_url": "https://www.bayern.landtag.de/abgeordnete/abgeordnete-von-a-z/?tx_stbltabgeordnete_filter%5Bpage%5D=9&tx_stbltabgeordnete_filter%5Bperiod-time%5D=a&tx_stbltabgeordnete_filter%5Bperpage%5D=20&cHash=973f50c1329bf9b92f58c006d09859b0",
+      "file": "008d7febc9a2bea9d50d818e106fe706513b1c42db873a57927a862618ce9a6e.gz",
+      "sha256": "008d7febc9a2bea9d50d818e106fe706513b1c42db873a57927a862618ce9a6e",
+      "retrieved_at": "2026-11-07T17:53:23.247394+00:00"
+    },
+    {
+      "url": "https://www.bayern.landtag.de/abgeordnete/abgeordnete-von-a-z/?tx_stbltabgeordnete_filter%5Bpage%5D=8&tx_stbltabgeordnete_filter%5Bperiod-time%5D=a&tx_stbltabgeordnete_filter%5Bperpage%5D=20&cHash=35dc657eb2cde958722b820f2519b6cf",
+      "final_url": "https://www.bayern.landtag.de/abgeordnete/abgeordnete-von-a-z/?tx_stbltabgeordnete_filter%5Bpage%5D=8&tx_stbltabgeordnete_filter%5Bperiod-time%5D=a&tx_stbltabgeordnete_filter%5Bperpage%5D=20&cHash=35dc657eb2cde958722b820f2519b6cf",
+      "file": "cf0b262aef09a0beff5544d4f6c2cf483d64e5cce5629e0ec0c64cde36d74d8d.gz",
+      "sha256": "cf0b262aef09a0beff5544d4f6c2cf483d64e5cce5629e0ec0c64cde36d74d8d",
+      "retrieved_at": "2026-11-07T17:53:23.629190+00:00"
+    }
+  ],
+  "acquired_count": 202,
+  "expected_count": null,
+  "observed_terms": [],
+  "departed_excluded": 0,
+  "error": null,
+  "first_rows": [
+    {
+      "external_id": "https://www.bayern.landtag.de/abgeordnete/abgeordnete-von-a-z/profil/albert-fueracker/",
+      "name": "Albert Füracker",
+      "aliases": [],
+      "profile_url": "https://www.bayern.landtag.de/abgeordnete/abgeordnete-von-a-z/profil/albert-fueracker/",
+      "role": "member",
+      "land": null,
+      "term": "abgeordnetenwatch:period:149 (Bayern 2023 - 2028)",
+      "group": "CSU",
+      "party": null,
+      "constituency": null,
+      "mandate_kind": null,
+      "service_start": null,
+      "service_end": null,
+      "source_updated_text": null,
+      "service_precision": null,
+      "bundestag_id": null,
+      "locator": "/html/body/main/div[2]/div[2]/div/div/div/div/div[1]/div/div[1]/table/tbody/tr[13]/td[2]/a",
+      "evidence_hash": "34f02441fa0597c25e9d49f27ec9bafc6ab0d4b9ad4e2788bcfe1ab9678f4b13",
+      "evidence_url": "https://www.bayern.landtag.de/abgeordnete/abgeordnete-von-a-z/?tx_stbltabgeordnete_filter%5Bpage%5D=3&tx_stbltabgeordnete_filter%5Bperiod-time%5D=a&tx_stbltabgeordnete_filter%5Bperpage%5D=20&cHash=d93eadf46d12e2bdf3ff32876c572e20",
+      "profile_evidence_hash": null,
+      "profile_member_class": null,
+      "conflicts": [],
+      "leadership": [],
+      "service_evidence": []
+    },
+    {
+      "external_id": "https://www.bayern.landtag.de/abgeordnete/abgeordnete-von-a-z/profil/alex-dorow/",
+      "name": "Alex Dorow",
+      "aliases": [],
+      "profile_url": "https://www.bayern.landtag.de/abgeordnete/abgeordnete-von-a-z/profil/alex-dorow/",
+      "role": "member",
+      "land": null,
+      "term": "abgeordnetenwatch:period:149 (Bayern 2023 - 2028)",
+      "group": "CSU",
+      "party": null,
+      "constituency": null,
+      "mandate_kind": null,
+      "service_start": null,
+      "service_end": null,
+      "source_updated_text": null,
+      "service_precision": null,
+      "bundestag_id": null,
+      "locator": "/html/body/main/div[2]/div[2]/div/div/div/div/div[1]/div/div[1]/table/tbody/tr[15]/td[2]/a",
+      "evidence_hash": "813d80b3dac471f6462fb54e92b86e4e9c644581a6ea842448a8c1cb11cdf983",
+      "evidence_url": "https://www.bayern.landtag.de/abgeordnete/abgeordnete-von-a-z/?tx_stbltabgeordnete_filter%5Bpage%5D=2&tx_stbltabgeordnete_filter%5Bperiod-time%5D=a&tx_stbltabgeordnete_filter%5Bperpage%5D=20&cHash=97047e588d28b9a005ddd07c3f703a65",
+      "profile_evidence_hash": null,
+      "profile_member_class": null,
+      "conflicts": [],
+      "leadership": [],
+      "service_evidence": []
+    }
+  ],
+  "term_evidence": [
+    {
+      "url": "https://www.abgeordnetenwatch.de/api/v2/parliaments/13",
+      "file": "a424589d71cc878eb2e97668e8010bd6a4baf6e89196f429310ed34ecc49fb6e.gz",
+      "sha256": "a424589d71cc878eb2e97668e8010bd6a4baf6e89196f429310ed34ecc49fb6e",
+      "retrieved_at": "2026-11-07T18:08:23.618814+00:00",
+      "purpose": "secondary_term_metadata"
+    },
+    {
+      "url": "https://www.abgeordnetenwatch.de/api/v2/parliament-periods/149",
+      "file": "b5912783c408a8a5b0e1b056e58f59674fdfd57070650cb9a14c0776613ab418.gz",
+      "sha256": "b5912783c408a8a5b0e1b056e58f59674fdfd57070650cb9a14c0776613ab418",
+      "retrieved_at": "2026-11-07T18:08:27.142836+00:00",
+      "purpose": "secondary_term_metadata"
+    }
+  ],
+  "secondary_term": {
+    "id": 149,
+    "entity_type": "parliament_period",
+    "label": "Bayern 2023 - 2028",
+    "api_url": "https://www.abgeordnetenwatch.de/api/v2/parliament-periods/149",
+    "abgeordnetenwatch_url": "https://www.abgeordnetenwatch.de/bayern",
+    "parliament": {
+      "id": 13,
+      "entity_type": "parliament",
+      "label": "Bayern",
+      "api_url": "https://www.abgeordnetenwatch.de/api/v2/parliaments/13",
+      "abgeordnetenwatch_url": "https://www.abgeordnetenwatch.de/bayern"
+    },
+    "previous_period": {
+      "id": 147,
+      "entity_type": "parliament_period",
+      "label": "Bayern Wahl 2023",
+      "api_url": "https://www.abgeordnetenwatch.de/api/v2/parliament-periods/147",
+      "abgeordnetenwatch_url": "https://www.abgeordnetenwatch.de/bayern/wahl-2023"
+    },
+    "type": "legislature",
+    "election_date": null,
+    "start_date_period": "2023-10-26",
+    "end_date_period": "2028-10-31"
+  },
+  "usage": {
+    "attribution": "Bayerischer Landtag",
+    "licence_assumption": "No blanket open licence assumed; issuer attribution retained; image assets are not acquired.",
+    "terms_url": "https://www.bayern.landtag.de/service/impressum/",
+    "link_label": "Impressum",
+    "status": 200,
+    "file": "1e5f79c006ba3fc148030fc11a0de551ce2f3bdc6eec327248d67a4012ab264d.gz",
+    "sha256": "1e5f79c006ba3fc148030fc11a0de551ce2f3bdc6eec327248d67a4012ab264d",
+    "retrieved_at": "2026-11-07T18:50:55.497456+00:00"
+  },
+  "qualification_date": "2026-11-07",
+  "credential_requirement": "Public HTTPS GET; no operator credential required",
+  "update_semantics": "Dated retrieval/current-directory observation; original bytes retained. Provider update times are unknown unless explicitly exposed.",
+  "historical_count": 0,
+  "profile_errors": [],
+  "profile_conflicts": [],
+  "check_basis": "official_directory_set;secondary_term_metadata",
+  "source_updates": [],
+  "qualified_term": "abgeordnetenwatch:period:149 (Bayern 2023 - 2028)"
+}

@@ -1,0 +1,157 @@
+{
+  "scope": "bverfg_1",
+  "institution": "Bundesverfassungsgericht — Erster Senat",
+  "pages": [
+    {
+      "url": "https://www.bundesverfassungsgericht.de/DE/DasBundesverfassungsgericht/RichterinnenRichter/richterinnenRichter_node.html",
+      "final_url": "https://www.bundesverfassungsgericht.de/DE/DasBundesverfassungsgericht/RichterinnenRichter/richterinnenRichter_node.html",
+      "file": "3122badeff3fec08090cd849e0a55df18e0985073854ac9017de826eec08b038.gz",
+      "sha256": "3122badeff3fec08090cd849e0a55df18e0985073854ac9017de826eec08b038",
+      "retrieved_at": "2026-11-07T17:53:24.036892+00:00"
+    }
+  ],
+  "acquired_count": 8,
+  "expected_count": null,
+  "observed_terms": [],
+  "departed_excluded": 0,
+  "error": null,
+  "first_rows": [
+    {
+      "external_id": "https://www.bundesverfassungsgericht.de/DE/DasBundesverfassungsgericht/RichterinnenRichter/RichterinnenRichter/ErsterSenat/Eifert/eifert_node.html",
+      "name": "Prof. Dr. Martin Eifert, LL.M. (Berkeley)",
+      "aliases": [],
+      "profile_url": "https://www.bundesverfassungsgericht.de/DE/DasBundesverfassungsgericht/RichterinnenRichter/RichterinnenRichter/ErsterSenat/Eifert/eifert_node.html",
+      "role": "judge",
+      "land": null,
+      "term": null,
+      "group": null,
+      "party": null,
+      "constituency": null,
+      "mandate_kind": null,
+      "service_start": null,
+      "service_end": null,
+      "source_updated_text": null,
+      "service_precision": null,
+      "bundestag_id": null,
+      "locator": "/html/body/div/div[2]/main/div/div/div[2]/div/ul/li[6]/div/a",
+      "evidence_hash": "3122badeff3fec08090cd849e0a55df18e0985073854ac9017de826eec08b038",
+      "evidence_url": "https://www.bundesverfassungsgericht.de/DE/DasBundesverfassungsgericht/RichterinnenRichter/richterinnenRichter_node.html",
+      "profile_evidence_hash": "40f062701e3335c367f65c26fe198b164797eca7b29cde86209cab5880fe18a5",
+      "profile_member_class": null,
+      "conflicts": [],
+      "leadership": [
+        "Richter des Ersten Senats"
+      ],
+      "service_evidence": [
+        {
+          "interval": "seit Februar 2023",
+          "statement": "Richter des Bundesverfassungsgerichts",
+          "locator": "/html/body/div/div[2]/main/div/div/div[1]/div[3]/table/tbody/tr[20]"
+        }
+      ]
+    },
+    {
+      "external_id": "https://www.bundesverfassungsgericht.de/DE/DasBundesverfassungsgericht/RichterinnenRichter/RichterinnenRichter/ErsterSenat/Haertel/haertel_node.html",
+      "name": "Prof. Dr. Ines Härtel",
+      "aliases": [],
+      "profile_url": "https://www.bundesverfassungsgericht.de/DE/DasBundesverfassungsgericht/RichterinnenRichter/RichterinnenRichter/ErsterSenat/Haertel/haertel_node.html",
+      "role": "judge",
+      "land": null,
+      "term": null,
+      "group": null,
+      "party": null,
+      "constituency": null,
+      "mandate_kind": null,
+      "service_start": null,
+      "service_end": null,
+      "source_updated_text": null,
+      "service_precision": null,
+      "bundestag_id": null,
+      "locator": "/html/body/div/div[2]/main/div/div/div[2]/div/ul/li[4]/div/a",
+      "evidence_hash": "3122badeff3fec08090cd849e0a55df18e0985073854ac9017de826eec08b038",
+      "evidence_url": "https://www.bundesverfassungsgericht.de/DE/DasBundesverfassungsgericht/RichterinnenRichter/richterinnenRichter_node.html",
+      "profile_evidence_hash": "5d2429119a2ef04c94cadd0105eed06d4d704f0f18bec55f1a5c5b81d8887078",
+      "profile_member_class": null,
+      "conflicts": [],
+      "leadership": [
+        "Richterin des Ersten Senats"
+      ],
+      "service_evidence": [
+        {
+          "interval": "seit Juli 2020",
+          "statement": "Richterin des Bundesverfassungsgerichts",
+          "locator": "/html/body/div/div[2]/main/div/div/div[1]/div[3]/table/tbody/tr[20]"
+        }
+      ]
+    }
+  ],
+  "profile_evidence": [
+    {
+      "url": "https://www.bundesverfassungsgericht.de/DE/DasBundesverfassungsgericht/RichterinnenRichter/RichterinnenRichter/ErsterSenat/Harbarth/harbarth_node.html",
+      "sha256": "f4ef0ecb711387cfde32b902b7bcd1266bd777439b631e33777da349f5adae12",
+      "file": "f4ef0ecb711387cfde32b902b7bcd1266bd777439b631e33777da349f5adae12.gz",
+      "retrieved_at": "2026-11-07T18:09:39.843549+00:00"
+    },
+    {
+      "url": "https://www.bundesverfassungsgericht.de/DE/DasBundesverfassungsgericht/RichterinnenRichter/RichterinnenRichter/ErsterSenat/Ott/ott_node.html",
+      "sha256": "6b3b4be4dd026666e74017eaa052174af43f27bc1dbbb0bbad0fbf353243fda2",
+      "file": "6b3b4be4dd026666e74017eaa052174af43f27bc1dbbb0bbad0fbf353243fda2.gz",
+      "retrieved_at": "2026-11-07T18:09:40.474345+00:00"
+    },
+    {
+      "url": "https://www.bundesverfassungsgericht.de/DE/DasBundesverfassungsgericht/RichterinnenRichter/RichterinnenRichter/ErsterSenat/Radtke/radtke_node.html",
+      "sha256": "cbd60f9b06e47e105cf42b9b533d534734e9994773abc2ff1e506b60ee5b5291",
+      "file": "cbd60f9b06e47e105cf42b9b533d534734e9994773abc2ff1e506b60ee5b5291.gz",
+      "retrieved_at": "2026-11-07T18:09:41.112757+00:00"
+    },
+    {
+      "url": "https://www.bundesverfassungsgericht.de/DE/DasBundesverfassungsgericht/RichterinnenRichter/RichterinnenRichter/ErsterSenat/Haertel/haertel_node.html",
+      "sha256": "5d2429119a2ef04c94cadd0105eed06d4d704f0f18bec55f1a5c5b81d8887078",
+      "file": "5d2429119a2ef04c94cadd0105eed06d4d704f0f18bec55f1a5c5b81d8887078.gz",
+      "retrieved_at": "2026-11-07T18:09:41.705328+00:00"
+    },
+    {
+      "url": "https://www.bundesverfassungsgericht.de/DE/DasBundesverfassungsgericht/RichterinnenRichter/RichterinnenRichter/ErsterSenat/Wolff/wolff_node.html",
+      "sha256": "7695c578bf00715373b7a279593e62cfb43a6799beebfad2a479578c77875e50",
+      "file": "7695c578bf00715373b7a279593e62cfb43a6799beebfad2a479578c77875e50.gz",
+      "retrieved_at": "2026-11-07T18:09:42.207797+00:00"
+    },
+    {
+      "url": "https://www.bundesverfassungsgericht.de/DE/DasBundesverfassungsgericht/RichterinnenRichter/RichterinnenRichter/ErsterSenat/Eifert/eifert_node.html",
+      "sha256": "40f062701e3335c367f65c26fe198b164797eca7b29cde86209cab5880fe18a5",
+      "file": "40f062701e3335c367f65c26fe198b164797eca7b29cde86209cab5880fe18a5.gz",
+      "retrieved_at": "2026-11-07T18:09:42.749207+00:00"
+    },
+    {
+      "url": "https://www.bundesverfassungsgericht.de/DE/DasBundesverfassungsgericht/RichterinnenRichter/RichterinnenRichter/ErsterSenat/Messling/messling_node.html",
+      "sha256": "5e7c5cab199c044daaab10589e9a90c3e7da8967b8796a1c80c23ea5ed21b62b",
+      "file": "5e7c5cab199c044daaab10589e9a90c3e7da8967b8796a1c80c23ea5ed21b62b.gz",
+      "retrieved_at": "2026-11-07T18:09:43.129132+00:00"
+    },
+    {
+      "url": "https://www.bundesverfassungsgericht.de/DE/DasBundesverfassungsgericht/RichterinnenRichter/RichterinnenRichter/ErsterSenat/Spinner/spinner_node.html",
+      "sha256": "ce3afb818c17fc3263880f4646ae95484cefdaebf97738438674df83ebfe48f7",
+      "file": "ce3afb818c17fc3263880f4646ae95484cefdaebf97738438674df83ebfe48f7.gz",
+      "retrieved_at": "2026-11-07T18:09:43.575110+00:00"
+    }
+  ],
+  "profile_errors": [],
+  "usage": {
+    "attribution": "Bundesverfassungsgericht — Erster Senat",
+    "licence_assumption": "No blanket open licence assumed; issuer attribution retained; image assets are not acquired.",
+    "terms_url": "https://www.bundesverfassungsgericht.de/DE/Service/Impressum/impressum_node.html",
+    "link_label": "Impressum",
+    "status": 200,
+    "file": "3f8265950a1fc50b6518f1ce56a9f5bb02d64255101324eba134675db84584c6.gz",
+    "sha256": "3f8265950a1fc50b6518f1ce56a9f5bb02d64255101324eba134675db84584c6",
+    "retrieved_at": "2026-11-07T18:50:55.226998+00:00"
+  },
+  "qualification_date": "2026-11-07",
+  "credential_requirement": "Public HTTPS GET; no operator credential required",
+  "update_semantics": "Dated retrieval/current-directory observation; original bytes retained. Provider update times are unknown unless explicitly exposed.",
+  "historical_count": 0,
+  "profile_conflicts": [],
+  "check_basis": "official_directory_set",
+  "source_updates": [],
+  "qualified_term": null
+}

@@ -95,7 +95,7 @@ Recorded so the same ground is not re-covered. Each is resolved in the section n
 | S-28 | Cross-process reference data |
 | S-29 | Wikipedia revision-linked entity context, DE/EN, shared document processing (BE-46) |
 | S-30 | Yahoo Finance governance, shareholder structure and earnings/report metadata; identity, schema/loader/API migration and availability semantics (BE-46) |
-| S-31 | Planned BE-56: Bundestag/all 16 state parliaments, both Bundesverfassungsgericht Senates, Bundesrat regular/deputy members and Bundespräsident/in; canonical persons, institution-appropriate offices, provenance/migration and all 21 coverage scopes; implementation next session |
+| S-31 | BE-56: Bundestag/all 16 state parliaments, both Bundesverfassungsgericht Senates, Bundesrat regular/deputy members and Bundespräsident/in; canonical persons, institution-appropriate offices, provenance/migration and all 21 coverage scopes; implemented candidate; qualification and deployed population reported separately |
 
 **Out of scope:** Design Document §2.4 applies. CI already exists. Agency/news processing is core scope; no separate extractor product, event-ledger application or second vector database is included.
 
@@ -269,6 +269,24 @@ vocabularies:
 Self-validation rejects: a relation naming an undeclared type in domain or range; an entity naming an undeclared supertype; duplicate names; an identifying key absent from the property list; a property marked unique that is not an identifying key.
 
 `temporal: false` relations are immutable statements of record — `AMENDS`, `REPEALS`, `CITES`, `ESTABLISHED_BY`, `OCCURRED_IN`, `ACTOR_IN`, `TARGET_OF`, `PARTICIPANT_IN`, `MENTIONS`. They carry full provenance but never have `valid_to` set.
+
+#### BE-56 ontology 1.4 additions
+
+`ParliamentaryGroup` is separate from `PoliticalParty`. `PersonIdentifier` has a
+source-scoped `external_id`; `RosterSnapshot` and `RosterMembership` have immutable
+`snapshot_id` and `membership_id`. Office identity uses compound `office_key`
+(institution, role, term where relevant, represented Land). New relations are
+`IDENTIFIES`, `HAS_ROSTER_MEMBER`, `ROSTER_PERSON`, `ROSTER_OFFICE`, `MEMBER_OF_GROUP`,
+`GROUP_AT`, `PARTICIPATED_IN_TERM`, `GROUP_EVIDENCE`, and `PART_OF_BODY`.
+Roster assertions expose `validity_basis=roster_observation` and `roster_snapshot_id`;
+unknown personal service dates stay unknown. Loader-owned `PersonIdentityReview`
+and `RosterLoadCheck` are system audit/qualification nodes, not ontology entities.
+Authenticated `GET /public-offices` accepts scope, term, as_of, believed, limit
+and include_members; reports all selected missing/failed/partial/stale scopes.
+The bounded `public-offices-identify --identity-reviews JSON` operator job requires
+archived evidence and explicit canonical identity, retaining earlier assertions.
+Migration 0002 repairs only legacy DIP-owned assertions and office keys, preserving
+original IDs/evidence; see the BE-56 handoff for backup and rollback limitations.
 
 ### 5.2 Node Labeling and Ownership
 
@@ -840,7 +858,8 @@ Adapters emit records and **write nothing to the graph**.
 | `fsd` | Consolidated XML | `Sanction`, `TARGETS`, `IMPOSED_BY`, `ESTABLISHED_BY` | yes | 1.00 |
 | `ted` | Bulk XML | `Contract`, `AWARDED_TO`, `BUYER_OF`, `ABOUT_TOPIC` | yes | 1.00 |
 | `transparency_register` | Export XML | `InterestGroup`, `LOBBIES_FOR`, `MET_WITH`, `MEMBER_OF` | yes | 1.00 |
-| `bundestag_dip` | DIP API | `Person`, `PoliticalParty`, `Office`, `HOLDS_OFFICE`, `OFFICE_AT`, `Document` | yes | 1.00 |
+| `bundestag_dip` | DIP API | `Person`, `Office`, `PublicBody`, `ParliamentaryGroup`, historical term/group evidence; never current-roster certification | yes | 1.00 |
+| `public_offices_<scope>` (21) | Official current directories/API/profile evidence | `Person`, `PersonIdentifier`, `Office`, `PublicBody`, `ParliamentaryGroup`, `RosterSnapshot`, `RosterMembership` | no; current snapshots only | 1.00 |
 | `gesetze_im_internet` | Index + XML | `LegalAct`, `APPLIES_TO`, `Topic` | yes | 1.00 |
 | `wikidata` | SPARQL, read-only enrichment | aliases and QIDs; never bulk-loaded | n/a | 0.90 |
 | `osm` | Overpass, DE bbox in bounded resumable partitions | `Asset`, `LOCATED_IN`, `OPERATES`, KRITIS `Topic` | no | 0.75 |
@@ -895,15 +914,16 @@ Wikipedia must not be confused with the existing enrichment-only Wikidata adapte
 German and European policy remains the scope; neither new adapter promises
 comprehensive EU-27 coverage. Core design §3.6 defines the enrichment semantics.
 
-#### 8.5.2a Planned BE-56 parliamentary and federal-officeholder contract
+#### 8.5.2a BE-56 parliamentary and federal-officeholder contract
 
 [BE-56 implementation plan](GERMAN_PARLIAMENT_MEMBERS.md) is the detailed contract
 for Bundestag, all 16 state parliaments, all serving judges in both
 Bundesverfassungsgericht Senates, regular/deputy Bundesrat members and the serving
 Bundespräsident or Bundespräsidentin. It adds nationwide roster acquisition
-to existing DIP capability; no Landtag source or completed roster is claimed by
-the current source table. Exact official endpoints, formats and fixture evidence
-must be qualified in the next session before implementation.
+to existing DIP capability. All 21 mappings and exact original-response fixtures
+are qualified in [BE56_SOURCES](BE56_SOURCES.md); production population remains
+separate. Sources are registered as `public_offices_<scope>` and use ordinary
+structured ingestion jobs with source-owned resumable cursors.
 
 Persist source/chamber-scoped external person identifiers through shared resolution,
 preserving existing `bundestag_id` and canonical IDs. Link a person's mandate to an

@@ -1,5 +1,128 @@
 # Verification and acceptance evidence
 
+## 2026-11-07 — BE-56 implementation; full qualification blocked by executor storage
+
+Implemented on `codex/be-56-german-parliament-members`. Fetched live GitHub before
+coding and fast-forwarded the clean checkout from `7c7be13` to main
+`d967bae244dcbe221307eebae903f14042479166`; baseline checks passed again at the
+latest candidate. The canonical `venv/` was synchronized from the frozen
+all-packages lock. Scope, completion A1–A8, prerequisites and branch were recorded
+before coding in `work/be56/SESSION.md`; D-98 records implementation.
+
+All 21 source mappings are implemented: Bundestag, all 16 state parliaments,
+both BVerfG Senates, Bundesrat regular/deputy membership and the presidency.
+[Source qualification](BE56_SOURCES.md) records exact original responses, hashes,
+URLs, retrieval times, term evidence, fields and access/retention limits. The 350
+new fixture files comprise 327 compressed original responses, 22 JSON manifests
+and one README. Counts are dated fixture observations, not legal quotas or deployed
+population. Public DIP-key discovery and HTTP 200 validation are documented with
+the public source and stated expiry; its 840 period-person records are not a
+serving roster. No existing operator secret file was read/changed or key committed.
+
+**Acceptance disposition:** A1–A6 and A8 have direct local implementation evidence;
+A7 remains open. This is not a fully accepted package or a passing full candidate.
+No required suite has been waived. The remaining blocker is concrete: Docker’s
+VFS images plus container copies exhaust this executor’s 8 GB filesystem. A larger
+filesystem is required to finish qualification; the current environment exposes
+no storage-resize action to this session.
+
+| Acceptance | Delivered behavior and direct evidence |
+|---|---|
+| A1 | All 21 official mappings and complete original fixtures; shared parameterized qualification, including city states, both court Senates and both Bundesrat classes. |
+| A2 | Scoped identifiers, exact canonical reuse and visible name candidates; graph tests cover same-name company people, local-ID collisions and audited canonical review without name-only merging. |
+| A3 | Ontology 1.4 institutions/offices/groups/roster artifacts; legacy DIP IDs/history retained through source-isolated, idempotent repair and bounded rollback tested on disposable Neo4j. |
+| A4 | Actual/unknown service dates, observation/recording/belief times and evidence survive normalization/persistence/API; real replacement/departure/name-change/profile fixtures and temporal graph regressions. |
+| A5 | Bounded page/byte/time/retry acquisition, durable archived-page resume, fresh consistency recheck, cycle/count/empty/overflow failures and no failed coverage checkpoint advancement. |
+| A6 | Authenticated coverage/member reads report missing/failed/partial/unverified/stale scopes and exact persisted sets; generic desktop HTTP coverage/evidence navigation and late-reply handling tested. |
+| A7 — OPEN | Static guards and five complete lanes pass (1,397 tests); runtime-stack fails during fixture startup because the disk is full. Requires a complete new passing frozen candidate on sufficient storage. |
+| A8 | Maintained design/specifications/roadmaps, generated operations/runtime docs, config example, source register and migration/identity-review/operator handoff reconciled; limits explicit. |
+
+Latest full candidate command: `venv/bin/python tools/qualify.py --output
+work/be56/candidate-qualified`. Report, source map, JUnit and logs remain in that
+ignored directory; report status is **failed**. Revision is the base; working-tree
+content is identified by source SHA-256
+**`dcf95004dd76338ca9e6bdbd6f36108420ae53e0e8a589775ba8a2baca0a69a7`** over the runner’s declared paths, including untracked
+code/tests/fixtures. A separate post-run comparison against `source.json` confirmed
+that source remained unchanged; the runner itself exits on the failed lane before
+its final source comparison.
+
+Started `2026-11-07T19:24:46.247786+00:00`; finished `2026-11-07T19:35:00.760801+00:00`;
+validation wall time **614.511 seconds**. Baseline, runtime/tool
+lint, mypy, documentation consistency, generated docs, architecture/security guards
+and whitespace checks all pass. Each passing lane has zero failures/errors/skips.
+The table describes this candidate only, not cumulative development passes.
+
+| Lane | Tests | Result | Runner wall seconds |
+|---|---:|---|---:|
+| unit | 977 | passed | 161.284 |
+| desktop | 149 | passed | 7.455 |
+| integration | 183 | passed | 295.914 |
+| acceptance | 85 | passed | 51.556 |
+| desktop-integration | 3 | passed | 29.019 |
+| runtime-stack | 1 failed | failed | 67.643 |
+
+Runtime failure: `docker compose … up --wait` could not initialize the disposable
+three-service stack. A bounded reproduction using its generated Compose fixture
+failed while creating the models volume with the daemon error **`no space left on
+device`**. Diagnostic: `work/be56/runtime-storage-diagnosis.log`. `df` showed the
+7.9 GiB filesystem at 100% with zero available space. Unused build-cache cleanup
+alone was insufficient; removing only the failed fixture’s unused API/worker test
+images restored 6.2 GiB free. Configured application containers/images were retained.
+Rebuilding those VFS images would recreate the peak storage requirement. No daemon
+replacement, storage-driver change, production operation or test bypass was attempted.
+
+Earlier attempts remain distinct and preserved: `candidate-authoritative` was
+interrupted to correct a later-replay/belief-time status defect (graph regression
+passes). `candidate-final` was interrupted after obsolete ontology/registry test
+expectations were found; affected API preflight (7 tests) and separate acceptance
+preflight (85 tests) then passed. `candidate-complete` had 182 passing integration
+tests and a backup HTTP 503 while abandoned disposable containers from the earlier
+interruption remained. Ownership was verified and only those fixtures were removed.
+The unchanged isolated backup/restore diagnostic passed, recovering the original
+marker and 1,000 workload rows; the latest candidate subsequently passed all 183
+integration tests including physical backup/restore. This does not establish a
+unique root cause for the earlier 503. An early combined integration/acceptance
+preflight hit their known duplicate-plugin conflict; canonical lanes run separately.
+Existing library deprecation warnings remain in logs. Failed reports are not
+relabeled successful and earlier passes do not substitute for A7.
+
+### Change accounting against live main
+
+| Category | Files | Added text lines | Deleted text lines | Net text lines | New compressed bytes |
+|---|---:|---:|---:|---:|---:|
+| handwritten documentation | 12 | 480 | 66 | 414 | 0 |
+| handwritten implementation/configuration/ontology/renderer | 39 | 2562 | 188 | 2374 | 0 |
+| tests/helpers | 25 | 862 | 187 | 675 | 0 |
+| generated documentation | 2 | 26 | 0 | 26 | 0 |
+| source fixtures | 350 | 4262 | 0 | 4262 | 4060857 |
+
+There are 15 net additional test functions and four rewritten DIP contract tests.
+Parametrized official-source cases share invariant coverage rather than copying
+21 suites. Compressed source bytes and fixture metadata are separate from code.
+Implementation effort was not independently timed; timings above measure validation
+only. At qualification time, no staging, commit, push or PR was requested or
+performed; publication is authorized by the subsequent request below.
+
+### Operator and measurement boundary
+
+No production ingestion, migration, paid inference or deployment was run. Coverage
+reads never acquire data. Production requires explicit backup, 1.4/DIP data repair,
+configured DIP key and NL prompt 1.1.0, then separately submitted source jobs and
+dated per-scope reconciliation. Unknown dates remain unknown; a directory without
+an independent serving count remains unverified. Missing/stale/unresolved/failed
+scopes prevent a reconciled national claim. OPEN_ISSUES retains unrelated external
+obligations and records the current storage blocker. Resume on sufficient storage
+with a fresh live-main check, preserve this diff and run the complete canonical
+qualification command; only then close A7 and claim full local acceptance.
+
+Publication update: the user requests preparing and opening a PR for this full
+session’s implementation. Staging, commit, push and draft PR creation are now
+authorized. Rechecked live main at `d967bae244dc`; the declared source fingerprint
+still matches the tested candidate. Only publication/disposition documentation
+changed afterward, checked with documentation/generated/whitespace guards. The
+user confirms larger storage is unavailable; A7 remains open with no acceptance
+waiver. Production actions and merge remain outside this request.
+
 ## 2026-11-07 — BE-56 parliamentary/federal-officeholder planning documentation
 
 Documentation-only delivery on checkout branch `work`, based on live-fetched main

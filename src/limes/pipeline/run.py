@@ -307,6 +307,15 @@ def _process_record(
         )
         return
     normalized.content_hash = content_hash
+    if spec.source_id.startswith("public_offices_"):
+        from limes.public_offices.resolution import resolve_identities
+
+        for entity in normalized.entities:
+            if entity.type == "RosterSnapshot":
+                entity.properties["run_id"] = record.run_id
+        for assertion in normalized.assertions:
+            assertion.validity.recorded_at = datetime.now(UTC)
+        resolve_identities(ctx.driver, normalized)
     if spec.source_id in ("wikipedia", "yahoo_finance"):
         from limes.enrichment.service import (
             resolve_observation_candidates,
@@ -321,7 +330,8 @@ def _process_record(
     # half idempotently. No cache marker is written before successful loading.
     if normalized.assertions or normalized.entities or normalized.lookup_rows:
         for assertion in normalized.assertions:
-            assertion.provenance.evidence_document_id = content_hash
+            if not spec.source_id.startswith("public_offices_"):
+                assertion.provenance.evidence_document_id = content_hash
             if raw.acquisition_context is not None:
                 evidence_manifest = raw.acquisition_context.get("manifest_hash")
                 if isinstance(evidence_manifest, str):
@@ -332,6 +342,14 @@ def _process_record(
                     "structured", spec.source_id, assertion.assertion_id, content_hash
                 )
         _process_structured(spec, ctx, normalized, record)
+        if spec.source_id.startswith("public_offices_") and not (
+            record.errors or record.assertions_rejected
+        ):
+            from limes.graph.loader import save_roster_check
+
+            for entity in normalized.entities:
+                if entity.type == "RosterSnapshot":
+                    save_roster_check(ctx.driver, entity.entity_id, record.run_id)
         if spec.source_id in ("wikipedia", "yahoo_finance"):
             from limes.graph.loader import save_enrichment_check
 

@@ -1,0 +1,141 @@
+{
+  "scope": "bw",
+  "institution": "Landtag von Baden-Württemberg",
+  "pages": [
+    {
+      "url": "https://www.landtag-bw.de/de/der-landtag/abgeordnete/abgeordnetenprofile",
+      "final_url": "https://www.landtag-bw.de/de/der-landtag/abgeordnete/abgeordnetenprofile",
+      "file": "8691c0f9d916f7b3ab22b4a70efe44404f9555a30b1e1060bc45cc5f08154c84.gz",
+      "sha256": "8691c0f9d916f7b3ab22b4a70efe44404f9555a30b1e1060bc45cc5f08154c84",
+      "retrieved_at": "2026-11-07T17:53:15.017859+00:00"
+    },
+    {
+      "url": "https://www.landtag-bw.de/ajax/filterlist/de/der-landtag/abgeordnete/abgeordnetenprofile/abgeordnete-finden-486382?limit=2000",
+      "final_url": "https://www.landtag-bw.de/ajax/filterlist/de/der-landtag/abgeordnete/abgeordnetenprofile/abgeordnete-finden-486382?limit=2000",
+      "file": "142b78535e1ffc815c536740dbc4e2c65081c24ae2083f9b84f31c8038a74856.gz",
+      "sha256": "142b78535e1ffc815c536740dbc4e2c65081c24ae2083f9b84f31c8038a74856",
+      "retrieved_at": "2026-11-07T17:53:17.221032+00:00"
+    }
+  ],
+  "acquired_count": 157,
+  "expected_count": 157,
+  "observed_terms": [
+    "18"
+  ],
+  "departed_excluded": 0,
+  "error": null,
+  "first_rows": [
+    {
+      "external_id": "https://www.landtag-bw.de/de/der-landtag/abgeordnete/abgeordnetenprofile/albrecht-schuette-623942",
+      "name": "Dr. Schütte, Albrecht",
+      "aliases": [],
+      "profile_url": "https://www.landtag-bw.de/de/der-landtag/abgeordnete/abgeordnetenprofile/albrecht-schuette-623942",
+      "role": "member",
+      "land": null,
+      "term": "18",
+      "group": "CDU",
+      "party": null,
+      "constituency": "41 Sinsheim",
+      "mandate_kind": null,
+      "service_start": null,
+      "service_end": null,
+      "source_updated_text": null,
+      "service_precision": null,
+      "bundestag_id": null,
+      "locator": "/html/body/div/div[119]/a",
+      "evidence_hash": "142b78535e1ffc815c536740dbc4e2c65081c24ae2083f9b84f31c8038a74856",
+      "evidence_url": "https://www.landtag-bw.de/ajax/filterlist/de/der-landtag/abgeordnete/abgeordnetenprofile/abgeordnete-finden-486382?limit=2000",
+      "profile_evidence_hash": null,
+      "profile_member_class": null,
+      "conflicts": [],
+      "leadership": [],
+      "service_evidence": []
+    },
+    {
+      "external_id": "https://www.landtag-bw.de/de/der-landtag/abgeordnete/abgeordnetenprofile/albrecht-stickel-623872",
+      "name": "Stickel, Albrecht",
+      "aliases": [],
+      "profile_url": "https://www.landtag-bw.de/de/der-landtag/abgeordnete/abgeordnetenprofile/albrecht-stickel-623872",
+      "role": "member",
+      "land": null,
+      "term": "18",
+      "group": "CDU",
+      "party": null,
+      "constituency": "6 Leonberg",
+      "mandate_kind": null,
+      "service_start": null,
+      "service_end": null,
+      "source_updated_text": null,
+      "service_precision": null,
+      "bundestag_id": null,
+      "locator": "/html/body/div/div[136]/a",
+      "evidence_hash": "142b78535e1ffc815c536740dbc4e2c65081c24ae2083f9b84f31c8038a74856",
+      "evidence_url": "https://www.landtag-bw.de/ajax/filterlist/de/der-landtag/abgeordnete/abgeordnetenprofile/abgeordnete-finden-486382?limit=2000",
+      "profile_evidence_hash": null,
+      "profile_member_class": null,
+      "conflicts": [],
+      "leadership": [],
+      "service_evidence": []
+    }
+  ],
+  "term_evidence": [
+    {
+      "url": "https://www.abgeordnetenwatch.de/api/v2/parliaments/6",
+      "file": "ac81c0d690dfd9a058563e16414341548c59360310ce3c9dff18d75eb2a437f6.gz",
+      "sha256": "ac81c0d690dfd9a058563e16414341548c59360310ce3c9dff18d75eb2a437f6",
+      "retrieved_at": "2026-11-07T17:56:09.617573+00:00",
+      "purpose": "secondary_term_metadata"
+    },
+    {
+      "url": "https://www.abgeordnetenwatch.de/api/v2/parliament-periods/165",
+      "file": "d5f5c77052b8e0b4aecaba1d36c931b73dc32d5633bac759e316bfba00aa813c.gz",
+      "sha256": "d5f5c77052b8e0b4aecaba1d36c931b73dc32d5633bac759e316bfba00aa813c",
+      "retrieved_at": "2026-11-07T17:56:10.186287+00:00",
+      "purpose": "secondary_term_metadata"
+    }
+  ],
+  "secondary_term": {
+    "id": 165,
+    "entity_type": "parliament_period",
+    "label": "Baden-Württemberg 2026 - 2031",
+    "api_url": "https://www.abgeordnetenwatch.de/api/v2/parliament-periods/165",
+    "abgeordnetenwatch_url": "https://www.abgeordnetenwatch.de/baden-wuerttemberg",
+    "parliament": {
+      "id": 6,
+      "entity_type": "parliament",
+      "label": "Baden-Württemberg",
+      "api_url": "https://www.abgeordnetenwatch.de/api/v2/parliaments/6",
+      "abgeordnetenwatch_url": "https://www.abgeordnetenwatch.de/baden-wuerttemberg"
+    },
+    "previous_period": {
+      "id": 163,
+      "entity_type": "parliament_period",
+      "label": "Baden-Württemberg Wahl 2026",
+      "api_url": "https://www.abgeordnetenwatch.de/api/v2/parliament-periods/163",
+      "abgeordnetenwatch_url": "https://www.abgeordnetenwatch.de/baden-wuerttemberg/wahl-2026"
+    },
+    "type": "legislature",
+    "election_date": null,
+    "start_date_period": "2026-05-12",
+    "end_date_period": "2031-05-20"
+  },
+  "usage": {
+    "attribution": "Landtag von Baden-Württemberg",
+    "licence_assumption": "No blanket open licence assumed; issuer attribution retained; image assets are not acquired.",
+    "terms_url": "https://www.landtag-bw.de/de/mediathek/nutzungsbedingungen-fuer-die-mediathek",
+    "link_label": "Nutzungsbedingungen",
+    "status": 200,
+    "file": "e4e058c84c28cf9d0873a8e7b62a86f06b60c5893bc401715bf133daa75a0435.gz",
+    "sha256": "e4e058c84c28cf9d0873a8e7b62a86f06b60c5893bc401715bf133daa75a0435",
+    "retrieved_at": "2026-11-07T18:50:56.177778+00:00"
+  },
+  "qualification_date": "2026-11-07",
+  "credential_requirement": "Public HTTPS GET; no operator credential required",
+  "update_semantics": "Dated retrieval/current-directory observation; original bytes retained. Provider update times are unknown unless explicitly exposed.",
+  "historical_count": 0,
+  "profile_errors": [],
+  "profile_conflicts": [],
+  "check_basis": "official_set_and_count",
+  "source_updates": [],
+  "qualified_term": "18"
+}

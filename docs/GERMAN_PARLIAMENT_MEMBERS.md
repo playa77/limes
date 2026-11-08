@@ -1,10 +1,19 @@
 # BE-56 — German parliamentary members and federal officeholders: implementation plan
 
-Status: planned, documentation only. Implementation is reserved for the next
-session. Prepared 2026-11-07 against live GitHub main
-`7c7be13dc74d4c8613f4507ec8b8b8f708c83955`; planning checkout branch `work`.
-Proposed implementation branch: `codex/be-56-german-parliament-members`, created
-from freshly verified main next session. D-97 records the scope decision.
+Status: implementation candidate on `codex/be-56-german-parliament-members`,
+from live-verified main `d967bae244dc` (2026-11-07). This session implements the
+full A1–A8 contract; final qualification is recorded in [VERIFICATION](VERIFICATION.md).
+D-97 preserves the planning decision; D-98 records implementation. Exact qualified
+sources and public DIP authentication are in [BE56_SOURCES](BE56_SOURCES.md).
+Production acquisition/deployment remains an operator action, separate from this
+implementation and its dated fixtures.
+
+Local implementation acceptance: A1–A6 and A8 have direct evidence. A7 remains
+open: all static guards and five test lanes (1,397 tests) pass, but the final
+runtime-stack lane exhausts this environment’s 8 GB filesystem. The Docker daemon
+reports `no space left on device` creating its fixture volume. A larger filesystem
+is required for a complete passing frozen candidate; see VERIFICATION. No full
+acceptance or production-coverage claim is made.
 
 ## Goal and completion boundary
 
@@ -35,20 +44,20 @@ successful, dated acquisition and reconciliation report for every coverage scope
 the 17 parliamentary chambers, each of the two court Senates, the Bundesrat and
 the federal presidency. These are 21 coverage scopes, not 21 parliaments.
 
-## Existing implementation and gaps
+## Baseline before BE-56 (live main d967bae244dc)
 
 - `src/limes/sources/bundestag_dip.py` already fetches paginated DIP persons,
   archives responses and produces `Person`, `Office` and membership assertions.
   `bundestag_id` must remain compatible with existing canonical person IDs.
-- DIP currently turns `fraktion` into `PoliticalParty` and links `Office` to that
+- Baseline DIP turned `fraktion` into `PoliticalParty` and links `Office` to that
   party, rather than to a parliamentary `PublicBody`. It uses known term starts
   for mandates without individual entry dates and leaves end dates open. Those
   records alone cannot establish current membership or correct party affiliation.
 - `wikidata` is enrichment-only. Its name search is not a roster-discovery source
   or sufficient proof for joining a legislator to a similarly named company officer.
-- No all-state parliamentary roster adapter or 17-chamber completeness contract
-  is present. The existing ontology/loader/resolver/API must be extended together
-  where required; a new file of names alone does not satisfy this package.
+- The baseline had no all-state roster adapters or 17-chamber completeness contract.
+  BE-56 extends ontology, loader, resolution and API together; implementation and
+  operational handoff below supersede these baseline gaps.
 
 ## Source register and acquisition strategy
 
@@ -59,14 +68,11 @@ prefer official machine-readable data; parse bounded official directory/profile
 pages where no suitable export exists. Reuse transport/parsing components across
 chambers with the same actual format, with explicit per-chamber mappings.
 
-The following are discovery starting points, not validated roster endpoints. The
-first implementation step must replace them with exact directory/export/profile
-URLs, access method, pagination/termination rules, stable IDs, term identification,
-source update/as-of semantics, available fields, usage/attribution terms and pinned
-raw fixtures for each chamber. No live endpoint or provider coverage was validated
-in this documentation session.
-Apply the same qualification to court, Bundesrat and presidency sources, with
-office/appointment intervals rather than legislative terms where appropriate.
+The portal table below remains the discovery index. Exact qualified directory,
+AJAX/API/profile endpoints, pagination, identifiers, fields, term evidence,
+usage references and raw fixture hashes are recorded in [the source matrix](BE56_SOURCES.md)
+and its linked scope manifests. Public source/fixture qualification was performed
+in this implementation session; no production graph was populated.
 
 | Jurisdiction | Chamber | Official discovery portal |
 |---|---|---|
@@ -199,7 +205,7 @@ a full-package blocker just as an unavailable state parliament is.
   Changes during pagination require a stable snapshot/version or a bounded
   consistency recheck; never certify a mixed-time roster as one coherent snapshot.
 
-## Implementation sequence for the next session
+## Implementation sequence and evidence contract
 
 | Step | Concrete work | Exit evidence |
 |---|---|---|
@@ -225,32 +231,32 @@ or inaccessible required rosters must identify the precise chamber and blocker.
 
 ## Acceptance checklist — one full BE-56 delivery
 
-- [ ] A1: All 21 coverage scopes have qualified current sources, exact raw fixtures
+- [x] A1: All 21 coverage scopes have qualified current sources, exact raw fixtures
   and explicit completeness/freshness rules: 17 parliamentary chambers, both court
   Senates, Bundesrat regular/deputy members and the presidential incumbent.
   City-state parliaments are included; Bremen state and municipal membership are
   not confused. Legislative terms apply only to relevant institutions.
-- [ ] A2: Each acquired serving member persists as a `Person` with stable scoped
+- [x] A2: Each acquired serving member persists as a `Person` with stable scoped
   identifiers, canonical reuse and an institution-appropriate mandate/office;
   judicial Senate, Bundesrat member class/Land and presidency are queryable; no silent row loss
   or name-only merging, including links to existing company-person entities.
-- [ ] A3: Parliament, office/term, mandate episode, party and parliamentary group
+- [x] A3: Parliament, office/term, mandate episode, party and parliamentary group
   semantics round-trip correctly; legacy DIP identity/history survives migration.
   Judicial appointments, Senate assignments, Bundesrat service and presidential
   tenure round-trip without fabricated legislative terms or party membership.
-- [ ] A4: Actual dates, unknown dates, current-roster observations, source evidence
+- [x] A4: Actual dates, unknown dates, current-roster observations, source evidence
   and both time axes survive archive→normalizer→resolver→graph→API; no false mandate
   start/end or inferred party membership is introduced.
-- [ ] A5: Per-chamber bounded acquisition, resume/replay, failure/checkpoint handling
+- [x] A5: Per-chamber bounded acquisition, resume/replay, failure/checkpoint handling
   and idempotency work; a partial or changing roster cannot claim national completion.
-- [ ] A6: Per-chamber member-set reconciliation, counts, freshness, unresolved rows
+- [x] A6: Per-chamber member-set reconciliation, counts, freshness, unresolved rows
   and missing coverage are visible through authenticated APIs and usable generic
   desktop evidence/query flows, including empty and failed cases.
 - [ ] A7: Independent fixture cases cover all chamber mappings and distinct failure
   modes; disposable graph/API scenarios prove identity, migration and temporal
   updates. Affected/shared checks and one full frozen candidate pass, with exact
   results and source identity recorded in VERIFICATION.
-- [ ] A8: Documentation, configuration examples and operator handoff distinguish
+- [x] A8: Documentation, configuration examples and operator handoff distinguish
   implemented acquisition capability from measured loaded coverage for all 21
   scopes; any unavailable required scope prevents an unqualified full-delivery claim.
 
@@ -266,16 +272,76 @@ state-government turnover, federal-presidential succession/repeated terms, and
 one person holding roles across institutions. Do not mix Bundesrat vote totals
 with member counts or infer judicial/presidential party affiliation.
 
-## Session handoff
+## Implementation and operator handoff
 
-This session changes documentation only. No roster acquisition, schema migration,
-implementation, production ingestion, deployment, staging, commit or push is part
-of this request. Next session should begin with BE-56 step 1 and deliver the full
-checklist. Provider inspection/read-only fixture acquisition is part of that work;
-production ingestion/deployment must follow the user's authorization at that time.
-The existing GraphRAG next-version proposal remains separate and unchanged.
+The three-service runtime now registers `public_offices_SCOPE` for each of the
+21 scope codes in [the source matrix](BE56_SOURCES.md). Use the existing authenticated
+operator job `ingest` with one such source; `ingest-all` includes them. No consumer
+read performs acquisition. Each job archives original pages before parsing, retains
+bounded per-source progress, performs an independent semantic consistency recheck,
+and leaves success unchanged on parse/transport/count/cycle/load failures. Bounds
+are 512 directory pages per pass, 5 MB per response, 40 MB per pass, a 1,800-second
+scheduling budget and the shared finite four-attempt transport policy; an outstanding
+bounded retry/cooldown can finish after that scheduling budget. Federal profile
+joins share the total read/byte/time bounds. Explicit resubmission resumes progress;
+interrupted work is not automatically replayed. Completed scopes remain usable.
 
-Publication update: the user subsequently authorizes a PR for this documentation
-session. Stage, commit and push the plan and related documentation on
-`codex/be-56-public-officeholder-planning`, then open a PR against main.
-This publication does not start next-session implementation or acquire rosters.
+Ontology 1.4.0 adds `ParliamentaryGroup`, `PersonIdentifier`, `RosterSnapshot` and
+`RosterMembership`, compound office/institution identifiers and additive relations.
+`HOLDS_OFFICE` roster edges have `validity_basis=roster_observation`; their validity
+start is an observation, not an invented mandate start. Source service dates,
+precision, profile episodes, original evidence and graph recording/belief times
+remain distinct. Snapshot membership distinguishes serving rows from encountered
+former-member episodes. Absence never invents an exit date or fills a service gap.
+A `RosterLoadCheck` associates successful loading with the actual run, including
+successful replay after an earlier failed load of the same immutable snapshot.
+
+Before production acquisition, back up the graph/archive and run the explicit
+operator migration `migrate --version 1.4.0` through the remote CLI/job API.
+The additive version has a declared source-owned data repair: it runs even if
+other nodes are already stamped 1.4.0. It preserves legacy person/office IDs and
+raw history, adds the proper compound office keys and supersedes only legacy DIP
+party/body/current-interval interpretations. DIP now emits historical term/group
+references without inventing personal service dates. The source-isolated migration
+is replayable; its rollback restores only its own retractions/added keys. Running
+an older binary after new 1.4.0 entities exist requires restoring the pre-migration
+backup, because the downgrade guard remains in force.
+
+Configure `LIMES_BUNDESTAG_DIP_API_KEY` from the [validated public source](BE56_SOURCES.md)
+when using DIP. Update existing operator settings to
+`LIMES_NL2CYPHER_PROMPT_VERSION=1.1.0`; the new default/example has roster-aware
+current/as-of guidance while the historical 1.0.0 prompt remains unchanged.
+Do not infer serving membership from an old open-ended assertion.
+
+`GET /public-offices` returns all 21 coverage scopes and a bounded member response.
+Filters are `scope`, `term`, timezone-aware `as_of`, `believed`, `limit` (1–1000)
+and `include_members=false` for coverage-only reads. It exposes missing/failed/
+partial/unverified/reconciled states, actual-set reconciliation, observation age,
+unknown/source dates, unresolved candidates, source conflicts and truncation.
+An as-of date before any acquired observation remains missing rather than
+extrapolating a retrospective complete roster. Canonical identity reviews are
+belief-sensitive. Historical raw assertions and original entity IDs remain intact.
+
+The desktop's existing Coverage panel has an asynchronous **Public office coverage**
+read, with error/empty/partial states and navigation to generic snapshot/entity/
+evidence views. A connection change rejects late replies. Ontology-driven query
+and evidence flows expose office, group, Land/member-class, Senate and presidency
+properties without desktop ontology constants or direct provider/database access.
+
+If a source identifier has an unresolved candidate, inspect the archived evidence
+and the existing person before submitting the bounded operator command
+`public-offices-identify --identity-reviews JSON` (also available through
+`remote run public-offices-identify`). Each of up to 100 explicit decisions carries
+`request_id`, acquired `external_id`, existing `person_id`, archived `evidence_hash`
+and a review `note`. The job verifies archive existence; the loader transaction
+retains immutable audit decisions and prior bindings. Reusing a decision ID with
+changed content is rejected. Reads and future loading reuse the reviewed canonical
+person; a shared name, group or biography keyword never authorizes a merge.
+
+Local validation/acceptance and exact source fingerprints are recorded in
+[VERIFICATION](VERIFICATION.md). Production population requires a separately
+successful dated acquisition/reconciliation for every scope; unverified or missing
+coverage is not converted into a nationwide loaded-roster claim. Existing unrelated
+operator obligations remain tracked in OPEN_ISSUES. The subsequent PR request
+authorizes staging, commit, push and a draft PR for this full implementation. A7
+remains open; merge, deployment and production data runs remain separate actions.

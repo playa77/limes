@@ -1,0 +1,101 @@
+{
+  "scope": "bp",
+  "institution": "Bundespräsidialamt",
+  "pages": [
+    {
+      "url": "https://www.bundespraesident.de/",
+      "final_url": "https://www.bundespraesident.de/DE/startseite/startseite_node.html",
+      "file": "84263f1b60a24278db3dd61060506a7d838534d883172e5192ba97647ae24057.gz",
+      "sha256": "84263f1b60a24278db3dd61060506a7d838534d883172e5192ba97647ae24057",
+      "retrieved_at": "2026-11-07T17:53:25.386210+00:00"
+    },
+    {
+      "url": "https://www.bundespraesident.de/DE/bundespraesident/frank-walter-steinmeier_node.html",
+      "final_url": "https://www.bundespraesident.de/DE/bundespraesident/frank-walter-steinmeier_node.html",
+      "file": "5e380ed307b8b2dcd1aedd1c1a577a45734a3cf56a888491e6fd92342c41d4c3.gz",
+      "sha256": "5e380ed307b8b2dcd1aedd1c1a577a45734a3cf56a888491e6fd92342c41d4c3",
+      "retrieved_at": "2026-11-07T17:53:26.357779+00:00"
+    }
+  ],
+  "acquired_count": 1,
+  "expected_count": null,
+  "observed_terms": [],
+  "departed_excluded": 0,
+  "error": null,
+  "first_rows": [
+    {
+      "external_id": "https://www.bundespraesident.de/DE/bundespraesident/frank-walter-steinmeier_node.html",
+      "name": "Frank-Walter Steinmeier",
+      "aliases": [],
+      "profile_url": "https://www.bundespraesident.de/DE/bundespraesident/frank-walter-steinmeier_node.html",
+      "role": "president",
+      "land": null,
+      "term": null,
+      "group": null,
+      "party": null,
+      "constituency": null,
+      "mandate_kind": null,
+      "service_start": null,
+      "service_end": null,
+      "source_updated_text": null,
+      "service_precision": null,
+      "bundestag_id": null,
+      "locator": "/html/body/div/div/main/div/div/div[1]/h1",
+      "evidence_hash": "5e380ed307b8b2dcd1aedd1c1a577a45734a3cf56a888491e6fd92342c41d4c3",
+      "evidence_url": "https://www.bundespraesident.de/DE/bundespraesident/frank-walter-steinmeier_node.html",
+      "profile_evidence_hash": "f85399114a124814931fd5d9b29f25372ddb538d3855badb4f9876b28cb5ab71",
+      "profile_member_class": null,
+      "conflicts": [],
+      "leadership": [],
+      "service_evidence": [
+        {
+          "statement": "Bundespräsidenten gewählt.",
+          "locator": "/html/body/div/div/main/div/div/div[1]/div[1]/div[1]/div/p",
+          "kind": "election_statement"
+        },
+        {
+          "statement": "Bundesversammlung ihn für eine zweite Amtszeit.",
+          "locator": "/html/body/div/div/main/div/div/div[1]/div[1]/div[1]/div/p",
+          "kind": "term_reference"
+        },
+        {
+          "statement": "Bundespräsidenten der Bundesrepublik Deutschland gewählt.",
+          "locator": "/html/body/div/div/main/div/div/div[1]/div[2]/div/div/p[6]",
+          "kind": "election_statement"
+        },
+        {
+          "statement": "Bundesversammlung ihn für eine zweite Amtszeit.",
+          "locator": "/html/body/div/div/main/div/div/div[1]/div[2]/div/div/p[6]",
+          "kind": "term_reference"
+        }
+      ]
+    }
+  ],
+  "profile_evidence": [
+    {
+      "url": "https://www.bundespraesident.de/DE/bundespraesident/biographie/biographie_node.html",
+      "sha256": "f85399114a124814931fd5d9b29f25372ddb538d3855badb4f9876b28cb5ab71",
+      "file": "f85399114a124814931fd5d9b29f25372ddb538d3855badb4f9876b28cb5ab71.gz",
+      "retrieved_at": "2026-11-07T18:09:39.369624+00:00"
+    }
+  ],
+  "profile_errors": [],
+  "usage": {
+    "attribution": "Bundespräsidialamt",
+    "licence_assumption": "No blanket open licence assumed; issuer attribution retained; image assets are not acquired.",
+    "terms_url": "https://www.bundespraesident.de/DE/service/impressum/impressum_node.html",
+    "link_label": "Impressum",
+    "status": 200,
+    "file": "6795ca6f3a607e0e07bc1e4988a590be517c21440124c3e7b3b4b8d414d5cb74.gz",
+    "sha256": "6795ca6f3a607e0e07bc1e4988a590be517c21440124c3e7b3b4b8d414d5cb74",
+    "retrieved_at": "2026-11-07T18:50:53.725673+00:00"
+  },
+  "qualification_date": "2026-11-07",
+  "credential_requirement": "Public HTTPS GET; no operator credential required",
+  "update_semantics": "Dated retrieval/current-directory observation; original bytes retained. Provider update times are unknown unless explicitly exposed.",
+  "historical_count": 0,
+  "profile_conflicts": [],
+  "check_basis": "official_directory_set",
+  "source_updates": [],
+  "qualified_term": null
+}

@@ -1,0 +1,132 @@
+{
+  "scope": "st",
+  "institution": "Landtag von Sachsen-Anhalt",
+  "pages": [
+    {
+      "url": "https://www.landtag.sachsen-anhalt.de/landtag/abgeordnete/abgeordnetensuche",
+      "final_url": "https://www.landtag.sachsen-anhalt.de/landtag/abgeordnete/abgeordnetensuche",
+      "file": "c134c2488e60e86c8c2f951cc5f01e5ab4e52fde834e4e831d98c09a7460c4d7.gz",
+      "sha256": "c134c2488e60e86c8c2f951cc5f01e5ab4e52fde834e4e831d98c09a7460c4d7",
+      "retrieved_at": "2026-11-07T17:53:22.423350+00:00"
+    }
+  ],
+  "acquired_count": 83,
+  "expected_count": 83,
+  "observed_terms": [],
+  "departed_excluded": 0,
+  "error": null,
+  "first_rows": [
+    {
+      "external_id": "https://www.landtag.sachsen-anhalt.de/landtag/abgeordnete/abgeordnetensuche/biografien/abgeordneter/alexander-raue/9-wahlperiode",
+      "name": "Alexander Raue",
+      "aliases": [],
+      "profile_url": "https://www.landtag.sachsen-anhalt.de/landtag/abgeordnete/abgeordnetensuche/biografien/abgeordneter/alexander-raue/9-wahlperiode",
+      "role": "member",
+      "land": null,
+      "term": "abgeordnetenwatch:period:178 (Sachsen-Anhalt 2026 - 2031)",
+      "group": "AfD",
+      "party": null,
+      "constituency": "Wahlkreis 35 (Halle I)",
+      "mandate_kind": null,
+      "service_start": null,
+      "service_end": null,
+      "source_updated_text": null,
+      "service_precision": null,
+      "bundestag_id": null,
+      "locator": "/html/body/main/div[2]/div[3]/div/div[2]/ul/li[68]/a",
+      "evidence_hash": "c134c2488e60e86c8c2f951cc5f01e5ab4e52fde834e4e831d98c09a7460c4d7",
+      "evidence_url": "https://www.landtag.sachsen-anhalt.de/landtag/abgeordnete/abgeordnetensuche",
+      "profile_evidence_hash": null,
+      "profile_member_class": null,
+      "conflicts": [],
+      "leadership": [],
+      "service_evidence": []
+    },
+    {
+      "external_id": "https://www.landtag.sachsen-anhalt.de/landtag/abgeordnete/abgeordnetensuche/biografien/abgeordneter/andreas-best/9-wahlperiode",
+      "name": "Andreas Best",
+      "aliases": [],
+      "profile_url": "https://www.landtag.sachsen-anhalt.de/landtag/abgeordnete/abgeordnetensuche/biografien/abgeordneter/andreas-best/9-wahlperiode",
+      "role": "member",
+      "land": null,
+      "term": "abgeordnetenwatch:period:178 (Sachsen-Anhalt 2026 - 2031)",
+      "group": "AfD",
+      "party": null,
+      "constituency": "Wahlkreis 24 (Wittenberg)",
+      "mandate_kind": null,
+      "service_start": null,
+      "service_end": null,
+      "source_updated_text": null,
+      "service_precision": null,
+      "bundestag_id": null,
+      "locator": "/html/body/main/div[2]/div[3]/div/div[2]/ul/li[8]/a",
+      "evidence_hash": "c134c2488e60e86c8c2f951cc5f01e5ab4e52fde834e4e831d98c09a7460c4d7",
+      "evidence_url": "https://www.landtag.sachsen-anhalt.de/landtag/abgeordnete/abgeordnetensuche",
+      "profile_evidence_hash": null,
+      "profile_member_class": null,
+      "conflicts": [],
+      "leadership": [],
+      "service_evidence": []
+    }
+  ],
+  "term_evidence": [
+    {
+      "url": "https://www.abgeordnetenwatch.de/api/v2/parliaments/8",
+      "file": "4f13288f742978c81aa7c5c871aabd1c926d865f8c53f20ffce42f4b24698302.gz",
+      "sha256": "4f13288f742978c81aa7c5c871aabd1c926d865f8c53f20ffce42f4b24698302",
+      "retrieved_at": "2026-11-07T18:09:15.243684+00:00",
+      "purpose": "secondary_term_metadata"
+    },
+    {
+      "url": "https://www.abgeordnetenwatch.de/api/v2/parliament-periods/178",
+      "file": "e3f0025624da2fc794a3b37ec41eb470c8655a98085c856d5f2eaf0873906823.gz",
+      "sha256": "e3f0025624da2fc794a3b37ec41eb470c8655a98085c856d5f2eaf0873906823",
+      "retrieved_at": "2026-11-07T18:09:17.914974+00:00",
+      "purpose": "secondary_term_metadata"
+    }
+  ],
+  "secondary_term": {
+    "id": 178,
+    "entity_type": "parliament_period",
+    "label": "Sachsen-Anhalt 2026 - 2031",
+    "api_url": "https://www.abgeordnetenwatch.de/api/v2/parliament-periods/178",
+    "abgeordnetenwatch_url": "https://www.abgeordnetenwatch.de/sachsen-anhalt",
+    "parliament": {
+      "id": 8,
+      "entity_type": "parliament",
+      "label": "Sachsen-Anhalt",
+      "api_url": "https://www.abgeordnetenwatch.de/api/v2/parliaments/8",
+      "abgeordnetenwatch_url": "https://www.abgeordnetenwatch.de/sachsen-anhalt"
+    },
+    "previous_period": {
+      "id": 168,
+      "entity_type": "parliament_period",
+      "label": "Sachsen-Anhalt Wahl 2026",
+      "api_url": "https://www.abgeordnetenwatch.de/api/v2/parliament-periods/168",
+      "abgeordnetenwatch_url": "https://www.abgeordnetenwatch.de/sachsen-anhalt/wahl-2026"
+    },
+    "type": "legislature",
+    "election_date": null,
+    "start_date_period": "2026-10-06",
+    "end_date_period": "2031-10-30"
+  },
+  "usage": {
+    "attribution": "Landtag von Sachsen-Anhalt",
+    "licence_assumption": "No blanket open licence assumed; issuer attribution retained; image assets are not acquired.",
+    "terms_url": "https://www.landtag.sachsen-anhalt.de/impressum",
+    "link_label": "Impressum",
+    "status": 200,
+    "file": "68e029104f37a3af77fb0edb7ec4385064a5c4716aaaa0a6da1027f95d398bfc.gz",
+    "sha256": "68e029104f37a3af77fb0edb7ec4385064a5c4716aaaa0a6da1027f95d398bfc",
+    "retrieved_at": "2026-11-07T18:50:58.840031+00:00"
+  },
+  "qualification_date": "2026-11-07",
+  "credential_requirement": "Public HTTPS GET; no operator credential required",
+  "update_semantics": "Dated retrieval/current-directory observation; original bytes retained. Provider update times are unknown unless explicitly exposed.",
+  "historical_count": 0,
+  "profile_errors": [],
+  "profile_conflicts": [],
+  "check_basis": "official_set_and_count;secondary_term_metadata",
+  "source_updates": [],
+  "qualified_term": "abgeordnetenwatch:period:178 (Sachsen-Anhalt 2026 - 2031)"
+}

@@ -4,6 +4,20 @@
 
 <!-- limes-runtime: {"services":["api","neo4j","worker"],"api_publication":"127.0.0.1:8000:8000","database_published":false,"api_authentication":"bearer","desktop_credentials":"session-only","budget_enforcement":false,"service_user":"7474:7474","host_docker_socket":false,"operations_authentication":"operator-bearer","backup_transport":"private-http","job_replay":"manual","deployment":"immutable-image-ids"} -->
 
+## Public-officeholder jobs
+
+Submit ingest for `public_offices_<scope>` using the 21 scope codes in
+[the BE-56 handoff](GERMAN_PARLIAMENT_MEMBERS.md). Preserve a pre-migration backup;
+run the declared 1.4 ontology/DIP data repair explicitly. Historical DIP persons
+never certify current membership. The runtime DIP key remains configured through
+LIMES_BUNDESTAG_DIP_API_KEY; [public key source/validation](BE56_SOURCES.md) is dated
+and does not replace credential configuration. Set nl2cypher_prompt_version=1.1.0
+for roster-aware query generation; old explicit pins remain available.
+Identity reviews require an archived evidence hash, explicit existing canonical
+Person, scoped identifier, note and immutable request_id. They are operator writes;
+coverage reads acquire no data. Fixture qualification does not certify production
+population, independent legal seat counts or perpetual source availability.
+
 ## Reviewed enrichment jobs
 
 Submit `enrich` through POST /operations/jobs with source wikipedia or
@@ -83,6 +97,7 @@ replays work. Output and status are operator-only. A timeout does not imply roll
 | migrate | `--version X.Y.Z` |
 | backup | none |
 | stamp-embeddings | none |
+| public-offices-identify | `--identity-reviews JSON` (1–100 evidence-backed reviews) |
 
 Make operational targets call the same HTTP remote CLI; only `up`/`down` administer
 Docker. `make select-models STAGE=measured` and `make evaluate EVALUATION=resolution`
