@@ -76,6 +76,7 @@ from limes.types import (
 )
 
 if TYPE_CHECKING:
+    from limes.config import Settings
     from limes.resolution.resolve import RunContext
 
 logger = structlog.get_logger(__name__)
@@ -171,7 +172,7 @@ def execute_run(spec: RunSpec, ctx: RunContext) -> IngestionRunRecord:
         return _execute_run(spec, ctx)
 
 
-def _source_budget(settings, source_id: str) -> tuple[int, int]:
+def _source_budget(settings: Settings, source_id: str) -> tuple[int, int]:
     """PA-1 R3: (wall-clock seconds, consecutive-attempt cap) for one run.
 
     Operators may pin a per-source floor/override as

@@ -12,6 +12,7 @@ and the query paths build their own Cypher on top.
 from __future__ import annotations
 
 import fcntl
+from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
@@ -38,7 +39,7 @@ def gate_path_for_jobs(jobs_path: Path) -> Path:
     return jobs_path.parent / "write-gate.lock"
 
 
-def write_gate_path_for(settings) -> Path | None:
+def write_gate_path_for(settings: Any) -> Path | None:
     """Resolve the effective gate path from settings.
 
     `None` when `LIMES_INGEST_WRITE_GATE` is false, or when the jobs parent
@@ -82,7 +83,7 @@ class GraphDriver:
         self._driver.close()
 
     @contextmanager
-    def _write_gate(self):
+    def _write_gate(self) -> Iterator[None]:
         if self._write_gate_path is None:
             yield
             return

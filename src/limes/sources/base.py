@@ -38,7 +38,7 @@ from contextvars import ContextVar
 from datetime import UTC, datetime
 from email.utils import parsedate_to_datetime
 from pathlib import Path
-from typing import Any, Literal, Protocol, runtime_checkable
+from typing import Any, Literal, Protocol, TextIO, runtime_checkable
 from urllib.parse import urlsplit
 
 import httpx
@@ -91,7 +91,9 @@ _scope: ContextVar[_RunBudget | None] = ContextVar("limes_source_run_budget", de
 
 
 @contextmanager
-def source_run_scope(deadline: float | None, transport_attempts: int | None):
+def source_run_scope(
+    deadline: float | None, transport_attempts: int | None
+) -> Iterator[_RunBudget | None]:
     """Bind the PA-1 R3 budget for one source run; remove it again on exit.
 
     A ContextVar (not a module global) keeps concurrent in-process timelines
@@ -667,7 +669,9 @@ def _host_cap(key: str) -> int:
     return int(os.environ.get("LIMES_HOST_CONCURRENCY_DEFAULT", "2"))
 
 
-def _acquire_host_slot(directory: Path, cap: int, deadline: float, key: str):
+def _acquire_host_slot(
+    directory: Path, cap: int, deadline: float, key: str
+) -> TextIO:
     while True:
         for index in range(cap):
             handle = (directory / f"{index}.lock").open("a")
@@ -686,7 +690,7 @@ def _acquire_host_slot(directory: Path, cap: int, deadline: float, key: str):
 
 
 @contextmanager
-def host_slot(url: str) -> Iterator:
+def host_slot(url: str) -> Iterator[None]:
     """PA-1 R5: acquire one per-host flock slot for a single HTTP request.
 
     Slots live at `$LIMES_HOST_SLOT_DIR/<key>/<i>.lock` (default

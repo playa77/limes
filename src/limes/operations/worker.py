@@ -22,7 +22,7 @@ from pathlib import Path
 
 import structlog
 
-from limes.config import load_settings
+from limes.config import Settings, load_settings
 from limes.news.store import TrackingStore
 from limes.operations.models import Job
 from limes.operations.store import OUTPUT_LIMIT, JobStore
@@ -91,12 +91,12 @@ def execute(
         store.finish(key, process.returncode or 0, result)
 
 
-def run_pool(store: JobStore, settings, stop: threading.Event) -> None:
+def run_pool(store: JobStore, settings: Settings, stop: threading.Event) -> None:
     """Bounded claim/execute pool (PA-1 R1): claims while a slot is free,
     observes operator cancel flags, and keeps the heartbeat/news cadence in
     the manager loop so no job can stall them."""
     events: dict[str, threading.Event] = {}
-    running: dict[Future, str] = {}
+    running: dict[Future[None], str] = {}
 
     with ThreadPoolExecutor(max_workers=settings.job_concurrency) as pool:
         next_news_check = 0.0
