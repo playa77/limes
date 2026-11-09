@@ -42,29 +42,39 @@ part of the manifest. No existing secret file was read or changed.
 
 ### Candidate
 
+After the first pass (`candidate-final-5`, revision `3896e91` + working tree,
+source SHA `35288c81…99a56`, 939.8 s, all lanes passing), one
+publication-blocking defect was found in the SPA packaging:
+`desktop/web/.gitignore` excluded `src/api/openapi.json`, so a fresh clone
+would lack the committed contract file that the freshness contract reads.
+The rule was removed, the generated file is tracked, and the publication
+commit `06cb16f` was requalified end to end.
+
 Authoritative command: `venv/bin/python tools/qualify.py --output
-work/dc17/candidate-final-5`; status **passed**; revision `3896e91` (branch
-base; the working tree is the candidate), source manifest SHA-256
-`35288c8127def2a83319d4dada967dafb326ddb9606b618f13cb62a698f99a56`,
-validation wall time **939.778 s**. Report, source.json, JUnit and logs are in
-that ignored directory. Starting 2026-11-09T12:07:01Z, finishing 12:22:41Z.
+work/dc17/candidate-final-6`; status **passed**; revision
+`06cb16fffe7a9c649df6835a6bb841ee4259fef9` (the complete publication commit),
+source manifest SHA-256
+`295a4d6513488b6db438ba8f3ecad394f1cbf6e40fa4e162ab2deb169e8076b6`,
+validation wall time **511.201 s**. `-5` is retained as superseded
+evidence (the only deltas are the gitignore rule and the tracked contract
+file; no behavior). Report, source.json, JUnit and logs are in the ignored
+directories.
 
 | Lane | Result | Case count | Elapsed |
 |---|---|---:|---:|
-| baseline/lint/tools-lint/types/docs/generated/guards/whitespace | passed | — | ≈1.8 s |
+| baseline/lint/tools-lint/types/docs/generated/guards/whitespace | passed | — | ≈1.9 s |
 | web (pnpm: install, tsc -b, vitest 29, eslint, build) | passed | 29 vitest cases | 10.4 s |
-| unit | passed | 1,012 | 155.9 s |
-| desktop (unit + contract) | passed | 42 | 2.8 s |
-| integration | passed | 185 | 229.1 s |
-| acceptance | passed | 85 | 37.2 s |
-| desktop-integration (launcher + real API + disposable graph) | passed | 2 | 19.4 s |
-| runtime-stack | passed | 1 | 483.1 s |
+| unit | passed | 1,012 | 157.9 s |
+| desktop (unit + contract) | passed | 42 | 2.9 s |
+| integration | passed | 185 | 198.3 s |
+| acceptance | passed | 85 | 37.0 s |
+| desktop-integration (launcher + real API + disposable graph) | passed | 2 | 21.2 s |
+| runtime-stack | passed | 1 | 82.6 s |
 
 Total 1,327 pytest cases, zero failures/errors/skips, no source drift. The
-web lane runs `pnpm install --frozen-lockfile --prefer-offline` (NO paid or
-network-dependent steps beyond standard registry installs; the committed tool
-chain is exercised). The runtime-stack lane passes on this executor (292 GB
-free) — it does not claim deployed behavior.
+web lane runs the committed pnpm toolchain with no test-time network beyond
+standard registry installs. The runtime-stack lane passes on this executor
+(292 GB free) — it does not claim deployed behavior.
 
 Earlier candidate attempts on this package are retained as non-evidence:
 `work/dc17/candidate-final` (and `-2`) crashed at the runner's source

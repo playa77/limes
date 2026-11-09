@@ -18,12 +18,13 @@
   v1.1.0, DESKTOP_ROADMAP DC-17 row, desktop README and renderer text.
 - Retire the retired stack's dependencies from the workspace lock (uv.lock
   regenerated without PySide6/pytest-qt/shiboken).
-- Full candidate `work/dc17/candidate-final-5` passes all lanes (1,327 pytest
-  cases + web lane, zero failures/errors/skips), including the new `web`
-  qualification lane and runtime-stack on this executor. Evidence and
-  change accounting recorded in VERIFICATION; earlier failing attempts
-  1–4 (runner fingerprint crash, guard fixture defect, integration rewrites)
-  are retained.
+- Full candidate `work/dc17/candidate-final-6` passes all lanes on the
+  publication commit `06cb16f` (1,327 pytest cases + web lane, zero
+  failures/errors/skips), including the new `web` qualification lane and
+  runtime-stack on this executor. Evidence and change accounting recorded in
+  VERIFICATION; earlier failing attempts 1–4 and the superseded `-5` pass are
+  retained (the `-6` requalification covers the tracked OpenAPI contract
+  file's packaging fix).
 
 ## 2026-11-07 — BE-56 German parliamentary members and federal officeholders
 
