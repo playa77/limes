@@ -16,7 +16,11 @@ core news consumer work paired with BE-43 and BE-44 respectively. DC-15 merged
 with BE-43 in PR #10; DC-16 merged with BE-44 in PR #11 (`44ab4eb`);
 DC-14's repairs are implemented on `codex/dc-14-desktop-qualification`; the final
 candidate passes all five suites (VERIFICATION). Reference/platform/deployment and original-review evidence
-remain explicitly bounded in [DESKTOP_QUALIFICATION](DESKTOP_QUALIFICATION.md). There is no
+remain explicitly bounded in [DESKTOP_QUALIFICATION](DESKTOP_QUALIFICATION.md). **DC-17
+(D-99) replaces the retired PySide6/QWebEngine stack with the ReUI web client
+plus launcher; its Qt-era external evidence (REF-DC-1/DEP-DC-1 style platform
+and manual deployment observations) binds the retired stack, and the web
+client's own qualification status is named in the DC-17 row.** There is no
 standalone news UI or ledger iteration. No claim that every desktop acceptance
 criterion is currently satisfied is made.
 
@@ -27,18 +31,20 @@ Relevant current tests are linked, not treated as proof of live acceptance.
 | Package | Historical alias/scope | Implementation commit | Current artifact | Verification and remaining obligation |
 |---|---|---|---|---|
 | DC-01 | desktop wp-01: Workspace/profiles | `fb1945c` | [config.py](../desktop/src/limes_desktop/config.py) | [unit test](../desktop/tests/unit/test_config.py); H; profile compose_root is legacy/ignored; session token is not persisted. |
-| DC-02 | desktop wp-02: API client/models | `0708212` | [client.py](../desktop/src/limes_desktop/api/client.py) | [unit test](../desktop/tests/unit/test_api_client.py); S; bearer auth and operation models added; parity guard includes top-level query/neighbors. |
+| DC-02 | desktop wp-02: API client/models | `0708212` | [client.py]`client.py` (retired in DC-17) | [unit test]`test_api_client.py` (retired in DC-17); S; bearer auth and operation models added; parity guard includes top-level query/neighbors. |
 | DC-03 | desktop wp-03: Ontology literal guard | `ea105cf` | [ontology guard](../desktop/tests/contract/test_no_ontology_literals.py) | H; contract/test_no_ontology_literals.py; OI-06 typo closed. |
-| DC-04 | desktop wp-04: SessionState | `625867d` | [state.py](../desktop/src/limes_desktop/state.py) | [unit test](../desktop/tests/unit/test_state.py); H; signal/state tests; full visual synchronization requires DC-14 qualification. |
-| DC-05 | desktop wp-05: Shell/connection/search | `cb6c8fb` | [main_window.py](../desktop/src/limes_desktop/views/main_window.py) | [unit test](../desktop/tests/unit/test_search_debounce.py); H; lifecycle fixes merged; startup ≤3s and reference X11/Wayland performance unmeasured. |
-| DC-06 | desktop wp-06: Entity/provenance/coverage | `157e0a9` | [entity.py](../desktop/src/limes_desktop/views/entity.py) | [unit test](../desktop/tests/unit/test_entity_view.py); H; OI-08 bookkeeping closed; qualified evidence UI belongs to DC-15. |
-| DC-07 | desktop wp-07: Query/console/history | `15e355b` | [query_nl.py](../desktop/src/limes_desktop/views/query_nl.py) | [unit test](../desktop/tests/unit/test_query_views.py); H; coverage/save wiring fixes merged; no blanket user workflow acceptance. |
-| DC-08 | desktop wp-08: Ontology query builder | `015ddc0` | [query_builder.py](../desktop/src/limes_desktop/views/query_builder.py) | [unit test](../desktop/tests/unit/test_query_builder_view.py); DC-14 candidate; admissible selections preserved and full suffix recomputed, with self-both regression. |
-| DC-09 | desktop wp-09: Network/map/timeline | `a6245ef` | [page.py](../desktop/src/limes_desktop/views/viz/page.py) | [unit test](../desktop/tests/unit/test_viz_payload.py); DC-14 candidate; coordinate-only local map, enforced resource guard and real JS/Qt click/render/network tests. Reference display evidence remains external. |
-| DC-10 | desktop wp-10: Read-only operations views | `933d253` | [ledger.py](../desktop/src/limes_desktop/views/ops/ledger.py) | [unit test](../desktop/tests/unit/test_ops_views.py); S; ledger is passive usage, not budget enforcement. |
-| DC-11 | desktop wp-11: Backup orchestration | `a07fc69` | [backup_runner.py](../desktop/src/limes_desktop/backup_runner.py) | [unit test](../desktop/tests/unit/test_backup_runner.py); S; subprocess replaced by authenticated asynchronous HTTP (9436372); current manual deployment recovery unverified. |
+| DC-04 | desktop wp-04: SessionState | `625867d` | [state.py]`state.py` (retired in DC-17) | [unit test]`test_state.py` (retired in DC-17); H; signal/state tests; full visual synchronization requires DC-14 qualification. |
+| DC-05 | desktop wp-05: Shell/connection/search | `cb6c8fb` | [main_window.py]`main_window.py` (retired in DC-17) | [unit test]`test_search_debounce.py` (retired in DC-17); H; lifecycle fixes merged; startup ≤3s and reference X11/Wayland performance unmeasured. |
+| DC-06 | desktop wp-06: Entity/provenance/coverage | `157e0a9` | [entity.py]`entity.py` (retired in DC-17) | [unit test]`test_entity_view.py` (retired in DC-17); H; OI-08 bookkeeping closed; qualified evidence UI belongs to DC-15. |
+| DC-07 | desktop wp-07: Query/console/history | `15e355b` | [query_nl.py]`query_nl.py` (retired in DC-17) | [unit test]`test_query_views.py` (retired in DC-17); H; coverage/save wiring fixes merged; no blanket user workflow acceptance. |
+| DC-08 | desktop wp-08: Ontology query builder | `015ddc0` | [query_builder.py]`query_builder.py` (retired in DC-17) | [unit test]`test_query_builder_view.py` (retired in DC-17); DC-14 candidate; admissible selections preserved and full suffix recomputed, with self-both regression. |
+| DC-09 | desktop wp-09: Network/map/timeline | `a6245ef` | [page.py]`page.py` (retired in DC-17) | [unit test]`test_viz_payload.py` (retired in DC-17); DC-14 candidate; coordinate-only local map, enforced resource guard and real JS/Qt click/render/network tests. Reference display evidence remains external. |
+| DC-10 | desktop wp-10: Read-only operations views | `933d253` | [ledger.py]`ledger.py` (retired in DC-17) | [unit test]`test_ops_views.py` (retired in DC-17); S; ledger is passive usage, not budget enforcement. |
+| DC-11 | desktop wp-11: Backup orchestration | `a07fc69` | [backup_runner.py]`backup_runner.py` (retired in DC-17) | [unit test]`test_backup_runner.py` (retired in DC-17); S; subprocess replaced by authenticated asynchronous HTTP (9436372); current manual deployment recovery unverified. |
 | DC-12 | desktop wp-12: Integration flow/docs | `b66feb5` | [integration flow](../desktop/tests/integration/test_full_flow.py) | H; OI-02/13 closed with recorded 2 integration passes on 2026-10-07; not a new run or deployed smoke. |
-| DC-13 | desktop wp-13: Final review/corrections | `1346847` | [main_window.py](../desktop/src/limes_desktop/views/main_window.py) | [unit test](../desktop/tests/unit/test_main_window_wiring.py); R; fixes merged but original ignored 18-finding trail absent (OI-05); not blanket review closure. |
+| DC-13 | desktop wp-13: Final review/corrections | `1346847` | [main_window.py]`main_window.py` (retired in DC-17) | [unit test]`test_main_window_wiring.py` (retired in DC-17); R; fixes merged but original ignored 18-finding trail absent (OI-05); not blanket review closure. |
+
+Retired-stack paths above are Git history as of DC-17 (D-99); the PySide6 client those artifacts belonged to is retired on this branch.
 
 ## Acceptance disposition
 
@@ -147,6 +153,67 @@ properties in the existing EntityView and retrieves archive evidence through HTT
 Model parity includes EnrichmentResponse and new bounded job selection fields.
 This supporting work does not complete DC-14's independent correctness/platform
 obligations or change the existing map-network policy.
+
+### DC-17 — ReUI web desktop rebuild (id=`dc-17-reui-web-desktop`)
+
+The complete parent replaces the retired PySide6/QWebEngine/pytest-qt stack
+with a React 19 + Tailwind v4 + ReUI SPA (`desktop/web/`) served by a FastAPI
+launcher (`desktop/src/limes_desktop/`), per D-99, after the ReUI component
+system could not be hosted inside Qt. Stack retirement removes
+`views/`, `state.py`, `api/`, `backup_runner.py`, `connection_probe.py`,
+`resources/web`, all pytest-qt suites and the PySide6 dependencies from the
+workspace; the retired stack's D-14 qualification evidence stays recorded in
+[DESKTOP_QUALIFICATION](DESKTOP_QUALIFICATION.md) and binds the retired stack.
+
+Implemented in this package (branch `dc-17-reui-web-desktop`):
+
+- Launcher: static SPA serve with index fallback and traversal guard,
+  `/api/*` bearer proxy with verbatim bodies, bounded same-origin redirect
+  following, cross-origin refusal and pinned envelopes, `/session` descriptor
+  with probe-classified credential kinds, `/profiles` XDG CRUD (name+URL
+  only), loopback-only bind, flock process-level single-instance guard,
+  validated port override, `--version`. Unit evidence:
+  [test_webapp.py](../desktop/tests/unit/test_webapp.py),
+  [test_app.py](../desktop/tests/unit/test_app.py),
+  [test_cli.py](../desktop/tests/unit/test_cli.py),
+  [test_config.py](../desktop/tests/unit/test_config.py).
+- SPA: all views (search, entity with distinct VALIDITY/BELIEF provenance,
+  NLQ with editable Cypher, builder with DC-14 refill semantics, Cypher
+  console with verbatim rejections, saved queries, network/map/timeline with
+  shared selection and bitemporal filtering, news claims/investigations/
+  developments/documents with separate modality/assessment/lifecycle/precision,
+  ingest auto-refresh, passive ledger, references, public offices, backup
+  with consequence dialog and no auto-retry), shared coverage/diagnosis
+  panel, connection dialog, health polling, capability gating.
+- Contract machinery: `tools/export_openapi.py` and `desktop/web/tools/gen-api.mjs`
+  generate the committed `openapi.json`/`schema.ts`; contract tests recompute
+  the schema, pin the TS endpoint surface (required/allowed-residual sets)
+  ([test_openapi_surface.py](../desktop/tests/contract/test_openapi_surface.py))
+  and extend the ontology-literal guard over `desktop/web/src`
+  ([test_no_ontology_literals.py](../desktop/tests/contract/test_no_ontology_literals.py)).
+  Superseded: the Python model-mirror parity (`test_model_parity.py`,
+  AC-DC-7's v1.0.0 mechanism) — the generated-schema mechanism replaces it.
+- Integration: [test_full_flow.py](../desktop/tests/integration/test_full_flow.py)
+  drives the launcher hosting the real API app over a disposable graph.
+- Infra: Makefile `desktop-*`/`web-check` targets, CI `web` job (pnpm lane)
+  without the retired Qt libraries, new `web` lane in
+  [tools/qualify.py](../tools/qualify.py), vitest pins for the pure modules
+  (builder refill, temporal filtering, viz payloads).
+
+Remaining obligations for this package:
+
+- Local AC mapping (A1–A15 of the session record) and full five-lane+web
+  candidate evidence are recorded in VERIFICATION when the qualification run
+  completes; a candidate that has not run yet is not evidence.
+- Interactive browser-level SPA behavior is covered by tsc/eslint/vitest and
+  the in-process integration flow; a manual browser session against a live
+  stack (real click-through, network/map/timeline rendering on reference
+  hardware, launcher-to-interactive-search latency) remains named external
+  evidence, like REF-DC-1 for the retired stack.
+- AC-DC-5's physical dump/health verification and DEP-DC-1-style
+  administrator deployment observation remain external for the web client.
+- Packaging (.deb / bundled dist) and multi-user accounts stay deferred in
+  [LIMES_Desktop_Client_Requirements_v1.0.0.md](LIMES_Desktop_Client_Requirements_v1.0.0.md).
 
 ## DC-14 local acceptance disposition
 

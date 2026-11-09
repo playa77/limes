@@ -58,13 +58,14 @@ open qualification obligations. Historical counts below are not current passes.
 
 Canonical environment: `UV_PROJECT_ENVIRONMENT=venv uv sync --frozen --all-packages`.
 The full candidate inventory is ruff, mypy, docs checks, root unit, desktop
-unit/contract, integration, acceptance (separately), and desktop integration.
+unit/contract, web typecheck/tests/lint/build, integration, acceptance
+(separately), and desktop integration.
 During development select affected tests and shared invariant checks; documentation
 uses relevant lightweight checks. Use one authoritative full pre-merge candidate
 run and bounded smoke for routine main pushes, per AGENTS.md. Run independent CI
 lanes on separate runners and retain exact candidate evidence and a stable
-fail-closed required status. Set `QT_QPA_PLATFORM=offscreen`
-on headless hosts; constrained WebEngine test hosts may need Chromium test flags.
+fail-closed required status. The web lane runs the committed pnpm toolchain
+(`pnpm -C desktop/web ...`) and builds the SPA bundle the launcher serves.
 Graph suites own disposable containers and volumes. Only a dedicated external
 test database may be selected via `LIMES_TEST_NEO4J_URI`; never operator data.
 The physical-backup test builds the real supervisor image, uses non-root services,

@@ -1,31 +1,32 @@
-<!-- LIMES — Desktop Client Requirements | v1.0.0 | 2026-09-08 | Status: Maintained -->
+<!-- LIMES — Desktop Client Requirements | v1.1.0 | 2026-09-08 | Status: Maintained -->
 
 # LIMES — Desktop Client Requirements
 
 | Field | Value |
 |---|---|
 | Document | LIMES — Desktop Client Requirements (Document 3 of 3) |
-| Version | 1.0.0 |
-| Date | 2026-09-08; reconciled 2026-10-27 |
+| Version | 1.1.0 |
+| Date | 2026-09-08; reconciled 2026-10-27, 2026-11-09 (DC-17 web-client/launcher swap, D-99) |
 | Status | Maintained requirements; per-package evidence in DESKTOP_ROADMAP.md |
 | Depends on | LIMES — Design Document v2.0.0 (§4, §6); LIMES — Technical Specification v2.1.0 (§6 API, §13.2 topology) |
-| Supersedes | none (initial) |
+| Supersedes | the v1.0.0 content of this same filename (stable link identity preserved) |
 
-This document defines the requirements for the LIMES desktop client: a native
-Ubuntu application that fully replaces the Dash UI and adds read-only
-operational monitoring plus backup orchestration. It is a pure API consumer for
-all data paths — it holds no database access, no ontology literals, and no
-extraction logic.
+This document defines the requirements for the LIMES desktop client: a browser
+SPA served by a local Python launcher that fully replaces the Dash UI and adds
+read-only operational monitoring plus backup orchestration. It is a pure API
+consumer for all data paths — it holds no database access, no ontology
+literals, and no extraction logic.
 
 ## 1. Purpose and scope
 
-The client gives the operator the complete LIMES workflow in one native
-window: find entities, interrogate the graph through three query surfaces
-(natural language, query builder, Cypher console), inspect results as network,
-map, and timeline with full provenance and coverage reporting, and monitor and
-operate the running stack (ingest status, cost ledger, backups).
+The client gives the operator the complete LIMES workflow in one browser
+window served by the local launcher: find entities, interrogate the graph
+through three query surfaces (natural language, query builder, Cypher
+console), inspect results as network, map, and timeline with full provenance
+and coverage reporting, and monitor and operate the running stack (ingest
+status, cost ledger, backups).
 
-In scope: native query/entity/network/map/timeline investigation, qualified
+In scope: query/entity/network/map/timeline investigation, qualified
 news/event evidence within the same graph as registries, source coverage, passive
 usage monitoring, authenticated API connection management and operator backup
 jobs. [DESKTOP_ROADMAP](DESKTOP_ROADMAP.md) records actual implementation and
@@ -42,15 +43,17 @@ technical specification; runtime settings are in OPERATIONS.
 
 | Decision | Choice | Rationale |
 |---|---|---|
-| Toolkit | Python 3.12 + PySide6 (Qt 6) | Same language and venv as the repo; native desktop chrome |
-| Graph/map/timeline rendering | QWebEngineView hosting Cytoscape.js, Leaflet, Plotly | Exact visual parity with the Dash UI; the web components are proven |
-| Application structure | `desktop/` workspace member (`desktop/src/limes_desktop/`) | Isolated from `src/limes`; shares types, not infrastructure |
-| API contract | Typed client mirroring `src/limes/api/models.py` Pydantic models | Contract tests pin client models to API models; drift fails CI |
-| Distribution | uv-managed; installable via `pipx`/`uv tool install` in v1; `.deb` later | Lowest-friction path first |
+| Toolkit | React 19 SPA (Vite 8, TypeScript, Tailwind v4) on the ReUI/shadcn registry, served by a Python FastAPI launcher | The required ReUI visual system needs a web component runtime; Qt cannot host it (D-99). The SPA replaces QWebEngine hosting entirely |
+| Graph/map/timeline rendering | Cytoscape.js, Leaflet (coordinate-only), Plotly bundled inside the SPA | Exact visual parity carries over from the Dash components; D-86's no-tile policy and bundled-resource principle are preserved in the browser |
+| Application structure | `desktop/web/` (SPA) plus `desktop/src/limes_desktop/` (launcher: static serve, `/api` bearer proxy, XDG profile store, loopback bind, flock single-instance guard) | The browser never holds credentials — the proxy injects the session token; profiles stay name+URL only |
+| API contract | TypeScript types generated from the API's OpenAPI schema (`desktop/web/src/api/openapi.json`, `schema.ts`); pytest contract tests recompute the schema and pin the client's endpoint surface | Contract data comes from the live application, so drift fails CI without needing node |
+| Distribution | uv-managed workspace; source checkout plus `pnpm build`; `.deb`/packaged bundle deferred | Lowest-friction path first |
 
-Rejected alternatives: all-native Qt rendering of network/map/timeline
+Rejected alternatives (D-99): hosting ReUI inside PySide6/QWebEngine (no
+component-level compatibility); all-native Qt rendering of network/map/timeline
 (rebuilds three nontrivial viz surfaces, drifts from Dash parity); Electron or
-Tauri shells (introduce a second language stack the repo does not carry).
+Tauri shells (a second language stack the repo does not carry; the Python
+launcher already owns loopback serving, the proxy and the profile store).
 
 ## 3. Functional requirements
 
@@ -65,7 +68,7 @@ the API is unreachable: connection state is visible at all times (FR-DC-002).
 - FR-DC-002: On startup and on connection-profile change, the client calls
   `GET /health` and displays reachability, API version, and graph summary.
 - FR-DC-003: The client stores named connection profiles (name, base URL) in
-  an XDG-conformant config location (`~/.config/limes-desktop/`). Credentials stay in session memory and are sent as bearer tokens. All surfaces require authentication; only operator credentials can submit/read operational jobs. Profiles never store tokens. The legacy compose_root field is ignored.
+  an XDG-conformant config location (`~/.config/limes-desktop/`). Credentials stay in session memory and are sent as bearer tokens. All surfaces require authentication; only operator credentials can submit/read operational jobs. Profiles never store tokens. The profile record is name + base URL only (the legacy compose_root field is retired with DC-17).
 
 ### 3.2 Search
 
@@ -110,13 +113,13 @@ the API is unreachable: connection state is visible at all times (FR-DC-002).
 
 ### 3.5 Visualization
 
-- FR-DC-040: Network view (Cytoscape.js in QWebEngineView): nodes/edges from
+- FR-DC-040: Network view (Cytoscape.js in the SPA): nodes/edges from
   any query or entity-neighborhood result, incremental expansion from a
   selected node, layout controls, and selection sync with the entity view.
-- FR-DC-041: Map view (Leaflet): entities with point geometry plotted; a
+- FR-DC-041: Map view (Leaflet in the SPA, coordinate-only): entities with point geometry plotted; a
   selected entity's geographic relations drawn as lines; temporal filtering
   applies.
-- FR-DC-042: Timeline view (Plotly): assertions and relations over validity
+- FR-DC-042: Timeline view (Plotly in the SPA): assertions and relations over validity
   time, with a belief-time discriminator so "what did the graph believe at T"
   is separately viewable — bitemporality is a first-class UI concern, not a
   footnote.
@@ -151,12 +154,18 @@ the API is unreachable: connection state is visible at all times (FR-DC-002).
 
 ### 3.8 Non-functional requirements
 
-- NFR-DC-070: Ubuntu 24.04+ on X11 and Wayland; single-instance behavior.
-- NFR-DC-071: Startup to interactive search in ≤ 3 s on the reference machine;
-  the QWebEngineView runtime is lazy-loaded on first visualization use.
-- NFR-DC-072: No telemetry, no network calls beyond the configured API and
-  operator job API — local-first defaults. DC-14 uses a conforming coordinate-only map without external tiles and enforces bundled-resource requests; see D-86 and DESKTOP_QUALIFICATION.
-- NFR-DC-073: Offline unit test suites for all client logic; API interactions
+- NFR-DC-070: The launcher binds loopback-only and enforces single-instance
+  behavior as a process-level rule (advisory flock under `$XDG_RUNTIME_DIR`); any
+  conforming desktop browser hosts the served SPA.
+- NFR-DC-071: From the launcher's first serve of the built bundle to
+  interactive search in ≤ 3 s on the reference machine; heavy visualization
+  libraries load lazily on first visualization use.
+- NFR-DC-072: No telemetry; no network calls beyond the launcher origin, the
+  configured API and the operator job API — local-first defaults. The SPA ships
+  its own fonts and visualization libraries; no tile/basemap provider is
+  registered (D-86 preserves the conforming coordinate-only map policy).
+- NFR-DC-073: Offline test suites for all client logic — vitest for the SPA's
+  pure modules, pytest for the launcher and contract surfaces; API interactions
   mocked; no test makes real inference calls (repo invariant).
 - NFR-DC-074: The client is replaceable against the API contract: it must work
   unmodified against any conformant implementation of Technical
@@ -172,17 +181,20 @@ the API is unreachable: connection state is visible at all times (FR-DC-002).
   assertion's validity time and belief time as distinct, labeled values.
 - AC-DC-3: An empty result on any surface renders the hop-level diagnosis,
   never a bare empty state.
-- AC-DC-4: Source scan of `desktop/src/limes_desktop/` finds no ontology type
-  or relation literals (guard test, mirroring `test_ui.py` for the Dash UI).
+- AC-DC-4: Source scans of `desktop/src/limes_desktop/` and `desktop/web/src/`
+  find no ontology type or relation literals (guard tests; the same standard
+  `test_ui.py` set for the Dash UI).
 - AC-DC-5: Triggering backup from the client produces a timestamped
   `limes-<timestamp>-<suffix>.dump` in the archive volume and a successful post-backup
   `/health` check, with the confirmation dialog shown before execution
   (FR-DC-061).
 - AC-DC-6: With the API stopped, every view shows the unreachable state
   within its refresh interval and no unhandled exception escapes to the user.
-- AC-DC-7: Client contract tests validate every API response model used by
-  the client against the live Pydantic models in `src/limes/api/models.py`;
-  a model change without a client update fails CI.
+- AC-DC-7: Contract tests recompute the API's OpenAPI schema and require it to
+  match the committed generated files (`desktop/web/src/api/openapi.json`,
+  `schema.ts`), and pin the TS client's endpoint surface to the API surface
+  (required surfaces must exist; new API surfaces without a client mirror or
+  an allowed-residual reason fail CI).
 
 ## 5. Qualified news and event requirements
 
@@ -203,8 +215,13 @@ the API is unreachable: connection state is visible at all times (FR-DC-002).
 
 DESKTOP_ROADMAP and DESKTOP_QUALIFICATION retain a disposition for every AC/NFR
 and grouped functional requirements. DC-14 repairs OI-10 builder semantics and
-OI-11/18 map networking/guard without weakening API-only operation. Missing original
-review evidence and reference-platform/performance/manual deployment qualification
-remain named external evidence obligations.
+OI-11/18 map networking/guard without weakening API-only operation; DC-17 (D-99)
+retires the Qt/QWebEngine shell for the browser SPA plus launcher while
+preserving every semantic requirement of this document. DESKTOP_QUALIFICATION's
+evidence binds the retired Qt stack; carry-over obligations (building-browser
+and served-SPA qualification, covered empty/diagnosis display, backup
+consequence UX) are named with the DC-17 roadmap row. Original-review,
+reference-browser/launcher-platform and manual deployment evidence remain named
+external obligations.
 Authentication and API backup are implemented current requirements, not deferred.
 Distribution packaging and ledger write UI have no implementation commitment.

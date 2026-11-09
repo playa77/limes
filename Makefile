@@ -24,7 +24,8 @@ help:
 	@echo "  make migrate ONTOLOGY_VERSION=<v>                   Apply the migration to the target ontology version"
 	@echo "  make backup                                         Offline Neo4j dump into the archive volume (Doc 2 §13.6)"
 	@echo "  make stamp-embeddings                              One-shot: fill null label_embeddings before the first backfill (§13.3)"
-	@echo "  make desktop-run                                   Launch the desktop client (MODE=ui for the real GUI; default prints the version)"
+	@echo "  make desktop-run                                    Serve the web desktop launcher (MODE=ui; default prints the version)"
+	@echo "  make web-check                                      Typecheck + vitest + lint + build the SPA (desktop/web)"
 	@echo
 	@echo "Bootstrap sequence: README.md, or Technical Specification §13.3."
 
@@ -70,8 +71,10 @@ backup:
 stamp-embeddings:
 	$(REMOTE) stamp-embeddings
 
-# Desktop client (wp-01): host-side lint/test, no Docker involved.
-.PHONY: desktop-lint desktop-test desktop-install desktop-run
+# Web desktop (DC-17): host-side lint/test, no Docker involved. The Python
+# launcher is a workspace member of the root venv; the SPA needs pnpm.
+.PHONY: desktop-lint desktop-test desktop-integration desktop-install desktop-run \
+        web-install web-check
 
 desktop-lint:
 	venv/bin/ruff check desktop/src desktop/tests
@@ -79,16 +82,28 @@ desktop-lint:
 desktop-test:
 	venv/bin/python -m pytest desktop/tests/unit desktop/tests/contract -q
 
-desktop-install:
-	uv sync --project desktop
+desktop-integration:
+	venv/bin/python -m pytest desktop/tests/integration -q
 
-# Launch the desktop client. Default is a headless sanity invocation
-# (--version, offscreen Qt platform): it proves the entry point works on a
-# display-less host without opening a window. MODE=ui drops the offscreen
-# platform and runs the real GUI, which needs a display.
+desktop-install:
+	UV_PROJECT_ENVIRONMENT=venv uv sync --frozen --all-packages
+
+# Launch the web desktop launcher. Default is a headless sanity invocation
+# (--version): it proves the entry point works on a display-less host without
+# binding. MODE=ui serves the real launcher (built SPA + /api proxy) on
+# loopback — build the SPA first (`make web-check` or `pnpm -C desktop/web build`).
 desktop-run:
 	@if [ "$(MODE)" = "ui" ]; then \
-		uv run --project desktop limes-desktop; \
+		venv/bin/limes-desktop; \
 	else \
-		QT_QPA_PLATFORM=offscreen uv run --project desktop limes-desktop --version; \
+		venv/bin/limes-desktop --version; \
 	fi
+
+web-install:
+	pnpm -C desktop/web install --frozen-lockfile
+
+web-check:
+	pnpm -C desktop/web exec tsc -b
+	pnpm -C desktop/web exec vitest run
+	pnpm -C desktop/web exec eslint src
+	pnpm -C desktop/web build

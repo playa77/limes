@@ -29,13 +29,6 @@ from tests.fixtures.graph_data import (
 
 
 def test_company_enrichment_pipeline_history_api_and_desktop(neo4j_instance, tmp_path, monkeypatch):
-    from limes_desktop.api.client import ApiClient
-    from limes_desktop.api.models import EntityDetail
-    from limes_desktop.state import SessionState
-    from limes_desktop.views.entity import EntityView
-    from PySide6.QtWidgets import QApplication
-
-    app = QApplication.instance() or QApplication([])
     wipe_graph(neo4j_instance)
     settings = api_settings(neo4j_instance, tmp_path).model_copy(
         update={"jobs_path": tmp_path / "jobs.db"}
@@ -166,46 +159,48 @@ def test_company_enrichment_pipeline_history_api_and_desktop(neo4j_instance, tmp
         ) as client:
             response = client.get("/entity/be46-siemens/enrichment", params={"limit": 100})
             assert response.status_code == 200
-            desktop_client = ApiClient("http://localhost")
-            desktop_client.close()
-            desktop_client._client = client
-            result = desktop_client.enrichment("be46-siemens", limit=100)
+            # The retired Python client wrapper (DC-17/D-99) is gone; the same
+            # payload the web client renders is asserted at the API surface.
+            result = response.json()
 
-            country_result = desktop_client.enrichment("iso2:DE")
-            assert country_result.snapshots[0]["target_id"] == "iso2:DE"
-            assert country_result.snapshots[0]["observations"][0]["page_id"] == 11867
-            assert country_result.snapshots[0]["observations"][0]["wikidata_qid"] == "Q183"
+            country_result = client.get("/entity/iso2:DE/enrichment").json()
+            assert country_result["snapshots"][0]["target_id"] == "iso2:DE"
+            assert country_result["snapshots"][0]["observations"][0]["page_id"] == 11867
+            assert country_result["snapshots"][0]["observations"][0]["wikidata_qid"] == "Q183"
             holding_snapshots = [
-                s for s in result.snapshots if s["section"] == "institutionOwnership"
+                s for s in result["snapshots"] if s["section"] == "institutionOwnership"
             ]
             shares = {s["observations"][0]["shares"] for s in holding_snapshots}
             assert shares == {53457, 60000}
             assert any(
                 s["section"] == "fundOwnership" and s["status"] == "failed"
-                for s in result.snapshots
+                for s in result["snapshots"]
             )
-            assert all(s["complete"] is False for s in result.snapshots)
+            assert all(s["complete"] is False for s in result["snapshots"])
             assert any(
-                s["section"] == "assetProfile" and s["status"] == "failed" for s in result.snapshots
+                s["section"] == "assetProfile" and s["status"] == "failed"
+                for s in result["snapshots"]
             )
-            recovered = desktop_client.enrichment("be46-siemens", section="fundOwnership", limit=1)
-            assert recovered.snapshots[0]["status"] == "available"
+            recovered = client.get(
+                "/entity/be46-siemens/enrichment", params={"section": "fundOwnership", "limit": 1}
+            ).json()
+            assert recovered["snapshots"][0]["status"] == "available"
             assert (
-                recovered.snapshots[0]["last_checked_at"] >= recovered.snapshots[0]["recorded_at"]
+                recovered["snapshots"][0]["last_checked_at"]
+                >= recovered["snapshots"][0]["recorded_at"]
             )
-            context = next(s for s in result.snapshots if s["section"] == "de")
+            context = next(s for s in result["snapshots"] if s["section"] == "de")
             assert context["observations"][0]["revision_id"] == 271660062
             assert context["observations"][0]["body"]
             observation_id = context["observations"][0]["entity_id"]
-            detail = EntityDetail.from_api(client.get(f"/entity/{observation_id}").json())
-            view = EntityView(SessionState())
-            view.show_entity(detail)
-            rendered = [
-                view.property_table.item(i, 1).text() for i in range(view.property_table.rowCount())
-            ]
-            assert "271660062" in rendered
-            assert any("creativecommons.org" in v for v in rendered)
-            view.close()
+            # The retired Qt property-table rendering assertions became a
+            # data-level response check (DC-17/D-99): the values the SPA
+            # entity view renders type-appropriately are carried by this
+            # payload, and the openapi-surface contract pins the client end.
+            observation = client.get(f"/entity/{observation_id}").json()
+            properties_dump = json.dumps(observation["entity"]["properties"], default=str)
+            assert "271660062" in properties_dump
+            assert "creativecommons.org" in properties_dump
             # Evidence edges carry the unchanged original archive hash and source section.
             snapshot_id = holding_snapshots[0]["entity_id"]
             edge = client.get(f"/entity/{snapshot_id}/neighbors").json()["neighbors"][0]["edge"]
@@ -248,7 +243,6 @@ def test_company_enrichment_pipeline_history_api_and_desktop(neo4j_instance, tmp
                 n["edge"] for n in registry if n["edge"]["assertion_id"] == old.assertion_id
             )
             assert prior["ontology_version"] == "1.1.0" and prior["valid_to"] is None
-        assert app is not None
     finally:
         ctx.driver.close()
         wipe_graph(neo4j_instance)

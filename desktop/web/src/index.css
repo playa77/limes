@@ -1,0 +1,159 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "@fontsource-variable/inter";
+@import "leaflet/dist/leaflet.css";
+
+/*
+ * LIMES desktop client visual identity (reui-client-style-instructions v0.2.0):
+ * light gradient canvas (pale violet -> ice blue-gray), primary accent
+ * #2207D4, "Lifted" elevation with rgb(24 20 48) shadow color, Inter Variable.
+ * Tokens are semantic; the style is radix-nova (components.json).
+ */
+
+:root {
+  --background: #f4effe;
+  --foreground: #181430;
+  --card: #ffffff;
+  --card-foreground: #181430;
+  --popover: #ffffff;
+  --popover-foreground: #181430;
+  --primary: #2207d4;
+  --primary-foreground: #ffffff;
+  --secondary: #edebf7;
+  --secondary-foreground: #2b2550;
+  --muted: #f0eef8;
+  --muted-foreground: #5d5a73;
+  --accent: #e6e1f6;
+  --accent-foreground: #2207d4;
+  --destructive: #b3261e;
+  --destructive-foreground: #ffffff;
+  --border: #e2ddef;
+  --input: #e2ddef;
+  --ring: #2207d4;
+  --radius: 0.75rem;
+  --chart-1: #2207d4;
+  --chart-2: #0e7c8c;
+  --chart-3: #b7791f;
+  --chart-4: #c94e5f;
+  --chart-5: #64748b;
+  /* ReUI extended state tokens (light) */
+  --success: #10b981;
+  --success-foreground: #064e3b;
+  --info: #8b5cf6;
+  --info-foreground: #4c1d95;
+  --warning: #eab308;
+  --warning-foreground: #713f12;
+  --invert: #18181b;
+  --invert-foreground: #fafafa;
+}
+
+.dark {
+  --background: #131120;
+  --foreground: #ecebf2;
+  --card: #1b1926;
+  --card-foreground: #ecebf2;
+  --popover: #1b1926;
+  --popover-foreground: #ecebf2;
+  --primary: #7c6bff;
+  --primary-foreground: #0d0a1f;
+  --secondary: #26243a;
+  --secondary-foreground: #e6e2f7;
+  --muted: #211f30;
+  --muted-foreground: #9a97ae;
+  --accent: #2a2742;
+  --accent-foreground: #c9c3f2;
+  --destructive: #e05b4d;
+  --destructive-foreground: #1a0604;
+  --border: #302d45;
+  --input: #302d45;
+  --ring: #8b7fff;
+  --success: #10b981;
+  --success-foreground: #059669;
+  --info: #8b5cf6;
+  --info-foreground: #7c3aed;
+  --warning: #eab308;
+  --warning-foreground: #ca8a04;
+  --invert: #302d45;
+  --invert-foreground: #fafafa;
+}
+
+/* Shape + elevation + type tokens for Tailwind utilities. */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-invert: var(--invert);
+  --color-invert-foreground: var(--invert-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, "JetBrains Mono", "Cascadia Code", monospace;
+}
+
+/* Shared "Lifted" elevation token (style doc: rgb(24 20 48) shadow base). */
+@theme {
+  --shadow-lifted:
+    0 1px 2px rgb(24 20 48 / 0.06), 0 4px 12px rgb(24 20 48 / 0.08),
+    0 12px 32px rgb(24 20 48 / 0.1);
+  --shadow-lifted-sm: 0 1px 2px rgb(24 20 48 / 0.06), 0 4px 10px rgb(24 20 48 / 0.07);
+}
+
+/* The one canvas gradient: shared light-theme backdrop behind content surfaces. */
+:root body {
+  background: linear-gradient(to right, #f4effe, #a8b9c4);
+  color: var(--foreground);
+}
+.dark body {
+  background: linear-gradient(to right, #131120, #1c2128);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html,
+  body,
+  #root {
+    height: 100%;
+    min-height: 100%;
+  }
+  body {
+    @apply min-h-full font-sans text-sm antialiased leading-relaxed;
+  }
+  /* Scroll and focus reachability inside every scrolling data region. */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply rounded-full bg-foreground/15;
+  }
+}
+
+/* Leaflet baseline CSS is imported at the top with the other sheets. */
+@custom-variant dark (&:is(.dark *));
