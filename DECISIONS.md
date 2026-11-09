@@ -5,6 +5,31 @@ reversibility: **R1** reversible in under an hour, **R2** bounded recoverable
 cost, **R3** one-way door. Written when each decision is made, latest first.
 Nothing here is a status report; unlogged decisions are unmade decisions.
 
+## 2026-11-09 — D-99 (R2) — DC-17: retire the PySide6 desktop for the ReUI web client plus launcher
+
+Dan's desktop rebuild instruction names ReUI — React + Tailwind v4 +
+shadcn (radix-nova) — as the required visual system. Qt/PySide6 cannot host a
+React component system, so the PySide6/QWebEngine/pytest-qt client is retired
+and rebuilt as a browser SPA (`desktop/web/`: Vite, React 19, TypeScript,
+TanStack Query/Table, zustand) served by a local FastAPI launcher
+(`desktop/src/limes_desktop/webapp.py`, async httpx) that keeps the
+credential model intact: profiles store name+base-url only, the launcher
+injects the session bearer token into `/api/*` (loopback-only bind,
+UID-namespaced flock single-instance guard before bind), and no token reaches
+the browser, the store or any response. A second agent session executed part
+of the same package concurrently on the same checkout and was parked by the
+user while this session held the delivery contract; its mutations (flock
+guard, PySide deletions, launcher unit/contract tests, openapi exporter) are
+included and reviewed. Contract machinery moves to generated schema:
+`tools/export_openapi.py` + `desktop/web/tools/gen-api.mjs` commit
+`openapi.json`/`schema.ts` and pytest-only parity tests recompute them
+(superseding the retired Python model-mirror parity, AC-DC-7's v1.0.0
+mechanism). D-86's coordinate-only map/no-tile policy and API-only operation
+carry into the SPA unchanged. Desktop contract docs go to v1.1.0 in place
+(stable filenames). Reversible: the retired stack is one validated commit
+away; the external-evidence obligations it carried (REF-DC-1/DEP-DC-1,
+DESKTOP_QUALIFICATION) remain recorded as evidence for the retired stack.
+
 ## 2026-11-07 — D-98 (R2) — Implement full BE-56 with observed rosters and conservative identity
 
 The user requests implementation of PR #25 and its full A1–A8 plan, after updating

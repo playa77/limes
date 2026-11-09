@@ -235,33 +235,17 @@ def test_developments_cross_source_history_and_operator_review(neo4j_instance, t
             coded_view = next(e for e in view["evidence"] if e["kind"] == "coded_observation")
             assert coded_view["properties"]["evidence_row"] == 3
             assert not coded_view["properties"]["article_text_available"]
-            # Real API → client mirrors → analyst network/timeline and evidence inspection.
-            from limes_desktop.api.client import ApiClient
-            from limes_desktop.views.developments import DevelopmentPanel
-            from PySide6.QtWidgets import QApplication
-
-            app = QApplication.instance() or QApplication([])
-            desktop_client = ApiClient("http://localhost")
-            desktop_client.close()
-            desktop_client._client = client
-            panel = DevelopmentPanel(lambda: desktop_client, lambda action, done: done(action()))
-            panel.set_case("award")
-            panel.load()
-            assert len(panel.rows) == 6
-            assert panel.timeline.rowCount() == 12
-            assert panel.scene.items()
-            official_index = next(
-                i for i, row in enumerate(panel.rows) if row["kind"] == "assertion"
-            )
-            panel.evidence_list.setCurrentRow(official_index)
-            assert '"notice"' in panel.detail.toPlainText()
-            assert "causation" in panel.detail.toPlainText()
-            panel.valid.setText(instant(1).isoformat())
-            assert panel.rows == []
-            panel.load()
-            assert len(panel.rows) == 2
-            panel.close()
-            app.processEvents()
+            # Real API → web client data path (DC-17/D-99): the payload the
+            # SPA developments view renders — evidence rows, instants,
+            # archived detail — travels this same surface without widget
+            # mirrors; the no-causality disclaimer wording is pinned in
+            # the web lane (vitest) and display-level browser evidence
+            # is named under OI-34.
+            assert len(view["evidence"]) == 6
+            official = next(e for e in view["evidence"] if e["kind"] == "assertion")
+            assert official["evidence_id"].endswith("official-award")
+            bounded = client.get(path, params={"as_of": instant(1).isoformat()}).json()
+            assert len(bounded["evidence"]) == 2
             assert archive.get(official_key).startswith(b'{"notice"')
     finally:
         driver.close()

@@ -13,9 +13,10 @@ research platform, turning fragmented public information into a connected view
 that analysts can explore and inspect.
 
 Follow a relationship across sources, place it in its geographic context and
-trace how it changes over time. A PySide6 desktop workspace brings network,
-geographic and temporal views together, while natural-language questions open a
-path into the graph through validated, read-only queries.
+trace how it changes over time. A bundled web desktop (a locally served React
+workspace) brings network, geographic and temporal views together, while
+natural-language questions open a path into the graph through validated,
+read-only queries.
 
 ## From public information to connected intelligence
 
@@ -109,13 +110,14 @@ config/secrets.env -f docker-compose.yml up -d --build`. For a release, use
 
 ### Desktop access
 
-Launch the desktop with `venv/bin/limes-desktop` after installing the workspace
-dependencies shown under Verification below.
-
-Desktop: use `http://127.0.0.1:8000` locally, HTTPS remotely, or a loopback SSH
-forward (`ssh -N -L 8000:127.0.0.1:8000 account@server`). The SSH account needs no
-Docker membership. Profiles never store credentials. Use the operator credential
-for desktop backup; a consumer token cannot submit operational jobs.
+Build the SPA once (`pnpm -C desktop/web install --frozen-lockfile && pnpm -C
+desktop/web build`), then serve it with `venv/bin/limes-desktop` after
+installing the workspace dependencies shown under Verification below. The
+launcher binds loopback only and hosts the SPA plus the `/api` bearer proxy;
+profiles point at `http://127.0.0.1:8000` locally, HTTPS remotely, or a loopback
+SSH forward (`ssh -N -L 8000:127.0.0.1:8000 account@server`). The SSH account
+needs no Docker membership. Profiles never store credentials. Use the operator
+credential for desktop backup; a consumer token cannot submit operational jobs.
 
 ### Remote operations
 
@@ -150,10 +152,14 @@ venv/bin/ruff check src tests desktop/src desktop/tests
 venv/bin/mypy
 venv/bin/python tools/check_docs.py docs/
 venv/bin/python -m pytest tests/unit -q
-QT_QPA_PLATFORM=offscreen venv/bin/python -m pytest desktop/tests/unit desktop/tests/contract -q
+venv/bin/python -m pytest desktop/tests/unit desktop/tests/contract -q
+pnpm -C desktop/web exec tsc -b
+pnpm -C desktop/web exec vitest run
+pnpm -C desktop/web exec eslint src
+pnpm -C desktop/web build
 venv/bin/python -m pytest tests/integration -q
 venv/bin/python -m pytest tests/acceptance -q
-QT_QPA_PLATFORM=offscreen venv/bin/python -m pytest desktop/tests/integration -q
+venv/bin/python -m pytest desktop/tests/integration -q
 ```
 
 Graph tests own disposable databases and clean them up. Acceptance runs separately

@@ -1,3 +1,31 @@
+## 2026-11-09 — DC-17 ReUI web desktop (launcher + SPA)
+
+- Replace the PySide6/QWebEngine/pytest-qt desktop with a React 19 + Tailwind
+  v4 + ReUI SPA (`desktop/web/`) served by a FastAPI launcher
+  (`desktop/src/limes_desktop/`): static SPA serve with deep-link fallback,
+  `/api` bearer proxy (loopback-only, verbatim bodies, bounded same-origin
+  redirects, cross-origin refusal), XDG profiles (name+URL), flock
+  single-instance guard, `--version`.
+- Regenerate the contract machinery: committed `openapi.json`/`schema.ts` from
+  the live API app plus pytest-only freshness and TS-client-surface parity
+  tests; the ontology-literal guard now scans `desktop/web/src` too.
+- Port all desktop flows to the SPA (search/entity/NLQ/builder/console/
+  history/viz/news/ops/offices/backup with shared coverage and bitemporal
+  filtering); vitest pins the pure modules; integration drives the launcher
+  against the real API and a disposable graph.
+- Update Makefile targets, CI lane structure (new pnpm `web` job, Qt
+  libraries retired), `tools/qualify.py` web lane, desktop contract docs
+  v1.1.0, DESKTOP_ROADMAP DC-17 row, desktop README and renderer text.
+- Retire the retired stack's dependencies from the workspace lock (uv.lock
+  regenerated without PySide6/pytest-qt/shiboken).
+- Full candidate `work/dc17/candidate-final-6` passes all lanes on the
+  publication commit `06cb16f` (1,327 pytest cases + web lane, zero
+  failures/errors/skips), including the new `web` qualification lane and
+  runtime-stack on this executor. Evidence and change accounting recorded in
+  VERIFICATION; earlier failing attempts 1–4 and the superseded `-5` pass are
+  retained (the `-6` requalification covers the tracked OpenAPI contract
+  file's packaging fix).
+
 ## 2026-11-07 — BE-56 German parliamentary members and federal officeholders
 
 - Implement all 21 official current-roster mappings, bounded resumable acquisition,

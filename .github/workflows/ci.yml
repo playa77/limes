@@ -13,15 +13,12 @@ jobs:
     timeout-minutes: 20
     env:
       UV_PROJECT_ENVIRONMENT: venv
-      QT_QPA_PLATFORM: offscreen
-      QTWEBENGINE_CHROMIUM_FLAGS: --no-sandbox --disable-gpu
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
         with:
           version: '0.12.1'
           enable-cache: true
-      - run: sudo apt-get update && sudo apt-get install -y libegl1 libopengl0 libxcb-cursor0 libxkbcommon-x11-0 libnss3 libasound2t64 libxcomposite1 libxdamage1 libxrandr2 libxtst6 libgbm1
       - run: uv sync --frozen --all-packages --python 3.12
       - run: venv/bin/ruff check src tests desktop/src desktop/tests
       - run: venv/bin/ruff check tools/build_context.py tools/deploy.py tools/init_config.py tools/generate_runtime_docs.py tools/smoke_test.py tools/qualify.py docker/neo4j_control.py
@@ -34,21 +31,37 @@ jobs:
         with:
           name: offline-results
           path: test-results/
+  web:
+    if: github.event_name != 'push'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: desktop/web/pnpm-lock.yaml
+      - run: pnpm -C desktop/web install --frozen-lockfile
+      - run: pnpm -C desktop/web exec tsc -b
+      - run: pnpm -C desktop/web exec vitest run
+      - run: pnpm -C desktop/web exec eslint src
+      - run: pnpm -C desktop/web build
   graph:
     if: github.event_name != 'push'
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
       UV_PROJECT_ENVIRONMENT: venv
-      QT_QPA_PLATFORM: offscreen
-      QTWEBENGINE_CHROMIUM_FLAGS: --no-sandbox --disable-gpu
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
         with:
           version: '0.12.1'
           enable-cache: true
-      - run: sudo apt-get update && sudo apt-get install -y libegl1 libopengl0 libxcb-cursor0 libxkbcommon-x11-0 libnss3 libasound2t64 libxcomposite1 libxdamage1 libxrandr2 libxtst6 libgbm1
       - run: uv sync --frozen --all-packages --python 3.12
       # Separate sessions avoid pytest's nested acceptance plugin collection issue.
       - run: venv/bin/python -m pytest tests/integration --ignore=tests/integration/test_runtime_stack.py -q --junitxml=test-results/integration.xml
@@ -79,7 +92,7 @@ jobs:
       - run: venv/bin/python -m pytest tests/unit/test_config.py tests/unit/test_news.py tests/unit/test_runtime_docs.py -q
   candidate-check:
     if: always()
-    needs: [offline, graph, smoke]
+    needs: [offline, graph, web, smoke]
     runs-on: ubuntu-24.04
     steps:
       - name: Require the complete applicable lanes
@@ -87,11 +100,12 @@ jobs:
           EVENT: ${{ github.event_name }}
           OFFLINE: ${{ needs.offline.result }}
           GRAPH: ${{ needs.graph.result }}
+          WEB: ${{ needs.web.result }}
           SMOKE: ${{ needs.smoke.result }}
         run: |
           python3 - <<'PY'
           import os
-          required = ['SMOKE'] if os.environ['EVENT'] == 'push' else ['OFFLINE', 'GRAPH']
+          required = ['SMOKE'] if os.environ['EVENT'] == 'push' else ['OFFLINE', 'GRAPH', 'WEB']
           failed = [name for name in required if os.environ[name] != 'success']
           if failed:
               raise SystemExit('Required lanes did not succeed: ' + ', '.join(failed))

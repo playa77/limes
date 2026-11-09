@@ -13,7 +13,24 @@ merges or deployment without explicit instruction. Production/co-tenant operatio
 are outside implementation scope. Snapshot and issue rows below are historical
 records; subsequent evidence/closures are appended without erasing them.
 
-## Current disposition — 2026-11-04 (BE-52 local acceptance; BE-45 waiver retained)
+## Current disposition — 2026-11-09 (DC-17 web desktop implementation)
+
+This index supersedes the desktop wording of the 2026-11-04 section below;
+package placement stays [backend](docs/BACKEND_ROADMAP.md) and
+[desktop](docs/DESKTOP_ROADMAP.md). D-99 retires the PySide6/QWebEngine
+desktop for the ReUI web client plus launcher (DC-17).
+
+| Issue | Current state | Owner/package | Remaining obligation or closure evidence |
+|---|---|---|---|
+| OI-34 | DC-17 implemented; full local candidate passed; external web-desktop evidence open | Agent + DC-17 / operator | Full candidate `work/dc17/candidate-final-5` passes all lanes: unit 1,012, desktop 42, integration 185, acceptance 85, desktop-integration 2, runtime-stack 1 (zero failures/errors/skips) plus the web lane (tsc, vitest, eslint, build) and all static guards (recorded in VERIFICATION, source SHA 35288c81…99a56). Open: a manual browser session against a live stack (click-through, network/map/timeline rendering on reference hardware, launcher-to-search latency), administrator deployment observation with the built bundle, and the transfer of AC-DC-5's dump/health observation to the web backup flow. The retired stack's REF-DC-1/DEP-DC-1 evidence stays bound to PySide6 in DESKTOP_QUALIFICATION. |
+
+All other rows' current state remains exactly as recorded in the 2026-11-04
+disposition below; nothing there is closed or reopened by DC-17.
+
+## Prior disposition — 2026-11-04 (BE-52 local acceptance; BE-45 waiver retained)
+
+Superseded as the current index by the 2026-11-09 section above (desktop
+ownership only); its wording is retained without erasing evidence.
 
 This index supersedes the status wording in the historical inventory below, without
 erasing its evidence. Package placement: [backend](docs/BACKEND_ROADMAP.md),

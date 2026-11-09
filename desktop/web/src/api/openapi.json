@@ -1,0 +1,4433 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "LIMES Query API",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/public-offices": {
+      "get": {
+        "tags": [
+          "public offices"
+        ],
+        "summary": "Public Offices",
+        "operationId": "public_offices_public_offices_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "scope",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 16
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Scope"
+            }
+          },
+          {
+            "name": "term",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Term"
+            }
+          },
+          {
+            "name": "as_of",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "As Of"
+            }
+          },
+          {
+            "name": "believed",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Believed"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 1000,
+              "minimum": 1,
+              "default": 200,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "include_members",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": true,
+              "title": "Include Members"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OfficesResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/entity/{entity_id}/enrichment": {
+      "get": {
+        "tags": [
+          "enrichment"
+        ],
+        "summary": "Enrichment",
+        "operationId": "enrichment_entity__entity_id__enrichment_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "entity_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Entity Id"
+            }
+          },
+          {
+            "name": "source",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "wikipedia",
+                    "yahoo_finance"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Source"
+            }
+          },
+          {
+            "name": "section",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 64
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Section"
+            }
+          },
+          {
+            "name": "as_of",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "As Of"
+            }
+          },
+          {
+            "name": "believed",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Believed"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnrichmentResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/operations/jobs": {
+      "post": {
+        "summary": "Submit",
+        "operationId": "submit_operations_jobs_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JobRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Job"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/operations/jobs/{job_id}": {
+      "get": {
+        "summary": "Status",
+        "operationId": "status_operations_jobs__job_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Job"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/operations/jobs/{job_id}/cancel": {
+      "post": {
+        "summary": "Cancel",
+        "description": "PA-1 R4: cancel one queued (immediately `cancelled`) or running job.\n\nA terminal job is a no-op answered with 409 and its current record;\na running job returns 202 with the operating worker to observe the flag.",
+        "operationId": "cancel_operations_jobs__job_id__cancel_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Job"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/operations/capabilities": {
+      "get": {
+        "summary": "Capabilities",
+        "operationId": "capabilities_operations_capabilities_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Capabilities Operations Capabilities Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/news/investigations": {
+      "get": {
+        "tags": [
+          "news"
+        ],
+        "summary": "Investigations",
+        "operationId": "investigations_news_investigations_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Investigation"
+                  },
+                  "type": "array",
+                  "title": "Response Investigations News Investigations Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/news/investigations/{key}": {
+      "put": {
+        "tags": [
+          "news"
+        ],
+        "summary": "Track",
+        "operationId": "track_news_investigations__key__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TrackingRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Investigation"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/news/investigations/{key}/replay": {
+      "post": {
+        "tags": [
+          "news"
+        ],
+        "summary": "Replay",
+        "operationId": "replay_news_investigations__key__replay_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Investigation"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/news/claims": {
+      "get": {
+        "tags": [
+          "news"
+        ],
+        "summary": "Claims",
+        "operationId": "claims_news_claims_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "investigation_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Investigation Id"
+            }
+          },
+          {
+            "name": "entity_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Entity Id"
+            }
+          },
+          {
+            "name": "include_retracted",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Include Retracted"
+            }
+          },
+          {
+            "name": "as_of",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "As Of"
+            }
+          },
+          {
+            "name": "believed",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Believed"
+            }
+          },
+          {
+            "name": "modality",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "asserted",
+                    "reported",
+                    "denied",
+                    "proposed",
+                    "conditional",
+                    "unknown"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Modality"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NewsClaimView"
+                  },
+                  "title": "Response Claims News Claims Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/news/documents/{document_id}": {
+      "get": {
+        "tags": [
+          "news"
+        ],
+        "summary": "Document",
+        "operationId": "document_news_documents__document_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "document_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Document Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Document News Documents  Document Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/news/evaluation": {
+      "get": {
+        "tags": [
+          "news"
+        ],
+        "summary": "Evaluation Pool",
+        "description": "An evolving review pool; unreviewed examples are never gold labels.",
+        "operationId": "evaluation_pool_news_evaluation_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": true
+                  },
+                  "title": "Response Evaluation Pool News Evaluation Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/news/documents/{document_id}/review": {
+      "put": {
+        "tags": [
+          "news"
+        ],
+        "summary": "Review Document",
+        "operationId": "review_document_news_documents__document_id__review_put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "document_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Document Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EvaluationReview"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "title": "Response Review Document News Documents  Document Id  Review Put"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/news/investigations/{key}/developments": {
+      "get": {
+        "tags": [
+          "news"
+        ],
+        "summary": "Investigation Developments",
+        "operationId": "investigation_developments_news_investigations__key__developments_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Key"
+            }
+          },
+          {
+            "name": "as_of",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "As Of"
+            }
+          },
+          {
+            "name": "believed",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Believed"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 100,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DevelopmentView"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/news/investigations/{key}/event-match-reviews": {
+      "post": {
+        "tags": [
+          "news"
+        ],
+        "summary": "Review Event Match",
+        "operationId": "review_event_match_news_investigations__key__event_match_reviews_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MatchReview"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewView"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/news/assertions/{assertion_id}/evidence": {
+      "get": {
+        "tags": [
+          "news"
+        ],
+        "summary": "Assertion Evidence",
+        "operationId": "assertion_evidence_news_assertions__assertion_id__evidence_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "assertion_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Assertion Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Assertion Evidence News Assertions  Assertion Id  Evidence Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Health",
+        "description": "Liveness: 200 with the ontology version when Neo4j answers a trivial\nread; 503 with the failure reason while it does not.",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Health Health Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/version": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Version",
+        "operationId": "version_version_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Version Version Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/ontology": {
+      "get": {
+        "tags": [
+          "ontology"
+        ],
+        "summary": "Get Ontology Full",
+        "description": "The full serialized ontology, exactly as loaded and self-validated.",
+        "operationId": "get_ontology_full_ontology_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Get Ontology Full Ontology Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/ontology/versions": {
+      "get": {
+        "tags": [
+          "ontology"
+        ],
+        "summary": "Get Ontology Versions",
+        "description": "Every ontology version stamped on an `:Entity` node, with counts.",
+        "operationId": "get_ontology_versions_ontology_versions_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "type": "array",
+                  "title": "Response Get Ontology Versions Ontology Versions Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/builder/schema": {
+      "get": {
+        "tags": [
+          "ontology"
+        ],
+        "summary": "Get Builder Schema",
+        "description": "The ontology projection the UI renders the query builder from\n(FR-09). Generated at runtime from the loaded ontology, never authored.",
+        "operationId": "get_builder_schema_builder_schema_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Get Builder Schema Builder Schema Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/entity/{entity_id}": {
+      "get": {
+        "tags": [
+          "entity"
+        ],
+        "summary": "Get Entity",
+        "description": "The entity with its properties, loader stamps, and a per-relation\nedge summary in each direction. 404 when the id is unknown.",
+        "operationId": "get_entity_entity__entity_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "entity_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Entity Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Entity Entity  Entity Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/entity/{entity_id}/neighbors": {
+      "get": {
+        "tags": [
+          "entity"
+        ],
+        "summary": "Get Entity Neighbors",
+        "description": "One-hop expansion of an entity, optionally restricted to one relation\nand to an `as_of` validity instant and/or a `believed` belief instant.\n404 when the id is unknown.",
+        "operationId": "get_entity_neighbors_entity__entity_id__neighbors_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "entity_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Entity Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 1000,
+              "minimum": 1,
+              "default": 200,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "relation",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "restrict to one relation type",
+              "title": "Relation"
+            },
+            "description": "restrict to one relation type"
+          },
+          {
+            "name": "as_of",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "validity instant (ISO)",
+              "title": "As Of"
+            },
+            "description": "validity instant (ISO)"
+          },
+          {
+            "name": "believed",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "belief instant (ISO)",
+              "title": "Believed"
+            },
+            "description": "belief instant (ISO)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NeighborResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/search": {
+      "get": {
+        "tags": [
+          "search"
+        ],
+        "summary": "Search",
+        "description": "Full-text search over entity labels and document titles/bodies.\nWithout `kind`, both indexes are searched and the results merged in\nindex order.",
+        "operationId": "search_search_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "description": "full-text query",
+              "title": "Q"
+            },
+            "description": "full-text query"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "kind",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "entity",
+                    "document"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "restrict to one index; both by default",
+              "title": "Kind"
+            },
+            "description": "restrict to one index; both by default"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SearchHit"
+                  },
+                  "title": "Response Search Search Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sources": {
+      "get": {
+        "tags": [
+          "sources"
+        ],
+        "summary": "Sources",
+        "description": "Every registered source with its trust rank and last refresh.",
+        "operationId": "sources_sources_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SourceView"
+                  },
+                  "type": "array",
+                  "title": "Response Sources Sources Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/cost/ledger": {
+      "get": {
+        "tags": [
+          "cost"
+        ],
+        "summary": "Cost Ledger",
+        "description": "Period spend and the period's entries.",
+        "operationId": "cost_ledger_cost_ledger_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 1000,
+              "minimum": 1,
+              "default": 100,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}$",
+              "description": "YYYY-MM period; the current month by default",
+              "default": "2026-11",
+              "title": "Period"
+            },
+            "description": "YYYY-MM period; the current month by default"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LedgerView"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ingest/status": {
+      "get": {
+        "tags": [
+          "ingest"
+        ],
+        "summary": "Ingest Status",
+        "description": "The latest run per source with counts and errors; a source that has\nnever run is absent from the list (its `:Source` node appears on the\n`/sources` endpoint instead).",
+        "operationId": "ingest_status_ingest_status_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RunStatus"
+                  },
+                  "type": "array",
+                  "title": "Response Ingest Status Ingest Status Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/query/cypher": {
+      "post": {
+        "tags": [
+          "query"
+        ],
+        "summary": "Query Cypher",
+        "description": "Validate, plan-gate, execute, and annotate an operator-supplied\nquery.",
+        "operationId": "query_cypher_query_cypher_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CypherQuery"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueryResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/query/nl": {
+      "post": {
+        "tags": [
+          "query"
+        ],
+        "summary": "Query Nl",
+        "description": "Generate, validate, plan-gate, execute \u2014 and persist the executed\nquery (FR-14, AC-30).",
+        "operationId": "query_nl_query_nl_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NlQuestion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Query Nl Query Nl Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/query/builder": {
+      "post": {
+        "tags": [
+          "query"
+        ],
+        "summary": "Query Builder",
+        "description": "Translate a validated builder spec to Cypher, then validate,\nplan-gate, execute, and annotate it like any other query.",
+        "operationId": "query_builder_query_builder_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BuilderSpec"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueryResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/coverage": {
+      "post": {
+        "tags": [
+          "coverage"
+        ],
+        "summary": "Coverage",
+        "description": "The coverage report for the given relations, or for the relations a\nquery uses. 400 when neither is supplied.",
+        "operationId": "coverage_coverage_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CoverageRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Coverage Coverage Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/saved-queries": {
+      "get": {
+        "tags": [
+          "saved-queries"
+        ],
+        "summary": "List Saved Queries",
+        "description": "Every saved query, newest first.",
+        "operationId": "list_saved_queries_saved_queries_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SavedQueryView"
+                  },
+                  "type": "array",
+                  "title": "Response List Saved Queries Saved Queries Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "saved-queries"
+        ],
+        "summary": "Create Saved Query",
+        "description": "Create one saved query. 409 when the (question, cypher) pair already\nexists.",
+        "operationId": "create_saved_query_saved_queries_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SavedQueryCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Create Saved Query Saved Queries Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/saved-queries/{saved_query_id}": {
+      "delete": {
+        "tags": [
+          "saved-queries"
+        ],
+        "summary": "Delete Saved Query",
+        "description": "Delete one saved query; 404 when it does not exist.",
+        "operationId": "delete_saved_query_saved_queries__saved_query_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "saved_query_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Saved Query Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "title": "Response Delete Saved Query Saved Queries  Saved Query Id  Delete"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "BuilderHop": {
+        "properties": {
+          "relation": {
+            "type": "string",
+            "title": "Relation"
+          },
+          "direction": {
+            "type": "string",
+            "enum": [
+              "out",
+              "in"
+            ],
+            "title": "Direction"
+          },
+          "target_type": {
+            "type": "string",
+            "title": "Target Type"
+          },
+          "filters": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Filters",
+            "default": {}
+          },
+          "temporal_qualifier": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "current",
+                  "as_of",
+                  "as_believed"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temporal Qualifier"
+          },
+          "temporal_instant": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temporal Instant"
+          }
+        },
+        "type": "object",
+        "required": [
+          "relation",
+          "direction",
+          "target_type"
+        ],
+        "title": "BuilderHop",
+        "description": "One ordered hop of a `BuilderSpec`. The direction is relative to the\nprevious node: \"out\" continues with `(prev)-[:R]->(next)`, \"in\" with\n`(prev)<-[:R]-(next)`. `temporal_qualifier` restricts the hop's\nrelationship to the current interval (`currently()`), a validity\ninstant (`as_of`), or a belief instant (`as_believed`), each of which\nneeds the matching `temporal_instant`."
+      },
+      "BuilderSpec": {
+        "properties": {
+          "start_type": {
+            "type": "string",
+            "title": "Start Type"
+          },
+          "start_filters": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Start Filters",
+            "default": {}
+          },
+          "hops": {
+            "items": {
+              "$ref": "#/components/schemas/BuilderHop"
+            },
+            "type": "array",
+            "title": "Hops",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "start_type"
+        ],
+        "title": "BuilderSpec",
+        "description": "The structured query the builder constructs (Doc 2 \u00a76): a starting\ntype with property filters plus an ordered hop list. The API rejects\nany spec whose relation is not permitted between adjacent types, making\nan invalid query unrepresentable rather than merely rejected (AC-24)."
+      },
+      "CoverageRequest": {
+        "properties": {
+          "relation_types": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Relation Types"
+          },
+          "query": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Query"
+          },
+          "params": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Params",
+            "default": {}
+          }
+        },
+        "type": "object",
+        "title": "CoverageRequest",
+        "description": "Either a relation set or a query \u2014 exactly one must be supplied."
+      },
+      "CypherQuery": {
+        "properties": {
+          "cypher": {
+            "type": "string",
+            "title": "Cypher"
+          },
+          "params": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Params",
+            "default": {}
+          }
+        },
+        "type": "object",
+        "required": [
+          "cypher"
+        ],
+        "title": "CypherQuery",
+        "description": "An operator-supplied query. `params` are the query's Cypher\nparameters; they travel as parameters end-to-end and never reach query\ntext."
+      },
+      "DevelopmentEvidence": {
+        "properties": {
+          "evidence_id": {
+            "type": "string",
+            "title": "Evidence Id"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "claim",
+              "assertion",
+              "coded_observation"
+            ],
+            "title": "Kind"
+          },
+          "subject_id": {
+            "type": "string",
+            "title": "Subject Id"
+          },
+          "object_id": {
+            "type": "string",
+            "title": "Object Id"
+          },
+          "subject_label": {
+            "type": "string",
+            "title": "Subject Label"
+          },
+          "object_label": {
+            "type": "string",
+            "title": "Object Label"
+          },
+          "relation": {
+            "type": "string",
+            "title": "Relation"
+          },
+          "properties": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Properties"
+          },
+          "dependency_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dependency Key"
+          }
+        },
+        "type": "object",
+        "required": [
+          "evidence_id",
+          "kind",
+          "subject_id",
+          "object_id",
+          "subject_label",
+          "object_label",
+          "relation",
+          "properties"
+        ],
+        "title": "DevelopmentEvidence"
+      },
+      "DevelopmentView": {
+        "properties": {
+          "investigation_id": {
+            "type": "string",
+            "title": "Investigation Id"
+          },
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/DevelopmentEvidence"
+            },
+            "type": "array",
+            "title": "Evidence"
+          },
+          "candidates": {
+            "items": {
+              "$ref": "#/components/schemas/EventMatch"
+            },
+            "type": "array",
+            "title": "Candidates"
+          },
+          "reviews": {
+            "items": {
+              "$ref": "#/components/schemas/ReviewView"
+            },
+            "type": "array",
+            "title": "Reviews"
+          },
+          "coverage": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Coverage"
+          },
+          "locations": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Locations"
+          },
+          "truncated": {
+            "type": "boolean",
+            "title": "Truncated"
+          },
+          "diagnosis": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Diagnosis"
+          }
+        },
+        "type": "object",
+        "required": [
+          "investigation_id",
+          "evidence",
+          "candidates",
+          "reviews",
+          "coverage",
+          "locations",
+          "truncated",
+          "diagnosis"
+        ],
+        "title": "DevelopmentView"
+      },
+      "EdgeRef": {
+        "properties": {
+          "relation": {
+            "type": "string",
+            "title": "Relation"
+          },
+          "validity_basis": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Validity Basis"
+          },
+          "roster_snapshot_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Roster Snapshot Id"
+          },
+          "subject_id": {
+            "type": "string",
+            "title": "Subject Id"
+          },
+          "object_id": {
+            "type": "string",
+            "title": "Object Id"
+          },
+          "source_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Id"
+          },
+          "source_trust": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Trust"
+          },
+          "confidence": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confidence"
+          },
+          "recorded_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recorded At"
+          },
+          "valid_from": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid From"
+          },
+          "valid_to": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid To"
+          },
+          "retracted_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Retracted At"
+          },
+          "assertion_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assertion Id"
+          },
+          "ontology_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ontology Version"
+          },
+          "extractor_model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extractor Model"
+          },
+          "prompt_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prompt Version"
+          },
+          "schema_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Schema Version"
+          },
+          "evidence_document_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence Document Id"
+          },
+          "evidence_manifest_hash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence Manifest Hash"
+          },
+          "evidence_start": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence Start"
+          },
+          "evidence_end": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence End"
+          },
+          "evidence_channel": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence Channel"
+          },
+          "evidence_member": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence Member"
+          },
+          "evidence_row": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence Row"
+          },
+          "source_event_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Event Id"
+          },
+          "source_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Url"
+          },
+          "report_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Report Url"
+          },
+          "source_recorded_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Recorded At"
+          },
+          "article_text_available": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Article Text Available"
+          }
+        },
+        "type": "object",
+        "required": [
+          "relation",
+          "subject_id",
+          "object_id"
+        ],
+        "title": "EdgeRef",
+        "description": "One relationship as returned to the UI, carrying the full \u00a75.6\nassertion metadata \u2014 provenance and bitemporal interval included, so\nthe provenance panel (WP-36) has everything client-side (AC-28)."
+      },
+      "EnrichmentResponse": {
+        "properties": {
+          "entity_id": {
+            "type": "string",
+            "title": "Entity Id"
+          },
+          "snapshots": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Snapshots",
+            "default": []
+          },
+          "truncated": {
+            "type": "boolean",
+            "title": "Truncated",
+            "default": false
+          },
+          "diagnosis": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Diagnosis",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "entity_id"
+        ],
+        "title": "EnrichmentResponse"
+      },
+      "EnrichmentSelection": {
+        "properties": {
+          "entity_id": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Entity Id"
+          },
+          "qid": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^Q[1-9][0-9]{0,15}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Qid"
+          },
+          "symbol": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[A-Z0-9][A-Z0-9.^=-]{0,31}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Symbol"
+          },
+          "exchange": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[A-Z0-9_-]{1,32}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exchange"
+          },
+          "isin": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[A-Z]{2}[A-Z0-9]{9}[0-9]$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Isin"
+          },
+          "share_class": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Share Class"
+          },
+          "evidence_url": {
+            "type": "string",
+            "pattern": "^https://[^\\s]{1,2000}$",
+            "title": "Evidence Url"
+          },
+          "rationale": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 10,
+            "title": "Rationale"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "entity_id",
+          "evidence_url",
+          "rationale"
+        ],
+        "title": "EnrichmentSelection",
+        "description": "An operator-reviewed mapping; evidence is retained in every acquisition manifest.\n\nSymbol and exchange identify a listing, never the canonical corporation.\nSecurity/share-class identity is optional and must be reviewed separately."
+      },
+      "EntityRef": {
+        "properties": {
+          "entity_id": {
+            "type": "string",
+            "title": "Entity Id"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "properties": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Properties",
+            "default": {}
+          },
+          "ontology_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ontology Version"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "entity_id",
+          "type",
+          "label"
+        ],
+        "title": "EntityRef",
+        "description": "One entity as returned to the UI: identity, label, concrete type,\nits remaining properties, and the loader's stamps."
+      },
+      "EvaluationReview": {
+        "properties": {
+          "expected_modality": {
+            "type": "string",
+            "enum": [
+              "asserted",
+              "reported",
+              "denied",
+              "proposed",
+              "conditional",
+              "unknown"
+            ],
+            "title": "Expected Modality"
+          },
+          "expected_event_status": {
+            "type": "string",
+            "enum": [
+              "unknown",
+              "proposed",
+              "planned",
+              "ongoing",
+              "completed",
+              "cancelled",
+              "denied"
+            ],
+            "title": "Expected Event Status"
+          },
+          "expected_time_precision": {
+            "type": "string",
+            "enum": [
+              "unknown",
+              "instant",
+              "day",
+              "month",
+              "year",
+              "interval"
+            ],
+            "title": "Expected Time Precision"
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Notes"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "expected_modality",
+          "expected_event_status",
+          "expected_time_precision",
+          "notes"
+        ],
+        "title": "EvaluationReview",
+        "description": "Human annotation of acquired evidence; never an automatic truth label."
+      },
+      "EventMatch": {
+        "properties": {
+          "candidate_id": {
+            "type": "string",
+            "title": "Candidate Id"
+          },
+          "left": {
+            "type": "string",
+            "title": "Left"
+          },
+          "right": {
+            "type": "string",
+            "title": "Right"
+          },
+          "decision": {
+            "type": "string",
+            "title": "Decision",
+            "default": "unresolved"
+          },
+          "assessment": {
+            "type": "string",
+            "title": "Assessment",
+            "default": "unassessed"
+          },
+          "independence": {
+            "type": "string",
+            "title": "Independence",
+            "default": "unknown"
+          },
+          "rationale": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rationale"
+          },
+          "review_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "candidate_id",
+          "left",
+          "right"
+        ],
+        "title": "EventMatch"
+      },
+      "GraphResult": {
+        "properties": {
+          "nodes": {
+            "items": {
+              "$ref": "#/components/schemas/EntityRef"
+            },
+            "type": "array",
+            "title": "Nodes",
+            "default": []
+          },
+          "edges": {
+            "items": {
+              "$ref": "#/components/schemas/EdgeRef"
+            },
+            "type": "array",
+            "title": "Edges",
+            "default": []
+          },
+          "counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Counts",
+            "default": {}
+          }
+        },
+        "type": "object",
+        "title": "GraphResult",
+        "description": "The normalized result of one executed query: deduplicated nodes and\nedges plus counts. `counts[\"rows\"]` is the raw row count \u2014 a query can\nreturn scalar rows with no nodes, and the saved-query result count\n(AC-30) records rows, not nodes."
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "IdentityReview": {
+        "properties": {
+          "request_id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9_-]{1,64}$",
+            "title": "Request Id"
+          },
+          "external_id": {
+            "type": "string",
+            "maxLength": 2048,
+            "minLength": 1,
+            "title": "External Id"
+          },
+          "person_id": {
+            "type": "string",
+            "maxLength": 2048,
+            "minLength": 1,
+            "title": "Person Id"
+          },
+          "evidence_hash": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$",
+            "title": "Evidence Hash"
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Note"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "request_id",
+          "external_id",
+          "person_id",
+          "evidence_hash",
+          "note"
+        ],
+        "title": "IdentityReview",
+        "description": "An operator's explicit, evidence-backed canonical identity decision."
+      },
+      "Investigation": {
+        "properties": {
+          "investigation_id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9_-]{1,64}$",
+            "title": "Investigation Id"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title"
+          },
+          "entity_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 20,
+            "title": "Entity Ids"
+          },
+          "assertion_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 20,
+            "title": "Assertion Ids"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active",
+            "default": true
+          },
+          "interval_minutes": {
+            "type": "integer",
+            "maximum": 10080.0,
+            "minimum": 15.0,
+            "title": "Interval Minutes",
+            "default": 60
+          },
+          "revision": {
+            "type": "integer",
+            "title": "Revision",
+            "default": 1
+          },
+          "job_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Job Id"
+          },
+          "next_due": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Due"
+          },
+          "last_success": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Success"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ready",
+              "queued",
+              "running",
+              "succeeded",
+              "failed",
+              "paused"
+            ],
+            "title": "Status",
+            "default": "ready"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "investigation_id",
+          "title"
+        ],
+        "title": "Investigation"
+      },
+      "Job": {
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Job Id"
+          },
+          "request": {
+            "$ref": "#/components/schemas/JobRequest"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "running",
+              "succeeded",
+              "failed",
+              "cancelled"
+            ],
+            "title": "Status"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "title": "Updated At"
+          },
+          "output": {
+            "type": "string",
+            "title": "Output",
+            "default": ""
+          },
+          "exit_code": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exit Code"
+          }
+        },
+        "type": "object",
+        "required": [
+          "job_id",
+          "request",
+          "status",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "Job"
+      },
+      "JobRequest": {
+        "properties": {
+          "request_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Request Id"
+          },
+          "command": {
+            "type": "string",
+            "enum": [
+              "public-offices-identify",
+              "enrich",
+              "news-reextract",
+              "news-refresh",
+              "ingest",
+              "ingest-all",
+              "backfill",
+              "reextract",
+              "select-models",
+              "evaluate",
+              "migrate",
+              "backup",
+              "stamp-embeddings"
+            ],
+            "title": "Command"
+          },
+          "identity_reviews": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/IdentityReview"
+                },
+                "type": "array",
+                "maxItems": 100,
+                "minItems": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Identity Reviews"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_]{0,63}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source"
+          },
+          "investigation_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-zA-Z0-9_-]{1,64}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Investigation Id"
+          },
+          "after_document": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "After Document"
+          },
+          "selections": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/EnrichmentSelection"
+                },
+                "type": "array",
+                "maxItems": 10,
+                "minItems": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Selections"
+          },
+          "extract_context": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extract Context"
+          },
+          "days": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 36500.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Days"
+          },
+          "version": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^\\d{1,4}\\.\\d{1,4}\\.\\d{1,4}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Version"
+          },
+          "stage": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "provisional",
+                  "measured"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stage"
+          },
+          "evaluation": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "extraction",
+                  "resolution",
+                  "nl2cypher"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evaluation"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "request_id",
+          "command"
+        ],
+        "title": "JobRequest"
+      },
+      "LedgerEntryView": {
+        "properties": {
+          "ledger_id": {
+            "type": "string",
+            "title": "Ledger Id"
+          },
+          "period": {
+            "type": "string",
+            "title": "Period"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
+          },
+          "purpose": {
+            "type": "string",
+            "title": "Purpose"
+          },
+          "model_id": {
+            "type": "string",
+            "title": "Model Id"
+          },
+          "input_tokens": {
+            "type": "integer",
+            "title": "Input Tokens"
+          },
+          "output_tokens": {
+            "type": "integer",
+            "title": "Output Tokens"
+          },
+          "cost_eur": {
+            "type": "number",
+            "title": "Cost Eur"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ledger_id",
+          "period",
+          "purpose",
+          "model_id",
+          "input_tokens",
+          "output_tokens",
+          "cost_eur",
+          "created_at"
+        ],
+        "title": "LedgerEntryView",
+        "description": "One ledger entry as returned to the operator."
+      },
+      "LedgerView": {
+        "properties": {
+          "period": {
+            "type": "string",
+            "title": "Period"
+          },
+          "spend_eur": {
+            "type": "number",
+            "title": "Spend Eur"
+          },
+          "entries": {
+            "items": {
+              "$ref": "#/components/schemas/LedgerEntryView"
+            },
+            "type": "array",
+            "title": "Entries"
+          }
+        },
+        "type": "object",
+        "required": [
+          "period",
+          "spend_eur",
+          "entries"
+        ],
+        "title": "LedgerView",
+        "description": "The ledger for one period: total spend and entries."
+      },
+      "MatchReview": {
+        "properties": {
+          "request_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Request Id"
+          },
+          "left": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Left"
+          },
+          "right": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Right"
+          },
+          "decision": {
+            "type": "string",
+            "enum": [
+              "unresolved",
+              "same_event",
+              "different_event"
+            ],
+            "title": "Decision"
+          },
+          "assessment": {
+            "type": "string",
+            "enum": [
+              "unassessed",
+              "supports",
+              "challenges",
+              "context"
+            ],
+            "title": "Assessment",
+            "default": "unassessed"
+          },
+          "independence": {
+            "type": "string",
+            "enum": [
+              "unknown",
+              "dependent",
+              "independent"
+            ],
+            "title": "Independence",
+            "default": "unknown"
+          },
+          "rationale": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Rationale"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "request_id",
+          "left",
+          "right",
+          "decision",
+          "rationale"
+        ],
+        "title": "MatchReview"
+      },
+      "NeighborResponse": {
+        "properties": {
+          "entity": {
+            "$ref": "#/components/schemas/EntityRef"
+          },
+          "neighbors": {
+            "items": {
+              "$ref": "#/components/schemas/NeighborRow"
+            },
+            "type": "array",
+            "title": "Neighbors"
+          }
+        },
+        "type": "object",
+        "required": [
+          "entity",
+          "neighbors"
+        ],
+        "title": "NeighborResponse",
+        "description": "The entity and its one-hop neighborhood."
+      },
+      "NeighborRow": {
+        "properties": {
+          "edge": {
+            "$ref": "#/components/schemas/EdgeRef"
+          },
+          "neighbor": {
+            "$ref": "#/components/schemas/EntityRef"
+          }
+        },
+        "type": "object",
+        "required": [
+          "edge",
+          "neighbor"
+        ],
+        "title": "NeighborRow",
+        "description": "One hop of the neighborhood expansion: the edge with its full\nprovenance and the neighbor node."
+      },
+      "NewsClaimView": {
+        "properties": {
+          "attribution": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attribution"
+          },
+          "modality": {
+            "type": "string",
+            "enum": [
+              "asserted",
+              "reported",
+              "denied",
+              "proposed",
+              "conditional",
+              "unknown"
+            ],
+            "title": "Modality"
+          },
+          "assessment": {
+            "type": "string",
+            "enum": [
+              "unassessed",
+              "supported",
+              "disputed",
+              "refuted"
+            ],
+            "title": "Assessment",
+            "default": "unassessed"
+          },
+          "event_status": {
+            "type": "string",
+            "enum": [
+              "unknown",
+              "proposed",
+              "planned",
+              "ongoing",
+              "completed",
+              "cancelled",
+              "denied"
+            ],
+            "title": "Event Status",
+            "default": "unknown"
+          },
+          "time_precision": {
+            "type": "string",
+            "enum": [
+              "unknown",
+              "instant",
+              "day",
+              "month",
+              "year",
+              "interval"
+            ],
+            "title": "Time Precision",
+            "default": "unknown"
+          },
+          "event_candidate": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Candidate"
+          },
+          "claim_id": {
+            "type": "string",
+            "title": "Claim Id"
+          },
+          "subject_id": {
+            "type": "string",
+            "title": "Subject Id"
+          },
+          "subject_label": {
+            "type": "string",
+            "title": "Subject Label"
+          },
+          "object_id": {
+            "type": "string",
+            "title": "Object Id"
+          },
+          "object_label": {
+            "type": "string",
+            "title": "Object Label"
+          },
+          "relation": {
+            "type": "string",
+            "title": "Relation"
+          },
+          "evidence_document_id": {
+            "type": "string",
+            "title": "Evidence Document Id"
+          },
+          "evidence_start": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence Start"
+          },
+          "evidence_end": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence End"
+          },
+          "source_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Id"
+          },
+          "source_trust": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Trust"
+          },
+          "confidence": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confidence"
+          },
+          "investigation_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Investigation Id"
+          },
+          "dispatch_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dispatch Id"
+          },
+          "publisher": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Publisher"
+          },
+          "syndication_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Syndication Key"
+          },
+          "report_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Report Url"
+          },
+          "valid_from": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid From"
+          },
+          "valid_to": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid To"
+          },
+          "recorded_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recorded At"
+          },
+          "retracted_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Retracted At"
+          },
+          "ontology_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ontology Version"
+          },
+          "prompt_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prompt Version"
+          },
+          "schema_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Schema Version"
+          },
+          "extractor_model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extractor Model"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "modality",
+          "claim_id",
+          "subject_id",
+          "subject_label",
+          "object_id",
+          "object_label",
+          "relation",
+          "evidence_document_id"
+        ],
+        "title": "NewsClaimView"
+      },
+      "NlQuestion": {
+        "properties": {
+          "question": {
+            "type": "string",
+            "title": "Question"
+          }
+        },
+        "type": "object",
+        "required": [
+          "question"
+        ],
+        "title": "NlQuestion",
+        "description": "A natural-language question for the four-stage service."
+      },
+      "OfficesResponse": {
+        "properties": {
+          "coverage_status": {
+            "type": "string",
+            "enum": [
+              "partial",
+              "reconciled"
+            ],
+            "title": "Coverage Status",
+            "default": "partial"
+          },
+          "scopes": {
+            "items": {
+              "$ref": "#/components/schemas/ScopeCoverage"
+            },
+            "type": "array",
+            "title": "Scopes",
+            "default": []
+          },
+          "members": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Members",
+            "default": []
+          },
+          "truncated": {
+            "type": "boolean",
+            "title": "Truncated",
+            "default": false
+          },
+          "diagnosis": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Diagnosis",
+            "default": []
+          }
+        },
+        "type": "object",
+        "title": "OfficesResponse"
+      },
+      "QueryResponse": {
+        "properties": {
+          "cypher": {
+            "type": "string",
+            "title": "Cypher"
+          },
+          "results": {
+            "$ref": "#/components/schemas/GraphResult"
+          },
+          "coverage": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Coverage"
+          },
+          "diagnosis": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Diagnosis"
+          },
+          "notes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Notes",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "cypher",
+          "results",
+          "coverage"
+        ],
+        "title": "QueryResponse",
+        "description": "One executed query: the (validated) Cypher, the normalized result\ngraph, the coverage report, the empty-result diagnosis when applicable,\nand any partial-verification notes."
+      },
+      "ReviewView": {
+        "properties": {
+          "request_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Request Id"
+          },
+          "left": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Left"
+          },
+          "right": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Right"
+          },
+          "decision": {
+            "type": "string",
+            "enum": [
+              "unresolved",
+              "same_event",
+              "different_event"
+            ],
+            "title": "Decision"
+          },
+          "assessment": {
+            "type": "string",
+            "enum": [
+              "unassessed",
+              "supports",
+              "challenges",
+              "context"
+            ],
+            "title": "Assessment",
+            "default": "unassessed"
+          },
+          "independence": {
+            "type": "string",
+            "enum": [
+              "unknown",
+              "dependent",
+              "independent"
+            ],
+            "title": "Independence",
+            "default": "unknown"
+          },
+          "rationale": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Rationale"
+          },
+          "investigation_id": {
+            "type": "string",
+            "title": "Investigation Id"
+          },
+          "recorded_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Recorded At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "request_id",
+          "left",
+          "right",
+          "decision",
+          "rationale",
+          "investigation_id",
+          "recorded_at"
+        ],
+        "title": "ReviewView"
+      },
+      "RunStatus": {
+        "properties": {
+          "source_id": {
+            "type": "string",
+            "title": "Source Id"
+          },
+          "mode": {
+            "type": "string",
+            "title": "Mode"
+          },
+          "run_id": {
+            "type": "string",
+            "title": "Run Id"
+          },
+          "started_at": {
+            "type": "string",
+            "title": "Started At"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
+          "records_fetched": {
+            "type": "integer",
+            "title": "Records Fetched",
+            "default": 0
+          },
+          "nodes_created": {
+            "type": "integer",
+            "title": "Nodes Created",
+            "default": 0
+          },
+          "nodes_matched": {
+            "type": "integer",
+            "title": "Nodes Matched",
+            "default": 0
+          },
+          "assertions_written": {
+            "type": "integer",
+            "title": "Assertions Written",
+            "default": 0
+          },
+          "assertions_skipped": {
+            "type": "integer",
+            "title": "Assertions Skipped",
+            "default": 0
+          },
+          "assertions_rejected": {
+            "type": "integer",
+            "title": "Assertions Rejected",
+            "default": 0
+          },
+          "documents_gated_out": {
+            "type": "integer",
+            "title": "Documents Gated Out",
+            "default": 0
+          },
+          "errors": {
+            "type": "integer",
+            "title": "Errors",
+            "default": 0
+          },
+          "cost_eur": {
+            "type": "number",
+            "title": "Cost Eur",
+            "default": 0.0
+          },
+          "last_success_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Success At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "source_id",
+          "mode",
+          "run_id",
+          "started_at"
+        ],
+        "title": "RunStatus",
+        "description": "The latest ingestion run for one source, with the source's last\nsuccess timestamp alongside."
+      },
+      "SavedQueryCreate": {
+        "properties": {
+          "question": {
+            "type": "string",
+            "title": "Question"
+          },
+          "cypher": {
+            "type": "string",
+            "title": "Cypher"
+          },
+          "result_count": {
+            "type": "integer",
+            "title": "Result Count",
+            "default": 0
+          },
+          "pinned": {
+            "type": "boolean",
+            "title": "Pinned",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "question",
+          "cypher"
+        ],
+        "title": "SavedQueryCreate",
+        "description": "An operator-created saved query. The auto-persisted per-execution\nwrites (FR-14) flow through `persist` instead and are not operator\ninput."
+      },
+      "SavedQueryView": {
+        "properties": {
+          "saved_query_id": {
+            "type": "string",
+            "title": "Saved Query Id"
+          },
+          "question": {
+            "type": "string",
+            "title": "Question"
+          },
+          "cypher": {
+            "type": "string",
+            "title": "Cypher"
+          },
+          "ontology_version": {
+            "type": "string",
+            "title": "Ontology Version"
+          },
+          "result_count": {
+            "type": "integer",
+            "title": "Result Count"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "pinned": {
+            "type": "boolean",
+            "title": "Pinned"
+          }
+        },
+        "type": "object",
+        "required": [
+          "saved_query_id",
+          "question",
+          "cypher",
+          "ontology_version",
+          "result_count",
+          "created_at",
+          "pinned"
+        ],
+        "title": "SavedQueryView",
+        "description": "One saved query as returned to the UI."
+      },
+      "ScopeCoverage": {
+        "properties": {
+          "scope": {
+            "type": "string",
+            "title": "Scope"
+          },
+          "institution": {
+            "type": "string",
+            "title": "Institution"
+          },
+          "snapshot_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Snapshot Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "missing",
+              "failed",
+              "partial",
+              "reconciled",
+              "unverified"
+            ],
+            "title": "Status",
+            "default": "missing"
+          },
+          "observed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Observed At"
+          },
+          "term": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Term"
+          },
+          "expected": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected"
+          },
+          "acquired": {
+            "type": "integer",
+            "title": "Acquired",
+            "default": 0
+          },
+          "loaded": {
+            "type": "integer",
+            "title": "Loaded",
+            "default": 0
+          },
+          "distinct_persons": {
+            "type": "integer",
+            "title": "Distinct Persons",
+            "default": 0
+          },
+          "unresolved": {
+            "type": "integer",
+            "title": "Unresolved",
+            "default": 0
+          },
+          "failed_rows": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Failed Rows"
+          },
+          "stale": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stale"
+          },
+          "check_basis": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Check Basis"
+          },
+          "diagnosis": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Diagnosis",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "scope",
+          "institution"
+        ],
+        "title": "ScopeCoverage"
+      },
+      "SearchHit": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "entity",
+              "document"
+            ],
+            "title": "Kind"
+          },
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "score": {
+            "type": "number",
+            "title": "Score"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind",
+          "id",
+          "label",
+          "score"
+        ],
+        "title": "SearchHit",
+        "description": "One full-text hit: the index it came from, the entity id or document\ncontent hash, a display label, and the score."
+      },
+      "SourceView": {
+        "properties": {
+          "source_id": {
+            "type": "string",
+            "title": "Source Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "trust_rank": {
+            "type": "number",
+            "title": "Trust Rank"
+          },
+          "supports_backfill": {
+            "type": "boolean",
+            "title": "Supports Backfill"
+          },
+          "supports_incremental": {
+            "type": "boolean",
+            "title": "Supports Incremental"
+          },
+          "last_success_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Success At"
+          },
+          "last_run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Run Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "source_id",
+          "name",
+          "kind",
+          "trust_rank",
+          "supports_backfill",
+          "supports_incremental"
+        ],
+        "title": "SourceView",
+        "description": "One registered source: the registry's declarations plus the graph's\nlast-refresh state. `last_success_at` is null for a source that has\nnever run."
+      },
+      "TrackingRequest": {
+        "properties": {
+          "investigation_id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9_-]{1,64}$",
+            "title": "Investigation Id"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title"
+          },
+          "entity_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 20,
+            "title": "Entity Ids"
+          },
+          "assertion_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 20,
+            "title": "Assertion Ids"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active",
+            "default": true
+          },
+          "interval_minutes": {
+            "type": "integer",
+            "maximum": 10080.0,
+            "minimum": 15.0,
+            "title": "Interval Minutes",
+            "default": 60
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "investigation_id",
+          "title"
+        ],
+        "title": "TrackingRequest"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  }
+}

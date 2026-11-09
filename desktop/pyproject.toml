@@ -1,15 +1,13 @@
-# desktop/pyproject.toml | v0.1.0 | Desktop client workspace member: packaging, deps, tooling config
+# desktop/pyproject.toml | v1.1.0 | DC-17: launcher workspace member (FastAPI + ReUI SPA host)
 [project]
 name = "limes-desktop"
-version = "0.1.0"
-description = "PySide6 desktop client for the LIMES knowledge graph"
+version = "1.1.0"
+description = "Local launcher for the LIMES web desktop — static SPA, bearer proxy, profile store"
 readme = "README.md"
 requires-python = ">=3.12,<3.14"
 dependencies = [
-    "pyside6>=6.7",
-    # NOTE: the brief says `pyside6-webengine>=6.7`, but no such PyPI project
-    # exists (registry 404). QtWebEngine ships inside PySide6_Addons.
-    "pyside6-addons>=6.7",
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
     "httpx>=0.27",
     "pydantic>=2.8",
 ]
@@ -17,14 +15,15 @@ dependencies = [
 [dependency-groups]
 dev = [
     "pytest>=8.3",
-    "pytest-qt>=4.4",
     "respx>=0.21",
     "ruff>=0.6",
     "mypy>=1.11",
 ]
 
-# Hatchling backend, same rationale as the root package: future packaged
-# resources (QML/assets) need a backend that ships non-Python files.
+# Hatchling backend, consistent with the root package. The built ReUI SPA is
+# not shipped inside the wheel: the launcher resolves `desktop/web/dist` (or
+# `$LIMES_DESKTOP_DIST`) at run time — packaged bundle deployment stays
+# deferred in the roadmap.
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"

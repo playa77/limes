@@ -1,5 +1,105 @@
 # Verification and acceptance evidence
 
+## 2026-11-09 — DC-17 ReUI web desktop: implementation and full candidate pass
+
+The complete DC-17 package (D-99) is implemented on
+`dc-17-reui-web-desktop` from live main `3896e91`
+(the per-session record lives in the ignored `work/dc17/SESSION.md`). The
+PySide6/QWebEngine desktop
+is retired for the React 19 + Tailwind v4 + ReUI SPA (`desktop/web/`) and a
+FastAPI launcher (`limes_desktop.webapp.py`: static serve, `/api` bearer proxy
+with credential injection and bounded same-origin redirects, XDG profile
+store, flock single-instance guard). Contract machinery generates the
+committed `openapi.json`/`schema.ts` from the live API app
+(`tools/export_openapi.py`, `desktop/web/tools/gen-api.mjs`) with pytest-only
+freshness and TS-client-surface parity tests; the ontology-literal guard
+extends to `desktop/web/src`. Vitest pins the pure modules (builder refill,
+temporal filtering, viz payloads). Two backend integration tests whose desktop
+halves imported the retired Python client were rewritten to the same payload
+surface the web client consumes; the retired Qt widget render assertions are
+superseded by payload-plus-contract evidence with the remaining browser-level
+display evidence named under OI-34 and the DC-17 roadmap row. A secondary
+agent session executed part of this package concurrently on the same checkout;
+the user parked it while this session held the delivery contract, and its work
+is incorporated and reviewed (details in the session record).
+
+### Change accounting against live main (untracked files included)
+
+| Category | Files | Added | Deleted | Net |
+|---|---:|---:|---:|---:|
+| Web SPA (React/TS sources, 3 generated contract files, tooling, committed lockfile) | 97 | 34,167 | 0 | +34,167 |
+| Desktop Python launcher (3 modified, 1 new, 37 retired-stack deletions) | 41 | 507 | 10,697 | −10,190 |
+| Desktop pytest suites (4 modified, 3 new, 21 retired deletions) | 28 | 881 | 3,712 | −2,831 |
+| Root integration tests (2 modified: retired-client blocks → consumable surface) | 2 | 38 | 60 | −22 |
+| Tooling (2 tools modified, `export_openapi.py` new, Makefile, CI) | 5 | 156 | 35 | +121 |
+| Dependencies (root pyproject + uv.lock; PySide6/pytest-qt/shiboken out) | 2 | 425 | 94 | +331 |
+| Handwritten documentation (requirements/architecture v1.1.0, roadmaps, ledgers, READMEs) | 10 | 510 | 207 | +303 |
+| Generated documentation (root README, docs/TESTING_PHASE) | 2 | 39 | 13 | +26 |
+
+Counts are text lines including untracked new files; fixture data, generated
+SPA artifacts (`dist/`, node_modules) and the ignored work/ evidence are not
+part of the manifest. No existing secret file was read or changed.
+
+### Candidate
+
+After the first pass (`candidate-final-5`, revision `3896e91` + working tree,
+source SHA `35288c81…99a56`, 939.8 s, all lanes passing), one
+publication-blocking defect was found in the SPA packaging:
+`desktop/web/.gitignore` excluded `src/api/openapi.json`, so a fresh clone
+would lack the committed contract file that the freshness contract reads.
+The rule was removed, the generated file is tracked, and the publication
+commit `06cb16f` was requalified end to end.
+
+Authoritative command: `venv/bin/python tools/qualify.py --output
+work/dc17/candidate-final-6`; status **passed**; revision
+`06cb16fffe7a9c649df6835a6bb841ee4259fef9` (the complete publication commit),
+source manifest SHA-256
+`295a4d6513488b6db438ba8f3ecad394f1cbf6e40fa4e162ab2deb169e8076b6`,
+validation wall time **511.201 s**. `-5` is retained as superseded
+evidence (the only deltas are the gitignore rule and the tracked contract
+file; no behavior). Report, source.json, JUnit and logs are in the ignored
+directories.
+
+| Lane | Result | Case count | Elapsed |
+|---|---|---:|---:|
+| baseline/lint/tools-lint/types/docs/generated/guards/whitespace | passed | — | ≈1.9 s |
+| web (pnpm: install, tsc -b, vitest 29, eslint, build) | passed | 29 vitest cases | 10.4 s |
+| unit | passed | 1,012 | 157.9 s |
+| desktop (unit + contract) | passed | 42 | 2.9 s |
+| integration | passed | 185 | 198.3 s |
+| acceptance | passed | 85 | 37.0 s |
+| desktop-integration (launcher + real API + disposable graph) | passed | 2 | 21.2 s |
+| runtime-stack | passed | 1 | 82.6 s |
+
+Total 1,327 pytest cases, zero failures/errors/skips, no source drift. The
+web lane runs the committed pnpm toolchain with no test-time network beyond
+standard registry installs. The runtime-stack lane passes on this executor
+(292 GB free) — it does not claim deployed behavior.
+
+Earlier candidate attempts on this package are retained as non-evidence:
+`work/dc17/candidate-final` (and `-2`) crashed at the runner's source
+fingerprint because tracked-but-deleted file paths carried no bytes while
+still uncommitted — the runner was corrected to fingerprint bytes on disk (a
+path appearing, disappearing or changing during a run still fails the drift
+check); `-3` failed the strengthened ontology-literal guard on a vitest
+fixture using real ontology names (`Corporation`/`SUBSIDIARY_OF` were in the
+ontology 1.4 name set — the fixture schema is now invented); `-4` failed the
+two retired-client integration tests. No failed assertion was waived or
+weakened on the way to the passing candidate; the guard's violation was a
+test-fixture defect, and the integration rewires preserve the underlying
+asserted values with the payload surface the web client consumes.
+At qualification time no staging, commit, push or PR was requested or
+performed; only the documentation above changed after the freeze, checked by
+`tools/check_docs.py`, generated-document drift and whitespace guards, and the
+frozen source manifest was recomputed unchanged.
+
+Publication update (2026-11-09): the user requests preparing and opening the
+PR for this session's implementation. Live main is rechecked at `3896e91`
+(tokens/checkout unchanged) and the declared source fingerprint still matches
+the tested candidate: staging, commit, push and PR creation are now
+authorized. The PR is a normal review candidate, not a draft; merge and
+deployment remain separate actions.
+
 ## 2026-11-07 — BE-56 implementation; full qualification blocked by executor storage
 
 Implemented on `codex/be-56-german-parliament-members`. Fetched live GitHub before

@@ -20,7 +20,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE_PATHS = (
-    "src", "desktop/src", "tests", "desktop/tests", "tools", "ontology", "docker",
+    "src", "desktop/src", "desktop/web", "tests", "desktop/tests", "tools", "ontology", "docker",
     "gold_set", "reference_questions", "pyproject.toml", "uv.lock", ".github",
     "docker-compose.yml", ".dockerignore", "docs/runtime-contract.json", "Makefile",
 )
@@ -42,12 +42,19 @@ SUITES = {
 
 
 def fingerprint(root: Path) -> dict[str, str]:
+    """Hash every path Git lists under SOURCE_PATHS that has bytes on disk.
+
+    Tracked deletions carry no snapshot; a path appearing, disappearing or
+    changing between the before/after snapshots still fails the drift check
+    because the manifest key sets differ.
+    """
     paths = subprocess.check_output(
         ["git", "ls-files", "-co", "--exclude-standard", "-z", "--", *SOURCE_PATHS], cwd=root
     ).decode().split("\0")
+    existing = [name for name in paths if name and (root / name).is_file()]
     return {
         name: hashlib.sha256((root / name).read_bytes()).hexdigest()
-        for name in sorted(set(paths) - {""})
+        for name in sorted(set(existing))
     }
 
 
@@ -119,6 +126,20 @@ def main() -> int:
         ("generated", [python, "tools/generate_runtime_docs.py", "--check"]),
         ("guards", [python, "tools/smoke_test.py", "--guards-only"]),
         ("whitespace", ["git", "diff", "--check"]),
+    ]
+    checks += [
+        (
+            "web",
+            [
+                "bash",
+                "-c",
+                "pnpm -C desktop/web install --frozen-lockfile --prefer-offline "
+                "&& pnpm -C desktop/web exec tsc -b "
+                "&& pnpm -C desktop/web exec vitest run "
+                "&& pnpm -C desktop/web exec eslint src "
+                "&& pnpm -C desktop/web build",
+            ],
+        ),
     ]
     checks += [(name, [python, "-m", "pytest", *paths, "-q", "--tb=short",
                        f"--junitxml={directory / (name + '.xml')}"])
