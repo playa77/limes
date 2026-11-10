@@ -14,6 +14,7 @@ in README, then this map.
 | What qualifies the current desktop? | [DC-14 qualification](DESKTOP_QUALIFICATION.md) | Current re-review, direct requirement evidence and named external blockers |
 | Why are evidence offsets rejected? | [BE-54 span geometry](EXTRACTION_SPAN_GEOMETRY.md) | Passage-local Unicode bounds, versioned generation and live measurement obligation |
 | How are partial feeds and source retries repaired? | [BE-52 source repair](INGEST_SOURCE_REPAIR.md) | Checkpoint semantics, extraction versions, bounded transport evidence and operator limits |
+| Can corpus ingestion finish and recover? | [BE-57 corpus reliability](CORPUS_INGESTION_RELIABILITY.md) | All-source audit, bulk TED, durable load receipts, partial outcomes and unresolved corpus acceptance |
 | What failed in the third full ingest? | [BE-49 repair](INGEST_THIRD_RUN_REPAIR.md) | Supplied deployment evidence, Wikidata defect and resumable OSM acquisition; local qualification remains distinct |
 | How are embedding credentials isolated? | [Dedicated embedding credential](EMBEDDING_CREDENTIALS.md) | BE-51 role authentication, pricing, diagnostics and operator deployment |
 | What is OSM transport and dead-feed policy? | [BE-53 policy](OSM_TRANSPORT_POLICY.md) | Timeout, mirror retries, bounded transport subdivision and cursor compatibility |

@@ -17,10 +17,13 @@ named refresh point for any future enrichment-only source.
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
+
 import structlog
 import typer
 
 from limes.config import Settings, load_settings
+from limes.errors import SourceSliceEnded
 from limes.logging_setup import configure_logging
 from limes.pipeline.run import RunSpec
 
@@ -71,7 +74,9 @@ def ingest_all() -> None:
             typer.echo(f"ingest-all: {source_id} failed: {exc}", err=True)
     if failures:
         raise LimesError("ingest-all: failed sources: " + ", ".join(failures))
-    typer.echo("ingest-all: complete bounded pass; backlog resumes from source checkpoints")
+    typer.echo(
+        "ingest-all: complete requested source windows; historical coverage is source-specific"
+    )
 
 
 def _ingest_source(settings: Settings, source_id: str, spec: RunSpec) -> None:
@@ -90,23 +95,36 @@ def _ingest_source(settings: Settings, source_id: str, spec: RunSpec) -> None:
         needs_inference=(adapter_kind(source_id) == "unstructured"),
     )
     try:
-        record = run_with_lock(ctx, source_id, spec)
-        typer.echo(
-            f"ingest {source_id}: {record.records_fetched} records, "
-            f"{record.assertions_written} assertions written, "
-            f"{record.assertions_skipped} skipped, {record.errors} errors, "
-            f"cost EUR {record.cost_eur}"
-        )
-        if record.errors:
-            raise LimesError(
-                f"ingest {source_id}: {record.errors} record errors; checkpoint unchanged"
-            )
-        covered_until = getattr(record, "window_to", None)
-        if covered_until is not None:
+        target = spec.until or datetime.now(UTC)
+        adapter = ctx.registry.get(source_id)
+        target = getattr(adapter, "ingest_target", lambda value: value)(target)
+        previous = None
+        while True:
+            try:
+                record = run_with_lock(ctx, source_id, spec)
+            except SourceSliceEnded as exc:
+                typer.echo(f"ingest {source_id}: {exc}")
+                continue
             typer.echo(
-                f"ingest {source_id}: covered window through {covered_until.isoformat()}; "
-                "source checkpoint never moves backward"
+                f"ingest {source_id}: {record.records_fetched} records, "
+                f"{record.assertions_written} assertions written, "
+                f"{record.assertions_skipped} skipped, {record.errors} errors, "
+                f"cost EUR {record.cost_eur}"
             )
+            if record.errors:
+                raise LimesError(
+                    f"ingest {source_id}: {record.errors} record errors; checkpoint unchanged"
+                )
+            covered_until = getattr(record, "window_to", None)
+            if covered_until is None or covered_until >= target or spec.since is not None:
+                break
+            if previous is not None and covered_until <= previous:
+                raise LimesError(f"ingest {source_id}: backlog did not advance; incomplete")
+            typer.echo(
+                f"ingest {source_id}: covered through {covered_until.isoformat()}; "
+                f"backlog remains through {target.isoformat()}; continuing"
+            )
+            previous = covered_until
     finally:
         ctx.driver.close()
 

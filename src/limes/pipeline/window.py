@@ -57,13 +57,24 @@ def resolve_window(
             # Checkpoints cover their final slot inclusively. Bound 96 NEW slots.
             return cutoff, adapter.bound_ingest_window(  # type: ignore[attr-defined]
                 cutoff + timedelta(microseconds=1), now or datetime.now(UTC))
+        if spec.source_id == "gdelt" and spec.until is None:
+            return spec.since, adapter.ingest_target(  # type: ignore[attr-defined]
+                now or datetime.now(UTC))
         return spec.since, spec.until
     if not adapter.supports_incremental:
         return None, None
+    if getattr(adapter, "full_initial_load", False) and not (
+        source_node is not None and source_node.corpus_complete
+    ):
+        # A legacy 90-day success is not evidence of initial corpus coverage.
+        return None, spec.until
     if source_node is not None and source_node.last_success_at is not None:
         cutoff = source_node.last_success_at
     elif source_node is not None and source_node.initial_window_from is not None:
         cutoff = source_node.initial_window_from
+    elif getattr(adapter, "full_initial_load", False):
+        # Structured corpus acquisition must not inherit a news lookback.
+        return None, spec.until
     else:
         cutoff = (now or datetime.now(UTC)) - timedelta(days=settings.backfill_days_unstructured)
     bound = getattr(adapter, "bound_ingest_window", None)

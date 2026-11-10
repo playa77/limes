@@ -292,7 +292,7 @@ def test_cli_backfill_feeds_end_to_end(graph, cli_env):
     assert rows[0]["c"] == 0
 
 
-def test_cli_gdelt_backfill_consumes_oldest_prefix_and_retries_errors(
+def test_cli_gdelt_backfill_drains_oldest_backlog_and_retries_only_unfinished_files(
     graph, neo4j_instance, tmp_path, monkeypatch,
 ):
     """Real CLI/lock/graph/checkpoint; only GDELT transport is replaced."""
@@ -308,6 +308,15 @@ def test_cli_gdelt_backfill_consumes_oldest_prefix_and_retries_errors(
     anchor = datetime(2026, 8, 2, 0, 0, tzinfo=UTC)
     graph.write_batch([(
         'CREATE (:Source {source_id:"gdelt", last_success_at:$at})', {'at': anchor})])
+    clock = [anchor + timedelta(days=2, minutes=15)]
+
+    class Frozen(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return clock[0]
+
+    monkeypatch.setattr('limes.cli.backfill.datetime', Frozen)
+    monkeypatch.setattr('limes.pipeline.window.datetime', Frozen)
     requested = []
     failure = None
     stream = io.BytesIO()
@@ -332,17 +341,14 @@ def test_cli_gdelt_backfill_consumes_oldest_prefix_and_retries_errors(
         return graph.read('MATCH (s:Source {source_id:"gdelt"}) '
                           'RETURN s.last_success_at AS at', {}, 30)[0]['at'].to_native()
 
-    for day in (0, 1):
-        requested.clear()
-        result = runner.invoke(app, command)
-        assert result.exit_code == 0, result.output
-        assert len(requested) == 96
-        start = anchor + timedelta(days=day, minutes=15)
-        end = anchor + timedelta(days=day + 1)
-        assert requested[0] == gdelt.FILE_URL_TEMPLATE.format(slot=start)
-        assert requested[-1] == gdelt.FILE_URL_TEMPLATE.format(slot=end)
-        assert checkpoint() == end
-        assert f'since {(anchor + timedelta(days=day)).isoformat()}' in result.output
+    result = runner.invoke(app, command)
+    assert result.exit_code == 0, result.output
+    assert len(requested) == 192  # two complete daily prefixes in ONE operation
+    assert requested[0] == gdelt.FILE_URL_TEMPLATE.format(slot=anchor + timedelta(minutes=15))
+    assert requested[-1] == gdelt.FILE_URL_TEMPLATE.format(slot=anchor + timedelta(days=2))
+    assert checkpoint() == anchor + timedelta(days=2)
+    assert 'continuing' in result.output
+    clock[0] += timedelta(days=1)
 
     before = checkpoint()
     for failure_mode in ('missing', 'malformed'):
@@ -358,7 +364,7 @@ def test_cli_gdelt_backfill_consumes_oldest_prefix_and_retries_errors(
     assert result.exit_code == 0, result.output
     assert checkpoint() == anchor + timedelta(days=3)
     assert requested[0] == gdelt.FILE_URL_TEMPLATE.format(
-        slot=before + timedelta(minutes=15))
+        slot=before + timedelta(minutes=30))
     runs = graph.read('MATCH (r:IngestionRun {source_id:"gdelt"}) '
                       'RETURN r.window_from AS start, r.errors AS errors, '
                       'r.finished_at AS finished ORDER BY r.started_at', {}, 30)

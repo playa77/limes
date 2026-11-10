@@ -42,8 +42,28 @@ rotation; PA-1 R3). Operators may pin a per-source wall-clock budget as
 slots keep parallel sources polite toward shared
 upstreams (`LIMES_HOST_CONCURRENCY_DEFAULT` = 2, heavier hosts capped at 1,
 `LIMES_HOST_SLOT_WAIT_SECONDS` = 10; PA-1 R5).
-Pending capacity is 256; output retains the last 32 KiB; default operation timeout is
-24 hours, configurable up to 7 days. Request UUIDs provide idempotent submission.
+BE-57 retains successful HTTP artifacts, record load receipts and completed TED
+packages under the existing archive volume. Resubmitting the same interrupted
+request resumes its pinned window; failures never advance coverage checkpoints.
+Productive clean time slices continue inside the same active operation, under its
+outer deadline; blocked transport and processing errors fail rather than looping.
+TED uses official monthly/daily packages and bounded deterministic graph batches
+(flush at 50 notices, 500 assertions or 8 MiB raw input; individual notices are
+bounded to 16 MiB and graph transactions to 500 assertions). Receipts follow
+successful batch loading; pending work flushes on interruption/package completion.
+Structured loaders group ontology-generated queries with parameterized UNWIND
+writes, preserving identity, per-notice evidence and nearest later intervals.
+Initial TED/EUR-Lex/DIP acquisition
+does not inherit the news lookback or trust a legacy recent-window checkpoint.
+The ingestion status API exposes blocked transport and stale progress separately
+from service health. [Corpus/source audit](CORPUS_INGESTION_RELIABILITY.md) records
+the exact scope, recovery contract and unresolved full-ingest acceptance.
+Pending capacity is 256; output retains the last 32 KiB. Ingest/ingest-all/backfill
+operations use `LIMES_CORPUS_JOB_TIMEOUT_SECONDS` (default 7 days); other operations
+use `LIMES_JOB_TIMEOUT_SECONDS` (default 24 hours). Both remain bounded to 7 days.
+The acquisition slice/transport budgets still fail stalled sources promptly; the
+longer outer envelope permits productive historical work, not blind retries.
+Request UUIDs provide idempotent submission.
 Duplicate UUIDs with different payloads
 fail with 409. Operators cancel one queued (immediately `cancelled`) or running job
 through `POST /operations/jobs/{job_id}/cancel`; the worker terminates that job's

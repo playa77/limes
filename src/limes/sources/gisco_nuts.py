@@ -16,9 +16,9 @@ double quoting; `_parse_rows` normalizes single-quoted fields to the
 double-quoted form the CSV module understands, so a quoted field containing a
 comma parses as one field, not two.
 
-Both files are static snapshots: the adapter is non-incremental, `fetch`
-ignores the window and yields one `RawRecord` per file, and every assertion's
-`valid_from` is the fetch instant.
+Both files are static snapshots. The hierarchy stays together; the postcode
+artifact is archived and split into bounded chunks. The adapter ignores the
+window and every assertion's `valid_from` is the original observation instant.
 """
 
 from __future__ import annotations
@@ -76,8 +76,8 @@ class GiscoNutsAdapter:
         """Fetch both CSV files. The window is ignored: static snapshots are
         always full loads (§8.6.2 — `supports_incremental` is False)."""
         fetched_at = now_utc()
-        for url in (NUTS_URL, POSTCODE_URL):
-            payload = fetch_bytes(url)
+        for url in (NUTS_URL,):
+            payload = fetch_bytes(url, max_bytes=8 * 1024 * 1024)
             logger.info(
                 "gisco payload fetched",
                 url=url,
@@ -88,11 +88,16 @@ class GiscoNutsAdapter:
                 payload=payload,
                 content_type=NUTS_CONTENT_TYPE,
                 source_url=url,
-                fetched_at=fetched_at,
+                fetched_at=now_utc(),
             )
+        from limes.sources.bulk import line_artifact_records
+
+        yield from line_artifact_records(POSTCODE_URL, fetched_at)
 
     def normalize(self, record: RawRecord) -> NormalizedRecord:
         """One file → assertions (hierarchy) or lookup rows (postcodes)."""
+        if (record.acquisition_context or {}).get("archive_only"):
+            return NormalizedRecord(content_hash=payload_hash(record.payload), kind="structured")
         text = record.payload.decode("utf-8-sig", errors="replace")
         header = text.splitlines()[0] if text.splitlines() else ""
 
@@ -106,28 +111,35 @@ class GiscoNutsAdapter:
         rows = _parse_rows(text)
         if len(rows) < 2:
             raise SourceParseError("gisco_nuts: NUTS hierarchy file has no data rows")
+        rows = rows[1:]
+        if any(len(row) < 3 or not row[1] or not row[2] for row in rows):
+            raise SourceParseError("gisco_nuts: malformed hierarchy identity/name row")
 
         names: dict[str, str] = {row[1]: row[2] for row in rows}
         assertions: list[Assertion] = []
+        entities: list[EntityEndpoint] = []
+        errors = 0
         for row in rows:
             nuts_id = row[1]
             name = row[2]
             if len(nuts_id) == 2:
                 continue  # the country row itself; regions reference it below
             parent_id = nuts_id[:-1]
-            if parent_id not in names:
-                logger.warning(
-                    "gisco_nuts: parent region missing from file; skipped",
-                    nuts_id=nuts_id,
-                    parent=parent_id,
-                )
-                continue
             region = EntityEndpoint(
                 entity_id=key_entity_id(("nuts_code", nuts_id)),
                 type="AdministrativeRegion",
                 label=name,
                 deterministic_key=("nuts_code", nuts_id),
             )
+            if parent_id not in names:
+                errors += 1
+                entities.append(region)
+                logger.warning(
+                    "gisco_nuts: parent region missing from file; skipped",
+                    nuts_id=nuts_id,
+                    parent=parent_id,
+                )
+                continue
             parent_is_country = len(parent_id) == 2
             parent = EntityEndpoint(
                 entity_id=key_entity_id(
@@ -150,6 +162,8 @@ class GiscoNutsAdapter:
             content_hash=payload_hash(record.payload),
             kind="structured",
             assertions=assertions,
+            entities=entities,
+            errors=errors,
         )
 
     def _normalize_postcodes(self, text: str, record: RawRecord) -> NormalizedRecord:
@@ -185,6 +199,7 @@ class GiscoNutsAdapter:
             content_hash=payload_hash(record.payload),
             kind="structured",
             lookup_rows=lookup_rows,
+            errors=skipped,
         )
 
 

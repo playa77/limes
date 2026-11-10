@@ -1,5 +1,11 @@
 # BE-52 ingest source repair
 
+Current policy update (BE-57): [Corpus reliability](CORPUS_INGESTION_RELIABILITY.md)
+supersedes the partial-feed success policy below. Failed publishers now block
+the complete outcome/checkpoint, while their healthy peers' work is retained.
+The original dated acceptance record below is historical evidence, not current
+full-corpus readiness or the active source acquisition contract.
+
 Selected 2026-11-04, live baseline `4ef67c89ae67`, branch
 `codex/be-52-ingest-source-repair`. This is one complete work package.
 Prerequisites: BE-41 documentation gate passed; supplied deployed BE-50/BE-51

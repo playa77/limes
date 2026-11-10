@@ -214,8 +214,28 @@ rotation; PA-1 R3). Operators may pin a per-source wall-clock budget as
 slots keep parallel sources polite toward shared
 upstreams (`LIMES_HOST_CONCURRENCY_DEFAULT` = 2, heavier hosts capped at 1,
 `LIMES_HOST_SLOT_WAIT_SECONDS` = 10; PA-1 R5).
-Pending capacity is 256; output retains the last 32 KiB; default operation timeout is
-24 hours, configurable up to 7 days. Request UUIDs provide idempotent submission.
+BE-57 retains successful HTTP artifacts, record load receipts and completed TED
+packages under the existing archive volume. Resubmitting the same interrupted
+request resumes its pinned window; failures never advance coverage checkpoints.
+Productive clean time slices continue inside the same active operation, under its
+outer deadline; blocked transport and processing errors fail rather than looping.
+TED uses official monthly/daily packages and bounded deterministic graph batches
+(flush at 50 notices, 500 assertions or 8 MiB raw input; individual notices are
+bounded to 16 MiB and graph transactions to 500 assertions). Receipts follow
+successful batch loading; pending work flushes on interruption/package completion.
+Structured loaders group ontology-generated queries with parameterized UNWIND
+writes, preserving identity, per-notice evidence and nearest later intervals.
+Initial TED/EUR-Lex/DIP acquisition
+does not inherit the news lookback or trust a legacy recent-window checkpoint.
+The ingestion status API exposes blocked transport and stale progress separately
+from service health. [Corpus/source audit](CORPUS_INGESTION_RELIABILITY.md) records
+the exact scope, recovery contract and unresolved full-ingest acceptance.
+Pending capacity is 256; output retains the last 32 KiB. Ingest/ingest-all/backfill
+operations use `LIMES_CORPUS_JOB_TIMEOUT_SECONDS` (default 7 days); other operations
+use `LIMES_JOB_TIMEOUT_SECONDS` (default 24 hours). Both remain bounded to 7 days.
+The acquisition slice/transport budgets still fail stalled sources promptly; the
+longer outer envelope permits productive historical work, not blind retries.
+Request UUIDs provide idempotent submission.
 Duplicate UUIDs with different payloads
 fail with 409. Operators cancel one queued (immediately `cancelled`) or running job
 through `POST /operations/jobs/{{job_id}}/cancel`; the worker terminates that job's
@@ -381,6 +401,10 @@ accepted for Wikipedia. No consumer read fetches providers. Remote CLI accepts
 Inspect acquired sections via GET /entity/ID/enrichment; failed jobs require manual
 replay with a new request ID after inspection. Existing source checkpoints advance
 only after the entire selected run succeeds; source versions replay idempotently.
+Ordinary ingest continues bounded windows through the invocation's safe target;
+it does not call one prefix a completed backlog. Failed publishers retain healthy
+entries but fail the aggregate coverage result. Source budgets bound work, not
+successful notices per hour. A stopped job still needs explicit resubmission.
 
 ## Configuration and first startup
 
@@ -493,24 +517,24 @@ actual authorized deployment. CI records JUnit results for every required suite.
 
 ## Investigation-driven news acquisition
 
-Default GDELT ingest covers one prefix of at most 96 slots; TED and EUR-Lex one day per
-invocation. Later ingests resume at the durable covered endpoint; failures never
-skip backlog. `ingest-all` attempts all sources, reports individual failures and
-fails its aggregate job when any source fails. Its success means a bounded pass,
-not that every historical window has been acquired. The first window anchor is persisted
-before fetching, so a failed initial attempt cannot slide the lookback start.
+Default GDELT ingest drains prefixes of at most 96 slots through its safe
+publication cutoff within one operation. TED/EUR-Lex bounded incremental windows
+also continue through the invocation target; initial historical acquisition is
+unfiltered. `ingest-all` attempts all sources and fails its aggregate job if any
+source fails. A clean result certifies its requested source windows, not unavailable
+historical feed/snapshot coverage. Initial window anchors and active acquisition
+windows are durable, so failed retries cannot slide the lookback start.
 
-GDELT `backfill --days 1` addresses an older source checkpoint before the fresh
-day: each explicit submission consumes the oldest unconsumed prefix of at most
-96 fifteen-minute slots, then durably advances the checkpoint. For a G-day gap,
-submit ceil(G/1) successful jobs sequentially, oldest to newest; inspect each
-terminal result and checkpoint before the next submission. No automatic replay.
-A checkpoint already advanced past a gap cannot reconstruct it; preserve the
-operator evidence and arrange a separately reviewed checkpoint repair first.
-When the checkpoint is at or after now-days (or absent), the existing fresh-window
-behavior remains; explicit windows over 96 slots still fail before network access.
-Other sources retain their existing backfill semantics. See
-[GDELT/OSM recovery](GDELT_BACKLOG_OSM_LEAVES.md) for cursor and coverage limits.
+GDELT `backfill --days N` addresses an older source checkpoint before the fresh
+window and continues clean prefixes through the invocation target. Explicit windows
+over 96 slots are supported with the composed durable acquisition journal;
+standalone adapter use without that journal retains the 96-slot guard. Per-file
+byte/row bounds remain. Completed downloads and loads survive an interrupted job;
+resubmit the same request explicitly to resume it. Interrupted jobs are never
+replayed automatically. A checkpoint already advanced past a gap cannot infer its
+lost coverage; preserve evidence and repair the historical window separately.
+[Corpus/source audit](CORPUS_INGESTION_RELIABILITY.md) supersedes the old one-prefix-
+per-submission instructions in [GDELT/OSM recovery](GDELT_BACKLOG_OSM_LEAVES.md).
 
 OSM exhausted leaf fetch failures are recorded in `failed_leaves` in the durable
 acquisition cursor. Eligible siblings continue within the existing 200-call cap;

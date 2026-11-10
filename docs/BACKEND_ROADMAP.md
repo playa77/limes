@@ -1,5 +1,15 @@
 # Backend work-package roadmap
 
+### BE-57 — Corpus ingestion reliability (2026-11-10)
+
+[Package acceptance and source audit](CORPUS_INGESTION_RELIABILITY.md) govern
+`codex/be-57-corpus-ingestion-reliability`, live base `5f6456b2b40c`.
+Bulk acquisition, durable progress, full initial structured scope, partial-source
+failures and visible blocked states belong to this package. Production corpus
+coverage is not accepted by automated release qualification. FSD access, live OSM
+capacity, historical update reconciliation and a completed full ingest remain
+evidence obligations; the stopped data run is not restarted or published here.
+
 Updated 2026-10-29 on `codex/be-47-ingest-repair`, based on live-fetched main `f1e773812baf`. Canonical prefix **BE-**;
 historical backend `WP-NN` maps to `BE-NN`, including the inserted BE-25a.
 The original roadmap defined WP-01–39 plus WP-25a (40 packages); WP-40 was a

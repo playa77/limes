@@ -50,12 +50,18 @@ export function IngestView() {
     {
       accessorKey: "finished_at",
       id: "finish",
-      header: ({ column }) => <DataGridColumnHeader title="Finished" column={column} />,
+      header: ({ column }) => <DataGridColumnHeader title="State / finished" column={column} />,
       cell: ({ row }) => (
-        <span className="text-xs tabular-nums">
-          {row.original.finished_at ?? (
-            <Badge variant="info-light">running (stage: {row.original.records_fetched} fetched)</Badge>
-          )}
+        <span className="text-xs tabular-nums" title={row.original.last_error ?? undefined}>
+          <Badge variant={row.original.errors || row.original.progress_stale ||
+            row.original.state === "rate_limited" || row.original.state === "upstream_failure" ||
+            row.original.state === "transport_failure" || row.original.state === "partial"
+            ? "warning-light" : "info-light"}>
+            {(row.original.state ?? (row.original.finished_at ? "window finished" : "acquiring"))
+              .replaceAll("_", " ")}
+            {row.original.progress_stale ? "; no recent progress; incomplete" : ""}
+          </Badge>
+          {row.original.finished_at ? <span> {row.original.finished_at}</span> : null}
         </span>
       ),
       size: 190,

@@ -151,33 +151,44 @@ class GdeltAdapter:
     supports_backfill: bool = True
     supports_incremental: bool = True
 
+    @staticmethod
+    def ingest_target(until: datetime) -> datetime:
+        latest = until.astimezone(UTC).replace(second=0, microsecond=0)
+        return latest - timedelta(minutes=latest.minute % 15) - _SLOT
+
     def bound_ingest_window(self, since: datetime, until: datetime) -> datetime:
         """One checkpointed prefix per ingest; leave the remaining backlog for next time."""
         first = _first_slot(since, until)
-        latest = until.astimezone(UTC).replace(second=0, microsecond=0)
-        latest -= timedelta(minutes=latest.minute % 15)
-        # Leave one publication interval for the most recent file to become available.
-        latest -= _SLOT
+        latest = self.ingest_target(until)
         return max(since, min(first + (MAX_SLOTS - 1) * _SLOT, latest))
 
     def fetch(self, since: datetime | None, until: datetime | None) -> Iterator[RawRecord]:
-        """Fetch at most one day (96 slots); larger windows fail before I/O.
+        """Stream a finite window, retaining per-file acquisition/load receipts.
 
-        Callers can submit consecutive bounded windows. Legacy budgets do not
-        limit work. Missing slots abort without advancing the checkpoint.
+        Normal ingestion resolves daily prefixes; explicit historical windows
+        stream across days under the run deadline. Missing slots abort without
+        advancing the checkpoint.
         """
         start = _first_slot(since, until)
         end = until if until is not None else now_utc()
         end = end.replace(tzinfo=UTC) if end.tzinfo is None else end.astimezone(UTC)
         if end < start:
             return
-        if (end - start) // _SLOT + 1 > MAX_SLOTS:
+        slot = start
+        from limes.sources.acquisition import active_acquisition
+
+        acquisition = active_acquisition.get()
+        if acquisition is None and (end - start) // _SLOT + 1 > MAX_SLOTS:
             from limes.errors import SourceFetchError
 
-            raise SourceFetchError("gdelt: window exceeds 96 slots; submit bounded windows")
-        slot = start
+            raise SourceFetchError(
+                "gdelt: window exceeds 96 slots without durable acquisition context"
+            )
         while slot <= end:
             url = FILE_URL_TEMPLATE.format(slot=slot)
+            if acquisition is not None and acquisition.unit_loaded(url):
+                slot += _SLOT
+                continue
             payload = fetch_bytes(url, max_bytes=MAX_COMPRESSED_BYTES)
             fetched_at = now_utc()
             logger.info(
@@ -186,12 +197,16 @@ class GdeltAdapter:
                 bytes=len(payload),
                 fetched_at=fetched_at.isoformat(),
             )
-            yield RawRecord(
+            raw = RawRecord(
                 payload=payload,
                 content_type=EVENTS_CONTENT_TYPE,
                 source_url=url,
                 fetched_at=fetched_at,
+                acquisition_context={"unit": url},
             )
+            yield raw
+            if acquisition is not None:
+                acquisition.finish_unit(url, [acquisition.record_key(raw)])
             slot += _SLOT
 
     def normalize(self, record: RawRecord) -> NormalizedRecord:

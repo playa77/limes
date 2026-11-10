@@ -24,11 +24,9 @@ Choices closed by the data, with the reasons that make them load-bearing:
 - The citation normalizes to "<periodikum> <zitstelle>" with periods
   stripped from the periodikum ("BGBl. I" -> "BGBl I"), so the
   deterministic key is stable across re-runs and identical for every law.
-- A law without a `fundstelle` has no citation and therefore no identity;
-  it is skipped and counted (`no_fundstelle`). A law *with* a citation but
-  without topic assignments still ships as a standalone entity so the
-  loader materializes the node and other sources' edges merge onto it (TED's
-  contract rule, WP-14). A missing `sachgebiet` is counted because a
+- A law without a `fundstelle` retains an honest source URL/member-derived
+  identity without fabricating a gazette citation. Topic-less laws still
+  ship as standalone entities. A missing `sachgebiet` is counted because a
   topic-less law is the anomalous case; a missing `anwendungsbereich` is not
   counted because most laws simply have none.
 - The TOC record is not a law, and `normalize` rejects it with
@@ -56,6 +54,7 @@ from lxml import etree  # type: ignore[import-untyped]
 from limes.errors import SourceParseError
 from limes.sources.base import (
     fetch_bytes,
+    hash_entity_id,
     key_entity_id,
     make_assertion,
     now_utc,
@@ -102,6 +101,7 @@ class GesetzeImInternetAdapter:
         """
         toc_fetched_at = now_utc()
         toc_payload = fetch_bytes(TOC_URL)
+        toc_fetched_at = now_utc()
         links = _law_links(toc_payload)
         logger.info(
             "gesetze_im_internet: index fetched",
@@ -121,6 +121,7 @@ class GesetzeImInternetAdapter:
         for law_number, link in enumerate(links, start=1):
             fetched_at = now_utc()
             payload = fetch_bytes(link)
+            fetched_at = now_utc()
             logger.info(
                 "gesetze_im_internet: law zip fetched",
                 law=law_number,
@@ -188,33 +189,19 @@ class GesetzeImInternetAdapter:
         if citation is None:
             skipped["no_fundstelle"] += 1
             logger.warning(
-                "gesetze_im_internet: law without fundstelle citation; skipped",
+                "gesetze_im_internet: law without citation retained by source identity",
                 jurabk=jurabk,
                 member=member,
                 source_id=self.source_id,
             )
-            logger.info(
-                "gesetze_im_internet: law normalized",
-                law=jurabk or member,
-                member=member,
-                citation=None,
-                assertions=0,
-                standalone_entity=False,
-                skipped=dict(skipped),
-                source_id=self.source_id,
-            )
-            return NormalizedRecord(
-                content_hash=payload_hash(record.payload),
-                kind="structured",
-                assertions=[],
-            )
 
         valid_from = _valid_from(_text(meta, "ausfertigung-datum"), record, skipped)
         legal_act = EntityEndpoint(
-            entity_id=key_entity_id(("bgb_citation", citation)),
+            entity_id=key_entity_id(("bgb_citation", citation)) if citation else
+            hash_entity_id("legal_act", "gesetze_im_internet", record.source_url or "", member),
             type="LegalAct",
-            label=langue or jurabk or citation,
-            deterministic_key=("bgb_citation", citation),
+            label=langue or jurabk or citation or member,
+            deterministic_key=("bgb_citation", citation) if citation else None,
         )
 
         assertions: list[Assertion] = []
@@ -297,9 +284,10 @@ def _law_links(toc_payload: bytes) -> list[str]:
     for item in root.findall(".//item"):
         link = _text(item, "link")
         if link is None:
-            logger.warning("gesetze_im_internet: index item without link; skipped")
-            continue
+            raise SourceParseError("gesetze_im_internet: index item has no acquisition link")
         links.append(link.strip())
+    if not links:
+        raise SourceParseError("gesetze_im_internet: index contains no law links")
     return links
 
 

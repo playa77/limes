@@ -354,7 +354,7 @@ def test_trace2_document_run_end_to_end(ctx, fixture_fetch):
         30,
     )
     assert rows[0]["run_id"] == record.run_id
-    assert rows[0]["at"] == record.started_at
+    assert rows[0]["at"] == record.window_to
 
 
 def test_documents_gated_out_are_counted(ctx, fixture_fetch):

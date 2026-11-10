@@ -122,11 +122,14 @@ class FeedsAdapter:
                 payload = fetch_bytes(feed.url)
             except SourceFetchError as exc:
                 failures.append(f"{feed.url}: {exc}")
+                _mark_incomplete(failures[-1])
                 logger.warning("feeds: feed fetch failed; continuing", url=feed.url, error=str(exc))
                 continue
             parsed = feedparser.parse(payload)
+            fetched_at = now_utc()
             if parsed.get("bozo") and not parsed.entries:
                 failures.append(f"{feed.url}: unparseable feed")
+                _mark_incomplete(failures[-1])
                 logger.warning(
                     "feeds: feed unparseable or empty; no entries",
                     url=feed.url,
@@ -147,6 +150,7 @@ class FeedsAdapter:
                     content_type=ENVELOPE_CONTENT_TYPE,
                     source_url=feed.url,
                     fetched_at=fetched_at,
+                    acquisition_context={"feed_archive_hash": payload_hash(payload)},
                 )
 
         if failures:
@@ -154,9 +158,9 @@ class FeedsAdapter:
                 "feeds: acquisition incomplete", failed_feeds=failures,
                 entries_yielded=entries_yielded, configured_feeds=len(self._feeds),
             )
-        if len(failures) == len(self._feeds):
+        if failures:
             raise SourceFetchError(
-                f"feeds: {len(failures)} feed failures; every configured feed failed: "
+                f"feeds: incomplete acquisition; {len(failures)} feed failures: "
                 + "; ".join(failures)
             )
 
@@ -196,6 +200,16 @@ class FeedsAdapter:
             kind="document",
             document=document,
         )
+
+
+def _mark_incomplete(reason: str) -> None:
+    from limes.sources.acquisition import active_acquisition
+
+    acquisition = active_acquisition.get()
+    if acquisition is not None:
+        acquisition.incomplete_reason = reason
+        if acquisition.progress is not None:
+            acquisition.progress("partial", reason)
 
 
 def _load_feed_config(path: Path) -> list[FeedConfig]:

@@ -5,6 +5,70 @@ reversibility: **R1** reversible in under an hour, **R2** bounded recoverable
 cost, **R3** one-way door. Written when each decision is made, latest first.
 Nothing here is a status report; unlogged decisions are unmade decisions.
 
+## 2026-11-10 — D-104 (R1) — Publish the BE-57 corpus reliability review
+
+The user explicitly requests: "prepare and open a pr with your work." This
+supersedes the earlier absence of publication authorization for BE-57 and permits
+staging, commit, push and PR creation on the existing package branch. Publish the
+complete qualified repair and all-source audit together, retaining OI-36 and the
+unresolved full-corpus acceptance obligations. Open as draft: automated/source
+sample qualification passes, while actual full production coverage and maintained
+freshness remain unproven. No merge, deployment, stopped-run restart or paid data
+run is included. The candidate source digest remains unchanged; publication-only
+documentation receives lightweight validation.
+
+## 2026-11-10 — D-103 (R2) — TED archive coverage takes precedence over search totals
+
+Independent checks return zero Search API notices for January 2011 while its
+complete official package contains 32,511. The 7,110,933 visible search hits for
+2011–today are therefore not a full archive inventory or a valid reconciliation
+target. Keep the discrepant receipts; do not replace the product requirement with
+what the index happens to expose. Full acquisition follows the official package
+calendar and reconciles archived member inventories/load receipts. Empty partial
+historical searches fall back to available monthly packages and filter by actual
+publication date; missing dates fail rather than silently dropping a member.
+A historical explicit upper bound cannot certify the current initial baseline.
+
+## 2026-11-10 — D-102 (R2) — Measured batch loading and corpus operation envelope
+
+The bounded real-data BE-57 sample exposed per-notice/per-statement graph overhead:
+1,000 TED notices required 82.952 seconds before batching. Use bounded deterministic
+notice accumulation and parameterized UNWIND groups of ontology-generated templates.
+Preserve distinct original evidence, transaction bounds, the graph write gate and
+receipts after complete loading. MERGE protects duplicate assertion identities inside
+a batch; interval closure aggregates the nearest later observation per relationship,
+source and channel. Failed intermediate duplicate/closure checks remain failed.
+The corrected standalone sample takes 29.551 seconds and retains the same 2,671
+nodes / 2,673 relationships. It does not certify full-scale throughput or storage.
+
+The observed rate still implies a multi-day historical load. Ingest/ingest-all/backfill
+use `LIMES_CORPUS_JOB_TIMEOUT_SECONDS` (default/max seven days); other operations
+retain the 24-hour default. Productive source slices remain 30 minutes, and stalled
+transport/processing remains failure. A longer productive envelope does not permit
+blind retries, automatic interrupted-job replay or a claim of completed coverage.
+Full inventories, storage/capacity and maintained freshness remain acceptance evidence
+obligations under the same BE-57 package and OI-36; no production run is authorized.
+
+## 2026-11-10 — D-101 (R2) — BE-57 corpus reliability as a product blocker
+
+The user requests fixing full ingestion and auditing similar source defects.
+Deliver one complete reliability package on `codex/be-57-corpus-ingestion-reliability`
+from live main `5f6456b2b40c`; acceptance is recorded before coding in
+`work/be57/SESSION.md` and maintained in [the source audit](docs/CORPUS_INGESTION_RELIABILITY.md).
+The supplied interrupted-run README is evidence, not fresh authorization to resume
+its stopped driver or paid/production jobs. Keep the three-service topology,
+manual operation resubmission, independent validation and content-addressed archive.
+
+Use TED's supported package service, durable HTTP/load/package receipts, full
+initial structured acquisition and explicit incomplete outcomes. Completed graph
+writes precede receipt commits; complete-window graph checkpoints precede journal
+retirement. Preserve original artifacts, observation dates and version invalidation.
+Missing optional source facets never justify inventing facts; unidentifiable
+required records and failed publishers prevent clean coverage. Distinguish service
+health, active progress, blocked transport, completed windows and actual corpus
+acceptance. Qualify code and bounded public samples without calling those a full
+production ingest. No staging, commit, push, deployment, merge or paid run is requested.
+
 ## 2026-11-10 — D-100 (R1) — Current-release qualification on the fixed-size executor
 
 The user requests remaining current-release repairs and a whole-codebase test

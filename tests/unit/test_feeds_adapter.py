@@ -302,7 +302,7 @@ def test_normalize_unparseable_published_timestamp_falls_back(tmp_path):
     assert len(warnings) == 1
 
 
-def test_dead_feed_does_not_fail_entries_from_later_feed(tmp_path):
+def test_dead_feed_preserves_later_entries_but_fails_coverage(tmp_path):
     config = _MINIMAL_CONFIG + "  - url: https://example.com/later.xml\n    name: Later\n"
     adapter = _adapter(tmp_path, config)
     with respx.mock:
@@ -311,7 +311,10 @@ def test_dead_feed_does_not_fail_entries_from_later_feed(tmp_path):
             return_value=Response(200, content=(FIXTURES / "feed.xml").read_bytes())
         )
         with structlog.testing.capture_logs() as captured:
-            records = list(adapter.fetch(None, None))
+            records = []
+            with pytest.raises(SourceFetchError, match="incomplete acquisition"):
+                for record in adapter.fetch(None, None):
+                    records.append(record)
         partial = next(e for e in captured if e["event"] == "feeds: acquisition incomplete")
         assert FEED_URL in partial["failed_feeds"][0]
         assert partial["entries_yielded"] == len(records)
@@ -326,7 +329,7 @@ def test_all_failed_feeds_names_every_url(tmp_path):
     with respx.mock:
         respx.get(FEED_URL).mock(return_value=Response(410))
         respx.get(later).mock(return_value=Response(403))
-        with pytest.raises(SourceFetchError, match="every configured feed failed") as error:
+        with pytest.raises(SourceFetchError, match="incomplete acquisition") as error:
             list(adapter.fetch(None, None))
     assert FEED_URL in str(error.value) and later in str(error.value)
 
@@ -337,4 +340,5 @@ def test_failed_and_healthy_empty_feed_is_not_all_failed(tmp_path):
     with respx.mock:
         respx.get(FEED_URL).mock(return_value=Response(410))
         respx.get(later).mock(return_value=Response(200, content=b"<rss><channel/></rss>"))
-        assert list(adapter.fetch(None, None)) == []
+        with pytest.raises(SourceFetchError, match="incomplete acquisition"):
+            list(adapter.fetch(None, None))

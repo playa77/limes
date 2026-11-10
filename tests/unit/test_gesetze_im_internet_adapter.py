@@ -19,6 +19,7 @@ import io
 import zipfile
 from datetime import UTC, datetime
 
+import pytest
 import respx
 from httpx import Response
 from structlog.testing import capture_logs
@@ -226,7 +227,7 @@ def test_law_xml_without_metadaten_raises_source_parse_error():
         raise AssertionError("expected SourceParseError")
 
 
-def test_law_without_fundstelle_is_skipped_and_counted():
+def test_law_without_fundstelle_is_retained_with_stable_source_identity():
     xml = (
         "<gesetz><metadaten><jurabk>XYZG</jurabk>"
         '<ausfertigung-datum manuell="ja">2010-05-01</ausfertigung-datum>'
@@ -240,13 +241,18 @@ def test_law_without_fundstelle_is_skipped_and_counted():
         normalized = ADAPTER.normalize(_law_record(buffer.getvalue(), LAW_WITH_TOPICS_LINK))
 
     assert normalized.assertions == []
-    assert normalized.entities == []
+    assert len(normalized.entities) == 1
+    entity = normalized.entities[0]
+    assert entity.type == "LegalAct" and entity.label == "Gesetz ohne Fundstelle"
+    assert entity.deterministic_key is None
+    repeated = ADAPTER.normalize(_law_record(buffer.getvalue(), LAW_WITH_TOPICS_LINK))
+    assert repeated.entities == [entity]
     summary = [log for log in logs if log["event"] == "gesetze_im_internet: law normalized"][0]
-    assert summary["skipped"] == {"no_fundstelle": 1}
+    assert summary["skipped"]["no_fundstelle"] == 1
     assert summary["assertions"] == 0
 
 
-def test_fundstelle_without_periodikum_or_zitstelle_is_skipped():
+def test_incomplete_citation_does_not_discard_law():
     xml = (
         "<gesetz><metadaten><jurabk>FPG</jurabk>"
         "<fundstelle><periodikum>BGBl. I</periodikum></fundstelle>"
@@ -261,7 +267,8 @@ def test_fundstelle_without_periodikum_or_zitstelle_is_skipped():
 
     assert normalized.assertions == []
     summary = [log for log in logs if log["event"] == "gesetze_im_internet: law normalized"][0]
-    assert summary["skipped"] == {"no_fundstelle": 1}
+    assert summary["skipped"]["no_fundstelle"] == 1
+    assert len(normalized.entities) == 1
 
 
 def test_law_without_ausfertigung_date_falls_back_to_fetched_at():
@@ -421,7 +428,7 @@ def test_zip_with_corrupted_member_raises_source_parse_error():
         raise AssertionError("expected SourceParseError for a corrupted member")
 
 
-def test_index_item_without_link_is_skipped():
+def test_index_item_without_link_blocks_coverage():
     toc = (
         b"<rss><channel>"
         b"<item><title>Ohne Link</title></item>"
@@ -430,21 +437,8 @@ def test_index_item_without_link_is_skipped():
     )
     with respx.mock:
         respx.get(TOC_URL).mock(return_value=Response(200, content=toc))
-        respx.get("http://www.gesetze-im-internet.de/xyz/xml.zip").mock(
-            return_value=Response(200, content=_law_zip_bytes(MEMBER_WITH_TOPICS))
-        )
-        with capture_logs() as logs:
-            records = list(ADAPTER.fetch(None, None))
-    assert [r.source_url for r in records] == [
-        TOC_URL,
-        "http://www.gesetze-im-internet.de/xyz/xml.zip",
-    ]
-    warnings = [
-        log
-        for log in logs
-        if log["event"] == "gesetze_im_internet: index item without link; skipped"
-    ]
-    assert len(warnings) == 1
+        with pytest.raises(SourceParseError, match="no acquisition link"):
+            list(ADAPTER.fetch(None, None))
 
 
 def test_index_that_is_not_parseable_raises_source_parse_error():

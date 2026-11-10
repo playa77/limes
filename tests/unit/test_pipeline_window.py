@@ -166,6 +166,26 @@ def test_until_passes_through_unmodified():
     assert passed == until
 
 
+def test_initial_structured_corpora_never_inherit_news_lookback():
+    from limes.sources.bundestag_dip import BundestagDipAdapter
+    from limes.sources.eurlex import EurlexAdapter
+    from limes.sources.ted import TedAdapter
+
+    for adapter in (TedAdapter(), EurlexAdapter(), BundestagDipAdapter()):
+        assert resolve_window(_spec(), adapter, None, _settings(), now=NOW) == (None, None)
+
+
+def test_legacy_recent_window_success_does_not_certify_historical_corpus():
+    from limes.sources.ted import TedAdapter
+
+    source = SourceRecord(source_id="ted", name="TED", kind="structured", trust_rank=1,
+                          last_success_at=LAST_SUCCESS)
+    assert resolve_window(_spec(), TedAdapter(), source, _settings(), now=NOW) == (None, None)
+    source.corpus_complete = True
+    since, until = resolve_window(_spec(), TedAdapter(), source, _settings(), now=NOW)
+    assert since == LAST_SUCCESS and until == LAST_SUCCESS + timedelta(days=1)
+
+
 def test_gdelt_backfill_old_checkpoint_is_bounded_oldest_prefix():
     from limes.sources.gdelt import GdeltAdapter
 
@@ -180,7 +200,7 @@ def test_gdelt_backfill_old_checkpoint_is_bounded_oldest_prefix():
     assert until == datetime(2026, 7, 2, 12, 0, tzinfo=UTC)
 
 
-def test_gdelt_fresh_or_absent_checkpoint_keeps_explicit_window():
+def test_gdelt_fresh_or_absent_checkpoint_keeps_start_and_uses_safe_publication_end():
     from limes.sources.gdelt import GdeltAdapter
 
     cutoff = NOW - timedelta(days=1)
@@ -189,4 +209,4 @@ def test_gdelt_fresh_or_absent_checkpoint_keeps_explicit_window():
         source = SourceRecord(source_id='gdelt', name='GDELT', kind='structured',
                               trust_rank=0.5, last_success_at=checkpoint)
         assert resolve_window(spec, GdeltAdapter(), source, _settings(), now=NOW) == (
-            cutoff, None)
+            cutoff, datetime(2026, 8, 1, 11, 45, tzinfo=UTC))

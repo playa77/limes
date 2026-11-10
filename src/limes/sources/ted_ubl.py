@@ -188,7 +188,12 @@ def normalize_ubl(
         value(t, "ID"): t for t in descendants(root, "TenderingParty") if children(t, "Tenderer")
     }
     award_dates: dict[str, set[datetime]] = {}
+    settled_tenders: dict[str, list[str]] = {}
     for settled in descendants(root, "SettledContract"):
+        refs = reference(settled, "LotTender")
+        settled_id = value(settled, "ID")
+        if settled_id and refs:
+            settled_tenders[settled_id] = refs
         when = date(value(settled, "AwardDate"))
         if when is not None:
             for ref in reference(settled, "LotTender"):
@@ -198,6 +203,11 @@ def normalize_ubl(
             continue
         lot_refs = reference(result, "TenderLot")
         tender_refs = reference(result, "LotTender")
+        if not tender_refs:
+            tender_refs = list(dict.fromkeys(
+                tender for settled_id in reference(result, "SettledContract")
+                for tender in settled_tenders.get(settled_id, [])
+            ))
         if len(lot_refs) != 1 or lot_refs[0] not in contracts or not tender_refs:
             errors += 1
             continue

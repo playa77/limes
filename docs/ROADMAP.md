@@ -7,6 +7,18 @@ The [documentation index](INDEX.md) identifies each document's authority; the
 Historical bare WP numbers must be qualified as backend or desktop. Old counts,
 unticked archived plans and merged commits are never substituted for acceptance.
 
+## Active ingestion reliability — BE-57 (2026-11-10)
+
+Branch `codex/be-57-corpus-ingestion-reliability`, live base `5f6456b2b40c`.
+[Acceptance and every-source audit](CORPUS_INGESTION_RELIABILITY.md) cover TED bulk
+packages, durable acquisition/load recovery, initial corpus scope, paging,
+partial-source failures and honest progress. This supersedes the older candidate
+labels below for current delivery. Full corpus ingestion remains a product blocker;
+automated qualification cannot certify deployed coverage. Current FSD availability,
+live OSM capacity, historical update discovery and full inventory/freshness
+reconciliation retain explicit evidence obligations. The stopped data run is not
+restarted as part of implementation verification.
+
 ## Implementation candidate — BE-56 German parliamentary members and federal officeholders (2026-11-07)
 
 The implementation candidate covers every serving member of the Bundestag and all 16 state

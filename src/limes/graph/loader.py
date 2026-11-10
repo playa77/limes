@@ -32,7 +32,9 @@ from __future__ import annotations
 
 import json
 import math
+import re
 from collections.abc import Callable
+from contextlib import nullcontext
 from datetime import UTC, datetime
 from typing import Any
 
@@ -81,6 +83,7 @@ def load(
     standalone_entities: list[EntityEndpoint] | None = None,
     lookup_rows: list[LookupRow] | None = None,
     embedder: Callable[[list[str]], list[list[float]]] | None = None,
+    bulk: bool = False,
 ) -> LoadResult:
     """Validate, partition, and write one batch of assertions bitemporally.
 
@@ -131,9 +134,10 @@ def load(
             lookup_chunks[index] if index < len(lookup_chunks) else [],
             embedder,
             result,
+            bulk,
         )
     for chunk in lookup_chunks[len(batches) :]:
-        _load_batch(driver, [], ontology, [], chunk, embedder, result)
+        _load_batch(driver, [], ontology, [], chunk, embedder, result, bulk)
     return result
 
 
@@ -347,6 +351,7 @@ def _load_batch(
     lookup_rows: list[LookupRow],
     embedder: Callable[[list[str]], list[list[float]]] | None,
     result: LoadResult,
+    bulk: bool = False,
 ) -> None:
     """One batch in one transaction: nodes, lookup rows, relationships, and
     interval closure (Doc 2 §5.6). A partial batch can leave neither an edge
@@ -398,7 +403,8 @@ def _load_batch(
         relation_spec = ontology.relation_types[assertion.relation]
         statements.append(
             (
-                queries.create_relationship(assertion.relation),
+                (queries.merge_relationship if bulk else queries.create_relationship)(
+                    assertion.relation),
                 {
                     "subject_id": assertion.subject.entity_id,
                     "object_id": assertion.object.entity_id,
@@ -410,7 +416,8 @@ def _load_batch(
         if relation_spec.temporal and assertion.provenance.validity_basis != "roster_observation":
             statements.append(
                 (
-                    queries.close_interval(assertion.relation),
+                    (queries.close_intervals if bulk else queries.close_interval)(
+                        assertion.relation),
                     {
                         "subject_id": assertion.subject.entity_id,
                         "object_id": assertion.object.entity_id,
@@ -421,7 +428,11 @@ def _load_batch(
                 )
             )
 
-    with driver._driver.session(default_access_mode="WRITE") as session:
+    if bulk:
+        statements = _coalesce_statements(statements)
+    with getattr(driver, "_write_gate", nullcontext)(), driver._driver.session(
+        default_access_mode="WRITE"
+    ) as session:
         tx = session.begin_transaction()
         try:
             created_in_batch = 0
@@ -432,6 +443,9 @@ def _load_batch(
                 created_in_batch += counters.nodes_created or 0
                 result.written += counters.relationships_created or 0
                 for record in records:
+                    if record.get("processed") is not None:
+                        result.skipped += int(record["processed"]) - (
+                            counters.relationships_created or 0)
                     if record.get("outcome") == "skipped":
                         result.skipped += 1
                     closed = record.get("closed")
@@ -444,6 +458,28 @@ def _load_batch(
 
     result.nodes_created += created_in_batch
     result.nodes_matched += max(0, len(endpoints) - created_in_batch)
+
+
+def _coalesce_statements(
+    statements: list[tuple[str, dict[str, Any]]],
+) -> list[tuple[str, dict[str, Any]]]:
+    """Bounded UNWIND writes, preserving entity-before-edge ordering.
+
+    Only generated query templates enter here; source values remain parameters.
+    Each relationship type is created before its interval closures. Closing all
+    earlier intervals after creating that type gives the same final intervals
+    regardless of input chronology, including replay and contradictory sources.
+    """
+    grouped: dict[str, list[dict[str, Any]]] = {}
+    for cypher, parameters in statements:
+        grouped.setdefault(cypher, []).append(parameters)
+    for cypher, rows in grouped.items():
+        if cypher.endswith("RETURN count(r) AS closed"):
+            rows.sort(key=lambda row: row["valid_from"])
+    return [
+        ("UNWIND $rows AS row\n" + re.sub(r"\$(\w+)", r"row.\1", cypher), {"rows": rows})
+        for cypher, rows in grouped.items()
+    ]
 
 
 def _embeddings_for(

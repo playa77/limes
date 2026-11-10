@@ -16,7 +16,10 @@ import gzip
 import hashlib
 import os
 import uuid
+from collections.abc import Iterator
+from contextlib import contextmanager
 from pathlib import Path
+from typing import BinaryIO, cast
 
 
 class ArchiveStore:
@@ -43,8 +46,16 @@ class ArchiveStore:
         final_path.parent.mkdir(parents=True, exist_ok=True)
         temp_path = final_path.with_name(f".tmp-{uuid.uuid4().hex}")
         try:
-            temp_path.write_bytes(gzip.compress(payload))
+            with temp_path.open("wb") as output:
+                output.write(gzip.compress(payload))
+                output.flush()
+                os.fsync(output.fileno())
             os.replace(temp_path, final_path)
+            descriptor = os.open(final_path.parent, os.O_RDONLY | os.O_DIRECTORY)
+            try:
+                os.fsync(descriptor)
+            finally:
+                os.close(descriptor)
         finally:
             temp_path.unlink(missing_ok=True)
         return content_hash
@@ -54,6 +65,41 @@ class ArchiveStore:
         Raises `FileNotFoundError` when the hash is not in the archive."""
         with gzip.open(self.path_for(content_hash), "rb") as handle:
             return handle.read()
+
+    def put_file(self, path: Path) -> str:
+        """Archive a large source artifact with bounded memory and durable publication."""
+        digest = hashlib.sha256()
+        with path.open("rb") as source:
+            while chunk := source.read(1024 * 1024):
+                digest.update(chunk)
+        content_hash = digest.hexdigest()
+        final = self.path_for(content_hash)
+        if final.exists():
+            return content_hash
+        final.parent.mkdir(parents=True, exist_ok=True)
+        temporary = final.with_name(f".tmp-{uuid.uuid4().hex}")
+        try:
+            with path.open("rb") as source, temporary.open("wb") as output:
+                with gzip.GzipFile(fileobj=output, mode="wb") as compressed:
+                    while chunk := source.read(1024 * 1024):
+                        compressed.write(chunk)
+                output.flush()
+                os.fsync(output.fileno())
+            os.replace(temporary, final)
+            descriptor = os.open(final.parent, os.O_RDONLY | os.O_DIRECTORY)
+            try:
+                os.fsync(descriptor)
+            finally:
+                os.close(descriptor)
+        finally:
+            temporary.unlink(missing_ok=True)
+        return content_hash
+
+    @contextmanager
+    def open(self, content_hash: str) -> Iterator[BinaryIO]:
+        """Stream the original artifact instead of expanding it into RAM."""
+        with gzip.open(self.path_for(content_hash), "rb") as handle:
+            yield cast(BinaryIO, handle)
 
     def preview(self, content_hash: str, limit: int = 65536) -> tuple[bytes, bool]:
         """Bound decompression for interactive evidence inspection, including old archives."""

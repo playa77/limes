@@ -70,6 +70,9 @@ def build_run_context(
     from limes.sources.osm_acquisition import OsmAcquisition
 
     archive = build_archive_store(settings)
+    from limes.sources.acquisition import AcquisitionStore
+
+    acquisitions = AcquisitionStore(archive, settings.archive_path / ".acquisition" / "sources")
     from limes.public_offices.acquisition import Acquisition
 
     offices_acquisition = Acquisition(driver, archive)
@@ -95,6 +98,7 @@ def build_run_context(
             driver=driver,
             registry=registry,
             archive=archive,
+            acquisitions=acquisitions,
         )
 
     nlp_de = spacy.load(settings.gate_spacy_model_de)
@@ -114,6 +118,7 @@ def build_run_context(
         driver=driver,
         registry=registry,
         archive=archive,
+        acquisitions=acquisitions,
         recorder=recorder,
         client=client,
         extractor=extractor,

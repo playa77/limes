@@ -128,6 +128,7 @@ def test_trace1_structured_run_end_to_end(ctx, fixture_fetch):
     )
     assert rows[0]["label"] == "Stuttgart, Stadtkreis"
 
+
     # Provenance is stamped from the registry (§15.2).
     rows = ctx.driver.read(
         "MATCH (:Entity)-[r:PART_OF_REGION]->(:Entity) RETURN DISTINCT r.source_id AS sid, "
@@ -139,9 +140,46 @@ def test_trace1_structured_run_end_to_end(ctx, fixture_fetch):
     assert rows[0]["trust"] == pytest.approx(GiscoNutsAdapter().trust_rank)
 
     # The archive holds both payloads (content-addressed gzip files).
-    root = ctx.archive.path_for("x").parents[2]
-    stored = [p for p in root.glob("**/*") if p.is_file()]
-    assert len(stored) == 2
+    import hashlib
+
+    for raw in fixture_fetch:
+        assert ctx.archive.get(hashlib.sha256(raw.payload).hexdigest()) == raw.payload
+
+
+def test_interrupted_acquisition_resumes_loaded_prefix_on_real_graph(ctx, monkeypatch):
+    from limes.errors import SourceFetchError
+
+    records = _fixture_records()
+    failed = False
+
+    def fetch(self, since, until):
+        nonlocal failed
+        yield records[0]
+        if not failed:
+            failed = True
+            raise SourceFetchError("second download interrupted")
+        yield records[1]
+
+    monkeypatch.setattr(GiscoNutsAdapter, "fetch", fetch)
+    spec = RunSpec(source_id="gisco_nuts", mode="ingest")
+    with pytest.raises(SourceFetchError, match="interrupted"):
+        execute_run(spec, ctx)
+    state = ctx.driver.read(
+        "MATCH (s:Source {source_id:'gisco_nuts'}) RETURN s.last_success_at AS t", {}, 30
+    )
+    assert state[0]["t"] is None
+    # A fresh composition/session reads the persisted receipts, with the same graph.
+    recovered = build_run_context(ctx.settings, needs_inference=False)
+    try:
+        run = execute_run(spec, recovered)
+        assert not run.errors
+        assert run.nodes_created == 3  # only the unfinished postal rows
+        assert run.assertions_written == run.assertions_skipped == 0
+        assert recovered.driver.read(
+            "MATCH ()-[r:PART_OF_REGION]->() RETURN count(r) AS n", {}, 30
+        )[0]["n"] == 9
+    finally:
+        recovered.driver.close()
 
 
 def test_ac05_reingest_writes_nothing_new(ctx, fixture_fetch):
@@ -227,7 +265,7 @@ def test_source_and_run_nodes_are_durable(ctx, fixture_fetch):
     assert rows[0]["name"] == "GISCO/NUTS"
     assert rows[0]["kind"] == "structured"
     assert rows[0]["run_id"] == record.run_id
-    assert rows[0]["at"] == record.started_at
+    assert rows[0]["at"] == record.window_to
 
     rows = ctx.driver.read(
         "MATCH (r:IngestionRun {run_id: $run_id}) "

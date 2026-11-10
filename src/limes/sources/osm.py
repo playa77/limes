@@ -56,7 +56,12 @@ from typing import Literal
 import httpx
 import structlog
 
-from limes.errors import SourceFetchError, SourceParseError
+from limes.errors import (
+    SourceFetchError,
+    SourceParseError,
+    SourceRunBudgetExceeded,
+    SourceSliceEnded,
+)
 from limes.sources.base import (
     RetryExhausted,
     TransientFailure,
@@ -227,6 +232,13 @@ class OsmAdapter:
         plan_hash = payload_hash(json.dumps([OVERPASS_URL, *OVERPASS_QUERIES]).encode())
         with nullcontext() if self._run_scope_active else store.locked():
             state = store.read(plan_hash)
+            from limes.sources.acquisition import active_acquisition
+
+            acquisition = active_acquisition.get()
+            if acquisition is not None:
+                acquisition.incomplete_reason = (
+                    "osm: failed leaves remain" if state.failed_leaves else None
+                )
             leaves = _leaf_queries(state.splits)
             leaf_keys = {key for key, _ in leaves}
             if (not (set(state.partitions) | set(state.failed_leaves)) <= leaf_keys
@@ -241,6 +253,9 @@ class OsmAdapter:
                     index += 1
                     continue
                 if requests >= MAX_REQUESTS_PER_RUN:
+                    if (acquisition is not None and acquisition.new_responses
+                            and not state.failed_leaves):
+                        raise SourceSliceEnded("osm: productive acquisition request slice ended")
                     raise SourceFetchError(
                         "osm: acquisition request limit reached; "
                         "progress retained for explicit resume")
@@ -253,8 +268,11 @@ class OsmAdapter:
                     payload = fetch_bytes_form(
                         self.endpoints[0], {"data": query},
                         read_timeout_s=self.read_timeout_s, fallback_urls=self.endpoints[1:])
+                    fetched_at = now_utc()
                     content_hash = store.archive.put("osm", payload, "application/json")
                     _validated_elements(payload)
+                except SourceRunBudgetExceeded:
+                    raise  # a local work boundary is not an upstream failed leaf
                 except (OverpassCapacityError, SourceFetchError) as exc:
                     if not isinstance(exc, OverpassCapacityError):
                         cause = exc.__cause__
@@ -272,12 +290,18 @@ class OsmAdapter:
                                   if isinstance(exc, OverpassCapacityError) else str(exc))
                         state.failed_leaves[partition] = FailedLeaf(
                             error=reason, content_hash=content_hash)
+                        if acquisition is not None:
+                            acquisition.incomplete_reason = "osm: failed leaves remain"
                         store.write(state)
                         logger.warning("osm leaf failed", partition=partition,
                                        error=reason, error_content_hash=content_hash)
                         index += 1
                         continue
                     state.failed_leaves.pop(partition, None)
+                    if acquisition is not None:
+                        acquisition.incomplete_reason = (
+                            "osm: failed leaves remain" if state.failed_leaves else None
+                        )
                     state.splits.append(partition)
                     store.write(state)  # durable topology before requesting children
                     leaves = _leaf_queries(state.splits)
@@ -288,6 +312,11 @@ class OsmAdapter:
                 state.partitions[partition] = PartitionEntry(
                     content_hash=content_hash, fetched_at=fetched_at)
                 store.write(state)
+                if acquisition is not None:
+                    acquisition.new_responses += 1
+                    acquisition.incomplete_reason = (
+                        "osm: failed leaves remain" if state.failed_leaves else None
+                    )
                 index += 1
                 logger.info("osm partition acquired", partition=partition,
                             completed=len(state.partitions), total=len(leaves),
@@ -323,7 +352,7 @@ class OsmAdapter:
             self._completed_acquisition = state.acquisition_id
 
     def complete_fetch(self) -> None:
-        """Retire state after complete loading, before the source success checkpoint."""
+        """Retire state after complete loading and the source success checkpoint."""
         if self.acquisition is not None and self._completed_acquisition is not None:
             self.acquisition.complete(
                 self._completed_acquisition, already_locked=self._run_scope_active)

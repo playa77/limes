@@ -81,6 +81,7 @@ from limes.types import (
 
 if TYPE_CHECKING:
     from limes.pipeline.gate import GateContext
+    from limes.sources.acquisition import AcquisitionStore
 
 logger = structlog.get_logger(__name__)
 
@@ -100,6 +101,7 @@ class RunContext:
     client: OpenRouterClient | None = None
     extractor: Extractor | None = None
     gate: GateContext | None = None
+    acquisitions: AcquisitionStore | None = None
 
 
 class ResolutionStats(BaseModel):

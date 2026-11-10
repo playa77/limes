@@ -43,6 +43,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import Iterator
+from copy import deepcopy
 from datetime import UTC, datetime
 from typing import Literal
 
@@ -106,16 +107,57 @@ class TransparencyRegisterAdapter:
             bytes=len(payload),
             fetched_at=fetched_at.isoformat(),
         )
-        yield RawRecord(
+        original = RawRecord(
             payload=payload,
             content_type=XML_CONTENT_TYPE,
             source_url=EXPORT_URL,
             fetched_at=fetched_at,
         )
+        try:
+            root = etree.fromstring(
+                _repair_xml_controls(payload),
+                etree.XMLParser(resolve_entities=False, no_network=True, recover=False),
+            )
+        except (etree.XMLSyntaxError, ValueError) as exc:
+            raise SourceParseError("transparency_register: invalid export XML") from exc
+        if root.getroottree().docinfo.doctype:
+            raise SourceParseError("transparency_register: DTD declarations are not supported")
+        if etree.QName(root).localname != "ListOfIRPublicDetail":
+            yield original
+            return
+        rows = root.xpath(".//*[local-name()='interestRepresentative']")
+        counts = root.xpath(".//*[local-name()='numberOfIR']/text()")
+        dates = root.xpath(".//*[local-name()='exportDate']/text()")
+        try:
+            if len(counts) != 1 or int(counts[0]) != len(rows) or len(dates) != 1:
+                raise ValueError("count/date mismatch")
+        except ValueError as exc:
+            raise SourceParseError("transparency_register: incomplete export metadata") from exc
+        original.acquisition_context = {"archive_only": True}
+        yield original
+        namespace = etree.QName(root).namespace
+        prefix = f"{{{namespace}}}" if namespace else ""
+        digest = payload_hash(payload)
+        for offset in range(0, len(rows), 250):
+            selected = rows[offset:offset + 250]
+            chunk = etree.Element(root.tag, nsmap=root.nsmap)
+            metadata = etree.SubElement(chunk, prefix + "metaData")
+            etree.SubElement(metadata, prefix + "exportDate").text = dates[0]
+            etree.SubElement(metadata, prefix + "numberOfIR").text = str(len(selected))
+            result = etree.SubElement(chunk, prefix + "resultList")
+            result.extend(deepcopy(row) for row in selected)
+            yield RawRecord(
+                payload=etree.tostring(chunk), content_type=XML_CONTENT_TYPE,
+                source_url=EXPORT_URL, fetched_at=fetched_at,
+                acquisition_context={"source_archive_hash": digest,
+                                     "source_row_offset": offset, "total_rows": len(rows)},
+            )
 
     def normalize(self, record: RawRecord) -> NormalizedRecord:
         """Convert one export payload into the interest-group assertion set.
         Pure: never touches the network."""
+        if (record.acquisition_context or {}).get("archive_only"):
+            return NormalizedRecord(content_hash=payload_hash(record.payload), kind="structured")
         try:
             payload = _repair_xml_controls(record.payload)
             root = etree.fromstring(
@@ -190,6 +232,7 @@ class TransparencyRegisterAdapter:
             content_hash=payload_hash(record.payload),
             kind="structured",
             assertions=assertions,
+            errors=counts["organisations_skipped_no_id"] + counts["organisations_skipped_no_name"],
         )
 
     def _normalize_current(self, root: etree._Element, record: RawRecord) -> NormalizedRecord:

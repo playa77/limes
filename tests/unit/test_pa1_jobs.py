@@ -179,6 +179,7 @@ def test_pool_runs_sources_concurrently_and_cancels_one(tmp_path, monkeypatch):
     slow = store.submit(request("migrate", version="1.0.0"))
     for _ in range(3):
         store.submit(request("backup"))
+    corpus = store.submit(request("ingest", source="ted"))
     other_ids = [
         row_id
         for row_id in _queue_ids(store)
@@ -194,11 +195,19 @@ def test_pool_runs_sources_concurrently_and_cancels_one(tmp_path, monkeypatch):
         return [sys.executable, "-c", script]
 
     monkeypatch.setattr(JobRequest, "argv", argv)
+    deadlines = {}
+    original_execute = worker.execute
 
+    def execute_with_observation(job, store, timeout, *events):
+        deadlines[str(job.job_id)] = timeout
+        return original_execute(job, store, timeout, *events)
+
+    monkeypatch.setattr(worker, "execute", execute_with_observation)
     stop = threading.Event()
     settings = SimpleNamespace(
         jobs_path=tmp_path / "jobs.sqlite3",
         job_timeout_seconds=6000,
+        corpus_job_timeout_seconds=12000,
         job_concurrency=4,
     )
 
@@ -233,6 +242,8 @@ def test_pool_runs_sources_concurrently_and_cancels_one(tmp_path, monkeypatch):
         stop.set()
         thread.join(timeout=60)
     assert not thread.is_alive()
+    assert deadlines[str(corpus.job_id)] == 12000
+    assert deadlines[str(slow.job_id)] == 6000
 
 
 def _queue_ids(store: JobStore) -> list[str]:

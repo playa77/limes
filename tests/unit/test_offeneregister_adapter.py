@@ -55,7 +55,8 @@ def test_fetch_legacy_metadata_then_original_and_bounded_data():
         records = list(OffeneRegisterAdapter(metadata_url=METADATA_URL).fetch(None, None))
     assert [r.source_url for r in records] == [METADATA_URL, DATA_URL, DATA_URL]
     assert records[0].content_type == "application/json"
-    assert records[1].content_type == "application/x-bzip2"
+    assert records[1].content_type == "application/json"
+    assert records[1].acquisition_context["archive_only"]
 
 
 def test_metadata_record_sets_publication_date():

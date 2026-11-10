@@ -6,6 +6,7 @@ where nothing is silently dropped, per §10 and §11 — plus each source's
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends
@@ -49,6 +50,12 @@ class RunStatus(BaseModel):
     errors: int = 0
     cost_eur: float = 0.0
     last_success_at: str | None = None
+    state: str = "acquiring"
+    last_progress_at: str | None = None
+    last_error: str | None = None
+    progress_stale: bool = False
+    window_from: str | None = None
+    window_to: str | None = None
 
 
 @router.get("/ingest/status")
@@ -61,6 +68,13 @@ def ingest_status(driver: Annotated[GraphDriver, Depends(get_driver)]) -> list[R
         run = row["latest"]
         started = native_datetime(run["started_at"])
         finished = native_datetime(run["finished_at"])
+        progress = native_datetime(run.get("last_progress_at")) or started
+        errors = int(run.get("errors") or 0)
+        state = str(run.get("state") or (
+            "failed" if errors else "complete_window" if finished else "acquiring"
+        ))
+        window_from = native_datetime(run.get("window_from"))
+        window_to = native_datetime(run.get("window_to"))
         statuses.append(
             RunStatus(
                 source_id=str(run["source_id"]),
@@ -75,8 +89,15 @@ def ingest_status(driver: Annotated[GraphDriver, Depends(get_driver)]) -> list[R
                 assertions_skipped=int(run.get("assertions_skipped") or 0),
                 assertions_rejected=int(run.get("assertions_rejected") or 0),
                 documents_gated_out=int(run.get("documents_gated_out") or 0),
-                errors=int(run.get("errors") or 0),
+                errors=errors,
                 cost_eur=float(run.get("cost_eur") or 0.0),
+                state=state,
+                last_progress_at=progress.isoformat() if progress else None,
+                last_error=run.get("last_error"),
+                progress_stale=bool(not finished and progress and (
+                    datetime.now(UTC) - progress).total_seconds() > 120),
+                window_from=window_from.isoformat() if window_from else None,
+                window_to=window_to.isoformat() if window_to else None,
             )
         )
     success: dict[str, str | None] = {}

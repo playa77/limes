@@ -1,5 +1,10 @@
 # BE-55 — GDELT backlog addressing and OSM leaf failures
 
+Current ingestion behavior is governed by [BE-57 corpus reliability](CORPUS_INGESTION_RELIABILITY.md).
+The bounded-pass/page-ceiling and explicit-window instructions below describe the
+older implementation; they are superseded by durable in-operation continuation.
+
+
 Branch: `codex/be-55-gdelt-backlog-and-osm-leaves`; live base `029f2fceea1d`.
 Owner decisions A/A, 2026-11-04. Prerequisites: BE-41 documentation acceptance
 passed; merged BE-47/BE-52 bounded checkpoint lifecycle and BE-49/50/53 durable

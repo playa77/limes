@@ -1,5 +1,20 @@
 # OPEN_ISSUES.md — LIMES evidenced open-issue ledger
 
+## Current ingestion disposition — 2026-11-10 (OI-36 / BE-57)
+
+**Full corpus ingestion is a product blocker.** Previous local automated release
+qualification does not establish ingestion readiness. The interrupted first-run
+record exposes misleading full-load scope, non-resumable ceilings/replay and
+partial-source success. [BE-57 acceptance and every-source audit](docs/CORPUS_INGESTION_RELIABILITY.md)
+record the repair, live sample boundaries and required full-corpus reconciliation.
+FSD current export acquisition and live OSM capacity remain blockers. Historical
+updates and actual complete ingestion/catch-up require evidence; these are
+engineering obligations, not failures excused as operator-only availability.
+The TED search-index total excludes archive history (January 2011 returns zero
+while its official package contains 32,511 notices); use package inventories for
+full-corpus reconciliation. No complete production ingest, freshness measurement,
+deployment or restart is claimed.
+
 Ledger mechanics: append-only; ids are never renumbered; an item leaves only
 through a `Closed` section carrying a re-runnable evidence line. "Resolved"
 means evidenced, not asserted — a bare "done" is not a closure. Design-level

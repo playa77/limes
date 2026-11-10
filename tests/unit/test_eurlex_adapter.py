@@ -326,3 +326,14 @@ def test_unparseable_date_falls_back_and_is_counted():
     assert adopted.validity.valid_from == NOW
     summary = [log for log in logs if log["event"] == "eurlex: normalized"][0]
     assert summary["skipped"] == {"unparseable_date": 1}
+
+
+def test_pinned_initial_corpus_filter_preserves_undated_acts():
+    from limes.sources.eurlex import _build_query
+
+    until = datetime(2026, 11, 10, tzinfo=UTC)
+    full = _build_query(None, until)
+    assert "!BOUND(?date) ||" in full
+    assert '?date <= "2026-11-10"^^xsd:date' in full
+    incremental = _build_query(datetime(2026, 11, 9, tzinfo=UTC), until)
+    assert "!BOUND(?date)" not in incremental

@@ -30,6 +30,10 @@ accepted for Wikipedia. No consumer read fetches providers. Remote CLI accepts
 Inspect acquired sections via GET /entity/ID/enrichment; failed jobs require manual
 replay with a new request ID after inspection. Existing source checkpoints advance
 only after the entire selected run succeeds; source versions replay idempotently.
+Ordinary ingest continues bounded windows through the invocation's safe target;
+it does not call one prefix a completed backlog. Failed publishers retain healthy
+entries but fail the aggregate coverage result. Source budgets bound work, not
+successful notices per hour. A stopped job still needs explicit resubmission.
 
 ## Configuration and first startup
 
@@ -142,24 +146,24 @@ actual authorized deployment. CI records JUnit results for every required suite.
 
 ## Investigation-driven news acquisition
 
-Default GDELT ingest covers one prefix of at most 96 slots; TED and EUR-Lex one day per
-invocation. Later ingests resume at the durable covered endpoint; failures never
-skip backlog. `ingest-all` attempts all sources, reports individual failures and
-fails its aggregate job when any source fails. Its success means a bounded pass,
-not that every historical window has been acquired. The first window anchor is persisted
-before fetching, so a failed initial attempt cannot slide the lookback start.
+Default GDELT ingest drains prefixes of at most 96 slots through its safe
+publication cutoff within one operation. TED/EUR-Lex bounded incremental windows
+also continue through the invocation target; initial historical acquisition is
+unfiltered. `ingest-all` attempts all sources and fails its aggregate job if any
+source fails. A clean result certifies its requested source windows, not unavailable
+historical feed/snapshot coverage. Initial window anchors and active acquisition
+windows are durable, so failed retries cannot slide the lookback start.
 
-GDELT `backfill --days 1` addresses an older source checkpoint before the fresh
-day: each explicit submission consumes the oldest unconsumed prefix of at most
-96 fifteen-minute slots, then durably advances the checkpoint. For a G-day gap,
-submit ceil(G/1) successful jobs sequentially, oldest to newest; inspect each
-terminal result and checkpoint before the next submission. No automatic replay.
-A checkpoint already advanced past a gap cannot reconstruct it; preserve the
-operator evidence and arrange a separately reviewed checkpoint repair first.
-When the checkpoint is at or after now-days (or absent), the existing fresh-window
-behavior remains; explicit windows over 96 slots still fail before network access.
-Other sources retain their existing backfill semantics. See
-[GDELT/OSM recovery](GDELT_BACKLOG_OSM_LEAVES.md) for cursor and coverage limits.
+GDELT `backfill --days N` addresses an older source checkpoint before the fresh
+window and continues clean prefixes through the invocation target. Explicit windows
+over 96 slots are supported with the composed durable acquisition journal;
+standalone adapter use without that journal retains the 96-slot guard. Per-file
+byte/row bounds remain. Completed downloads and loads survive an interrupted job;
+resubmit the same request explicitly to resume it. Interrupted jobs are never
+replayed automatically. A checkpoint already advanced past a gap cannot infer its
+lost coverage; preserve evidence and repair the historical window separately.
+[Corpus/source audit](CORPUS_INGESTION_RELIABILITY.md) supersedes the old one-prefix-
+per-submission instructions in [GDELT/OSM recovery](GDELT_BACKLOG_OSM_LEAVES.md).
 
 OSM exhausted leaf fetch failures are recorded in `failed_leaves` in the durable
 acquisition cursor. Eligible siblings continue within the existing 200-call cap;
