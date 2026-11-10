@@ -39,3 +39,34 @@ def test_write_batch_reraises_graph_write_errors_unchanged():
     driver._driver = FakeRawDriver()
     with pytest.raises(GraphWriteError, match="graph write failed: boom"):
         driver.write_batch([("RETURN 1", {})])
+
+
+def test_read_deadline_is_query_metadata_not_a_cypher_parameter(monkeypatch):
+    from neo4j import Query
+
+    observed = {}
+
+    class ReadSession:
+        def run(self, query, parameters=None, **kwargs):
+            observed.update(query=query, parameters=parameters, kwargs=kwargs)
+            return [{"value": parameters["timeout"]}]
+
+    class ReadDriver:
+        @contextmanager
+        def session(self, **kwargs):
+            observed["session"] = kwargs
+            yield ReadSession()
+
+        def close(self):
+            pass
+
+    monkeypatch.setattr("limes.graph.driver.GraphDatabase.driver", lambda *a, **k: ReadDriver())
+    driver = GraphDriver("bolt://localhost:7687", "u", "p", "neo4j")
+    assert driver.read("RETURN $timeout AS value", {"timeout": 99}, 7) == [{"value": 99}]
+    query = observed["query"]
+    assert isinstance(query, Query)
+    assert query.text == "RETURN $timeout AS value"
+    assert query.timeout == 7
+    assert observed["parameters"] == {"timeout": 99}
+    assert observed["kwargs"] == {}
+    assert observed["session"]["default_access_mode"] == "READ"

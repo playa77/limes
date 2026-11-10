@@ -13,6 +13,57 @@ merges or deployment without explicit instruction. Production/co-tenant operatio
 are outside implementation scope. Snapshot and issue rows below are historical
 records; subsequent evidence/closures are appended without erasing them.
 
+## Final current-release disposition — 2026-11-10
+
+This index supersedes the earlier OI-35 blocked snapshot below. Re-runnable receipts,
+source identity and complete lane commands are in [VERIFICATION](docs/VERIFICATION.md)
+and [CURRENT_RELEASE_READINESS](docs/CURRENT_RELEASE_READINESS.md).
+
+### Closed — OI-35 executor qualification and local configuration access
+
+`venv/bin/python tools/qualify.py --output work/readiness/<new-candidate>` passes
+all six pytest lanes (1,335 cases, zero failures/errors/skips), 48 web cases and
+all static guards on the unchanged final-10 source. Final source manifest/report:
+`work/readiness/candidate-final-10/`. Both Chromium gates pass: 22 real-renderer
+fixture scenarios and 24 scenarios through the exact three qualified images,
+including confirmed physical backup, one POST across route remount, dump and
+API/database/global-health recovery. No page errors, external calls or credential
+leaks are observed. Existing disk capacity is unchanged; no gate is waived.
+
+The user explicitly approved service configuration access including secrets and
+local restart. Service-group access is verified as UID/GID 7474 for API/worker;
+all three restored services report healthy on the qualified images. All original
+named volumes and configuration are retained. Evidence:
+`work/readiness/restored-local-environment.json`. Earlier approval rejections,
+storage failures and failed candidates remain historical evidence below.
+
+OI-34 now additionally has real-stack automated web backup/recovery evidence.
+Manual human click-through, reference-hardware rendering/latency and administrator
+deployment observations remain open, as do previously recorded live ingestion,
+coverage and extraction-quality obligations. These are not inferred from fixture
+success. The current candidate is ready to start the requested human testing.
+
+## Current-release readiness addendum — 2026-11-09
+
+This addendum supplements the current disposition below without replacing historical
+evidence. Current release implementation audit and repair mapping:
+[CURRENT_RELEASE_READINESS](docs/CURRENT_RELEASE_READINESS.md).
+
+| Issue | Current state | Owner/package | Remaining obligation or closure evidence |
+|---|---|---|---|
+| OI-35 | Current candidate blocked by executor storage and local configuration access | BE-45 / DC-17 + operator | Full final-5 passes 1,332 pytest cases, 46 web tests and static guards; runtime-stack image build fails with confirmed VFS ENOSPC. A separate 22-check Chromium fixture session passes. Run complete candidate on sufficient disk; repair pre-existing API/worker config access only after explicit approval, then observe the live web/backup flow. Automatic review rejected persistent ACL access including secrets; no ACL changed. Exact source and failed evidence remain in VERIFICATION. |
+| OI-34 | Automated fixture-browser evidence added; live/reference evidence still open | DC-17 / operator | All 15 routes plus graph rendering/selection and deep-link reload pass in real Chromium with fixture responses. This does not close the manual live-stack, reference-hardware, deployment or web-backup observation obligations below. |
+
+### Closed — DEFECT-PA1-R1 test isolation
+
+The ingestion-test assignment under `docs/next-version/` concerns current merged
+PA-1 behavior. Reproduction and fix: fresh disposable graph before composition
+provisioning. Re-run:
+`venv/bin/python -m pytest tests/integration/test_pipeline_run_structured.py tests/integration/test_composition_root.py -q`.
+Before: 1 failed/13 passed. After: 14 passed. Full final-5 graph integration also
+passes all 185 cases. Production downgrade rejection is unchanged. This closes
+that test defect, not live ingestion readiness or OI-35.
+
 ## Current disposition — 2026-11-09 (DC-17 web desktop implementation)
 
 This index supersedes the desktop wording of the 2026-11-04 section below;

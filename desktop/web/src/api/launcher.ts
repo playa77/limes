@@ -18,7 +18,7 @@ export interface Profile {
 }
 
 export class LauncherApi {
-  constructor(private readonly fetchImpl: typeof fetch = fetch) {}
+  constructor(private readonly fetchImpl: typeof fetch = globalThis.fetch.bind(globalThis)) {}
 
   async session(): Promise<SessionDescriptor> {
     return (await this.send("GET", "/session")) as SessionDescriptor

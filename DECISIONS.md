@@ -5,6 +5,56 @@ reversibility: **R1** reversible in under an hour, **R2** bounded recoverable
 cost, **R3** one-way door. Written when each decision is made, latest first.
 Nothing here is a status report; unlogged decisions are unmade decisions.
 
+## 2026-11-10 — D-100 (R1) — Current-release qualification on the fixed-size executor
+
+The user requests remaining current-release repairs and a whole-codebase test
+pass before human testing, explicitly excluding the proposed GraphRAG backlog.
+The routed PA-1 test-isolation defect belongs to the merged current release.
+BE-45 / DC-17 readiness is the parent delivery; no smaller feature package is
+invented. Preserve independent query validation and read-mode sessions; read
+transaction deadlines use Neo4j Query metadata, separate from Cypher parameters.
+
+The user confirms that executor disk cannot be enlarged and requires full
+qualification. Use standard multi-stage Docker builds with compact final
+filesystems, frozen runtime dependencies and a build-only installer mount.
+Preserve non-root identities, commands, model separation, vendor runtime paths,
+volumes and ports. Put filesystem metadata instructions before the final copy to
+avoid full VFS copies for empty layers. Source changes invalidate dependency
+installation in this layout; bounded storage justifies that build-cache tradeoff.
+
+Qualification may prune ordinary unused build cache and stale unused fixture
+images between builds. Regenerable development dependencies may temporarily use
+RAM; existing data volumes and configuration remain persistent. Direct relocation
+of live Docker layer directories was rejected by automatic approval review and
+was not applied. Detached controllers preserve execution across tooling
+reconnects. Interrupted or failing reports remain failed; no assertion or timeout
+is waived to obtain a passing result. Exact source and receipts belong in
+VERIFICATION, with live-browser evidence recorded separately.
+
+The user explicitly grants the existing API/worker service UID configuration read
+access including secrets and authorizes their local restart. Filesystem ACLs are
+unsupported, so grant equivalent service-group read/traverse access while
+preserving owner and private 750/640 modes. Never print secret contents. Restore
+the approved local services after testing and preserve all existing data volumes.
+No paid ingestion, external deployment, staging, commit, push or merge is included.
+Live acquisition/coverage and reference-hardware observations remain separate
+from automated release qualification.
+
+Local restoration measurement: the complete stack plus an on-disk development
+venv exhausted the fixed filesystem during Neo4j startup. Keep the exact qualified
+venv in RAM and retain a compressed on-disk copy, checksum and recovery command
+(`work/readiness/restore_canonical_venv.py`). Preserve the built desktop bundle;
+regenerable web build dependencies may be reinstalled when needed. This operational
+layout preserves service/data disk headroom without changing qualified runtime
+images. Record the failed first restoration and the final healthy receipt.
+
+Publication update: the user subsequently requests preparing and opening a PR for
+this readiness work, authorizing staging, commit, push and PR creation on
+`codex/current-release-readiness`. Publish the complete BE-45 / DC-17 readiness
+repair and qualification diff. The passed source digest remains unchanged;
+publication metadata receives lightweight checks. No merge or paid data run is
+included.
+
 ## 2026-11-09 — D-99 (R2) — DC-17: retire the PySide6 desktop for the ReUI web client plus launcher
 
 Dan's desktop rebuild instruction names ReUI — React + Tailwind v4 +

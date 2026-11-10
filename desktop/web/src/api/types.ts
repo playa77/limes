@@ -452,17 +452,17 @@ export function coverageReportFromApi(d: JsonObject): CoverageReport {
 
 export function diagnosisFromApi(d: JsonObject): Diagnosis {
   return {
-    failing_clause: str(d.failing_clause),
+    failing_clause: text(d.failing_clause, "failing_clause"),
     clause_index: num(d.clause_index),
     relation_counts: mapCount(d.relation_counts),
-    note: str(d.note),
+    note: text(d.note, "note"),
   }
 }
 
 export function nlqOutcomeFromApi(d: JsonObject): NlqOutcome {
   return {
-    question: str(d.question),
-    cypher: str(d.cypher),
+    question: text(d.question, "question"),
+    cypher: text(d.cypher, "cypher"),
     results: d.results != null ? graphResultFromApi(obj(d.results)) : null,
     validation_errors: (arr(d.validation_errors) as unknown[]).map(String),
     plan_rejection: (d.plan_rejection ?? null) as JsonObject | null,
@@ -508,8 +508,8 @@ export function graphNeighborsFromApi(d: JsonObject): GraphNeighbors {
 export function savedQueryFromApi(d: JsonObject): SavedQuery {
   return {
     saved_query_id: str(d.saved_query_id),
-    question: str(d.question),
-    cypher: str(d.cypher),
+    question: text(d.question, "question"),
+    cypher: text(d.cypher, "cypher"),
     ontology_version: str(d.ontology_version),
     result_count: num(d.result_count),
     created_at: str(d.created_at ?? ""),
@@ -575,7 +575,7 @@ export function operationJobFromApi(d: JsonObject): OperationJob {
     status: str(d.status),
     created_at: str(d.created_at ?? ""),
     updated_at: str(d.updated_at ?? ""),
-    output: str(d.output ?? ""),
+    output: text(d.output ?? "", "output"),
     exit_code: optNum(d.exit_code),
   }
 }
@@ -734,6 +734,13 @@ export function officesFromApi(d: JsonObject): OfficesResponse {
 }
 
 // -- parsing helpers (fail loudly, never default silently) ----------------
+
+function text(value: unknown, field: string): string {
+  // Empty free text is a valid API value (queued job output, rejected Cypher,
+  // or a diagnosis with no failing hop); identifiers still use nonempty str().
+  if (typeof value !== "string") throw new TypeError(`client mirror expects a string for ${field}`)
+  return value
+}
 
 export function toStringValue(value: unknown, field: string): string {
   if (typeof value !== "string" || value === "") {

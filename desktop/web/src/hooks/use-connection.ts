@@ -74,8 +74,12 @@ export function useConnectionSync(): void {
   }, [profiles.data, setProfiles])
 
   useEffect(() => {
-    if (health.data) setHealth(health.data)
-  }, [health.data, setHealth])
+    // Equal recovered payloads reuse their cached object; status still changes.
+    if (health.isSuccess && health.data) {
+      setHealth(health.data)
+      setTokenRequired(false)
+    }
+  }, [health.data, health.isSuccess, setHealth, setTokenRequired])
 
   useEffect(() => {
     if (!health.isError) return

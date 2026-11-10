@@ -10,6 +10,12 @@ Current implementation candidate (2026-11-07): **BE-56**, German parliamentary m
 and federal officeholders. See the package entry, [implementation contract](GERMAN_PARLIAMENT_MEMBERS.md)
 and [qualification evidence](VERIFICATION.md). Deployed population is a separate operator obligation.
 
+Current-release qualification (2026-11-10): the descendant BE-45 / DC-17 readiness
+candidate passes the complete automated inventory and real-stack browser backup/
+recovery on the fixed-size executor. [Evidence](CURRENT_RELEASE_READINESS.md).
+Historical BE-56 A7 blocked reports remain unchanged; live population/quality and
+reference-hardware evidence retain their named obligations.
+
 ## Exact position and status vocabulary
 
 Implementation commits exist in main for **BE-01–40 and BE-25a**. This is not a
@@ -91,6 +97,7 @@ ledger entries. Current code, tests and explicit issues govern status.
 | Cloud/Qt lifecycle repairs | cfcab1a / PR #1 | Implemented; desktop effects mapped in DC register |
 | Testing-phase auth/accounting/config/pins | 94052b4, e440b74 / PR #2/#3 | Implemented; supersedes old monetary/unauthenticated requirements |
 | Unprivileged runtime, jobs and backup | 9436372 / PR #4 | Implemented; disposable evidence in OPEN_ISSUES; operator deployment evidence absent |
+| Parallel acquisition, cancellation and source budgets | PA-1 / PR #27 (`3896e91`); [contract](next-version/PA-1_PARALLEL_ACQUISITION.md) | Implemented; [routed test-isolation defect](next-version/DEFECT-01_downgrade_guard_test_isolation.md) and [current readiness](CURRENT_RELEASE_READINESS.md) tracked separately |
 | Delivery contract and news review | PR #6, 3f1effd | Documentation/review merged; not news runtime delivery |
 
 ## Remaining sequence and acceptance
