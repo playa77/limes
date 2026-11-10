@@ -17,7 +17,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
 
-from neo4j import GraphDatabase, ManagedTransaction
+from neo4j import GraphDatabase, ManagedTransaction, Query
 from neo4j.exceptions import Neo4jError, SessionExpired, TransientError
 from tenacity import (
     retry,
@@ -100,7 +100,8 @@ class GraphDriver:
         """Execute `cypher` in a read-access-mode session and return rows as
         dicts. A write statement inside read mode is refused by the driver."""
         with self._driver.session(database=self._database, default_access_mode="READ") as session:
-            result = session.run(cypher, **params, timeout=timeout_s)
+            # Extra Session.run keywords are Cypher parameters, not transaction options.
+            result = session.run(Query(cypher, timeout=timeout_s), parameters=params)
             return [dict(record) for record in result]
 
     @retry(

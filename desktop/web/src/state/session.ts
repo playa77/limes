@@ -46,6 +46,7 @@ interface SessionStore {
   profiles: Profile[]
   activeProfile: string | null
   tokenRequired: boolean
+  backupRequestId: string | null
 
   // investigation state
   selection: string | null
@@ -59,6 +60,7 @@ interface SessionStore {
   setCapabilities(caps: Record<string, boolean>): void
   setProfiles(profiles: Profile[], active: string | null): void
   setTokenRequired(required: boolean): void
+  setBackupRequestId(requestId: string): void
   setSelection(entityId: string | null): void
   setTemporalFilter(filter: TemporalFilter): void
   publish(outcome: QueryOutcome, extra?: Pick<Bundle, "entity" | "hits" | "source">): void
@@ -76,6 +78,7 @@ export const useSession = create<SessionStore>((setState) => ({
   profiles: [],
   activeProfile: null,
   tokenRequired: false,
+  backupRequestId: null,
   selection: null,
   temporalFilter: { ...EMPTY_TEMPORAL },
   history: [],
@@ -95,6 +98,9 @@ export const useSession = create<SessionStore>((setState) => ({
   },
   setTokenRequired(required) {
     setState({ tokenRequired: required })
+  },
+  setBackupRequestId(backupRequestId) {
+    setState({ backupRequestId })
   },
   setSelection(entityId) {
     setState({ selection: entityId })

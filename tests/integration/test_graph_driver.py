@@ -85,3 +85,7 @@ def test_explain_returns_plansummary(driver: GraphDriver):
     assert summary.max_estimated_rows >= 0
     assert summary.total_estimated_rows >= 0
     assert summary.has_cartesian_product is False
+
+
+def test_read_preserves_a_parameter_named_timeout(driver: GraphDriver):
+    assert driver.read("RETURN $timeout AS value", {"timeout": 99}, 7) == [{"value": 99}]

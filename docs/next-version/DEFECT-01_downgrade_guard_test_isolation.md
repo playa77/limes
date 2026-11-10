@@ -40,3 +40,16 @@ leaves data (pipeline structured run writes a real `:Source`) breaks it.
 `pytest tests/integration/test_pipeline_run_structured.py tests/integration/test_composition_root.py -q`
 passes in one session; the guard's fresh-graph claim is stated by construction, not by
 luck of ordering.
+
+## 2026-11-09 — Current disposition: repaired and targeted requalification passed
+
+The current-release readiness pass reproduced the exact two-module command on
+main `1dd2d8241a84`: **1 failed, 13 passed**, 522.24 seconds; the failure was the
+reported `Source` count of one. `test_composition_root.py` now requests a
+function-scoped `fresh_graph` fixture backed by the session-owned disposable
+Neo4j instance. It deletes test data before the composition build, preserving
+the fresh-graph premise and the production guard. The repaired exact command
+passes **14 tests**, 395.47 seconds. Evidence: `work/readiness/defect-pa1-before.xml`
+and `defect-pa1-after.xml` with matching logs. No assertion was removed, and no
+production schema/guard code changed. Whole-candidate qualification is recorded
+separately in [VERIFICATION](../VERIFICATION.md).

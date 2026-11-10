@@ -21,6 +21,7 @@ in README, then this map.
 | How does OSM recover overloaded cells? | [Adaptive acquisition](OSM_ADAPTIVE_ACQUISITION.md) | BE-50 subdivision, resume, completeness and finite limits |
 | What failed in the second full ingest? | [BE-48 rerun repair](INGEST_RERUN_REPAIR.md) | Supplied job evidence, fixes, qualification and remaining limits |
 | What failed in the first full ingest? | [BE-47 diagnosis](INGEST_RUN_DIAGNOSIS.md) | Current source contracts, acceptance and bounded evidence; no production-success claim |
+| Is the current release ready for human testing? | [Current-release readiness](CURRENT_RELEASE_READINESS.md) | Package/ingestion-defect audit, browser repairs and full candidate evidence; live ingestion is separate |
 | What defects and external evidence remain? | [OPEN_ISSUES](../OPEN_ISSUES.md) | Current disposition index plus append-only history; direct closure evidence required |
 | Why were decisions made? | [DECISIONS](../DECISIONS.md), [CHANGELOG](../CHANGELOG.md) | Historical records, not current blanket acceptance |
 | What supports the status audit? | [Baseline audit](BASELINE_AUDIT.md), [news investigation](NEWS_REVIEW.md) | Artifact/ancestry/source evidence and limits; not competing architecture |

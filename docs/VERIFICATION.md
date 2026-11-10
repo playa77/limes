@@ -1,5 +1,149 @@
 # Verification and acceptance evidence
 
+## 2026-11-10 — Final current-release qualification and local recovery (BE-45 / DC-17)
+
+This is the final source-bound disposition, superseding intermediate current-release
+entries below. Full repairs and limitations: [CURRENT_RELEASE_READINESS](CURRENT_RELEASE_READINESS.md).
+
+**The current release passes the complete automated qualification and both browser
+gates; the approved local stack is restored and healthy.**
+
+Final candidate: `work/readiness/candidate-final-10/report.json`.
+Source SHA-256: `b02928e06b85d9839d58edd8112d534bad2c97d20118eedd18d6ec496cc51a72`.
+Live GitHub baseline: `1dd2d8241a84ebb7549768cdffe1029f89a4178b`.
+Validation elapsed: 10 November 2026, 09:25:40–09:52:59 CET; 1,638.952 seconds. This is validation time, not implementation effort
+or merge latency. Branch: `codex/current-release-readiness`; qualification was
+recorded before publication. The later PR authorization is recorded in D-100.
+
+| Lane | Passed |
+|---|---:|
+| Backend unit | 1,019 |
+| Desktop unit/contract | 42 |
+| Graph integration | 186 |
+| Acceptance | 85 |
+| Desktop integration | 2 |
+| Three-service runtime | 1 |
+| Total pytest cases | 1,335 |
+| Web Vitest | 48 |
+| Chromium renderer/navigation scenarios | 22 |
+| Chromium through real three-service stack | 24 |
+
+All six pytest lanes have zero failures, errors and skips. Frozen web install,
+TypeScript, ESLint, production build, Ruff, mypy, documentation/generation,
+G1–G4, whitespace and live-baseline checks pass. The runtime lane proves non-root
+execution, model separation, authorization, bounded jobs, remote backup, nonempty
+physical dump, recovered health and read-only API archive access. Graph integration
+restores the marker, 1,000 records and 1,024,000 payload bytes.
+
+The final Chromium fixture uses real Cytoscape, Leaflet and Plotly renderers and
+covers selection, header search, all routes and deep-link reload. Its receipt is
+`work/readiness/browser-fixture-final-source.json`, with no page errors or external
+requests. The separate real-stack flow uses the exact qualified images, a disposable
+graph and synthetic credentials: launcher session, read-only Cypher, route API
+responses, consequence confirmation, physical backup, navigation away/return with
+exactly one POST, actual dump output, recovered API/database health, recovered global
+header/action eligibility, credential confinement and reload. Receipts:
+`work/readiness/real-browser-results.json` and
+`work/readiness/real-browser-stack/success.json`; screenshot:
+`work/readiness/real-stack-browser.png`. Its dump is independently verified nonempty.
+
+There are 27 new behavioral regression cases (19 web, 6 supervisor, 1 query-deadline
+unit and 1 live reserved-parameter integration). The map teardown regression is
+covered by the real-renderer browser gate. These are distinct from cumulative
+suite counts. DEFECT-PA1-R1 has exact combined before/after evidence: 1 failed/13
+passed before, 14 passed after; final integration passes all 186 cases.
+
+Candidate-8 and candidate-9 retain passing canonical reports for their own source.
+Supplemental work caught stale global health after backup in candidate-8, then two
+Leaflet callbacks touching a removed pane in candidate-9. Health recovery tests
+failed before repair and pass after it; map stack traces and its passing repeated
+renderer gate are retained. Candidate-10 qualifies both repairs. Earlier interrupted
+or failed reports remain failed. Final-7's 120-second lookup timeout did not reproduce
+under instrumentation at the original deadline; the separately reproduced query
+metadata bug is fixed, but is not asserted as its sole cause.
+
+Qualification completed on the existing 2-CPU, 8-GB RAM, 7.9-GB disk executor with
+rootless Docker VFS. Standard compact multi-stage images, ordinary unused cache/image
+cleanup and RAM storage of regenerable dependencies bounded disk use.
+An initial local restoration with an on-disk venv exhausted startup disk; its
+failed receipt is retained. Moving the exact environment to RAM with a durable
+compressed recovery archive supplied the required local-service headroom.
+No assertion, authentication barrier, transaction deadline or content check was
+waived. Direct relocation of Docker layer directories was rejected and never applied.
+The qualification-only wrapper and source manifests are retained under `work/readiness`.
+
+The approved local API/worker configuration grant is verified as service UID 7474.
+All three local services are healthy on the exact verified images; original named
+data volumes and configuration are preserved. The canonical environment uses RAM with a durable compressed recovery archive
+and the desktop bundle remains available. Restoration receipt:
+`work/readiness/restored-local-environment.json`. OI-35's executor/configuration
+blockers are closed. Human/reference-hardware and live ingestion/quality obligations
+remain explicit; no paid data run or publication is claimed.
+
+
+## 2026-11-10 — Current-release automated qualification passed (BE-45 / DC-17)
+
+This supersedes the current-readiness disposition in the dated blocked entry below;
+all older failed reports keep their original status. Scope and repair mapping:
+[CURRENT_RELEASE_READINESS](CURRENT_RELEASE_READINESS.md). Current release only;
+no GraphRAG implementation, live paid ingestion or publication is included.
+
+Full canonical candidate: `work/readiness/candidate-final-8/report.json`.
+Base/live main: `1dd2d8241a84ebb7549768cdffe1029f89a4178b`.
+Source SHA-256: `2500b148e442f85cb1c51781a4045de8ecc22a9951b4bbb06ab7547d2f6af754`.
+Validation: 10 November 2026, 07:58:58–08:22:10 CET; 1,391.699 seconds elapsed.
+Branch `codex/current-release-readiness`; no staging, commit, push or merge.
+
+| Lane | Result |
+|---|---|
+| Live baseline, Ruff/runtime/tool lint, mypy, docs, generated docs, G1–G4, whitespace | Passed |
+| Web frozen install, TypeScript, Vitest, ESLint, production build | Passed; 46 tests |
+| Backend unit | 1,019 passed |
+| Desktop unit/contract | 42 passed |
+| Graph integration | 186 passed |
+| Acceptance | 85 passed |
+| Desktop integration | 2 passed |
+| Three-service runtime | 1 passed |
+
+**All six pytest lanes pass: 1,335 cases, zero failures/errors/skips.** This
+includes physical recovery of the marker, 1,000 records and 1,024,000 payload
+bytes; non-root roles; model separation; consumer/operator authorization;
+forbidden arbitrary commands; job idempotency and availability while Neo4j is
+down; nonempty dump; restored API/database health and read-only API archive.
+A separate same-source runtime preflight passed in 529.54 seconds before this
+full run; it is not added to the cumulative case count.
+
+The same frontend source passed the earlier 22-check real Chromium session with
+fixture API responses. Source equality is independently recorded in
+`work/readiness/frontend-browser-equivalence.json`; no page errors/external
+requests were observed. This is distinct from the pending real-stack browser
+receipt, human testing and reference-hardware latency. The earlier 8.652-second
+scripted typing/navigation workflow is not a reference latency measurement.
+
+New behavioral regressions: 25 (17 web, 6 supervisor, 1 read-deadline metadata
+unit, 1 live reserved-parameter case). The existing ingestion guard-isolation
+case also has an exact combined before/after reproduction: 1 failed/13 passed
+before, 14 passed after; current full integration passes. Read timeout regression
+before repair: 1 failed/1 passed with a duplicate-keyword TypeError. After repair:
+8 focused graph cases pass; both fresh-process lookup cases pass separately.
+
+Final-7 remains failed: acceptance had 84 passed/1 timed out at the original
+120-second child deadline. The instrumented lookup passed both cases without
+raising that deadline; the read-metadata bug was separately reproduced. No sole
+cause of the earlier process stall is claimed. Final-6's managed controller was
+externally killed; its unit child exit status 0 and complete JUnit are retained,
+but the full report remains failed. Detached execution completed final-8.
+
+Disk was not enlarged. Standard multi-stage compact images, ordinary unused
+build-cache/stale-fixture-image cleanup, isolated test services and temporary
+RAM storage of regenerable development dependencies bound the rootless VFS
+footprint. The direct Docker-layer relocation proposal was rejected and never
+applied. All original local data volumes and configuration were retained.
+No test, authentication barrier, transaction deadline or content assertion was
+waived. Runtime code and tests are frozen at the digest above; later report edits
+receive lightweight documentation checks. Validation elapsed is not a measurement
+of implementation effort or merge latency; no merge occurred.
+
 ## 2026-11-09 — DC-17 ReUI web desktop: implementation and full candidate pass
 
 The complete DC-17 package (D-99) is implemented on
@@ -1733,3 +1877,74 @@ claim that its original byte fingerprint equals this normalized publication tree
 The user authorized preparing and opening the session PR. Staging, commit and
 push preserve the frozen candidate source and its runtime-stack blocker; no
 merge, deployment or production acquisition is included.
+
+
+## 2026-11-09 — Current-release readiness (BE-45 / DC-17; blocked)
+
+Live GitHub main and HEAD: `1dd2d8241a84ebb7549768cdffe1029f89a4178b`.
+Branch: `codex/current-release-readiness`; changes are uncommitted. User scope:
+current release only, including the ingestion-test assignment, no GraphRAG backlog.
+Repair mapping: [CURRENT_RELEASE_READINESS](CURRENT_RELEASE_READINESS.md).
+
+Authoritative full run: `work/readiness/candidate-final-5/report.json`,
+2026-11-09 19:32:17–19:54:05 UTC, 1,307.588 seconds validation elapsed.
+Source SHA-256: `c3537d5f5e425df7ec3f9ea5e6381f6a855c2eab6f323cb4611718dd2aeeb135`.
+**Report status: failed. Full current-release acceptance remains blocked.**
+
+| Lane | Result |
+|---|---|
+| Live baseline, Ruff/runtime/tool lint, mypy, docs, generated docs, G1–G4, whitespace | Passed |
+| Web frozen install, TypeScript, Vitest, ESLint, production build | Passed; 46 tests |
+| Backend unit | 1,018 passed; zero failures/errors/skips |
+| Desktop unit/contract | 42 passed; zero failures/errors/skips |
+| Graph integration, excluding separately scheduled runtime-stack | 185 passed; zero failures/errors/skips |
+| Acceptance | 85 passed; zero failures/errors/skips |
+| Desktop integration | 2 passed; zero failures/errors/skips |
+| Runtime-stack | 1 failed during API image build; confirmed VFS snapshot ENOSPC |
+
+The passing pytest lanes total 1,332; the missing runtime-stack pass is never
+included. New behavior coverage is 23 cases (17 web, 6 supervisor), distinct from
+cumulative suite counts. The existing routed ingestion isolation defect also has
+a separate exact before/after reproduction: 1 failed/13 passed before, 14 passed
+after (`work/readiness/defect-pa1-before*` and `defect-pa1-after*`).
+
+Separate real Chromium session against the built SPA and launcher with fixture API
+responses: 22 checks pass, no page errors/external requests. Evidence:
+`work/readiness/browser-results.json`, `browser-final-2.log` and screenshots.
+Coverage includes all 15 routes, header search while search is mounted, entity
+navigation, network/map/timeline rendering, map/timeline source selection and deep
+link reload. This is fixture-browser evidence, not human acceptance, a deployed
+stack session or reference-hardware performance. The 8.652-second scripted
+search/entity workflow includes typing/waits; it is not the reference latency metric.
+
+Earlier failed candidates remain failed: final-2 exposed the cold Java readiness
+probe timeout; final-3 exposed recovery-helper storage pressure; final-4 captured
+Neo4j browser extraction ENOSPC causing the secondary `Path is null` failure.
+The final-5 integration suite proves the readiness/cache/recovery-fixture repairs,
+including the physical dump/load marker, 1,000 records and 1,024,000 payload bytes.
+An experimental one-layer API/worker build then moved ENOSPC to worker dependency
+installation (`runtime-layout-after.log`, 1 failed in 100.90 seconds); it did not
+qualify runtime behavior and was reverted. The current source fingerprint again
+matches final-5 exactly. No test budget/guard or content assertion was relaxed.
+
+Executor: 2 CPUs, 8 GB RAM, 7.9 GB disk, rootless Docker VFS. Only unused session
+images/build cache were reclaimed; original containers/images/volumes remain.
+The original running Neo4j was temporarily stopped cleanly for test isolation
+and restarted afterward; API/worker were already exited. They require a separate
+configuration ACL repair: automatic approval review rejected granting host UID
+107472 (container UID 7474) persistent read access including secrets. No ACLs
+changed and secret contents were not read. User approval remains required.
+
+Next gate: rerun the complete frozen candidate on sufficient disk, then perform
+live-stack browser/backup observation after approved configuration access. Existing
+live acquisition, coverage, quality, operator pinning and reference-hardware
+obligations remain open. No paid ingestion/model evaluation or deployment was run.
+No staging, commit, push or merge occurred. Implementation/merge latency is not
+inferred from validation elapsed time; no merge occurred.
+
+Change accounting (complete working diff, including new untracked source files):
+handwritten runtime 168 additions / 135 deletions; tests/helpers 430 / 11;
+no fixture data, generated documents or lockfile changes. Hand-maintained docs
+are counted separately in `work/readiness/change-accounting.json`; the final
+receipt includes this accounting paragraph itself. These are additions/deletions,
+not net growth. No generated or fixture lines are presented as implementation.

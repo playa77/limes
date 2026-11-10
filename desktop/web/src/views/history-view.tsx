@@ -94,7 +94,7 @@ function HistoryEntry({ bundle }: { bundle: Bundle }) {
               <CodeBlock code={bundle.cypher} language="cypher" variant="ghost" maxLines={10} />
             ) : null}
             {bundle.nlq !== null && bundle.nlq.validation_errors.length > 0 ? (
-              <p className="text-destructive-foreground text-xs">
+              <p className="text-destructive text-xs">
                 {bundle.nlq.validation_errors.join(" | ")}
               </p>
             ) : null}

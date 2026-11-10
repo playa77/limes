@@ -24,6 +24,7 @@ from limes.composition import (
     embedder_for,
 )
 from limes.config import Settings
+from limes.graph.driver import GraphDriver
 from limes.pipeline.gate import GateContext
 from limes.resolution.resolve import RunContext
 from tests.integration.conftest import Neo4jInstance
@@ -230,12 +231,28 @@ def test_embedder_for_none_client_returns_none(neo4j_instance: Neo4jInstance, tm
     assert embedder_for(settings, None) is None
 
 
-def test_provision_runs_the_downgrade_guard(neo4j_instance: Neo4jInstance, tmp_path: Path):
+@pytest.fixture
+def fresh_graph(neo4j_instance: Neo4jInstance) -> Neo4jInstance:
+    # This session-owned database can contain records from an earlier module.
+    # Establish the fresh-graph premise BEFORE composition/provision is called;
+    # clearing it afterward would not prove startup on a fresh graph.
+    driver = GraphDriver(
+        neo4j_instance.uri, neo4j_instance.user,
+        neo4j_instance.password, neo4j_instance.database,
+    )
+    try:
+        driver.write_batch([("MATCH (n) DETACH DELETE n", {})])
+    finally:
+        driver.close()
+    return neo4j_instance
+
+
+def test_provision_runs_the_downgrade_guard(fresh_graph: Neo4jInstance, tmp_path: Path):
     # The downgrade guard is part of provision() (WP-04); building a context
     # against an empty database must succeed, proving the guard passes on a
     # fresh graph (Doc 2 §4.3). The guard's rejection side is covered by the
     # WP-04 schema tests.
-    ctx = build_run_context(_settings(neo4j_instance, tmp_path), needs_inference=False)
+    ctx = build_run_context(_settings(fresh_graph, tmp_path), needs_inference=False)
     try:
         rows = ctx.driver.read(
             "MATCH (n:Source) RETURN count(n) AS c",

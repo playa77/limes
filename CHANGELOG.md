@@ -1,3 +1,29 @@
+## 2026-11-10 — Current-release qualification repairs (BE-45 / DC-17)
+
+- Repair native browser fetch, search URL synchronization, visualization lifecycle,
+  timeline selection and temporal filtering of retained neighbor expansions.
+- Prevent Leaflet zoom-transition callbacks from outliving a removed map during
+  tab or route changes; automatic data fitting is immediate.
+- Publish health recovery even when React Query retains an identical cached payload;
+  clear stale authentication prompts after successful health checks.
+- Preserve valid empty API free text; repair backup readiness gating, dump reporting,
+  cancellation and request retention across view navigation; improve error contrast.
+- Permit cold cypher-shell startup within the existing overall supervisor readiness
+  deadline; stop further probes on shutdown and preserve clean dump/authentication checks.
+- Reclaim only stale owned Neo4j browser extraction directories between database
+  processes, preventing backup restarts from filling temporary storage.
+- Reduce recovery-fixture filesystem duplication on rootless VFS while retaining
+  all dump/restore content assertions and surfacing helper stderr on failure.
+- Flatten the self-contained service images using standard multi-stage builds;
+  install frozen dependencies/source once and keep the installer outside runtime.
+- Apply read deadlines through Neo4j query metadata and preserve Cypher parameters
+  named `timeout`; retain read-mode sessions and independent query validation.
+- Reproduce DEFECT-PA1-R1 and establish a fresh disposable graph before the composition
+  guard test. The production downgrade guard is unchanged.
+- Add behavior regressions and requalify the complete current release. Exact results
+  and external ingestion/human-testing boundaries are recorded in
+  docs/CURRENT_RELEASE_READINESS.md and docs/VERIFICATION.md.
+
 ## 2026-11-09 — DC-17 ReUI web desktop (launcher + SPA)
 
 - Replace the PySide6/QWebEngine/pytest-qt desktop with a React 19 + Tailwind

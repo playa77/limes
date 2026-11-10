@@ -6,6 +6,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react"
 import type { Core as CyCore, EventObject } from "cytoscape"
+import type { PlotMouseEvent, PlotlyHTMLElement } from "plotly.js-dist-min"
 import L from "leaflet"
 import Plotly from "plotly.js-dist-min"
 import { Badge } from "@/components/reui/badge"
@@ -41,25 +42,28 @@ export function NetworkPane({
   const selection = useSession((s) => s.selection)
   const setSelection = useSession((s) => s.setSelection)
   const temporalFilter = useSession((s) => s.temporalFilter)
-  const [expanded, setExpanded] = useState<GraphResult | null>(null)
+  const [expansion, setExpansion] = useState<{ base: GraphResult; result: GraphResult } | null>(null)
+  const expanded = expansion?.base === bundle.result ? expansion.result : null
+  const [expansionError, setExpansionError] = useState<string | null>(null)
+  const [expanding, setExpanding] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const cyRef = useRef<CyCore | null>(null)
-  const [payload, payloadMeta] = useMemo(() => {
-    const { result, coverage } = bundleWithTemporal(bundle.result, bundle.coverage, temporalFilter)
-    const meta = expanded
-      ? mergeGraphs(result, expanded)
-      : { result, coverage }
-    return [
-      networkPayload(meta.result, meta.coverage),
-      meta,
-    ] as const
+  const payload = useMemo(() => {
+    // Merge first so the same temporal rules apply to every retained assertion.
+    const result = expanded ? mergeGraphs(bundle.result, expanded).result : bundle.result
+    const meta = bundleWithTemporal(result, bundle.coverage, temporalFilter)
+    return networkPayload(meta.result, meta.coverage)
   }, [bundle, temporalFilter, expanded])
 
   useEffect(() => {
     const container = containerRef.current
     if (!container) return
+    let disposed = false
+    let cy: CyCore | null = null
     void (async () => {
-      const cy = (await import("cytoscape")).default({
+      const cytoscape = (await import("cytoscape")).default
+      if (disposed) return
+      cy = cytoscape({
         container,
         elements: [
           ...payload.nodes.map((node) => ({
@@ -128,10 +132,13 @@ export function NetworkPane({
         setSelection(source)
       })
       cyRef.current = cy
+      const selected = useSession.getState().selection
+      if (selected !== null) cy.getElementById(selected).select()
     })()
     return () => {
-      cyRef.current?.destroy()
-      cyRef.current = null
+      disposed = true
+      cy?.destroy()
+      if (cyRef.current === cy) cyRef.current = null
     }
   }, [payload, setSelection])
 
@@ -150,19 +157,26 @@ export function NetworkPane({
   }, [selection, payload])
 
   async function expand() {
-    if (selection === null) return
+    if (selection === null || expanding) return
+    setExpanding(true)
+    setExpansionError(null)
     try {
       const neighbors = await apiClient.entityNeighbors(selection)
-      // Retained expansion (DC-14): prior deltas survive the redraw.
-      const merged: GraphResult = {
-        nodes: [...(expanded ?? payloadMeta.result).nodes, ...neighbors.neighbors.map((r) => r.neighbor)],
-        edges: [...(expanded ?? payloadMeta.result).edges, ...neighbors.neighbors.map((r) => r.edge)],
-        counts: { ...(expanded ?? payloadMeta.result).counts },
+      const delta: GraphResult = {
+        nodes: neighbors.neighbors.map((row) => row.neighbor),
+        edges: neighbors.neighbors.map((row) => row.edge),
+        counts: {},
       }
-      setExpanded(merged)
-    } catch {
-      // Surface through the shared error region (parent view renders errors).
-      setExpanded(null)
+      setExpansion((current) => ({
+        base: bundle.result,
+        result: mergeGraphs(
+          current?.base === bundle.result ? current.result : bundle.result, delta,
+        ).result,
+      }))
+    } catch (error) {
+      setExpansionError(error instanceof Error ? error.message : "Neighbor expansion failed.")
+    } finally {
+      setExpanding(false)
     }
   }
 
@@ -178,12 +192,13 @@ export function NetworkPane({
           size="xs"
           variant="outline"
           className="ms-auto"
-          disabled={selection === null}
+          disabled={selection === null || expanding}
           onClick={expand}
         >
           Expand selected
         </Button>
       </div>
+      {expansionError ? <p role="alert" className="text-destructive text-xs">{expansionError}</p> : null}
       <div className="bg-card min-h-0 flex-1 overflow-hidden rounded-lg border">
         <div ref={containerRef} className="size-full" />
       </div>
@@ -205,7 +220,11 @@ function mergeGraphs(
   )
   return {
     result: {
-      nodes: [...base.nodes, ...extra.nodes.filter((node) => !nodeIds.has(node.entity_id))],
+      nodes: [...base.nodes, ...extra.nodes.filter((node) => {
+        if (nodeIds.has(node.entity_id)) return false
+        nodeIds.add(node.entity_id)
+        return true
+      })],
       edges: [
         ...base.edges,
         ...extra.edges.filter(
@@ -248,6 +267,9 @@ export function MapPane({ bundle, className }: { bundle: BundleLike; className?:
       center: [51, 10],
       zoom: 4,
       scrollWheelZoom: true,
+      // Leaflet leaves a zoom-transition callback alive after map.remove().
+      // Route/tab changes must not leave it accessing a detached map pane.
+      zoomAnimation: false,
       attributionControl: false,
     })
     L.svg({ padding: 0.2 }).addTo(map)
@@ -287,7 +309,7 @@ export function MapPane({ bundle, className }: { bundle: BundleLike; className?:
     }
     const points = payload.nodes.map((node) => node.geometry)
     if (points.length > 0) {
-      map.fitBounds(L.latLngBounds(points).pad(0.25))
+      map.fitBounds(L.latLngBounds(points).pad(0.25), { animate: false })
     }
   }, [payload, selection, setSelection])
 
@@ -323,6 +345,7 @@ export function TimelinePane({ bundle, className }: { bundle: BundleLike; classN
   const setSelection = useSession((s) => s.setSelection)
   const temporalFilter = useSession((s) => s.temporalFilter)
   const containerRef = useRef<HTMLDivElement>(null)
+  const [renderError, setRenderError] = useState<string | null>(null)
 
   const payload: TimelinePayloadData = useMemo(() => {
     const { result, coverage } = bundleWithTemporal(bundle.result, bundle.coverage, temporalFilter)
@@ -369,27 +392,31 @@ export function TimelinePane({ bundle, className }: { bundle: BundleLike; classN
       yaxis: { automargin: true },
       hovermode: "closest" as const,
     }
-    Plotly.react(container, data, layout)
-      .then(() => {
-        void container
-      })
-      .catch(() => {})
-    const clickHandler: Parameters<typeof container.addEventListener>[1] = (event) => {
-      // Plotly emits 'plotly_click' as a custom DOM event with the point.
-      const detail = (event as CustomEvent<{ points: { customdata?: string[] }[] }>).detail
-      const first = detail?.points[0]
-      const sourceId = first?.customdata?.[0]
+    let disposed = false
+    let plot: PlotlyHTMLElement | null = null
+    const clickHandler = (event: PlotMouseEvent) => {
+      const customdata = event.points[0]?.customdata
+      const sourceId = Array.isArray(customdata) ? customdata[0] : undefined
       if (typeof sourceId === "string") setSelection(sourceId)
     }
-    container.addEventListener("plotly_click", clickHandler)
+    setRenderError(null)
+    void Plotly.react(container, data, layout).then((element) => {
+      if (disposed) return
+      plot = element
+      plot.on("plotly_click", clickHandler)
+    }).catch((error: unknown) => {
+      if (!disposed) setRenderError(error instanceof Error ? error.message : "Timeline rendering failed.")
+    })
     return () => {
-      container.removeEventListener("plotly_click", clickHandler)
+      disposed = true
+      plot?.removeAllListeners("plotly_click")
       void Plotly.purge(container)
     }
   }, [payload, setSelection])
 
   return (
     <div className={cn("flex h-[26rem] flex-col gap-2", className)}>
+      {renderError ? <p role="alert" className="text-destructive text-xs">{renderError}</p> : null}
       <div className="flex items-center gap-2">
         <Badge variant="outline">{payload.validity.length} validity points</Badge>
         <Badge variant="outline">{payload.belief.length} belief points</Badge>

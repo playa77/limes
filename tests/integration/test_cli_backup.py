@@ -198,22 +198,21 @@ def test_backup_stops_dumps_and_restarts(backup_env: dict[str, str], record_test
             [
                 "docker",
                 "compose",
-                "run",
-                "--rm",
-                "--no-deps",
-                "--entrypoint",
-                "sh",
+                "exec",
+                "-T",
                 "neo4j",
+                "sh",
                 "-c",
                 "find /data/archive/dumps -maxdepth 1 -type f -name 'limes-*.dump' "
                 "-printf '%f %s\\n'",
             ],
-            check=True,
+            check=False,
             capture_output=True,
             text=True,
             cwd=compose_root,
             timeout=60,
         )
+        assert inspection.returncode == 0, inspection.stderr
         dumps = inspection.stdout.strip().splitlines()
         assert len(dumps) == 1, inspection.stdout
         name, size = dumps[0].split()
@@ -238,17 +237,25 @@ def test_backup_stops_dumps_and_restarts(backup_env: dict[str, str], record_test
             ["docker", "compose", "stop", "neo4j"], cwd=compose_root,
             check=True, capture_output=True, timeout=240,
         )
-        tick = time.monotonic()
+        # Rootless VFS copies the image filesystem for each container. Keep the
+        # data/archive volumes, but release the stopped service filesystem before
+        # creating the offline loader; restore then recreates a fresh service.
         subprocess.run(
+            ["docker", "compose", "rm", "-f", "neo4j"], cwd=compose_root,
+            check=True, capture_output=True, timeout=60,
+        )
+        tick = time.monotonic()
+        loaded = subprocess.run(
             ["docker", "compose", "run", "--rm", "--no-deps", "--entrypoint", "sh",
              "neo4j", "-c", "mkdir -p /data/archive/recovery && "
              "cp /data/archive/dumps/limes-*.dump /data/archive/recovery/neo4j.dump && "
              "neo4j-admin database load --from-path=/data/archive/recovery "
              "--overwrite-destination=true neo4j"],
-            cwd=compose_root, check=True, capture_output=True, timeout=300,
+            cwd=compose_root, check=False, capture_output=True, text=True, timeout=300,
         )
+        assert loaded.returncode == 0, loaded.stderr
         subprocess.run(
-            ["docker", "compose", "start", "neo4j"], cwd=compose_root,
+            ["docker", "compose", "up", "-d", "neo4j"], cwd=compose_root,
             check=True, capture_output=True, timeout=60,
         )
         _wait_ready(uri)
@@ -285,6 +292,18 @@ def test_backup_stops_dumps_and_restarts(backup_env: dict[str, str], record_test
         record_testsuite_property("storage_kib", storage)
         record_testsuite_property("dump_bytes", int(size))
         record_testsuite_property("restore_seconds", restore_seconds)
+    except BaseException:
+        # Keep the disposable supervisor's root cause before down removes logs.
+        # This fixture contains only its synthetic credentials and records.
+        try:
+            diagnostic = subprocess.run(
+                ["docker", "compose", "logs", "--no-color", "--tail", "160"],
+                cwd=compose_root, capture_output=True, text=True, timeout=30,
+            )
+            print(diagnostic.stdout, diagnostic.stderr)
+        except (OSError, subprocess.SubprocessError) as error:
+            print("Backup fixture diagnostics unavailable:", type(error).__name__)
+        raise
     finally:
         subprocess.run(
             ["docker", "compose", "down", "-v", "--remove-orphans"],

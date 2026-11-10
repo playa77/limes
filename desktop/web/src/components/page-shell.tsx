@@ -92,7 +92,7 @@ export function RegionError({
       className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2"
     >
       {/* API error bodies are diagnostic signal: verbatim, no rephrasing. */}
-      <p className="text-destructive-foreground min-w-0 flex-1 text-xs break-words">{detail}</p>
+      <p className="text-destructive min-w-0 flex-1 text-xs break-words">{detail}</p>
       <Button size="xs" variant="outline" onClick={onRetry}>
         Retry
       </Button>

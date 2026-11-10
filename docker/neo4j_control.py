@@ -9,6 +9,7 @@ import json
 import os
 import re
 import secrets
+import shutil
 import signal
 import subprocess
 import threading
@@ -28,9 +29,23 @@ class Database:
         if self.stopping.is_set():
             raise RuntimeError("service is shutting down")
         if self.process is None or self.process.poll() is not None:
+            self._clear_browser_cache()
             self.process = subprocess.Popen(
                 ["/startup/docker-entrypoint.sh", "neo4j"], start_new_session=True,
             )
+
+    @staticmethod
+    def _clear_browser_cache() -> None:
+        # Neo4j extracts its bundled browser to a fresh directory on every JVM
+        # start, including backup restarts. Reclaim only this UID's stale public
+        # asset cache while the owned database process is stopped.
+        for path in Path("/tmp").glob("decompressed-browser*"):
+            if not re.fullmatch(r"decompressed-browser[0-9]+", path.name):
+                continue
+            if path.is_symlink() or not path.is_dir():
+                continue
+            if path.stat().st_uid == os.getuid():
+                shutil.rmtree(path)
 
     def stop(self) -> None:
         if self.process is not None and self.process.poll() is None:
@@ -41,11 +56,13 @@ class Database:
                 raise RuntimeError("database did not shut down cleanly")
 
     @staticmethod
-    def cypher(query: str, user: str = "neo4j") -> subprocess.CompletedProcess[bytes]:
+    def cypher(
+        query: str, user: str = "neo4j", timeout_s: float = 60,
+    ) -> subprocess.CompletedProcess[bytes]:
         return subprocess.run(
             ["cypher-shell", "-u", user, "--non-interactive", query],
             env={**os.environ, "NEO4J_PASSWORD": os.environ["LIMES_NEO4J_PASSWORD"]},
-            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=15,
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=timeout_s,
         )
 
     def ready(self, provision: bool = False) -> None:
@@ -53,25 +70,37 @@ class Database:
         if not re.fullmatch(r"[A-Za-z][A-Za-z0-9_]{0,63}", user):
             raise ValueError("invalid application user identifier")
         deadline = time.monotonic() + 360
+
+        def probe(query: str, probe_user: str = "neo4j") -> subprocess.CompletedProcess[bytes]:
+            # cypher-shell starts a JVM. A cold launch can exceed 15 seconds on
+            # a constrained host even after Bolt is ready. Allow that startup,
+            # while keeping every probe within the shared readiness deadline.
+            if self.stopping.is_set():
+                raise RuntimeError("service is shutting down")
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise subprocess.TimeoutExpired("cypher-shell", 0)
+            return self.cypher(query, probe_user, timeout_s=min(60, remaining))
+
         while time.monotonic() < deadline and not self.stopping.is_set():
             if self.process is None or self.process.poll() is not None:
                 raise RuntimeError("Neo4j exited during startup")
             try:
-                if self.cypher("RETURN 1").returncode == 0:
+                if probe("RETURN 1").returncode == 0:
                     if provision and user != "neo4j":
                         password = os.environ["LIMES_NEO4J_PASSWORD"]
                         escaped = password.replace("\\", "\\\\").replace("'", "\\'")
-                        result = self.cypher(
+                        result = probe(
                             f"CREATE USER `{user}` IF NOT EXISTS SET PASSWORD '{escaped}' "
                             "CHANGE NOT REQUIRED"
                         )
                         if result.returncode:
                             raise RuntimeError("application user provisioning failed")
-                    if self.cypher("RETURN 1", user).returncode == 0:
+                    if probe("RETURN 1", user).returncode == 0:
                         return
             except subprocess.TimeoutExpired:
                 pass
-            self.stopping.wait(2)
+            self.stopping.wait(min(2, max(0, deadline - time.monotonic())))
         raise RuntimeError("database did not become ready")
 
     def backup(self) -> str:

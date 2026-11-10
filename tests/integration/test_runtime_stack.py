@@ -193,7 +193,9 @@ def test_remote_backup_without_host_privileges(tmp_path: Path):
         )
         assert api_archive.returncode == 0
 
-    except Exception:
+    except Exception as exc:
+        if isinstance(exc, subprocess.CalledProcessError):
+            print(exc.stderr)
         logs = subprocess.run(
             [*compose, "logs", "--no-color", "--tail", "100"],
             capture_output=True,

@@ -58,7 +58,7 @@ import {
 const TO_OBJECT_SENTINEL = "API returned an invalid JSON response"
 
 export class ApiClient {
-  constructor(private readonly fetchImpl: typeof fetch = fetch) {}
+  constructor(private readonly fetchImpl: typeof fetch = globalThis.fetch.bind(globalThis)) {}
 
   // -- liveness -----------------------------------------------------------
 

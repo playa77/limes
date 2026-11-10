@@ -20,8 +20,7 @@ const DEBOUNCE_MS = 300
 
 export function SearchView() {
   const [params, setParams] = useSearchParams()
-  const initialQuery = params.get("q") ?? ""
-  const [value, setValue] = useState(initialQuery)
+  const value = params.get("q") ?? ""
   const debounced = useDebounce(value.trim(), DEBOUNCE_MS)
   const navigate = useNavigate()
   const [cursor, setCursor] = useState(0)
@@ -29,16 +28,6 @@ export function SearchView() {
   const reachability = useSession((s) => s.reachability)
 
   const trimmed = debounced
-
-  useEffect(() => {
-    if (trimmed !== initialQuery) {
-      const next = new URLSearchParams(params)
-      if (trimmed.length >= 2) next.set("q", trimmed)
-      else next.delete("q")
-      setParams(next, { replace: true })
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [trimmed])
 
   const query = useQuery({
     queryKey: ["api", "search", trimmed],
@@ -75,7 +64,12 @@ export function SearchView() {
             ref={inputRef}
             autoFocus
             value={value}
-            onChange={(event) => setValue(event.target.value)}
+            onChange={(event) => {
+              const next = new URLSearchParams(params)
+              if (event.target.value) next.set("q", event.target.value)
+              else next.delete("q")
+              setParams(next, { replace: true })
+            }}
             placeholder="Search entities and documents…"
             aria-label="Search entities"
             role="combobox"
@@ -87,7 +81,7 @@ export function SearchView() {
             onKeyDown={(event) => {
               if (event.key === "ArrowDown") {
                 event.preventDefault()
-                setCursor((current) => Math.min(current + 1, hits.length - 1))
+                setCursor((current) => Math.max(0, Math.min(current + 1, hits.length - 1)))
               } else if (event.key === "ArrowUp") {
                 event.preventDefault()
                 setCursor((current) => Math.max(current - 1, 0))
