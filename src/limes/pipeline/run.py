@@ -37,9 +37,10 @@ from __future__ import annotations
 
 import json
 import os
+import sqlite3
 import time
 import uuid
-from contextlib import nullcontext
+from contextlib import ExitStack, nullcontext
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from typing import TYPE_CHECKING, Literal
@@ -54,6 +55,7 @@ from limes.errors import (
     SourceFetchError,
     SourceParseError,
     SourceRunBudgetExceeded,
+    SourceSliceEnded,
 )
 from limes.extraction.cache import put as cache_put
 from limes.graph.loader import load, news_claim_id, retract, save_claims, save_document
@@ -61,6 +63,7 @@ from limes.ontology.validator import validate_assertions
 from limes.pipeline import window as window_module
 from limes.pipeline.gate import gate_document
 from limes.resolution.resolve import resolve_assertions
+from limes.sources.acquisition import AcquisitionSession
 from limes.sources.base import (
     SourceAdapter,
     deterministic_assertion_id,
@@ -99,6 +102,7 @@ RETURN s.source_id AS source_id,
        s.kind AS kind,
        s.trust_rank AS trust_rank,
        s.last_success_at AS last_success_at,
+       s.corpus_complete AS corpus_complete,
        s.last_run_id AS last_run_id,
        s.initial_window_from AS initial_window_from
 """
@@ -127,7 +131,17 @@ SET r.finished_at = $finished_at,
     r.assertions_rejected = $assertions_rejected,
     r.documents_gated_out = $documents_gated_out,
     r.errors = $errors,
-    r.cost_eur = $cost_eur
+    r.cost_eur = $cost_eur,
+    r.state = $state,
+    r.last_progress_at = $finished_at,
+    r.last_error = $last_error
+"""
+
+_RUN_PROGRESS = """
+MATCH (r:IngestionRun {run_id: $run_id})
+SET r.state = $state, r.last_progress_at = $last_progress_at,
+    r.last_error = $last_error, r.records_fetched = $records_fetched,
+    r.assertions_written = $assertions_written, r.errors = $errors
 """
 
 _SOURCE_SUCCESS = """
@@ -135,7 +149,12 @@ MATCH (s:Source {source_id: $source_id})
 SET s.last_success_at = CASE
     WHEN s.last_success_at > $last_success_at THEN s.last_success_at
     ELSE $last_success_at END,
-    s.last_run_id = $last_run_id
+    s.last_run_id = $last_run_id,
+    s.corpus_complete = coalesce(s.corpus_complete, false) OR $corpus_complete,
+    s.acquisition_manifest_hash = $acquisition_manifest_hash
+WITH s
+MATCH (r:IngestionRun {run_id: $last_run_id})
+SET r.acquisition_manifest_hash = $acquisition_manifest_hash
 """
 
 _PRIOR_DOCUMENT_ASSERTIONS = """
@@ -157,6 +176,7 @@ class RunSpec(BaseModel):
     since: datetime | None = None
     until: datetime | None = None
     budget_eur: Decimal | None = None
+    relative_days: int | None = None
 
 
 def execute_run(spec: RunSpec, ctx: RunContext) -> IngestionRunRecord:
@@ -169,7 +189,20 @@ def execute_run(spec: RunSpec, ctx: RunContext) -> IngestionRunRecord:
     adapter = ctx.registry.get(spec.source_id)
     run_scope = getattr(adapter, "run_scope", nullcontext)
     with run_scope():
-        return _execute_run(spec, ctx)
+        if ctx.acquisitions is None or spec.mode == "reextract" or spec.source_id in (
+            "news", "wikipedia", "yahoo_finance"
+        ) or spec.source_id.startswith("public_offices_"):
+            return _execute_run(spec, ctx)
+        version = json.dumps([
+            "BE57-1", ctx.settings.revision, ctx.ontology.version, ctx.settings.extraction_model,
+            ctx.settings.extraction_prompt_version, ctx.settings.extraction_schema_version,
+        ])
+        request = {"mode": spec.mode,
+                   "since": None if spec.relative_days is not None else spec.since,
+                   "relative_days": spec.relative_days, "until": spec.until,
+                   "target": [ctx.settings.neo4j_uri, ctx.settings.neo4j_database]}
+        with ctx.acquisitions.session(spec.source_id, request, version) as acquisition:
+            return _execute_run(spec, ctx, acquisition)
 
 
 def _source_budget(settings: Settings, source_id: str) -> tuple[int, int]:
@@ -192,7 +225,9 @@ def _source_budget(settings: Settings, source_id: str) -> tuple[int, int]:
     return seconds, settings.source_transport_budget_attempts
 
 
-def _execute_run(spec: RunSpec, ctx: RunContext) -> IngestionRunRecord:
+def _execute_run(
+    spec: RunSpec, ctx: RunContext, acquisition: AcquisitionSession | None = None
+) -> IngestionRunRecord:
     """Run while the adapter's optional acquisition scope remains active."""
     adapter = ctx.registry.get(spec.source_id)
     started = time.monotonic()  # PA-1 R3: budget measured from run start
@@ -200,6 +235,8 @@ def _execute_run(spec: RunSpec, ctx: RunContext) -> IngestionRunRecord:
     ctx.driver.write_batch([(_SOURCE_MERGE, _source_params(adapter))])
     source_node = _read_source(ctx, spec.source_id)
     since, until = window_module.resolve_window(spec, adapter, source_node, ctx.settings)
+    if acquisition is not None:
+        since, until = acquisition.window(since, until)
 
     record = IngestionRunRecord(
         run_id=uuid.uuid4().hex,
@@ -235,6 +272,57 @@ def _execute_run(spec: RunSpec, ctx: RunContext) -> IngestionRunRecord:
     )
 
     cost_before = _recorded_spend(ctx)
+    budget_seconds = ctx.settings.source_run_budget_seconds
+    transport_budget = None
+    progress_written = 0.0
+
+    def progress(state: str, detail: str | None = None) -> None:
+        nonlocal progress_written
+        if acquisition is not None and acquisition.incomplete_reason:
+            state, detail = "partial", acquisition.incomplete_reason
+        instant = time.monotonic()
+        if state == record.state and instant - progress_written < 10:
+            return
+        record.state = state
+        record.last_error = detail
+        record.last_progress_at = datetime.now(UTC)
+        ctx.driver.write_batch([(_RUN_PROGRESS, {
+            "run_id": record.run_id, "state": state, "last_error": detail,
+            "last_progress_at": record.last_progress_at,
+            "records_fetched": record.records_fetched,
+            "assertions_written": record.assertions_written, "errors": record.errors,
+        })])
+        progress_written = instant
+
+    pending: list[tuple[RawRecord, NormalizedRecord]] = []
+    pending_bytes = 0
+    pending_assertions = 0
+
+    def flush_structured() -> None:
+        nonlocal pending_bytes, pending_assertions
+        if not pending:
+            return
+        combined = NormalizedRecord(
+            content_hash="", kind="structured",
+            assertions=[a for _, normalized in pending for a in normalized.assertions],
+            entities=[e for _, normalized in pending for e in normalized.entities],
+            lookup_rows=[row for _, normalized in pending for row in normalized.lookup_rows],
+        )
+        errors_before = record.errors
+        _process_structured(spec, ctx, combined, record)
+        if acquisition is not None:
+            for raw, _ in pending:
+                if record.errors == errors_before:
+                    acquisition.acknowledge(raw)
+                else:
+                    acquisition.invalidate(raw)
+        pending.clear()
+        pending_bytes = pending_assertions = 0
+
+    if acquisition is not None:
+        acquisition.progress = progress
+        acquisition.flush = flush_structured
+        progress("acquiring")
     try:
         fetch_since = since
         if window_module.checkpoint_anchored_backfill(spec, source_node):
@@ -246,7 +334,8 @@ def _execute_run(spec: RunSpec, ctx: RunContext) -> IngestionRunRecord:
         budget_seconds, budget_attempts = _source_budget(ctx.settings, spec.source_id)
         with source_run_scope(
             started + budget_seconds, budget_attempts
-        ):
+        ) as transport_budget, ExitStack() as finalizers:
+            finalizers.callback(flush_structured)
             for raw in adapter.fetch(fetch_since, until):
                 # PA-1 R3: wall-clock budget checked every streaming iteration;
                 # exhausted budget aborts the run in seconds, not hours.
@@ -256,18 +345,65 @@ def _execute_run(spec: RunSpec, ctx: RunContext) -> IngestionRunRecord:
                         f"{spec.source_id}; acquisition aborts cleanly"
                     )
                 record.records_fetched += 1
-                _process_record(spec, ctx, adapter, raw, record)
+                if acquisition is not None:
+                    progress("processing")
+                if acquisition is not None and acquisition.is_loaded(raw) and not (
+                    raw.acquisition_context or {}
+                ).get("replay_required"):
+                    logger.info("ingestion record already loaded; retained receipt",
+                                source_id=spec.source_id, source_url=raw.source_url)
+                    continue
+                errors_before = record.errors
+                deferred = _process_record(
+                    spec, ctx, adapter, raw, record,
+                    defer_structured=(spec.source_id == "ted" and acquisition is not None),
+                )
+                if deferred is not None:
+                    pending.append((raw, deferred))
+                    pending_bytes += len(raw.payload)
+                    pending_assertions += len(deferred.assertions)
+                    if (len(pending) >= 50 or pending_bytes >= 8 * 1024**2
+                            or pending_assertions >= 500):
+                        flush_structured()
+                elif acquisition is not None and record.errors == errors_before:
+                    acquisition.acknowledge(raw)
+                elif acquisition is not None:
+                    acquisition.invalidate(raw)
+                if record.records_fetched % 100 == 0:
+                    logger.info("ingestion processing progress", source_id=spec.source_id,
+                                records=record.records_fetched, errors=record.errors,
+                                elapsed_seconds=round(time.monotonic() - started, 1),
+                                coverage="incomplete until acquisition and loading finish")
         # Retire an acquisition only after complete loading, but BEFORE the
         # success checkpoint: a crash between these steps must trigger a fresh
         # acquisition rather than certify an old collection as freshly fetched.
-        if not record.errors:
+        if not record.errors and spec.source_id != "osm":
             complete_fetch = getattr(adapter, "complete_fetch", None)
             if complete_fetch is not None:
                 complete_fetch()
     except (SourceFetchError, SourceParseError, ExtractionError, GraphWriteError, OSError) as exc:
         # Fetch and configuration failures abort the run; the durable record
         # still closes with the error counted (Doc 2 §8.6.1).
+        if (isinstance(exc, SourceRunBudgetExceeded) and acquisition is not None
+                and (time.monotonic() - started >= budget_seconds
+                     or isinstance(exc, SourceSliceEnded)) and not record.errors
+                and transport_budget is not None and not transport_budget.failures
+                and not acquisition.incomplete_reason
+                and (acquisition.new_loads or acquisition.new_responses)):
+            record.state = "continuing"
+            record.last_error = None
+            _close_run(ctx, record, cost_before)
+            raise SourceSliceEnded(
+                "productive time slice retained; corpus incomplete; continuing same operation"
+            ) from exc
         record.errors += 1
+        record.last_error = (
+            acquisition.incomplete_reason if acquisition and acquisition.incomplete_reason else
+            f"{exc}; {record.last_error}" if record.last_error else str(exc)
+        )
+        if (acquisition is not None and isinstance(exc, (SourceFetchError, SourceParseError))
+                and not isinstance(exc, SourceRunBudgetExceeded)):
+            acquisition.discard_last_response()
         _close_run(ctx, record, cost_before)
         logger.error(
             "ingestion run aborted",
@@ -276,6 +412,19 @@ def _execute_run(spec: RunSpec, ctx: RunContext) -> IngestionRunRecord:
             error_type=type(exc).__name__,
             error=str(exc),
         )
+        if isinstance(exc, SourceSliceEnded):
+            raise SourceFetchError(str(exc)) from exc
+        raise
+    except Exception as exc:
+        # An unexpected adapter/programming error is still a failed run, never
+        # a permanently "running, zero errors" row. Preserve the original bug.
+        record.errors += 1
+        record.last_error = f"{type(exc).__name__}: {exc}"
+        try:
+            _close_run(ctx, record, cost_before)
+        except Exception:
+            logger.exception("could not persist ingestion failure", run_id=record.run_id)
+        logger.exception("unexpected ingestion failure", source_id=spec.source_id)
         raise
 
     _close_run(ctx, record, cost_before)
@@ -283,18 +432,35 @@ def _execute_run(spec: RunSpec, ctx: RunContext) -> IngestionRunRecord:
     # the interval between an explicit historical until and run completion.
     if record.errors or (spec.source_id == "feeds" and not record.records_fetched):
         return record
-    ctx.driver.write_batch(
-        [
-            (
-                _SOURCE_SUCCESS,
-                {
-                    "source_id": spec.source_id,
-                    "last_success_at": until or record.started_at,
-                    "last_run_id": record.run_id,
-                },
-            )
-        ]
-    )
+    try:
+        acquisition_manifest = acquisition.manifest() if acquisition is not None else None
+        ctx.driver.write_batch(
+            [
+                (
+                    _SOURCE_SUCCESS,
+                    {
+                        "source_id": spec.source_id,
+                        "last_success_at": until or record.started_at,
+                        "last_run_id": record.run_id,
+                        "corpus_complete": bool(getattr(adapter, "full_initial_load", False)
+                                                and since is None and spec.since is None
+                                                and spec.until is None),
+                        "acquisition_manifest_hash": acquisition_manifest,
+                    },
+                )
+            ]
+        )
+        if spec.source_id == "osm":
+            complete_fetch = getattr(adapter, "complete_fetch", None)
+            if complete_fetch is not None:
+                complete_fetch()
+        if acquisition is not None:
+            acquisition.complete()
+    except (OSError, sqlite3.Error, GraphWriteError, SourceFetchError) as exc:
+        record.errors += 1
+        record.last_error = str(exc)
+        _close_run(ctx, record, cost_before)
+        raise
     logger.info(
         "ingestion run finished",
         run_id=record.run_id,
@@ -318,7 +484,8 @@ def _process_record(
     adapter: SourceAdapter,
     raw: RawRecord,
     record: IngestionRunRecord,
-) -> None:
+    *, defer_structured: bool = False,
+) -> NormalizedRecord | None:
     """Archive, normalize, and route one raw record. Every record-level
     failure is counted in `record.errors` and skipped — nothing aborts the
     run but fetch/configuration failures."""
@@ -348,7 +515,7 @@ def _process_record(
             source_id=spec.source_id,
             error=str(exc),
         )
-        return
+        return None
     normalized.content_hash = content_hash
     if spec.source_id.startswith("public_offices_"):
         from limes.public_offices.resolution import resolve_identities
@@ -384,6 +551,8 @@ def _process_record(
                 assertion.assertion_id = hash_entity_id(
                     "structured", spec.source_id, assertion.assertion_id, content_hash
                 )
+        if defer_structured and normalized.document is None and not normalized.errors:
+            return normalized
         _process_structured(spec, ctx, normalized, record)
         if spec.source_id.startswith("public_offices_") and not (
             record.errors or record.assertions_rejected
@@ -408,7 +577,7 @@ def _process_record(
             logger.warning(
                 "record skipped: document kind without payload", source_id=spec.source_id
             )
-        return
+        return None
     normalized.document.content_hash = content_hash
     if spec.source_id == "wikipedia":
         # A MediaWiki metadata change is a new archived response, not a new
@@ -425,6 +594,7 @@ def _process_record(
     if normalized.document.news_metadata is not None:
         save_document(ctx.driver, normalized.document, ctx.ontology)
     _process_document(spec, ctx, adapter, raw, normalized, record)
+    return None
 
 
 def _process_structured(
@@ -452,6 +622,7 @@ def _process_structured(
         )
     accepted, rejected = validate_assertions(normalized.assertions, ctx.ontology)
     record.assertions_rejected += len(rejected)
+    record.errors += len(rejected)
     for error in rejected:
         logger.warning(
             "assertion rejected",
@@ -473,12 +644,14 @@ def _process_structured(
         standalone_entities=normalized.entities,
         lookup_rows=normalized.lookup_rows,
         embedder=embedder_for(ctx.settings, ctx.client),
+        bulk=True,
     )
     record.nodes_created += result.nodes_created
     record.nodes_matched += result.nodes_matched
     record.assertions_written += result.written
     record.assertions_skipped += result.skipped
     record.assertions_rejected += result.rejected
+    record.errors += result.rejected
     logger.info(
         "structured record loaded",
         source_id=spec.source_id,
@@ -816,6 +989,8 @@ def _close_run(
             cost = max(Decimal("0"), spent - cost_before)
     record.finished_at = finished_at
     record.cost_eur = cost
+    record.state = ("failed" if record.errors else "continuing"
+                    if record.state == "continuing" else "complete_window")
     ctx.driver.write_batch(
         [
             (
@@ -832,6 +1007,8 @@ def _close_run(
                     "documents_gated_out": record.documents_gated_out,
                     "errors": record.errors,
                     "cost_eur": float(cost),
+                    "state": record.state,
+                    "last_error": record.last_error,
                 },
             )
         ]
@@ -867,6 +1044,7 @@ def _read_source(ctx: RunContext, source_id: str) -> SourceRecord | None:
         # Neo4j returns its own DateTime type; the model accepts native
         # datetimes only.
         last_success_at=_native_datetime(row["last_success_at"]),
+        corpus_complete=bool(row.get("corpus_complete")),
         initial_window_from=_native_datetime(row.get("initial_window_from")),
         last_run_id=row["last_run_id"],
     )

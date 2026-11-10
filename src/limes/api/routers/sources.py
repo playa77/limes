@@ -23,6 +23,8 @@ _SOURCE_STATE_QUERY = """
 MATCH (s:Source)
 RETURN s.source_id AS source_id,
        s.last_success_at AS last_success_at,
+       s.corpus_complete AS corpus_complete,
+       s.acquisition_manifest_hash AS acquisition_manifest_hash,
        s.last_run_id AS last_run_id
 """
 
@@ -40,6 +42,8 @@ class SourceView(BaseModel):
     supports_incremental: bool
     last_success_at: str | None = None
     last_run_id: str | None = None
+    corpus_complete: bool = False
+    acquisition_manifest_hash: str | None = None
 
 
 @router.get("/sources")
@@ -47,12 +51,16 @@ def sources(driver: Annotated[GraphDriver, Depends(get_driver)]) -> list[SourceV
     """Every registered source with its trust rank and last refresh."""
     registry = build_default_registry()
     state: dict[str, tuple[str | None, str | None]] = {}
+    corpus: dict[str, bool] = {}
+    manifests: dict[str, str | None] = {}
     for row in driver.read(_SOURCE_STATE_QUERY, {}, 30):
         last = native_datetime(row["last_success_at"])
         state[str(row["source_id"])] = (
             last.isoformat() if last is not None else None,
             row["last_run_id"],
         )
+        corpus[str(row["source_id"])] = bool(row.get("corpus_complete"))
+        manifests[str(row["source_id"])] = row.get("acquisition_manifest_hash")
     views: list[SourceView] = []
     for source_id in registry.source_ids():
         adapter = registry.get(source_id)
@@ -67,6 +75,8 @@ def sources(driver: Annotated[GraphDriver, Depends(get_driver)]) -> list[SourceV
                 supports_incremental=adapter.supports_incremental,
                 last_success_at=last_success_at,
                 last_run_id=last_run_id,
+                corpus_complete=corpus.get(source_id, False),
+                acquisition_manifest_hash=manifests.get(source_id),
             )
         )
     return views

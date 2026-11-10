@@ -465,3 +465,31 @@ def test_retract_sets_retracted_at(driver: GraphDriver, ontology):
 
     again = retract(driver, ["ret-1"], datetime(2026, 8, 3, tzinfo=UTC))
     assert again == 0
+
+
+def test_bulk_writes_preserve_exact_counts_intervals_sources_and_replay(driver, ontology):
+    subject, object_ = endpoint("bulk57-a"), endpoint("bulk57-b")
+    latest = datetime(2024, 1, 1, tzinfo=UTC)
+    items = [
+        assertion("bulk57-latest", subject, "SUBSIDIARY_OF", object_, valid_from=latest),
+        assertion("bulk57-old", subject, "SUBSIDIARY_OF", object_, valid_from=V_2020),
+        assertion("bulk57-middle", subject, "SUBSIDIARY_OF", object_, valid_from=V_2022),
+        assertion("bulk57-other-source", subject, "SUBSIDIARY_OF", object_,
+                  source_id="independent", valid_from=V_2020),
+    ]
+    first = load(driver, items + [items[1]], ontology, bulk=True)
+    assert first.nodes_created == 2
+    assert first.written == 4
+    assert first.skipped == 1 and first.rejected == 0
+    assert first.closed_intervals == 2
+    rows = driver.read(
+        "MATCH (:Entity {entity_id:'bulk57-a'})-[r:SUBSIDIARY_OF]->() "
+        "RETURN r.assertion_id AS id, r.valid_to AS until", {}, 30)
+    assert {row["id"]: row["until"] for row in rows} == {
+        "bulk57-old": V_2022, "bulk57-middle": latest,
+        "bulk57-latest": None, "bulk57-other-source": None,
+    }
+    second = load(driver, items + items, ontology, bulk=True)
+    assert second.nodes_created == second.written == second.closed_intervals == 0
+    assert second.nodes_matched == 2
+    assert second.skipped == 8

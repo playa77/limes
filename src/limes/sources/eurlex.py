@@ -98,18 +98,19 @@ WHERE {
                "European Parliament", STR(?body))) AS ?author)
   }
   OPTIONAL {
+   {
     ?act cdm:resource_legal_amends_resource_legal ?amended .
     ?amended cdm:resource_legal_id_celex ?amends_celex .
-  }
-  OPTIONAL {
+   } UNION {
     ?act cdm:resource_legal_repeals_resource_legal ?repealed .
     ?repealed cdm:resource_legal_id_celex ?repeals_celex .
-  }
-  OPTIONAL { ?act cdm:work_cites_work ?cited . ?cited cdm:resource_legal_id_celex ?cites_celex . }
-  OPTIONAL {
+   } UNION {
+    ?act cdm:work_cites_work ?cited . ?cited cdm:resource_legal_id_celex ?cites_celex .
+   } UNION {
     ?act cdm:work_is_about_concept_eurovoc ?topic .
     BIND(REPLACE(STR(?topic), "^.*/", "") AS ?topic_code)
     BIND("EuroVoc" AS ?topic_voc)
+   }
   }
   {date_filter}
 }
@@ -126,6 +127,7 @@ class EurlexAdapter:
     trust_rank: float = 1.00
     supports_backfill: bool = True
     supports_incremental: bool = True
+    full_initial_load: bool = True
 
     def fetch(self, since: datetime | None, until: datetime | None) -> Iterator[RawRecord]:
         """Query Cellar SPARQL for acts adopted in the window.
@@ -136,7 +138,8 @@ class EurlexAdapter:
         """
         query = _build_query(since, until)
         seen_pages: set[str] = set()
-        for page in range(40):
+        page = 0
+        while True:
             paged = f"{query}\nLIMIT {PAGE_SIZE} OFFSET {page * PAGE_SIZE}"
             url = f"{SPARQL_URL}?{urlencode({'query': paged, 'format': 'json'})}"
             payload = fetch_bytes(url, max_bytes=32 * 1024 * 1024)
@@ -160,7 +163,7 @@ class EurlexAdapter:
             )
             if len(bindings) < PAGE_SIZE:
                 return
-        raise SourceFetchError("eurlex: page limit exceeded; submit a narrower window")
+            page += 1
 
     def bound_ingest_window(self, since: datetime, until: datetime) -> datetime:
         return min(since + timedelta(days=1), until)
@@ -212,6 +215,7 @@ class EurlexAdapter:
             kind="structured",
             assertions=assertions,
             entities=standalone,
+            errors=skipped["malformed_binding"] + skipped["missing_celex"],
         )
 
     def _normalize_row(
@@ -331,6 +335,10 @@ def _build_query(since: datetime | None, until: datetime | None) -> str:
     if until is not None:
         clauses.append(f'?date <= "{until.date().isoformat()}"^^xsd:date')
     date_filter = " && ".join(clauses)
+    if date_filter and since is None:
+        # A pinned initial/as-of window must also retain undated legal acts;
+        # SPARQL comparisons on an unbound optional date otherwise drop them.
+        date_filter = f"!BOUND(?date) || ({date_filter})"
     # .replace, not .format: the SPARQL braces are format fields and would
     # be misparsed.
     return _QUERY_TEMPLATE.replace(

@@ -1,5 +1,118 @@
 # Verification and acceptance evidence
 
+## 2026-11-10 — Corpus ingestion reliability candidate (BE-57)
+
+Branch `codex/be-57-corpus-ingestion-reliability`; live-fetched base
+`5f6456b2b40c`. [Acceptance and source audit](CORPUS_INGESTION_RELIABILITY.md)
+separate implementation qualification from the unresolved product requirement:
+complete, reconciled production ingestion and maintained freshness. This entry
+supersedes prior blanket readiness wording for ingestion. No production restart,
+deployment or paid inference is performed by this qualification.
+
+**Complete automated candidate passed. Full production corpus acceptance remains open.**
+
+Authoritative candidate: `work/be57/candidate-11/report.json`.
+Source SHA-256: `275e31c406fec6504fa6e8beeb83656ea64c57107fc3ea17f5c5cc665cc1c3b3`.
+Live baseline: `5f6456b2b40c6fe43fd7c5bc0ade507305b15f93`.
+Validation: 15:04:43–15:22:24 UTC, 1,060.799 seconds. This measures validation,
+not implementation effort or merge latency; qualification was recorded before publication.
+
+| Lane | Passed |
+|---|---:|
+| Backend unit | 1,063 |
+| Desktop unit/contract | 42 |
+| Graph integration | 189 |
+| Acceptance | 85 |
+| Desktop integration | 2 |
+| Three-service runtime | 1 |
+| Total pytest cases | 1,382 |
+| Web Vitest | 49 |
+
+All Python lanes have zero failures, errors and skips. Live baseline, Ruff, mypy,
+documentation/generation, invariant guards, whitespace, TypeScript, ESLint and web
+build pass. Runtime qualification includes authenticated bounded jobs, non-root
+services, archive access and physical backup/recovery on disposable data. No source
+changed during the authoritative candidate. The suite adds 47 net Python cases
+(44 backend unit / three graph integration) and one web case over the baseline;
+the cumulative counts above are not a claim of that many new tests. Regressions
+cover source integrity, current archive layouts, exact historical selection,
+productive/stalled slices, recovery receipts, partial publishers, paging, explicit
+scope, failure persistence, batch counts, duplicate identities and interval closure.
+No new fixture data files are added to this patch; synthetic archives and existing fixtures
+support regressions, while downloaded public evidence stays under `work/be57/`.
+
+
+Change accounting against the live baseline (including new untracked source/test
+files): handwritten runtime/UI +1,538 / −189 (net +1,349 lines); tests/helpers
++998 / −79 (net +919); generated API/runtime documents +139 / −20 (net +119);
+configuration/document renderer +46 / −20 (net +26). Documentation is maintained
+separately in the audit, issue/decision ledgers, roadmap and this evidence entry.
+The detailed path/category receipt is `work/be57/change-accounting.json`.
+
+Earlier failed/interrupted candidates remain failed: candidate-1 exposed missing
+web API normalization fields; candidate-2 was superseded during implementation;
+candidate-3 exposed dedicated read-timeout and standalone GDELT-window regressions;
+candidate-4 passed 1,053 backend unit cases but failed four integration assumptions
+that retained the old bounded-pass/checkpoint/OSM replay or transport-mock contract.
+All four corrected integration files then passed 16 tests together. Candidate-5 was
+explicitly interrupted after review reproduced a separate structured-rejection
+false success (not a passing source-bound receipt). The latter fails before the
+repair in `work/be57/structured-rejection-before.log`; after correction, all 27
+pipeline unit cases pass, including ontology and loader rejection preserving the
+pending journal without a loaded receipt or source checkpoint. Candidate-6 was
+interrupted to replace cardinality-only package completion with exact current
+record-key verification after recovery review identified a stale-receipt hazard.
+The combined acquisition/pipeline/source regressions then passed 89 cases,
+including changed packages with equally many obsolete receipts. Real-data graph
+timing subsequently exposed per-notice/per-statement overhead. Bounded TED batches
+and parameterized structured writes now preserve the original small-sample graph
+exactly (2,671 nodes / 2,673 relationships). The naive intermediate batch failed
+duplicate/interval checks and is not accepted; corrected graph checks pass nine
+cases and pipeline recovery checks pass 29. Worker ingestion deadlines now use a
+separate seven-day envelope rather than predictably timing out at 24 hours.
+Candidate-7 was explicitly interrupted after final query review found that the
+pinned upper date excluded undated EUR-Lex acts from initial acquisition. The
+corrected initial query retains them; 15 adapter cases and its actual bounded live
+query pass (20 bindings, 23 assertions, two standalone acts).
+
+Candidate-8 was interrupted after independent package/search reconciliation
+showed that the TED Search API returns zero for January 2011 despite the official
+32,511-notice archive. It cannot serve as a historical corpus total. Partial
+historical windows now fall back to available monthly archives with actual
+publication-date filtering. Full-month acquisition was already package-based.
+Explicit historical upper bounds also no longer certify the current baseline.
+This discovery changes the inventory evidence, not the requirement for coverage.
+The corrected January 4, 2011 monthly selection returns 1,817 notices, exactly
+matching all payload hashes of the independent official daily package
+(`work/be57/ted-historical-window-quality.json`); 53 focused acquisition/pipeline
+checks pass, including explicit-cutoff baseline status.
+
+Candidate-9 passed 1,063 backend unit and 42 desktop cases, then failed one of
+189 graph integration cases. Its October 29 daily-package fixture had pinned the
+artifact clock but not the new package calendar clock, so actual November time
+correctly selected the historical monthly fallback and met an unmocked route.
+Pinning the calendar to the same fixture observation date preserves the intended
+current-month daily path; both structured-source integration cases then pass.
+The historical monthly fallback retains independent unit and real-source evidence.
+No failed candidate is promoted or waived.
+
+Candidate-10 passed 1,062 backend cases but exposed a nondeterministic existing
+GLEIF ZIP fixture helper: expected archive hashes regenerated ZIPs whose default
+creation timestamps could differ across the transport check. The helper now pins
+ZIP member metadata to the fixture observation date; the original exact-byte hash
+assertion remains. All 17 GLEIF adapter cases pass after this fixture correction.
+Runtime implementation is unchanged from candidate-9 for these two clock fixes.
+
+Public source checks are independent evidence: all 190 TED monthly HEADs succeeded
+(37,649,868,153 compressed bytes); complete January 2011 normalization/ontology
+qualification covers 32,511 notices and 325,124 assertions with zero errors or
+rejections. Three complete daily packages cover old/current XML eras. The real
+mirrored FSD original covers 6,269 distinct records / 18,807 assertions without
+normalization errors, but its underlying generation date is October 23. Re-export
+on November 10 does not prove current source freshness. Official access remains
+unresolved. See the source audit for exact receipt paths and every source's limits.
+
+
 ## 2026-11-10 — Final current-release qualification and local recovery (BE-45 / DC-17)
 
 This is the final source-bound disposition, superseding intermediate current-release

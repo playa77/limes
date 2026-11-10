@@ -47,7 +47,8 @@ HELSINKI_HASH = hashlib.sha256(b"FI|00100|Helsinki").hexdigest()
 def _zip_bytes(csv_member: str, csv_text: str) -> bytes:
     buffer = io.BytesIO()
     with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as archive:
-        archive.writestr(csv_member, csv_text)
+        member = zipfile.ZipInfo(csv_member, date_time=(2026, 8, 1, 12, 0, 0))
+        archive.writestr(member, csv_text, compress_type=zipfile.ZIP_DEFLATED)
     return buffer.getvalue()
 
 
@@ -97,15 +98,15 @@ def test_fetch_archives_originals_then_yields_csv_chunks():
         RELATIONSHIP_ZIP_URL,
     ]
     assert [r.content_type for r in records] == [
-        "application/zip",
+        "application/json",
         "text/csv",
-        "application/zip",
+        "application/json",
         "text/csv",
     ]
     assert records[0].acquisition_context["archive_only"]
     assert (
         records[1].acquisition_context["source_archive_hash"]
-        == hashlib.sha256(records[0].payload).hexdigest()
+        == hashlib.sha256(_entity_record().payload).hexdigest()
     )
     assert all(r.fetched_at.tzinfo is not None for r in records)
 

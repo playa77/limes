@@ -346,8 +346,39 @@ def test_structured_record_fully_rejected_is_counted_not_loaded(tmp_path):
     record = execute_run(RunSpec(source_id="test", mode="ingest"), ctx)
     assert record.assertions_rejected == 1
     assert record.assertions_written == 0
+    assert record.errors == 1
+    assert record.state == "failed"
+    assert not any("last_success_at" in params for _, params in driver.writes)
     # No loader statement reached the transaction.
     assert driver._driver._session.tx.ran == []
+
+
+@pytest.mark.parametrize("rejected_by", ["ontology", "loader"])
+def test_structured_rejection_has_no_checkpoint_or_load_receipt(tmp_path, monkeypatch, rejected_by):
+    from limes.graph.loader import LoadResult
+    from limes.sources.acquisition import AcquisitionStore
+
+    raw = _raw_record()
+    assertion = _resolved_assertion(
+        relation="NOT_A_RELATION" if rejected_by == "ontology" else "OWNS")
+    adapter = FakeAdapter(records=[raw], normalize=lambda _: _structured_record([assertion]))
+    driver = FakeDriver()
+    ctx = _ctx(tmp_path, driver, adapter)
+    from dataclasses import replace
+
+    ctx = replace(ctx, acquisitions=AcquisitionStore(ctx.archive, tmp_path / "progress"))
+    if rejected_by == "loader":
+        monkeypatch.setattr("limes.pipeline.run.load", lambda *a, **kw: LoadResult(rejected=1))
+    record = execute_run(RunSpec(source_id="test", mode="ingest"), ctx)
+    assert record.errors == record.assertions_rejected == 1
+    assert record.state == "failed"
+    assert not any("last_success_at" in params for _, params in driver.writes)
+    import sqlite3
+
+    database = next((tmp_path / "progress").rglob("progress.sqlite3"))
+    with sqlite3.connect(database) as connection:
+        assert connection.execute("SELECT count(*) FROM loaded").fetchone()[0] == 0
+        assert connection.execute("SELECT count(*) FROM state").fetchone()[0] > 0
 
 
 def test_document_record_without_inference_aborts_the_run(tmp_path):
@@ -570,3 +601,281 @@ def test_feeds_checkpoint_requires_entries_and_clean_processing(
     record = execute_run(RunSpec(source_id="feeds", mode="ingest"), _ctx(tmp_path, driver, adapter))
     stamps = [p["last_success_at"] for _, p in driver.writes if "last_success_at" in p]
     assert stamps == ([record.started_at] if advances else [])
+
+
+def test_restart_reuses_downloads_and_loads_only_unfinished_records(tmp_path, monkeypatch):
+    from dataclasses import replace
+
+    import httpx
+    import respx
+
+    from limes.sources.acquisition import AcquisitionStore
+    from limes.sources.base import fetch_bytes, now_utc
+
+    calls = []
+    adapter = FakeAdapter(normalize=lambda raw: (calls.append(raw.payload) or _structured_record()))
+
+    def fetch(since, until):
+        for name in ("one", "two"):
+            url = f"https://example.test/{name}"
+            yield RawRecord(payload=fetch_bytes(url), content_type="text/plain",
+                            source_url=url, fetched_at=now_utc())
+
+    monkeypatch.setattr(adapter, "fetch", fetch)
+    driver = FakeDriver()
+    ctx = _ctx(tmp_path, driver, adapter)
+    ctx = replace(ctx, acquisitions=AcquisitionStore(ctx.archive, tmp_path / "progress"))
+    spec = RunSpec(source_id="test", mode="ingest")
+    with respx.mock:
+        one = respx.get("https://example.test/one").respond(200, content=b"one")
+        two = respx.get("https://example.test/two").mock(side_effect=[
+            httpx.Response(403), httpx.Response(200, content=b"two")
+        ])
+        with pytest.raises(SourceFetchError):
+            execute_run(spec, ctx)
+        assert calls == [b"one"]
+        assert not any("last_success_at" in params for _, params in driver.writes)
+        result = execute_run(spec, ctx)
+        assert not result.errors
+        assert calls == [b"one", b"two"]
+        assert one.call_count == 1 and two.call_count == 2
+        assert any("last_success_at" in params for _, params in driver.writes)
+
+
+def test_processing_error_has_no_durable_loaded_receipt(tmp_path):
+    from dataclasses import replace
+
+    from limes.sources.acquisition import AcquisitionStore
+
+    calls = []
+    raw = _raw_record()
+
+    def normalize(record):
+        calls.append(record.payload)
+        result = _structured_record()
+        result.errors = int(len(calls) == 1)
+        return result
+
+    adapter = FakeAdapter(records=[raw], normalize=normalize)
+    driver = FakeDriver()
+    ctx = _ctx(tmp_path, driver, adapter)
+    ctx = replace(ctx, acquisitions=AcquisitionStore(ctx.archive, tmp_path / "progress"))
+    spec = RunSpec(source_id="test", mode="ingest")
+    assert execute_run(spec, ctx).errors == 1
+    assert not any("last_success_at" in params for _, params in driver.writes)
+    assert execute_run(spec, ctx).errors == 0
+    assert calls == [raw.payload, raw.payload]
+
+
+def test_relative_backfill_resubmission_keeps_original_window_and_inventory(tmp_path, monkeypatch):
+    import json
+    from dataclasses import replace
+
+    from limes.sources.acquisition import AcquisitionStore
+
+    windows = []
+
+    def fetch(since, until):
+        windows.append((since, until))
+        yield _raw_record()
+        if len(windows) == 1:
+            raise SourceFetchError("interrupted")
+
+    adapter = FakeAdapter(normalize=lambda _: _structured_record())
+    monkeypatch.setattr(adapter, "fetch", fetch)
+    driver = FakeDriver()
+    ctx = _ctx(tmp_path, driver, adapter)
+    ctx = replace(ctx, acquisitions=AcquisitionStore(ctx.archive, tmp_path / "progress"))
+    original = datetime(2026, 8, 1, tzinfo=UTC)
+    with pytest.raises(SourceFetchError):
+        execute_run(RunSpec(source_id="test", mode="backfill", since=original,
+                            relative_days=1), ctx)
+    result = execute_run(RunSpec(source_id="test", mode="backfill",
+                                 since=datetime(2026, 8, 2, tzinfo=UTC), relative_days=1), ctx)
+    assert result.errors == 0 and result.window_from == original
+    assert windows[0] == windows[1]
+    success = next(params for _, params in driver.writes if "last_success_at" in params)
+    manifest = json.loads(ctx.archive.get(success["acquisition_manifest_hash"]))
+    assert manifest["counts"]["loaded"] == 1
+    assert ctx.archive.exists(manifest["inventory_hash"])
+
+
+@pytest.mark.parametrize("blocked", [False, True, "partial"])
+def test_only_productive_wall_slices_continue_not_partial_or_rate_limited_work(
+    tmp_path, monkeypatch, blocked
+):
+    from dataclasses import replace
+
+    import httpx
+    import respx
+
+    from limes.errors import SourceRunBudgetExceeded, SourceSliceEnded
+    from limes.sources.acquisition import AcquisitionStore, active_acquisition
+    from limes.sources.base import fetch_bytes
+
+    clock = [0.0]
+    monkeypatch.setattr("limes.pipeline.run.time.monotonic", lambda: clock[0])
+    calls = []
+    windows = []
+
+    def fetch(since, until):
+        windows.append((since, until))
+        yield _raw_record(b"one")
+        if len(windows) == 1:
+            if blocked == "partial":
+                active_acquisition.get().incomplete_reason = "failed publisher"
+            elif blocked:
+                fetch_bytes("https://example.test/blocked")
+            clock[0] = 1901.0
+        yield _raw_record(b"two")
+
+    adapter = FakeAdapter(normalize=lambda raw: (calls.append(raw.payload) or _structured_record()))
+    monkeypatch.setattr(adapter, "fetch", fetch)
+    driver = FakeDriver()
+    ctx = _ctx(tmp_path, driver, adapter)
+    ctx = replace(ctx, acquisitions=AcquisitionStore(ctx.archive, tmp_path / "progress"))
+
+    def limited(request):
+        clock[0] = 1901.0
+        return httpx.Response(429, headers={"Retry-After": "60"})
+
+    spec = RunSpec(source_id="test", mode="ingest")
+    with respx.mock:
+        respx.get("https://example.test/blocked").mock(side_effect=limited)
+        with pytest.raises(SourceRunBudgetExceeded) as raised:
+            execute_run(spec, ctx)
+        assert isinstance(raised.value, SourceSliceEnded) == (not blocked)
+        assert not any("last_success_at" in params for _, params in driver.writes)
+        closed = [params for _, params in driver.writes if "finished_at" in params][-1]
+        assert closed["errors"] == int(bool(blocked))
+        assert closed["state"] == ("failed" if blocked else "continuing")
+        if not blocked:
+            assert execute_run(spec, ctx).errors == 0
+            assert calls == [b"one", b"two"]
+
+
+def test_osm_productive_request_slices_keep_acquired_leaves_and_retire_after_checkpoint(
+    tmp_path, monkeypatch
+):
+    from dataclasses import replace
+
+    from limes.errors import SourceSliceEnded
+    from limes.sources import osm
+    from limes.sources.acquisition import AcquisitionStore
+    from limes.sources.osm_acquisition import OsmAcquisition
+
+    monkeypatch.setattr(osm, "OVERPASS_QUERIES", ("first", "second"))
+    monkeypatch.setattr(osm, "MAX_REQUESTS_PER_RUN", 1)
+    monkeypatch.setattr(osm.time, "sleep", lambda _: None)
+    calls = []
+    monkeypatch.setattr(osm, "fetch_bytes_form", lambda url, body, **kwargs: (
+        calls.append(body["data"]) or b'{"elements":[]}'
+    ))
+    archive = ArchiveStore(tmp_path / "archive")
+    cursor = tmp_path / "osm-cursor"
+    adapter = osm.OsmAdapter(OsmAcquisition(archive, cursor))
+    driver = FakeDriver()
+    ctx = _ctx(tmp_path, driver, adapter)
+    ctx = replace(ctx, acquisitions=AcquisitionStore(archive, tmp_path / "progress"))
+    spec = RunSpec(source_id="osm", mode="ingest")
+    with pytest.raises(SourceSliceEnded):
+        execute_run(spec, ctx)
+    assert calls == ["first"]
+    assert (cursor / "active.json").exists()
+    complete = adapter.complete_fetch
+
+    def finish():
+        assert any("last_success_at" in params for _, params in driver.writes)
+        complete()
+
+    monkeypatch.setattr(adapter, "complete_fetch", finish)
+    result = execute_run(spec, ctx)
+    assert not result.errors and result.records_fetched == 2
+    assert calls == ["first", "second"]
+    assert not (cursor / "active.json").exists()
+
+
+def test_unexpected_adapter_exception_closes_run_as_failed(tmp_path):
+    def broken(raw):
+        raise TypeError("adapter bug")
+
+    driver = FakeDriver()
+    ctx = _ctx(tmp_path, driver, FakeAdapter(records=[_raw_record()], normalize=broken))
+    with pytest.raises(TypeError, match="adapter bug"):
+        execute_run(RunSpec(source_id="test", mode="ingest"), ctx)
+    closed = [params for _, params in driver.writes if "finished_at" in params][-1]
+    assert closed["errors"] == 1 and closed["state"] == "failed"
+    assert closed["last_error"] == "TypeError: adapter bug"
+    assert not any("last_success_at" in params for _, params in driver.writes)
+
+
+@pytest.mark.parametrize("write_fails", [False, True])
+def test_ted_pending_batch_flushes_on_interruption_and_receipts_follow_commit(
+    tmp_path, monkeypatch, write_fails
+):
+    from dataclasses import replace
+
+    from limes.errors import GraphWriteError
+    from limes.graph.loader import LoadResult
+    from limes.sources.acquisition import AcquisitionStore
+
+    adapter = FakeAdapter()
+    adapter.source_id = "ted"
+    adapter.kind = "structured"
+    calls = []
+    failed = False
+    raws = [_raw_record(b"one"), _raw_record(b"two")]
+
+    def normalize(raw):
+        calls.append(raw.payload)
+        return _structured_record([_resolved_assertion()])
+
+    def fetch(since, until):
+        nonlocal failed
+        yield from raws
+        if not failed:
+            failed = True
+            raise SourceFetchError("next package interrupted")
+
+    batches = []
+
+    def write(driver, assertions, ontology, **kwargs):
+        batches.append([a.provenance.evidence_document_id for a in assertions])
+        assert kwargs["bulk"]
+        if write_fails and len(batches) == 1:
+            raise GraphWriteError("batch transaction failed")
+        return LoadResult(written=len(assertions))
+
+    adapter.normalize = normalize
+    monkeypatch.setattr(adapter, "fetch", fetch)
+    monkeypatch.setattr("limes.pipeline.run.load", write)
+    driver = FakeDriver()
+    ctx = _ctx(tmp_path, driver, adapter)
+    ctx = replace(ctx, acquisitions=AcquisitionStore(ctx.archive, tmp_path / "progress"))
+    spec = RunSpec(source_id="ted", mode="ingest")
+    with pytest.raises(GraphWriteError if write_fails else SourceFetchError):
+        execute_run(spec, ctx)
+    assert len(batches) == 1 and len(batches[0]) == 2
+    assert len(set(batches[0])) == 2  # distinct per-notice archived evidence
+    assert not any("last_success_at" in parameters for _, parameters in driver.writes)
+    result = execute_run(spec, ctx)
+    assert not result.errors
+    assert calls == [b"one", b"two"] * (2 if write_fails else 1)
+    assert len(batches) == (2 if write_fails else 1)
+
+
+@pytest.mark.parametrize("explicit_until", [False, True])
+def test_explicit_historical_cutoff_does_not_certify_current_initial_corpus(
+    tmp_path, explicit_until
+):
+    adapter = FakeAdapter(records=[_raw_record()], normalize=lambda _: _structured_record())
+    adapter.supports_incremental = True
+    adapter.full_initial_load = True
+    driver = FakeDriver()
+    execute_run(RunSpec(source_id="test", mode="ingest",
+                        until=datetime(2020, 1, 1, tzinfo=UTC) if explicit_until else None),
+                _ctx(tmp_path, driver, adapter))
+    checkpoints = [parameters for _, parameters in driver.writes
+                   if "last_success_at" in parameters]
+    assert len(checkpoints) == 1
+    assert checkpoints[0]["corpus_complete"] is (not explicit_until)

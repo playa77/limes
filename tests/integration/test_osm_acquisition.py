@@ -111,7 +111,7 @@ def test_osm_interruption_load_failure_resume_and_complete_checkpoint(
     try:
         monkeypatch.setattr(osm.OsmAdapter, 'normalize', parse_failure)
         rejected = execute_run(spec, ctx)
-        assert rejected.errors == 2
+        assert rejected.errors == 1  # already-loaded west is retained, not normalized again
         assert cursor.exists()
         assert ctx.driver.read(
             'MATCH (s:Source {source_id:"osm"}) RETURN s.last_success_at AS at', {}, 30,
@@ -120,7 +120,7 @@ def test_osm_interruption_load_failure_resume_and_complete_checkpoint(
         result = execute_run(spec, ctx)
         assert result.errors == result.assertions_rejected == 0
         assert result.assertions_written == 1  # new way; cached node replays idempotently
-        assert result.assertions_skipped == 1
+        assert result.assertions_skipped == 0  # loaded-prefix receipt avoids a graph replay
         assert not cursor.exists()
         rows = ctx.driver.read(
             'MATCH (a:Asset) RETURN a.entity_id AS id ORDER BY id', {}, 30)
@@ -140,7 +140,7 @@ def test_osm_interruption_load_failure_resume_and_complete_checkpoint(
         runs = ctx.driver.read(
             'MATCH (r:IngestionRun {source_id:"osm"}) RETURN r.errors AS errors '
             'ORDER BY r.started_at', {}, 30)
-        assert [r['errors'] for r in runs] == [1, 1, 2, 0]
+        assert [r['errors'] for r in runs] == [1, 1, 1, 0]
     finally:
         ctx.driver.close()
 

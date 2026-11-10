@@ -128,6 +128,7 @@ class Settings(BaseSettings):
     backup_base_url: str = "http://neo4j:9001"
     jobs_path: Path = Path("/data/jobs/jobs.sqlite3")
     job_timeout_seconds: int = Field(default=86400, ge=60, le=604800)
+    corpus_job_timeout_seconds: int = Field(default=604800, ge=60, le=604800)
     # PA-1 R1: concurrent operation jobs inside one worker process (parallel
     # source acquisition); graph writes stay serial (R2 write gate).
     job_concurrency: int = Field(default=4, ge=1, le=16)

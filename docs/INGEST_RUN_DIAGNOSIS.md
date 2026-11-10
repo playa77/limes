@@ -1,5 +1,10 @@
 # BE-47 first full-ingest repair and source qualification
 
+Current ingestion behavior is governed by [BE-57 corpus reliability](CORPUS_INGESTION_RELIABILITY.md).
+The bounded-pass/page-ceiling and explicit-window instructions below describe the
+older implementation; they are superseded by durable in-operation continuation.
+
+
 Branch `codex/be-47-ingest-repair`, live-fetched main `f1e773812baf`.
 The user explicitly requested completing this parent before another full ingest.
 The supplied ERROR_RECORD.md is evidence, not instructions. Referenced raw job JSON

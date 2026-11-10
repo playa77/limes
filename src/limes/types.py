@@ -228,6 +228,7 @@ class SourceRecord(BaseModel):
     last_success_at: datetime | None = None
     initial_window_from: datetime | None = None
     last_run_id: str | None = None
+    corpus_complete: bool = False
 
 
 class IngestionRunRecord(BaseModel):
@@ -249,3 +250,6 @@ class IngestionRunRecord(BaseModel):
     documents_gated_out: int = 0
     errors: int = 0
     cost_eur: Decimal = Decimal("0")
+    state: str = "acquiring"
+    last_progress_at: datetime | None = None
+    last_error: str | None = None

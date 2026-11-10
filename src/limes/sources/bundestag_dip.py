@@ -62,6 +62,7 @@ class BundestagDipAdapter:
     trust_rank: float = 1.00
     supports_backfill: bool = True
     supports_incremental: bool = True
+    full_initial_load: bool = True
 
     def __init__(self, api_key: str | None = None) -> None:
         self._api_key = api_key
@@ -77,8 +78,9 @@ class BundestagDipAdapter:
         headers = {"Authorization": f"ApiKey {self._api_key}"} if self._api_key else {}
         cursor = None
         seen_cursors: set[str] = set()
+        seen_pages: set[str] = set()
         # Bounded acquisition, never mark a truncated response covered.
-        for _ in range(100):
+        while True:
             page_params = params + ([("cursor", cursor)] if cursor else [])
             url = f"{PERSON_URL}?{urlencode(page_params)}" if page_params else PERSON_URL
             payload = fetch_bytes(url, headers=headers)
@@ -89,15 +91,19 @@ class BundestagDipAdapter:
             if not rows:
                 return
             next_cursor = document.get("cursor")
-            if cursor is not None and next_cursor == cursor:
-                return
+            page_key = json.dumps(rows, sort_keys=True)
+            if page_key in seen_pages:
+                if next_cursor == cursor:
+                    return
+                raise SourceFetchError("bundestag_dip: repeated page; checkpoint unchanged")
+            seen_pages.add(page_key)
             yield RawRecord(
                 payload=payload,
                 content_type=JSON_CONTENT_TYPE,
                 source_url=url,
                 fetched_at=now_utc(),
             )
-            if not next_cursor:
+            if not next_cursor or next_cursor == cursor:
                 return
             if not isinstance(next_cursor, str):
                 raise SourceParseError("bundestag_dip: invalid cursor")
@@ -105,7 +111,6 @@ class BundestagDipAdapter:
                 raise SourceFetchError("bundestag_dip: cursor cycle; checkpoint unchanged")
             seen_cursors.add(next_cursor)
             cursor = next_cursor
-        raise SourceFetchError("bundestag_dip: page limit exceeded; submit a narrower window")
 
     def normalize(self, record: RawRecord) -> NormalizedRecord:
         """Historical DIP participation evidence, never an authoritative current roster.

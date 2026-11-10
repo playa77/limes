@@ -36,6 +36,14 @@ class SourceRunBudgetExceeded(SourceFetchError):
     applies unchanged."""
 
 
+class SourceSliceEnded(SourceRunBudgetExceeded):
+    """A productive durable slice ended; the same operation can continue its work.
+
+    Transport stalls and processing errors never use this outcome. An interrupted
+    or cancelled operation is still never automatically replayed.
+    """
+
+
 class SourceParseError(LimesError):
     """Record-level: a fetched payload could not be parsed. The record is
     counted and skipped, never silently dropped."""

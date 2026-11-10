@@ -87,7 +87,7 @@ def test_fetch_yields_one_raw_record_per_notice_and_honors_window():
         respx.get(NOTICE_URI_NAME).mock(
             return_value=Response(200, content=_name_only_notice().payload)
         )
-        records = list(ADAPTER.fetch(since, until))
+        records = list(ADAPTER.fetch_individual(since, until))
         body = json.loads(search.calls[0].request.content)
 
     assert [r.source_url for r in records] == [NOTICE_URI_LEI, NOTICE_URI_NAME]
@@ -105,7 +105,7 @@ def test_fetch_without_window_sends_match_all_query():
         respx.get(NOTICE_URI_NAME).mock(
             return_value=Response(200, content=_name_only_notice().payload)
         )
-        records = list(ADAPTER.fetch(None, None))
+        records = list(ADAPTER.fetch_individual(None, None))
         body = json.loads(search.calls[0].request.content)
 
     assert len(records) == 2
@@ -116,7 +116,7 @@ def test_fetch_empty_search_yields_no_records_and_logs():
     with respx.mock:
         respx.post(SEARCH_URL).mock(return_value=Response(200, json={"results": []}))
         with capture_logs() as captured:
-            records = list(ADAPTER.fetch(None, None))
+            records = list(ADAPTER.fetch_individual(None, None))
     assert records == []
     summary = [e for e in captured if e.get("event") == "ted: search returned no notices"]
     assert len(summary) == 1
@@ -134,7 +134,7 @@ def test_search_hits_without_id_or_uri_are_skipped_and_counted():
         respx.post(SEARCH_URL).mock(return_value=Response(200, json={"results": hits}))
         respx.get(NOTICE_URI_LEI).mock(return_value=Response(200, content=_lei_notice().payload))
         with capture_logs() as captured:
-            records = list(ADAPTER.fetch(None, None))
+            records = list(ADAPTER.fetch_individual(None, None))
     assert [r.source_url for r in records] == [NOTICE_URI_LEI]
     skipped = [
         e for e in captured if e.get("event") == "ted: search hits without id or uri skipped"
@@ -147,14 +147,14 @@ def test_search_response_that_is_not_json_raises():
     with respx.mock:
         respx.post(SEARCH_URL).mock(return_value=Response(200, content=b"not json"))
         with pytest.raises(SourceParseError):
-            list(ADAPTER.fetch(None, None))
+            list(ADAPTER.fetch_individual(None, None))
 
 
 def test_search_response_without_results_list_raises():
     with respx.mock:
         respx.post(SEARCH_URL).mock(return_value=Response(200, json={"results": "nope"}))
         with pytest.raises(SourceParseError):
-            list(ADAPTER.fetch(None, None))
+            list(ADAPTER.fetch_individual(None, None))
 
 
 def test_normalize_lei_notice_produces_expected_records():
@@ -353,6 +353,7 @@ def test_notice_without_notice_id_is_skipped_and_counted():
 
     assert normalized.kind == "structured"
     assert normalized.assertions == []
+    assert normalized.errors == 1
     assert normalized.content_hash == hashlib.sha256(payload).hexdigest()
     skipped = [e for e in captured if e.get("event") == "ted: notice without NO_DOC_OJS skipped"]
     assert len(skipped) == 1

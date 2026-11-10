@@ -139,9 +139,10 @@ def run_pool(store: JobStore, settings: Settings, stop: threading.Event) -> None
                         break
                     key = str(job.job_id)
                     events[key] = threading.Event()
-                    future = pool.submit(
-                        execute, job, store, settings.job_timeout_seconds, stop, events[key]
-                    )
+                    timeout = (settings.corpus_job_timeout_seconds
+                               if job.request.command in ("ingest", "ingest-all", "backfill")
+                               else settings.job_timeout_seconds)
+                    future = pool.submit(execute, job, store, timeout, stop, events[key])
                     running[future] = key
                     logger.info("job claimed", job_id=key, pool_slot=len(running))
             except Exception as exc:  # noqa: BLE001  (worker must survive DB hiccups)

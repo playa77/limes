@@ -4017,6 +4017,60 @@
               }
             ],
             "title": "Last Success At"
+          },
+          "state": {
+            "type": "string",
+            "title": "State",
+            "default": "acquiring"
+          },
+          "last_progress_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Progress At"
+          },
+          "last_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Error"
+          },
+          "progress_stale": {
+            "type": "boolean",
+            "title": "Progress Stale",
+            "default": false
+          },
+          "window_from": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Window From"
+          },
+          "window_to": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Window To"
           }
         },
         "type": "object",
@@ -4318,6 +4372,22 @@
               }
             ],
             "title": "Last Run Id"
+          },
+          "corpus_complete": {
+            "type": "boolean",
+            "title": "Corpus Complete",
+            "default": false
+          },
+          "acquisition_manifest_hash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Acquisition Manifest Hash"
           }
         },
         "type": "object",

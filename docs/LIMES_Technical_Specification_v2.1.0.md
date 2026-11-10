@@ -870,15 +870,26 @@ Adapters emit records and **write nothing to the graph**.
 | `yahoo_finance` (BE-46) | Yahoo Finance through pinned `yfinance` transport | Company/security identity, available officers/board roles, shareholder structure, earnings/report metadata | Dated snapshots, not reconstructed history | 0.70 |
 | `news` (BE-43/DC-15) | Dynamic DE/EN public search RSS | Archived index responses and report versions, qualified NewsClaim artifacts; full article text unavailable | Investigation-driven bounded cycles | 0.50 index trust |
 
-Feeds acquisition (BE-52) treats individual feed failures as visible partial
-availability: log failed URLs and continue; raise an aggregate naming every failure
-only when all configured feeds fail. A healthy empty feed is not a failed feed.
+Feeds acquisition (BE-57, superseding BE-52's partial-success policy) retains
+healthy entries and then raises an aggregate naming every failed publisher if
+any publisher failed. A healthy empty feed is not a failed feed.
 Only nonempty, cleanly processed acquisitions advance `last_success_at`; zero
-entries or processing/rejection errors never advance it. A partial checkpoint is
-acquisition progress, not all-feed coverage. RSS is still polled as a bounded set;
+entries, partial acquisition or processing/rejection errors never advance it.
+RSS is still polled as a bounded set;
 content hashes and successful extraction caches avoid duplicate processing without
 dropping undated/corrected entries through a publisher-date filter. Rejections stay
 archived and replayable. Feed URL disposition remains an operator decision.
+
+BE-57 acquires the TED XML corpus via monthly/daily packages rather than individual
+rendering URLs. Initial TED/EUR-Lex/DIP loads do not inherit the news lookback;
+legacy recent-window success does not certify their historical baseline.
+Composition supplies durable HTTP/load/package receipts on the archive volume;
+receipts follow successful writes and checkpoints require clean iterator
+exhaustion. The ingestion status surface reports blocked transport, stale progress
+and completed windows separately from infrastructure health. The
+[source audit](CORPUS_INGESTION_RELIABILITY.md) records each source's scope,
+limitations and remaining corpus acceptance; no automated test result substitutes
+for a completed reconciled ingest.
 
 OSM acquisition (BE-49) covers the original bbox with 80 deterministic cells,
 rejects error remarks even on HTTP 200, archives original responses and retains a
@@ -1050,8 +1061,9 @@ Full GDELT Mentions coverage and licensed full-article retrieval remain explicit
 source-coverage gaps; BE-43 discovers and acquires public investigation search
 feeds with missing full text visible. No index response establishes article access.
 The adapter is structured-only because exports contain no article text. Maximum
-request: 96 slots, 16 MiB compressed, 128 MiB expanded and 250,000 rows per export.
-Oversized windows fail before acquisition; submit consecutive explicit windows.
+standalone window without durable acquisition: 96 slots. Composed ingestion/backfill
+supports longer windows with durable file/load receipts and productive continuation.
+Each export remains bounded to 16 MiB compressed, 128 MiB expanded and 250,000 rows.
 Provenance adds nullable `evidence_channel`, `evidence_member`, `evidence_row`,
 `source_event_id`, `source_url`, `report_url`, `source_recorded_at` and
 `article_text_available` across loader/API/desktop mirrors. Old absent fields stay
@@ -1838,19 +1850,25 @@ GLEIF and OffeneRegister retain original compressed downloads, then process at
 most 1,000 rows/8 MiB input per normalization chunk with 1 MiB row bounds. Chunk
 manifests reference the original archive hash, member and row offset; optional
 evidence_manifest_hash passes through provenance, graph edges, API and desktop
-models to make that pointer inspectable. GLEIF
-compressed responses are bounded to 1 GiB, OffeneRegister to 512 MiB. These are
-work limits, not a production-scale capacity certification.
+models to make that pointer inspectable. Streaming artifact downloads are
+bounded to 2 GiB per artifact. This is a transport bound with disk/archive
+streaming, not an in-memory buffer or a production-scale capacity certification.
 
-EUR-Lex uses canonical underscore CDM predicates and up to forty ordered pages
-of 5,000 bindings; repeated pages and limit exhaustion fail without a checkpoint.
+EUR-Lex uses canonical underscore CDM predicates and ordered pages of 5,000
+bindings without a fixed page ceiling; repeated pages fail without a checkpoint.
+Relation facets are unioned rather than multiplying citations, amendments and topics.
 Standalone legal acts survive missing relations. The laws TOC is archived as
 metadata rather than counted as a law parse failure.
 
-Default GDELT ingestion advances at most 96 slots per invocation, checkpointing
-only that covered prefix of the historical backlog. Consecutive runs share one
-inclusive boundary slot; stable identities make that overlap idempotent. A durable Source.initial_window_from anchor is established when opening an
-initial run, so first-failure retries cannot slide the lookback start. Failure
-never advances past unprocessed history. Explicit oversized requests still fail.
-`ingest-all` continues expected source failures and returns a failed aggregate job
-listing failed sources; a completed bounded pass never claims the backlog is gone.
+Default GDELT ingestion drains clean bounded prefixes through a publication-safe
+invocation cutoff, checkpointing only completed prefixes. A durable initial-window
+anchor and pinned acquisition window keep failed retries from sliding the lookback
+start. Explicit larger windows use the same durable acquisition context; only
+standalone adapter calls without recovery retain the 96-slot guard. Failures never
+advance over unprocessed history. `ingest-all` attempts remaining sources and
+returns a failed aggregate when any fails. A clean requested window is not a claim
+of unavailable historical coverage. Structured writes use bounded parameterized
+UNWIND batches; TED flushes pending work at 50 notices, 500 assertions or 8 MiB
+raw input (a single notice can cross a trigger but is bounded to 16 MiB; graph
+transactions remain bounded to 500 assertions). Per-notice original evidence remains distinct. Journal receipts
+follow successful loading; failed batches stay pending.

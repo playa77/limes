@@ -117,17 +117,12 @@ class OffeneRegisterAdapter:
                 payload=fetch_bytes(self._metadata_url),
                 content_type=METADATA_CONTENT_TYPE,
                 source_url=self._metadata_url,
-                fetched_at=fetched_at,
+                fetched_at=now_utc(),
+                acquisition_context={"replay_required": True},
             )
-        data_payload = fetch_bytes(DATA_URL, max_bytes=512 * 1024 * 1024)
-        logger.info(
-            "offeneregister: dataset fetched",
-            bytes=len(data_payload),
-            fetched_at=fetched_at.isoformat(),
-        )
-        from limes.sources.bulk import bz2_jsonl_records
+        from limes.sources.bulk import bz2_jsonl_artifact_records
 
-        yield from bz2_jsonl_records(data_payload, DATA_URL, fetched_at)
+        yield from bz2_jsonl_artifact_records(DATA_URL, fetched_at)
 
     def normalize(self, record: RawRecord) -> NormalizedRecord:
         """Route on the record's content type: metadata or data. Pure —

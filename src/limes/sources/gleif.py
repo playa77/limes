@@ -106,16 +106,9 @@ class GleifAdapter:
         copy is a full snapshot and always supersedes any window."""
         fetched_at = now_utc()
         for url in _published_urls(fetch_bytes(PUBLICATIONS_URL, max_bytes=2 * 1024 * 1024)):
-            payload = fetch_bytes(url, max_bytes=1024 * 1024 * 1024)
-            logger.info(
-                "gleif payload fetched",
-                url=url,
-                bytes=len(payload),
-                fetched_at=fetched_at.isoformat(),
-            )
-            from limes.sources.bulk import zip_csv_records
+            from limes.sources.bulk import zip_csv_artifact_records
 
-            yield from zip_csv_records(payload, url, fetched_at)
+            yield from zip_csv_artifact_records(url, fetched_at)
 
     def normalize(
         self,
@@ -227,6 +220,7 @@ class GleifAdapter:
             kind="structured",
             assertions=assertions,
             entities=entities,
+            errors=malformed,
         )
 
     def _normalize_relationships(self, text: str, record: RawRecord) -> NormalizedRecord:
@@ -324,6 +318,7 @@ class GleifAdapter:
             content_hash=payload_hash(record.payload),
             kind="structured",
             assertions=assertions,
+            errors=unmaterializable,
         )
 
     def _normalize_current_relationships(

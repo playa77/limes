@@ -1,3 +1,25 @@
+## 2026-11-10 — Corpus ingestion reliability (BE-57)
+
+- Acquire TED through official monthly/daily packages, with retained compressed
+  evidence, bounded member parsing and durable completed-package receipts.
+- Persist source windows, HTTP artifacts and successful load receipts across
+  interruption; stream large GLEIF/OffeneRegister/GISCO artifacts and bound
+  Transparency Register normalization chunks.
+- Batch deterministic TED loading and parameterized structured graph writes while
+  preserving per-notice evidence, duplicate identity and nearest later intervals.
+  Give corpus operations a separate seven-day deadline; retain bounded productive
+  slices, transport failures and explicit interrupted-job resubmission.
+- Remove fixed EUR-Lex/DIP page ceilings, avoid multiplying EUR-Lex relation
+  facets, retain DIP terminal records and drain bounded ingestion backlog.
+- Separate initial historical corpus coverage from legacy recent-window success;
+  count failed publishers, invalid required identities and structured ontology/loader
+  rejections as incomplete outcomes.
+- Repair current FSD XML handling, actual legacy TED fields and shared-contract
+  award joins; retain laws lacking gazette citations with honest source identities.
+- Expose live blocked/progress/stale states and selected windows through the API
+  and desktop. Record all-source availability/scope limitations and pending full
+  ingestion evidence in docs/CORPUS_INGESTION_RELIABILITY.md.
+
 ## 2026-11-10 — Current-release qualification repairs (BE-45 / DC-17)
 
 - Repair native browser fetch, search URL synchronization, visualization lifecycle,

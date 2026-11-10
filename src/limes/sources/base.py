@@ -33,7 +33,7 @@ import math
 import os
 import time
 from collections.abc import Iterator
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from contextvars import ContextVar
 from datetime import UTC, datetime
 from email.utils import parsedate_to_datetime
@@ -373,7 +373,13 @@ def _retry_wait(state: Any) -> float:
     fallback = wait_exponential_jitter(initial=2.0, max=60.0, jitter=2.0)(state)
     error = state.outcome.exception()
     delay = error.retry_after if isinstance(error, TransientFailure) else None
-    return max(fallback, delay or 0.0)
+    wait = max(fallback, delay or 0.0)
+    left = run_time_left()
+    if left is not None and wait >= left:
+        raise SourceRunBudgetExceeded(
+            "source run cannot honor retry cooldown within remaining budget; retry later"
+        )
+    return wait
 
 
 
@@ -430,6 +436,7 @@ def request_with_retry(
     follow_redirects: bool = True,
     log: Any = logger,
     max_bytes: int | None = None,
+    output_path: Path | None = None,
 ) -> httpx.Response:
     """The one §11 retry transport: exponential backoff from 2 s, factor 2,
     jittered, at most `HTTP_MAX_ATTEMPTS` attempts, on connection errors,
@@ -469,25 +476,34 @@ def request_with_retry(
         reraise=True,
     )
     def _call() -> httpx.Response:
+        from limes.sources.acquisition import active_acquisition
+
         nonlocal attempts, endpoint_index
         scope = _scope.get()
+        acquisition = active_acquisition.get()
         if scope is not None and scope.deadline is not None and time.monotonic() >= scope.deadline:
             raise SourceRunBudgetExceeded(
                 "source run budget elapsed; refusing another HTTP attempt"
             )
         attempt_url = endpoints[endpoint_index % len(endpoints)]
         attempts += 1
+        remaining = run_time_left()
+        effective_timeout = (min(timeout_s, max(0.001, remaining))
+                             if remaining is not None else timeout_s)
+        effective_read = read_timeout_s or timeout_s
+        if remaining is not None:
+            effective_read = min(effective_read, max(0.001, remaining))
         if read_timeout_s is not None:
             log.info("source HTTP attempt", endpoint=attempt_url, attempt=attempts)
         # PA-1 R5: one host slot per request, held until the response body
         # is consumed — never released mid-stream.
         with host_slot(attempt_url), httpx.Client(
-            timeout=httpx.Timeout(timeout_s, read=read_timeout_s or timeout_s),
+            timeout=httpx.Timeout(effective_timeout, read=effective_read),
             follow_redirects=follow_redirects,
             headers=headers,
         ) as client:
             try:
-                if max_bytes is None:
+                if max_bytes is None and output_path is None:
                     response = (
                         client.post(attempt_url, data=form_body)
                         if form_body is not None
@@ -500,10 +516,28 @@ def request_with_retry(
                         method, attempt_url, json=json_body, data=form_body
                     ) as streamed:
                         chunks = bytearray()
-                        for chunk in streamed.iter_bytes():
-                            if len(chunks) + len(chunk) > max_bytes:
-                                raise SourceFetchError("source response exceeds byte limit")
-                            chunks.extend(chunk)
+                        size = 0
+                        # Never publish error bodies as successful source artifacts.
+                        destination = output_path if streamed.is_success else None
+                        with destination.open("wb") if destination else nullcontext() as output:
+                            for chunk in streamed.iter_bytes():
+                                if destination and acquisition and acquisition.progress:
+                                    acquisition.progress("downloading", None)
+                                left = run_time_left()
+                                if left is not None and left <= 0:
+                                    raise SourceRunBudgetExceeded("source deadline during download")
+                                size += len(chunk)
+                                if max_bytes is not None and size > max_bytes:
+                                    raise SourceFetchError("source response exceeds byte limit")
+                                if output is not None:
+                                    output.write(chunk)
+                                elif output_path is None:
+                                    chunks.extend(chunk)
+                                elif len(chunks) < 16384:
+                                    chunks.extend(chunk[:16384 - len(chunks)])
+                            if output is not None:
+                                output.flush()
+                                os.fsync(output.fileno())
                         response = httpx.Response(
                             streamed.status_code,
                             # iter_bytes() already decoded HTTP content encoding.
@@ -525,9 +559,23 @@ def request_with_retry(
                     error_type=type(exc).__name__,
                 )
                 endpoint_index += 1
+                if acquisition and acquisition.progress:
+                    acquisition.progress("transport_failure", type(exc).__name__)
                 _budget_failure("transport", type(exc).__name__)
                 raise TransientFailure(str(exc)) from exc
             delay = _retry_after_seconds(response.headers.get("Retry-After"))
+            if acquisition is not None and acquisition.progress is not None:
+                acquisition.progress(
+                    "rate_limited" if response.status_code == 429 else
+                    "upstream_failure" if response.status_code >= 500 else "acquiring",
+                    f"HTTP {response.status_code} from {attempt_url}"
+                    if response.status_code >= 400 else None,
+                )
+            if response.headers.get("x-amzn-waf-action") in ("challenge", "captcha"):
+                raise SourceFetchError(
+                    f"source access blocked by WAF challenge: {attempt_url} "
+                    f"(HTTP {response.status_code}); no usable source payload"
+                )
             log.info(
                 "HTTP attempt completed", method=method, url=attempt_url, attempt=attempts,
                 max_attempts=HTTP_MAX_ATTEMPTS, status_code=response.status_code,
@@ -618,6 +666,19 @@ def _fetch(
     read_timeout_s: float | None = None,
     fallback_urls: tuple[str, ...] = (),
 ) -> bytes:
+    from limes.sources.acquisition import active_acquisition, request_key
+
+    acquisition = active_acquisition.get()
+    if acquisition is not None:
+        acquisition.last_response_key = None
+    key = request_key(method, url, json=json_body, form=form_body, headers=headers)
+    if acquisition is not None and acquisition.source_id not in ("feeds", "osm"):
+        # Poll every publisher again; a dead feed must not freeze healthy feeds.
+        cached = acquisition.response(key)
+        if cached is not None:
+            if max_bytes is not None and len(cached) > max_bytes:
+                raise SourceFetchError("cached source response exceeds byte limit")
+            return cached
     try:
         response = request_with_retry(
             method,
@@ -638,13 +699,19 @@ def _fetch(
         raise SourceFetchError(
             f"fetch failed after {exc.attempts} attempts: {exc.url} ({exc.reason})"
         ) from exc
+    if acquisition is not None and acquisition.source_id != "osm":
+        acquisition.save_response(key, response.content)
     return response.content
 
 
 def now_utc() -> datetime:
     """The current UTC instant, timezone-aware. Adapters use this for
     `fetched_at` and, in the absence of a source-stated date, `valid_from`."""
-    return datetime.now(UTC)
+    from limes.sources.acquisition import active_acquisition
+
+    acquisition = active_acquisition.get()
+    return (acquisition.last_fetched_at if acquisition is not None and acquisition.last_fetched_at
+            else datetime.now(UTC))
 
 
 # ---------------- PA-1 R5: cross-process per-host netiquette slots ----------------

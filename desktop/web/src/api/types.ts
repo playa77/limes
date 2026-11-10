@@ -179,6 +179,12 @@ export interface IngestRun {
   errors: number
   cost_eur: number
   last_success_at: string | null
+  state: string
+  last_progress_at: string | null
+  last_error: string | null
+  progress_stale: boolean
+  window_from: string | null
+  window_to: string | null
 }
 
 export type QuerySurface = "cypher" | "builder" | "nl"
@@ -565,6 +571,12 @@ export function ingestRunFromApi(d: JsonObject): IngestRun {
     errors: num(d.errors ?? 0),
     cost_eur: Number(d.cost_eur ?? 0),
     last_success_at: optStr(d.last_success_at),
+    state: str(d.state ?? (d.finished_at ? (num(d.errors ?? 0) ? "failed" : "complete_window") : "acquiring")),
+    last_progress_at: optStr(d.last_progress_at),
+    last_error: optStr(d.last_error),
+    progress_stale: Boolean(d.progress_stale),
+    window_from: optStr(d.window_from),
+    window_to: optStr(d.window_to),
   }
 }
 

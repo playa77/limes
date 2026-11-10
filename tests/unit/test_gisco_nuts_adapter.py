@@ -43,8 +43,10 @@ def test_fetch_yields_one_record_per_file():
             return_value=Response(200, content=_fixture("postcode_correspondence.csv"))
         )
         records = list(ADAPTER.fetch(None, None))
-    assert [r.source_url for r in records] == [NUTS_URL, POSTCODE_URL]
-    assert all(r.content_type == "text/csv; charset=utf-8" for r in records)
+    assert [r.source_url for r in records] == [NUTS_URL, POSTCODE_URL, POSTCODE_URL]
+    assert records[1].acquisition_context["archive_only"]
+    assert ADAPTER.normalize(records[1]).lookup_rows == []
+    assert len(ADAPTER.normalize(records[2]).lookup_rows) == 3
 
 
 def test_hierarchy_normalize_produces_expected_assertions():
@@ -189,6 +191,15 @@ def test_blank_line_in_csv_is_ignored():
     )
     normalized = ADAPTER.normalize(_record(payload, POSTCODE_URL))
     assert len(normalized.lookup_rows) == 1
+
+
+def test_missing_hierarchy_parent_retains_region_but_blocks_complete_outcome():
+    result = ADAPTER.normalize(_record(
+        b"CNTR_CODE,NUTS_ID,NAME_LATN\nDE,DE11,Stuttgart\n", NUTS_URL
+    ))
+    assert result.errors == 1
+    assert result.assertions == []
+    assert [entity.entity_id for entity in result.entities] == ["nuts_code:DE11"]
 
 
 def test_oversized_csv_field_raises_source_parse_error():

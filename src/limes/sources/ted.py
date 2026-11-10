@@ -21,11 +21,9 @@ Non-obvious choices, each load-bearing:
   the postal-code correspondence (`postal_lookup`) is consulted only
   otherwise. A miss or an absent lookup leaves the region unassigned —
   counted and summarized once, never guessed.
-- The search API is POST-only and filters by date in the query text, so
-  `fetch` compiles the window into an ISO publication-date range in the
-  body; without a window the query is a match-all and the run is a full
-  load. Iteration is bounded to 400 pages of `FETCH_LIMIT` notices;
-  excessive requests fail without a checkpoint.
+- Corpus acquisition uses monthly/daily XML packages from January 2011.
+  Original compressed artifacts and member identities remain archived;
+  the individual Search API/rendering path is explicit repair tooling only.
 - A contractor's VAT, postal code, town, and country are read by no path:
   no ontology relation consumes them and the loader stamps no arbitrary
   properties. Only the name and, when present, the LEI drive identity.
@@ -35,6 +33,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from collections.abc import Callable, Iterator
 from datetime import UTC, datetime, timedelta
 from typing import Literal
@@ -65,10 +64,13 @@ logger = structlog.get_logger(__name__)
 
 SEARCH_URL = "https://api.ted.europa.eu/v3/notices/search"
 
-# Per-page bound; iteration is additionally capped at 400 pages.
+# Per-page bound for the explicit individual-notice repair path.
 FETCH_LIMIT = 50
 
 NOTICE_CONTENT_TYPE = "application/xml"
+CORPUS_START = datetime(2011, 1, 1, tzinfo=UTC)
+MONTHLY_URL = "https://ted.europa.eu/packages/monthly/{year}-{month}"
+DAILY_URL = "https://ted.europa.eu/packages/daily/{year}{issue:05d}"
 
 
 class TedAdapter:
@@ -80,8 +82,17 @@ class TedAdapter:
     trust_rank: float = 1.00
     supports_backfill: bool = True
     supports_incremental: bool = True
+    full_initial_load: bool = True
 
     def fetch(self, since: datetime | None, until: datetime | None) -> Iterator[RawRecord]:
+        """Acquire the XML corpus using monthly/daily packages, never notice GETs."""
+        from limes.sources.ted_bulk import fetch_packages
+
+        yield from fetch_packages(since or CORPUS_START, until or now_utc())
+
+    def fetch_individual(
+        self, since: datetime | None, until: datetime | None
+    ) -> Iterator[RawRecord]:
         """Search for notices in the window, then GET each notice XML.
 
         The window is compiled into the search query text as an ISO
@@ -94,11 +105,13 @@ class TedAdapter:
             "limit": FETCH_LIMIT,
             "fields": ["publication-number", "links"],
             "paginationMode": "ITERATION",
+            "scope": "ALL", "onlyLatestVersions": False,
         }
         seen_tokens: set[str] = set()
         seen_notices: set[str] = set()
         expected: int | None = None
-        for page in range(400):
+        page = 0
+        while True:
             search_payload = fetch_bytes_post(SEARCH_URL, body)
             hits = _search_hits(search_payload)
             if not hits and page == 0:
@@ -144,7 +157,7 @@ class TedAdapter:
                 )
             seen_tokens.add(token)
             body["iterationNextToken"] = token
-        raise SourceFetchError("ted: page limit exceeded; submit a narrower window")
+            page += 1
 
     def bound_ingest_window(self, since: datetime, until: datetime) -> datetime:
         """Catch up in daily checkpointed requests; explicit windows remain operator-selected."""
@@ -175,7 +188,7 @@ class TedAdapter:
             from limes.sources.ted_ubl import normalize_ubl
 
             return normalize_ubl(self, root, record, postal_lookup=postal_lookup)
-        notice_id = _first_text(root, "NO_DOC_OJS")
+        notice_id = _attr(root, "DOC_ID") or _first_text(root, "NO_DOC_OJS")
         if notice_id is None:
             logger.warning(
                 "ted: notice without NO_DOC_OJS skipped",
@@ -184,7 +197,17 @@ class TedAdapter:
             return NormalizedRecord(
                 content_hash=payload_hash(record.payload),
                 kind="structured",
+                errors=1,
             )
+        match = re.fullmatch(r"(\d{4})/S\s+\d+-(\d+)", notice_id)
+        if match:
+            notice_id = f"{int(match[2])}-{match[1]}"
+        elif re.fullmatch(r"\d+-\d{4}", notice_id):
+            number, year = notice_id.split("-")
+            notice_id = f"{int(number)}-{year}"
+        requested = (record.acquisition_context or {}).get("requested_notice_id")
+        if requested is not None and str(requested).lstrip("0") != notice_id:
+            raise SourceParseError("ted: legacy XML publication does not match requested notice")
 
         counts = {
             "cpv_codes": 0,
@@ -198,7 +221,7 @@ class TedAdapter:
         }
 
         titles = _descendants(root, "TITLE")
-        title = _first_text(titles[0], "VALUE") if titles else None
+        title = (" ".join(titles[0].itertext()).strip() or None) if titles else None
         contract = EntityEndpoint(
             entity_id=key_entity_id(("ted_notice_id", notice_id)),
             type="Contract",
@@ -206,7 +229,9 @@ class TedAdapter:
             deterministic_key=("ted_notice_id", notice_id),
         )
 
-        pub_date = _parse_yyyymmdd(_first_text(root, "DT_PUBLISH"))
+        pub_date = _parse_yyyymmdd(
+            _first_text(root, "DT_PUBLISH") or _first_text(root, "DATE_PUB")
+        )
         if pub_date is None:
             pub_date = record.fetched_at
             counts["date_fallback"] += 1
@@ -238,11 +263,11 @@ class TedAdapter:
             )
 
         award_date = _award_date(root, pub_date, counts, notice_id)
-        for award_el in _descendants(root, "AWARD_CONTRACT") + _descendants(
-            root, "AWARDED_CONTRACT"
-        ):
+        for award_el in (_descendants(root, "AWARDED_CONTRACT") or
+                         _descendants(root, "AWARD_CONTRACT")):
             for contractor_el in _descendants(award_el, "CONTRACTOR"):
-                name = _first_text(contractor_el, "OFFICIALNAME")
+                name = (_first_text(contractor_el, "OFFICIALNAME") or
+                        _first_text(contractor_el, "ORGANISATION"))
                 if name is None:
                     counts["skipped_contractor_name"] += 1
                     logger.warning(
@@ -296,7 +321,7 @@ class TedAdapter:
             if buyer_address is None:
                 counts["no_buyer_address"] += 1
             else:
-                country = _first_text(buyer_address, "COUNTRY") or ""
+                country = _country(buyer_address)
                 postal = _first_text(buyer_address, "POSTAL_CODE") or ""
                 town = _first_text(buyer_address, "TOWN") or ""
                 if not country or not postal:
@@ -318,6 +343,9 @@ class TedAdapter:
                         )
                     )
                     nuts = _first_value_code(buyer_address, "BUYER_NUTS")
+                    if nuts is None:
+                        codes = _descendants(buyer_address, "NUTS")
+                        nuts = _attr(codes[0], "CODE") if codes else None
                     if nuts is None and postal_lookup is not None:
                         nuts = postal_lookup(country, postal)
                     if nuts is None:
@@ -465,16 +493,17 @@ def _buyer(root: etree._Element) -> tuple[EntityEndpoint | None, etree._Element 
     the name), so it returns (None, address) and the caller counts it.
     """
     bodies = _descendants(root, "CONTRACTING_BODY")
-    if not bodies:
-        return None, None
-    addresses = _descendants(bodies[0], "ADDRESS_CONTRACTING_BODY")
-    if not addresses:
-        return None, None
-    address = addresses[0]
-    name = _first_text(address, "OFFICIALNAME")
+    addresses = _descendants(bodies[0], "ADDRESS_CONTRACTING_BODY") if bodies else []
+    address = addresses[0] if addresses else None
+    name = _first_text(address, "OFFICIALNAME") if address is not None else None
+    if name is None:
+        name = _first_text(root, "AA_NAME")
     if name is None:
         return None, address
-    country = _first_text(address, "COUNTRY") or ""
+    country = _country(address) if address is not None else ""
+    if not country:
+        countries = _descendants(root, "ISO_COUNTRY")
+        country = (_attr(countries[0], "VALUE") or "") if countries else ""
     digest = hashlib.sha256(f"{country}|{name}".encode()).hexdigest()
     buyer = EntityEndpoint(
         entity_id=key_entity_id(("ted_buyer_id", digest)),
@@ -485,6 +514,13 @@ def _buyer(root: etree._Element) -> tuple[EntityEndpoint | None, etree._Element 
     return buyer, address
 
 
+def _country(address: etree._Element) -> str:
+    countries = _descendants(address, "COUNTRY")
+    if not countries:
+        return ""
+    return (_attr(countries[0], "VALUE") or (countries[0].text or "").strip())
+
+
 def _award_date(
     root: etree._Element,
     fallback: datetime,
@@ -493,6 +529,12 @@ def _award_date(
 ) -> datetime:
     """The first `AWARD_DATE`/`VALUE` as an aware UTC instant, or the
     publication date when absent or unparseable (counted)."""
+    conclusion = _first_text(root, "DATE_CONCLUSION_CONTRACT")
+    if conclusion:
+        try:
+            return datetime.fromisoformat(conclusion).replace(tzinfo=UTC)
+        except ValueError:
+            pass
     award_dates = _descendants(root, "AWARD_DATE")
     if not award_dates:
         return fallback

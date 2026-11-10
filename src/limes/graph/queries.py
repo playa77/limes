@@ -74,6 +74,36 @@ RETURN CASE WHEN existing IS NULL THEN 'written' ELSE 'skipped' END AS outcome
 """.strip()
 
 
+def merge_relationship(relation: str) -> str:
+    """MERGE is required for UNWIND duplicates: OPTIONAL MATCH + CREATE can
+    eagerly match all input rows before any of them writes its relationship.
+    The loader derives skips from processed rows minus created relationships.
+    """
+    return f"""
+MATCH (s:Entity {{entity_id: $subject_id}}), (o:Entity {{entity_id: $object_id}})
+MERGE (s)-[r:{relation} {{assertion_id: $assertion_id}}]->(o)
+ON CREATE SET r = $props
+RETURN count(r) AS processed
+""".strip()
+
+
+def close_intervals(relation: str) -> str:
+    """After batch creation, close each old interval at its nearest later
+    observation of the same source/channel. Aggregate per relationship so
+    eager evaluation cannot update/count one interval multiple times.
+    """
+    return f"""
+MATCH (s:Entity {{entity_id: $subject_id}})-[r:{relation}]->(o:Entity {{entity_id: $object_id}})
+WHERE r.valid_to IS NULL
+  AND r.source_id = $source_id
+  AND coalesce(r.evidence_channel, 'legacy') = coalesce($evidence_channel, 'legacy')
+  AND r.valid_from < $valid_from
+WITH r, min($valid_from) AS next_from
+SET r.valid_to = next_from
+RETURN count(r) AS closed
+""".strip()
+
+
 def close_interval(relation: str) -> str:
     """Close superseded intervals of the same type between the same endpoints
     (Doc 2 §5.6 step 5). Only intervals from the same `source_id` with null

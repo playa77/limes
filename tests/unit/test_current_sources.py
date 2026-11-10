@@ -164,13 +164,13 @@ def test_ted_iteration_covers_all_pages_and_rejects_truncated_results():
         )
         respx.get("https://ted.europa.eu/en/notice/1/xml").respond(200, content=payload)
         respx.get("https://ted.europa.eu/en/notice/2/xml").respond(200, content=payload)
-        records = list(TedAdapter().fetch(None, None))
+        records = list(TedAdapter().fetch_individual(None, None))
         assert len(records) == 2
         assert json.loads(search.calls[1].request.content)["iterationNextToken"] == "next"
         assert records[1].acquisition_context["search_page"] == 2
         search.mock(return_value=httpx.Response(200, json=page(1, None)))
         with pytest.raises(SourceFetchError, match="incomplete search"):
-            list(TedAdapter().fetch(None, None))
+            list(TedAdapter().fetch_individual(None, None))
 
 
 def test_gdelt_initial_and_resume_keep_backlog_within_96_slots():

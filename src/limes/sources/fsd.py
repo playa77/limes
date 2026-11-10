@@ -51,7 +51,7 @@ attempt, which is the correct honest behavior.
 from __future__ import annotations
 
 from collections.abc import Iterator
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Literal
 
 import structlog
@@ -136,6 +136,8 @@ class FsdAdapter:
             root = etree.fromstring(record.payload)
         except (etree.XMLSyntaxError, ValueError) as exc:
             raise SourceParseError(f"fsd: payload is not parseable XML: {exc}") from exc
+        if etree.QName(root).localname == "export":
+            return _normalize_export(self, root, record)
         container = root.find("Sanctions")
         if container is None:
             raise SourceParseError("fsd: payload has no <Sanctions> container")
@@ -162,7 +164,81 @@ class FsdAdapter:
             content_hash=payload_hash(record.payload),
             kind="structured",
             assertions=assertions,
+            errors=counts["skipped_subject_type"] + counts["skipped_unnamed"],
         )
+
+
+def _normalize_export(
+    adapter: FsdAdapter, root: etree._Element, record: RawRecord
+) -> NormalizedRecord:
+    """Current official FSF 1.1 export, distinct from legacy archived fixtures."""
+    namespace = "http://eu.europa.ec/fpi/fsd/export"
+    if etree.QName(root).namespace != namespace:
+        raise SourceParseError("fsd: unrecognized export namespace")
+    try:
+        generated = datetime.fromisoformat(root.attrib["generationDate"].replace("Z", "+00:00"))
+        if generated.tzinfo is None:
+            raise ValueError("generation date has no timezone")
+        generated = generated.astimezone(UTC)
+    except (KeyError, ValueError) as exc:
+        raise SourceParseError("fsd: export lacks a valid generationDate") from exc
+    entries = root.findall(f"{{{namespace}}}sanctionEntity")
+    if not entries:
+        raise SourceParseError("fsd: export contains no sanctionEntity records")
+    assertions: list[Assertion] = []
+    errors = 0
+    seen: set[str] = set()
+    for entry in entries:
+        identifier = (entry.get("euReferenceNumber") or "").strip()
+        subject = entry.find(f"{{{namespace}}}subjectType")
+        code = subject.get("classificationCode") if subject is not None else None
+        aliases = entry.findall(f"{{{namespace}}}nameAlias")
+        names = [(a.get("wholeName") or "").strip() for a in sorted(
+            aliases, key=lambda a: a.get("strong") != "true"
+        )]
+        name = next((name for name in names if name), None)
+        if not identifier or identifier in seen or code not in _SUBJECT_TYPES or not name:
+            errors += 1
+            continue
+        seen.add(identifier)
+        sanction = EntityEndpoint(
+            entity_id=f"fsd_id:{identifier}:EU", type="Sanction", label=name,
+            deterministic_key=("fsd_id", f"{identifier}:EU"),
+        )
+        target_type = _SUBJECT_TYPES[code]
+        target = EntityEndpoint(
+            entity_id=hash_entity_id(target_type.lower(), name), type=target_type, label=name
+        )
+        authority = EntityEndpoint(
+            entity_id="wikidata_qid:Q458", type="IGO", label="European Union",
+            deterministic_key=("wikidata_qid", "Q458"),
+        )
+        # The current snapshot establishes observation, not historical designation.
+        assertions.extend([
+            make_assertion(adapter, record, sanction, "TARGETS", target, valid_from=generated),
+            make_assertion(
+                adapter, record, sanction, "IMPOSED_BY", authority, valid_from=generated
+            ),
+        ])
+        regulations = entry.findall(f"{{{namespace}}}regulation")
+        if not regulations:
+            errors += 1
+        for regulation in regulations:
+            citation = (regulation.get("numberTitle") or "").strip()
+            if not citation:
+                errors += 1
+                continue
+            legal_act = EntityEndpoint(
+                entity_id=f"celex:FSD:{citation}", type="LegalAct", label=citation,
+                deterministic_key=("celex", f"FSD:{citation}"),
+            )
+            assertions.append(make_assertion(
+                adapter, record, sanction, "ESTABLISHED_BY", legal_act, valid_from=generated
+            ))
+    return NormalizedRecord(
+        content_hash=payload_hash(record.payload), kind="structured", assertions=assertions,
+        errors=errors,
+    )
 
 
 def _normalize_sanction(

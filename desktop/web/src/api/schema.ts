@@ -1441,6 +1441,24 @@ export interface components {
             cost_eur: number;
             /** Last Success At */
             last_success_at?: string | null;
+            /**
+             * State
+             * @default acquiring
+             */
+            state: string;
+            /** Last Progress At */
+            last_progress_at?: string | null;
+            /** Last Error */
+            last_error?: string | null;
+            /**
+             * Progress Stale
+             * @default false
+             */
+            progress_stale: boolean;
+            /** Window From */
+            window_from?: string | null;
+            /** Window To */
+            window_to?: string | null;
         };
         /**
          * SavedQueryCreate
@@ -1577,6 +1595,13 @@ export interface components {
             last_success_at?: string | null;
             /** Last Run Id */
             last_run_id?: string | null;
+            /**
+             * Corpus Complete
+             * @default false
+             */
+            corpus_complete: boolean;
+            /** Acquisition Manifest Hash */
+            acquisition_manifest_hash?: string | null;
         };
         /** TrackingRequest */
         TrackingRequest: {

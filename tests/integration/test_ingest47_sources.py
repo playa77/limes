@@ -6,11 +6,14 @@ import bz2
 import hashlib
 import io
 import json
+import tarfile
 import zipfile
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
+import respx
+from httpx import Response
 
 from limes.composition import build_run_context
 from limes.errors import SourceFetchError
@@ -31,6 +34,7 @@ def zipped(name, payload):
     return stream.getvalue()
 
 
+@respx.mock
 def test_current_structured_sources_preserve_archive_graph_api(
     neo4j_instance, tmp_path, monkeypatch
 ):
@@ -52,27 +56,37 @@ def test_current_structured_sources_preserve_archive_graph_api(
     monkeypatch.setattr("limes.sources.bulk.CHUNK_ROWS", 1)
     monkeypatch.setattr("limes.sources.gleif.fetch_bytes", gleif_fetch)
     monkeypatch.setattr("limes.sources.gleif.now_utc", lambda: NOW)
+    monkeypatch.setattr("limes.sources.bulk.now_utc", lambda: NOW)
+    monkeypatch.setattr("limes.sources.ted_bulk.now_utc", lambda: NOW)
+    respx.get(urls["lei2"]).respond(200, content=entity_zip)
+    respx.get(urls["rr"]).respond(200, content=rr_zip)
+    from limes.sources.offeneregister import DATA_URL
+
+    respx.get(DATA_URL).respond(200, content=off_zip)
     monkeypatch.setattr("limes.sources.offeneregister.fetch_bytes", lambda *a, **kw: off_zip)
     monkeypatch.setattr("limes.sources.offeneregister.now_utc", lambda: NOW)
     monkeypatch.setattr(
         "limes.sources.transparency_register.fetch_bytes",
         lambda *a, **kw: (FIXTURES / "transparency.xml").read_bytes(),
     )
-    uri = "https://ted.europa.eu/en/notice/745241-2026/xml"
-    monkeypatch.setattr(
-        "limes.sources.ted.fetch_bytes_post",
-        lambda *a, **kw: json.dumps(
-            {
-                "notices": [{"publication-number": "745241-2026", "links": {"xml": {"MUL": uri}}}],
-                "totalNoticeCount": 1,
-                "iterationNextToken": "terminal",
-                "timedOut": False,
-            }
-        ).encode(),
-    )
-    monkeypatch.setattr(
-        "limes.sources.ted.fetch_bytes",
-        lambda *a, **kw: (FIXTURES / "ted-contract.xml").read_bytes(),
+    from limes.sources.ted import SEARCH_URL
+
+    def discovery(request):
+        has_notice = json.loads(request.content)["query"] == "PD = 20261029"
+        return Response(200, json={
+            "notices": [{"ojs-number": "210/2026"}] if has_notice else [],
+            "totalNoticeCount": int(has_notice),
+        })
+
+    respx.post(SEARCH_URL).mock(side_effect=discovery)
+    package = io.BytesIO()
+    payload = (FIXTURES / "ted-contract.xml").read_bytes()
+    with tarfile.open(fileobj=package, mode="w:gz") as archive:
+        member = tarfile.TarInfo("20261029_210/00745241_2026.xml")
+        member.size = len(payload)
+        archive.addfile(member, io.BytesIO(payload))
+    respx.get("https://ted.europa.eu/packages/daily/202600210").respond(
+        200, content=package.getvalue()
     )
     ctx = build_run_context(_settings(neo4j_instance, tmp_path), needs_inference=False)
     try:
