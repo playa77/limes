@@ -15,6 +15,24 @@ was re-fetched at `7ccdd365fc80`; the qualified source manifest still matches.
 Publication-only documentation receives lightweight checks, without repeating
 unchanged runtime qualification. No merge, deployment, purge or data run is included.
 
+### CI portability follow-up — 2026-11-12
+
+GitHub run `43218926288` on `61f9a6e` failed OFFLINE with one failure and
+1,071 passes: the new news-replay unit test mocked composition but called the
+real settings loader. Local application settings masked this missing test boundary;
+the clean GitHub runner correctly rejected eight missing required configuration
+fields. Graph and web lanes passed; the required-lanes guard correctly failed.
+This does not invalidate the recorded local run, but it limits its portability
+claim. Its full source fingerprint identifies the original candidate only.
+
+The test now mocks its settings-loader boundary as well as composition and the
+run lock, preserving every replay/date assertion. No runtime code, source policy,
+CI workflow or gate is changed and no test is skipped. Reproduction with all
+`LIMES_*` variables removed and dotenv sources disabled: one failure before the
+fix (`work/be58/ci-clean-reproduction.log`), all five source-scope cases pass after
+it (`work/be58/ci-clean-source-scope.log`). Ruff and documentation/generated guards
+pass. The pushed test-only follow-up receives the complete GitHub CI lanes.
+
 ### Acceptance evidence
 
 | Criterion | Delivered behavior and direct evidence |

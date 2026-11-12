@@ -74,6 +74,9 @@ def test_news_replay_preserves_original_acquisition_and_internal_old_publication
     driver = SimpleNamespace(read=Mock(return_value=rows), close=Mock())
     ctx = SimpleNamespace(driver=driver, registry=SimpleNamespace(get=lambda _: adapter),
                           archive=archive)
+    # Configuration is an I/O boundary too: this replay unit test must not
+    # read operator settings or require environment configuration on CI.
+    monkeypatch.setattr("limes.cli.news.load_settings", Mock())
     monkeypatch.setattr("limes.composition.build_run_context", lambda *a, **kw: ctx)
     monkeypatch.setattr("limes.cli.main.run_with_lock", lambda *a: SimpleNamespace(
         errors=0, records_fetched=len(adapter.replay_records)))
