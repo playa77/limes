@@ -49,6 +49,7 @@ import structlog
 from pydantic import BaseModel
 
 from limes.composition import embedder_for
+from limes.data_scope import DATA_SCOPE_VERSION, DATA_START, require_source_date, scoped_window
 from limes.errors import (
     ExtractionError,
     GraphWriteError,
@@ -103,6 +104,7 @@ RETURN s.source_id AS source_id,
        s.trust_rank AS trust_rank,
        s.last_success_at AS last_success_at,
        s.corpus_complete AS corpus_complete,
+       s.data_scope_version AS data_scope_version,
        s.last_run_id AS last_run_id,
        s.initial_window_from AS initial_window_from
 """
@@ -150,7 +152,10 @@ SET s.last_success_at = CASE
     WHEN s.last_success_at > $last_success_at THEN s.last_success_at
     ELSE $last_success_at END,
     s.last_run_id = $last_run_id,
-    s.corpus_complete = coalesce(s.corpus_complete, false) OR $corpus_complete,
+    s.corpus_complete = CASE WHEN s.data_scope_version = $data_scope_version
+        THEN coalesce(s.corpus_complete, false) OR $corpus_complete
+        ELSE $corpus_complete END,
+    s.data_scope_version = $data_scope_version,
     s.acquisition_manifest_hash = $acquisition_manifest_hash
 WITH s
 MATCH (r:IngestionRun {run_id: $last_run_id})
@@ -187,6 +192,7 @@ def execute_run(spec: RunSpec, ctx: RunContext) -> IngestionRunRecord:
     and consumes only what the context carries (§8.15).
     """
     adapter = ctx.registry.get(spec.source_id)
+    scoped_window(spec.since, spec.until)
     run_scope = getattr(adapter, "run_scope", nullcontext)
     with run_scope():
         if ctx.acquisitions is None or spec.mode == "reextract" or spec.source_id in (
@@ -194,10 +200,11 @@ def execute_run(spec: RunSpec, ctx: RunContext) -> IngestionRunRecord:
         ) or spec.source_id.startswith("public_offices_"):
             return _execute_run(spec, ctx)
         version = json.dumps([
-            "BE57-1", ctx.settings.revision, ctx.ontology.version, ctx.settings.extraction_model,
+            DATA_SCOPE_VERSION, "BE57-1", ctx.settings.revision, ctx.ontology.version,
+            ctx.settings.extraction_model,
             ctx.settings.extraction_prompt_version, ctx.settings.extraction_schema_version,
         ])
-        request = {"mode": spec.mode,
+        request = {"data_scope": DATA_SCOPE_VERSION, "mode": spec.mode,
                    "since": None if spec.relative_days is not None else spec.since,
                    "relative_days": spec.relative_days, "until": spec.until,
                    "target": [ctx.settings.neo4j_uri, ctx.settings.neo4j_database]}
@@ -236,7 +243,7 @@ def _execute_run(
     source_node = _read_source(ctx, spec.source_id)
     since, until = window_module.resolve_window(spec, adapter, source_node, ctx.settings)
     if acquisition is not None:
-        since, until = acquisition.window(since, until)
+        since, until = scoped_window(*acquisition.window(since, until))
 
     record = IngestionRunRecord(
         run_id=uuid.uuid4().hex,
@@ -325,7 +332,9 @@ def _execute_run(
         progress("acquiring")
     try:
         fetch_since = since
-        if window_module.checkpoint_anchored_backfill(spec, source_node):
+        if (window_module.checkpoint_anchored_backfill(spec, source_node)
+                and source_node is not None and source_node.last_success_at is not None
+                and source_node.last_success_at >= DATA_START):
             assert since is not None
             # Preserve the recorded checkpoint anchor, but exclude its consumed slot.
             fetch_since = since + timedelta(microseconds=1)
@@ -344,6 +353,7 @@ def _execute_run(
                         f"source run budget of {budget_seconds}s elapsed for "
                         f"{spec.source_id}; acquisition aborts cleanly"
                     )
+                require_source_date(raw.fetched_at, spec.source_id)
                 record.records_fetched += 1
                 if acquisition is not None:
                     progress("processing")
@@ -443,9 +453,10 @@ def _execute_run(
                         "last_success_at": until or record.started_at,
                         "last_run_id": record.run_id,
                         "corpus_complete": bool(getattr(adapter, "full_initial_load", False)
-                                                and since is None and spec.since is None
+                                                and since == DATA_START and spec.since is None
                                                 and spec.until is None),
                         "acquisition_manifest_hash": acquisition_manifest,
+                        "data_scope_version": DATA_SCOPE_VERSION,
                     },
                 )
             ]
@@ -1045,6 +1056,7 @@ def _read_source(ctx: RunContext, source_id: str) -> SourceRecord | None:
         # datetimes only.
         last_success_at=_native_datetime(row["last_success_at"]),
         corpus_complete=bool(row.get("corpus_complete")),
+        data_scope_version=row.get("data_scope_version"),
         initial_window_from=_native_datetime(row.get("initial_window_from")),
         last_run_id=row["last_run_id"],
     )

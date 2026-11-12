@@ -1,3 +1,10 @@
+> **2026-11-12 source-scope amendment (BE-58):** All existing sources remain
+> required. Acquisition/publication history starts **2020-01-01 inclusive**;
+> current snapshots retain all older entities, facts and original dates.
+> This is not a validity/as-of cutoff or authority to exclude a source.
+> [Every-source contract and recovery policy](SOURCE_DATA_SCOPE.md) supersede
+> earlier unbounded acquisition or adoption-date incremental descriptions.
+
 > Core product specification, including integrated news intelligence (D-79).
 > This document specifies the complete intended product; implementation status,
 > completed packages and remaining dependencies are recorded in [ROADMAP](ROADMAP.md).
@@ -601,6 +608,8 @@ class SourceRecord(BaseModel):
     trust_rank: float
     last_success_at: datetime | None = None
     last_run_id: str | None = None
+    corpus_complete: bool = False
+    data_scope_version: str | None = None
 
 
 class IngestionRunRecord(BaseModel):
@@ -854,16 +863,16 @@ Adapters emit records and **write nothing to the graph**.
 |---|---|---|---|---|
 | `gisco_nuts` | Static CSV | `AdministrativeRegion`, `PART_OF_REGION`, `LookupRow(postal_code)` | no | 1.00 |
 | `gleif` | Published golden copy CSV | `Corporation`, `HEADQUARTERED_IN`, `DIRECTLY_CONSOLIDATED_BY`, `ULTIMATELY_CONSOLIDATED_BY` | yes | 1.00 |
-| `eurlex` | Cellar SPARQL | `LegalAct`, `Topic`, `ADOPTED`, `AMENDS`, `REPEALS`, `CITES`, `ABOUT_TOPIC` | yes | 1.00 |
+| `eurlex` | Current complete Cellar SPARQL snapshot | `LegalAct`, `Topic`, `ADOPTED`, `AMENDS`, `REPEALS`, `CITES`, `ABOUT_TOPIC` | no; internal act dates unrestricted | 1.00 |
 | `fsd` | Consolidated XML | `Sanction`, `TARGETS`, `IMPOSED_BY`, `ESTABLISHED_BY` | yes | 1.00 |
 | `ted` | Bulk XML | `Contract`, `AWARDED_TO`, `BUYER_OF`, `ABOUT_TOPIC` | yes | 1.00 |
 | `transparency_register` | Export XML | `InterestGroup`, `LOBBIES_FOR`, `MET_WITH`, `MEMBER_OF` | yes | 1.00 |
-| `bundestag_dip` | DIP API | `Person`, `Office`, `PublicBody`, `ParliamentaryGroup`, historical term/group evidence; never current-roster certification | yes | 1.00 |
+| `bundestag_dip` | DIP API | `Person`, `Office`, `PublicBody`, `ParliamentaryGroup`, historical term/group evidence; never current-roster certification | no; complete current catalogue | 1.00 |
 | `public_offices_<scope>` (21) | Official current directories/API/profile evidence | `Person`, `PersonIdentifier`, `Office`, `PublicBody`, `ParliamentaryGroup`, `RosterSnapshot`, `RosterMembership` | no; current snapshots only | 1.00 |
 | `gesetze_im_internet` | Index + XML | `LegalAct`, `APPLIES_TO`, `Topic` | yes | 1.00 |
 | `wikidata` | SPARQL, read-only enrichment | aliases and QIDs; never bulk-loaded | n/a | 0.90 |
 | `osm` | Overpass, DE bbox in bounded resumable partitions | `Asset`, `LOCATED_IN`, `OPERATES`, KRITIS `Topic` | no | 0.75 |
-| `offeneregister` | Historical bzip2 JSONL | `Corporation`, `DIRECTOR_OF` | no | 0.30 |
+| `offeneregister` | Current exposed historical bzip2 JSONL snapshot; original row vintage retained | `Corporation`, `DIRECTOR_OF` | no | 0.30 |
 | `gdelt` | 15-min ZIP containing 61-column TSV | Coded `Event` observations, role/location edges, export/row/report provenance; original report documents only when separately acquired | yes | 0.50 |
 | `feeds` | RSS/Atom per `feeds.yaml` | One source-versioned document per entry | yes | 0.60–0.70 |
 | `wikipedia` (BE-46) | MediaWiki API, verified Wikidata sitelinks | Revision-linked entity context and optional evidence-linked extracted claims | Revision-aware refresh, not full history | 0.65 |
@@ -1110,7 +1119,7 @@ backfill (no explicit `until`): if `last_success_at` is older than `since`, reco
 the checkpoint as the window anchor and fetch the next at most 96 unconsumed
 slots, excluding the already covered checkpoint slot. Resolve against the source
 read under the CLI source lock. Fresh/absent-checkpoint GDELT and other sources
-retain explicit-window semantics. Otherwise: if `adapter.supports_incremental`, the window starts at `Source.last_success_at`, or at `now - LIMES_BACKFILL_DAYS_UNSTRUCTURED` if the source has never run; if not incremental, the window is `(None, None)` meaning a full load. This is why `supports_incremental` exists on the protocol and why `Source.last_success_at` is read and not merely written.
+retain explicit-window semantics. Otherwise: if `adapter.supports_incremental`, the window starts at `Source.last_success_at`, or at `now - LIMES_BACKFILL_DAYS_UNSTRUCTURED` if the source has never run; if not incremental, acquire the full current snapshot. Every resolved acquisition lower bound is at least `2020-01-01T00:00:00Z`; old checkpoints and explicit earlier starts clamp to it, and wholly earlier/inverted windows fail before I/O. Initial corpus coverage is scope-versioned. A clamped old GDELT checkpoint has not consumed the first eligible slot. Internal fact dates remain unrestricted. This is why `supports_incremental` exists on the protocol and why `Source.last_success_at` is read and not merely written.
 
 #### 8.6.3 Gate
 ```python

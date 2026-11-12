@@ -1,3 +1,10 @@
+> **2026-11-12 source-scope amendment (BE-58):** All existing sources remain
+> required. Acquisition/publication history starts **2020-01-01 inclusive**;
+> current snapshots retain all older entities, facts and original dates.
+> This is not a validity/as-of cutoff or authority to exclude a source.
+> [Every-source contract and recovery policy](SOURCE_DATA_SCOPE.md) supersede
+> earlier unbounded acquisition or adoption-date incremental descriptions.
+
 <!-- LIMES — Desktop Client Requirements | v1.1.0 | 2026-09-08 | Status: Maintained -->
 
 # LIMES — Desktop Client Requirements

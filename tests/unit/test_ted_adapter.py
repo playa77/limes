@@ -98,7 +98,7 @@ def test_fetch_yields_one_raw_record_per_notice_and_honors_window():
     assert body["limit"] == FETCH_LIMIT
 
 
-def test_fetch_without_window_sends_match_all_query():
+def test_fetch_without_window_starts_at_project_boundary():
     with respx.mock:
         search = respx.post(SEARCH_URL).mock(return_value=Response(200, content=_search_payload()))
         respx.get(NOTICE_URI_LEI).mock(return_value=Response(200, content=_lei_notice().payload))
@@ -109,7 +109,7 @@ def test_fetch_without_window_sends_match_all_query():
         body = json.loads(search.calls[0].request.content)
 
     assert len(records) == 2
-    assert body["query"] == "*"
+    assert body["query"] == "PD >= 20200101"
 
 
 def test_fetch_empty_search_yields_no_records_and_logs():

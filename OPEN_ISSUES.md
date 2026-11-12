@@ -1,5 +1,17 @@
 # OPEN_ISSUES.md — LIMES evidenced open-issue ledger
 
+## Current source-scope disposition — 2026-11-12 (BE-58)
+
+[The approved source contract](docs/SOURCE_DATA_SCOPE.md) starts acquisition
+history at 2020-01-01 and retains every source, including OffeneRegister and all
+current snapshots with older internal facts. No source is disabled. Historical
+BE-57 inventory/measurement evidence remains historical, not an acquisition target
+for pre-2020 editions. Scope-specific completeness requires fresh qualification;
+existing OI-36 source/corpus/freshness blockers remain open within the new scope.
+A1–A6 implementation acceptance is supported by the full frozen candidate in
+[VERIFICATION](docs/VERIFICATION.md). No production acquisition, archive purge or
+deployed graph reconciliation is performed or claimed by this implementation.
+
 ## Current ingestion disposition — 2026-11-10 (OI-36 / BE-57)
 
 **Full corpus ingestion is a product blocker.** Previous local automated release

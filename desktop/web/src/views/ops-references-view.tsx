@@ -43,7 +43,7 @@ export function ReferencesView() {
     <ViewPage>
       <PageHeader
         title="Sources & ontology"
-        description="Reference panels over the API's registry and type catalog"
+        description="All sources remain included. Source acquisition starts 2020-01-01; current snapshots retain their historical content."
       />
       <Tabs defaultValue="sources">
         <TabsList>

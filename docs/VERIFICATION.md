@@ -1,5 +1,102 @@
 # Verification and acceptance evidence
 
+## 2026-11-12 — Source acquisition from 2020 (BE-58)
+
+**A1–A6 implementation/qualification accepted locally.** All sources remain
+included; no production acquisition, source removal, data purge, deployment or
+publication was performed. Branch `codex/be-58-data-scope-2020`, live main verified
+as `7ccdd365fc80`. [Full package and every-source contract](SOURCE_DATA_SCOPE.md).
+The user's clarification governs: source acquisition begins in 2020; historical
+facts inside current snapshots remain usable with original dates.
+
+Publication update, 2026-11-12: the user subsequently authorized staging,
+commit, push and PR creation for the complete BE-58 package (D-106). Live main
+was re-fetched at `7ccdd365fc80`; the qualified source manifest still matches.
+Publication-only documentation receives lightweight checks, without repeating
+unchanged runtime qualification. No merge, deployment, purge or data run is included.
+
+### Acceptance evidence
+
+| Criterion | Delivered behavior and direct evidence |
+|---|---|
+| A1 — complete source set | Registry unchanged; existing exact-source registry/API tests and `test_source_scope.py` retain every source, explicitly including OffeneRegister. Existing real-format tests retain 2018 row observation dates. AGENTS.md now carries the mandatory no-exclusion rule. |
+| A2 — historical acquisition floor | Shared UTC floor covers explicit/default/checkpoint/pinned windows; TED starts January 2020 and rejects older returned notice IDs before a notice GET. GDELT clamps export slots and retains its first eligible slot. Window, acquisition and actual pipeline-call regressions pass. |
+| A3 — retain older current content | EUR-Lex/DIP observe complete current catalogues without internal adoption/update filtering. A current legal metadata fixture retains 1995 validity and an undated act. OffeneRegister/Wikipedia/current snapshot semantics retain original historical dates; no validity clipping or source exclusion. |
+| A4 — recovery/completeness | Scope-versioned acquisition journals retain legacy evidence without reusing its coverage. Old cached observations are refused before payload reads. OSM preserves old cursor metadata and reacquires current partitions. Source scope is persisted on real graph nodes; legacy completeness is not certified. News replay retains saved observation dates and older internal publication dates. |
+| A5 — consumer and contracts | `/sources` exposes the acquisition floor and scope-qualified completeness. Desktop source reference header explains historical content. Core/desktop specs, generated runtime docs, source audit, roadmaps, decisions and issue disposition agree; document/generated/OpenAPI guards pass. |
+| A6 — full candidate | Complete canonical qualification below passes on an unchanged source manifest, including disposable graph and three-service backup/recovery. |
+
+### Authoritative candidate
+
+Command:
+`venv/bin/python tools/qualify.py --output work/be58/candidate-final-2`.
+Workspace-local XDG/pnpm data/cache/store directories under `work/be58/` supplied
+the dependency environment; no home-directory or credential changes were needed.
+
+- Report: `work/be58/candidate-final-2/report.json`; per-file source manifest:
+  `work/be58/candidate-final-2/source.json`.
+- Frozen source SHA-256: `7dcd37088e00eb0c2f056bf7830f70c472e215ae9ffb3453329f6e2d99344c16`.
+  The qualifier verified the source fingerprint was unchanged after every lane.
+  Git HEAD is the base, not a commit of these uncommitted changes.
+- Run: 2026-11-12 12:43:30–12:56:50 Europe/Berlin (UTC+1).
+  Total qualification elapsed: 799.808 seconds; implementation
+  effort and publication/merge latency are not measured by that duration.
+
+| Lane | Passed cases | Failures/errors/skips | Elapsed seconds |
+|---|---:|---|---:|
+| unit | 1072 | 0 / 0 / 0 | 171.147 |
+| desktop | 42 | 0 / 0 / 0 | 4.527 |
+| integration | 189 | 0 / 0 / 0 | 307.191 |
+| acceptance | 85 | 0 / 0 / 0 | 63.523 |
+| desktop-integration | 2 | 0 / 0 / 0 | 30.260 |
+| runtime-stack | 1 | 0 / 0 / 0 | 196.844 |
+
+The six Python lanes total **1,391 cases**, with no failures, errors or skips.
+The web lane passes TypeScript, **49 Vitest cases in 11 files**, ESLint and the
+production build. Baseline, source/tool lint, types, document consistency,
+generated runtime docs, shared guards and whitespace checks also pass. The web
+case total is 49 (correcting an intermediate commentary count of 48).
+
+Nine additional distinct Python regressions cover source-scope boundaries,
+legacy receipts, pre-download TED rejection, saved news observation replay,
+mandatory registry/completeness, OSM cache renewal and GDELT's first eligible slot.
+Existing checks were updated for current-snapshot semantics and the explicit run
+window boundary. Cumulative passes above are not a count of new coverage. No real
+source data, production graph or paid model is used by qualification.
+
+### Failed evidence and repair
+
+`work/be58/candidate-final/report.json` remains failed: integration had 188 passes
+and one obsolete assertion equating a full snapshot with a null `window_from`.
+The actual run correctly persisted 2020-01-01. The repaired test checks that exact
+boundary and the graph's stored source-scope version. The isolated graph test
+passes (`work/be58/durable-window-repair.log`), followed by the complete fresh
+candidate above. Earlier development failures/logs are retained under `work/be58/`;
+no guard, source requirement or assertion was waived.
+
+### Change accounting and remaining obligations
+
+Implementation-acceptance counts against live main include untracked deliverables
+and separate handwritten
+code, tests, helpers, generated artifacts and maintained documentation. No fixture
+file was changed. Exact inventory: `work/be58/change-accounting.json`.
+
+| Category | Added lines | Deleted lines | Net |
+|---|---:|---:|---:|
+| implementation | 167 | 75 | 92 |
+| tests | 253 | 56 | 197 |
+| tools | 22 | 0 | 22 |
+| generated | 71 | 4 | 67 |
+| documentation/configuration | 334 | 10 | 324 |
+
+BE-58 closes the scoped implementation/qualification checklist, not OI-36's live
+corpus inventory, source availability, maintained freshness or extraction-quality
+obligations. Existing graph/archive data is preserved. Operator-authorized legacy
+data reconciliation remains necessary before claiming the deployed corpus meets
+the new source policy. No staging, commit, push, PR, merge, production ingestion,
+paid quality run or deployment is included.
+
+
 ## 2026-11-10 — Corpus ingestion reliability candidate (BE-57)
 
 Branch `codex/be-57-corpus-ingestion-reliability`; live-fetched base

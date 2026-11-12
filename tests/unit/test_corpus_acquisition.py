@@ -30,13 +30,13 @@ def _tar(*members):
     return output.getvalue()
 
 
-def test_ten_year_backfill_uses_120_monthly_packages_without_notice_or_search_requests():
+def test_scoped_backfill_uses_72_monthly_packages_without_notice_or_search_requests():
     with respx.mock:
-        urls = list(package_urls(datetime(2011, 1, 1, tzinfo=UTC),
-                                 datetime(2020, 12, 31, tzinfo=UTC)))
-    assert len(urls) == 120
-    assert urls[0] == "https://ted.europa.eu/packages/monthly/2011-1"
-    assert urls[-1] == "https://ted.europa.eu/packages/monthly/2020-12"
+        urls = list(package_urls(datetime(2020, 1, 1, tzinfo=UTC),
+                                 datetime(2025, 12, 31, tzinfo=UTC)))
+    assert len(urls) == 72
+    assert urls[0] == "https://ted.europa.eu/packages/monthly/2020-1"
+    assert urls[-1] == "https://ted.europa.eu/packages/monthly/2025-12"
 
 
 def test_daily_discovery_uses_one_search_and_one_package_for_all_notices(tmp_path):
@@ -74,14 +74,14 @@ def test_daily_discovery_uses_one_search_and_one_package_for_all_notices(tmp_pat
 
 
 def test_historical_monthly_package_contains_nested_daily_archives():
-    payload = _tar(("2011-01-04.tar.gz", _tar(("20110104_001/000036_2011.xml", b"<notice/>"))))
+    payload = _tar(("2020-01-04.tar.gz", _tar(("20200104_001/000036_2020.xml", b"<notice/>"))))
     with respx.mock:
-        respx.get("https://ted.europa.eu/packages/monthly/2011-1").respond(200, content=payload)
-        records = list(fetch_packages(datetime(2011, 1, 1, tzinfo=UTC),
-                                      datetime(2011, 1, 31, tzinfo=UTC)))
+        respx.get("https://ted.europa.eu/packages/monthly/2020-1").respond(200, content=payload)
+        records = list(fetch_packages(datetime(2020, 1, 1, tzinfo=UTC),
+                                      datetime(2020, 1, 31, tzinfo=UTC)))
     assert len(records) == 1
     assert records[0].acquisition_context["source_member"] == (
-        "2011-01-04.tar.gz!/20110104_001/000036_2011.xml"
+        "2020-01-04.tar.gz!/20200104_001/000036_2020.xml"
     )
 
 
@@ -94,10 +94,10 @@ def test_historical_monthly_package_contains_nested_daily_archives():
 ])
 def test_invalid_or_truncated_package_never_certifies_completion(payload):
     with respx.mock:
-        respx.get("https://ted.europa.eu/packages/monthly/2011-1").respond(200, content=payload)
+        respx.get("https://ted.europa.eu/packages/monthly/2020-1").respond(200, content=payload)
         with pytest.raises(SourceFetchError):
-            list(fetch_packages(datetime(2011, 1, 1, tzinfo=UTC),
-                                datetime(2011, 1, 31, tzinfo=UTC)))
+            list(fetch_packages(datetime(2020, 1, 1, tzinfo=UTC),
+                                datetime(2020, 1, 31, tzinfo=UTC)))
 
 
 def test_window_network_cache_and_versioned_load_receipts_survive_reopening(tmp_path):
@@ -309,27 +309,33 @@ def test_changed_package_cannot_complete_with_equally_many_obsolete_receipts(tmp
 
 
 def test_empty_historical_search_uses_monthly_archive_and_filters_publication_dates():
-    url = "https://ted.europa.eu/packages/monthly/2011-1"
-    payload = _tar(("20110104_001/000036_2011.xml",
-                    b"<TED_EXPORT><DATE_PUB>20110104</DATE_PUB></TED_EXPORT>"),
-                   ("20110105_002/000037_2011.xml",
-                    b"<TED_EXPORT><DATE_PUB>20110105</DATE_PUB></TED_EXPORT>"))
+    url = "https://ted.europa.eu/packages/monthly/2020-1"
+    payload = _tar(("20200104_001/000036_2020.xml",
+                    b"<TED_EXPORT><DATE_PUB>20200104</DATE_PUB></TED_EXPORT>"),
+                   ("20200105_002/000037_2020.xml",
+                    b"<TED_EXPORT><DATE_PUB>20200105</DATE_PUB></TED_EXPORT>"))
     with respx.mock:
         search = respx.post(SEARCH_URL).respond(200, json={
             "totalNoticeCount": 0, "notices": []})
         archive = respx.get(url).respond(200, content=payload)
-        records = list(fetch_packages(datetime(2011, 1, 4, tzinfo=UTC),
-                                      datetime(2011, 1, 4, tzinfo=UTC)))
+        records = list(fetch_packages(datetime(2020, 1, 4, tzinfo=UTC),
+                                      datetime(2020, 1, 4, tzinfo=UTC)))
     assert search.call_count == archive.call_count == 1
     assert len(records) == 1
-    assert records[0].acquisition_context["requested_notice_id"] == "36-2011"
+    assert records[0].acquisition_context["requested_notice_id"] == "36-2020"
 
 
 def test_empty_historical_weekend_is_checked_against_nonempty_archive():
-    payload = _tar(("20110104_001/000036_2011.xml",
-                    b"<TED_EXPORT><DATE_PUB>20110104</DATE_PUB></TED_EXPORT>"))
+    payload = _tar(("20200104_001/000036_2020.xml",
+                    b"<TED_EXPORT><DATE_PUB>20200104</DATE_PUB></TED_EXPORT>"))
     with respx.mock:
         respx.post(SEARCH_URL).respond(200, json={"totalNoticeCount": 0, "notices": []})
-        respx.get("https://ted.europa.eu/packages/monthly/2011-1").respond(200, content=payload)
-        assert list(fetch_packages(datetime(2011, 1, 8, tzinfo=UTC),
-                                   datetime(2011, 1, 8, tzinfo=UTC))) == []
+        respx.get("https://ted.europa.eu/packages/monthly/2020-1").respond(200, content=payload)
+        assert list(fetch_packages(datetime(2020, 1, 8, tzinfo=UTC),
+                                   datetime(2020, 1, 8, tzinfo=UTC))) == []
+
+
+def test_pre_scope_ted_package_request_is_rejected_before_network():
+    with respx.mock as network, pytest.raises(SourceFetchError, match="2020"):
+        list(package_urls(datetime(2019, 12, 1, tzinfo=UTC), NOW))
+    assert not network.calls

@@ -21,7 +21,7 @@ Non-obvious choices, each load-bearing:
   the postal-code correspondence (`postal_lookup`) is consulted only
   otherwise. A miss or an absent lookup leaves the region unassigned —
   counted and summarized once, never guessed.
-- Corpus acquisition uses monthly/daily XML packages from January 2011.
+- Corpus acquisition uses monthly/daily XML packages from January 2020.
   Original compressed artifacts and member identities remain archived;
   the individual Search API/rendering path is explicit repair tooling only.
 - A contractor's VAT, postal code, town, and country are read by no path:
@@ -41,6 +41,7 @@ from typing import Literal
 import structlog
 from lxml import etree  # type: ignore[import-untyped]
 
+from limes.data_scope import DATA_START, scoped_window
 from limes.errors import SourceFetchError, SourceParseError
 from limes.sources.base import (
     address_location,
@@ -68,7 +69,7 @@ SEARCH_URL = "https://api.ted.europa.eu/v3/notices/search"
 FETCH_LIMIT = 50
 
 NOTICE_CONTENT_TYPE = "application/xml"
-CORPUS_START = datetime(2011, 1, 1, tzinfo=UTC)
+CORPUS_START = DATA_START
 MONTHLY_URL = "https://ted.europa.eu/packages/monthly/{year}-{month}"
 DAILY_URL = "https://ted.europa.eu/packages/daily/{year}{issue:05d}"
 
@@ -88,7 +89,8 @@ class TedAdapter:
         """Acquire the XML corpus using monthly/daily packages, never notice GETs."""
         from limes.sources.ted_bulk import fetch_packages
 
-        yield from fetch_packages(since or CORPUS_START, until or now_utc())
+        since, until = scoped_window(since, until)
+        yield from fetch_packages(since, until or now_utc())
 
     def fetch_individual(
         self, since: datetime | None, until: datetime | None
@@ -100,6 +102,7 @@ class TedAdapter:
         and the run is a full load. The notices are fetched sequentially
         (politeness: zero concurrency against the source).
         """
+        since, until = scoped_window(since, until)
         body: dict[str, object] = {
             "query": _build_query(since, until),
             "limit": FETCH_LIMIT,
@@ -126,6 +129,9 @@ class TedAdapter:
                             "ted: search count changed during pagination; retry window"
                         )
             for notice_id, uri in hits:
+                publication = re.fullmatch(r"\d+-(\d{4})", notice_id)
+                if publication is not None and int(publication[1]) < DATA_START.year:
+                    raise SourceFetchError("ted: search returned a pre-2020 publication")
                 if notice_id in seen_notices:
                     raise SourceFetchError(
                         "ted: repeated notice during pagination; checkpoint unchanged"

@@ -1,3 +1,13 @@
+## 2026-11-12 — Source acquisition from 2020 (BE-58)
+
+- Limit historical acquisition windows and TED packages to 2020-01-01 onward,
+  preserving all sources and older facts carried by current snapshots.
+- Refresh complete current EUR-Lex/DIP catalogues without filtering internal act,
+  update or term dates. Preserve OffeneRegister's original historical vintage.
+- Version acquisition journals and completeness by source scope; preserve legacy
+  evidence and original acquisition dates during news replay.
+- Expose the source boundary through API/desktop and reconcile active contracts.
+
 ## 2026-11-10 — Corpus ingestion reliability (BE-57)
 
 - Acquire TED through official monthly/daily packages, with retained compressed

@@ -20,6 +20,7 @@ from typing import Literal
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, ValidationError
 
 from limes.archive.store import ArchiveStore
+from limes.data_scope import require_source_date, source_date_eligible
 from limes.errors import SourceFetchError
 from limes.sources.base import now_utc, payload_hash
 
@@ -82,6 +83,18 @@ class OsmAcquisition:
         except (ValidationError, ValueError) as exc:
             raise SourceFetchError(
                 "osm: invalid acquisition cursor; preserve for inspection") from exc
+        if (not source_date_eligible(state.started_at)
+                or any(not source_date_eligible(entry.fetched_at)
+                       for entry in state.partitions.values())):
+            # Preserve legacy progress metadata and original archive bytes. Start
+            # a fresh CURRENT collection rather than disabling the OSM source or
+            # reading pre-scope cached payloads.
+            retained = self.root / f"pre-2020-{state.acquisition_id}.json"
+            if not retained.exists():
+                retained.write_bytes(path.read_bytes())
+            state = AcquisitionState(plan_hash=plan_hash)
+            self.write(state)
+            return state
         if state.plan_hash != plan_hash:
             raise SourceFetchError(
                 "osm: acquisition plan changed; retain or retire old cursor first")
@@ -105,6 +118,7 @@ class OsmAcquisition:
             temporary.unlink(missing_ok=True)
 
     def payload(self, entry: PartitionEntry) -> bytes:
+        require_source_date(entry.fetched_at, "osm")
         try:
             payload = self.archive.get(entry.content_hash)
         except (OSError, EOFError) as exc:

@@ -37,7 +37,7 @@ def _fixture() -> bytes:
     return (FIXTURES / "sparql_results.json").read_bytes()
 
 
-def test_fetch_yields_one_record_and_honors_window():
+def test_fetch_observes_current_metadata_without_filtering_legal_act_dates():
     since = datetime(2024, 1, 1, tzinfo=UTC)
     until = datetime(2025, 12, 31, tzinfo=UTC)
     with respx.mock:
@@ -51,10 +51,8 @@ def test_fetch_yields_one_record_and_honors_window():
     assert record.content_type == "application/json"
     assert record.source_url == SPARQL_URL
     assert record.fetched_at.tzinfo is not None
-    # The window is compiled into the query text as an adoption-date FILTER.
-    assert "FILTER" in query
-    assert '?date >= "2024-01-01"^^xsd:date' in query
-    assert '?date <= "2025-12-31"^^xsd:date' in query
+    # A current metadata snapshot may describe older legal acts.
+    assert "?date >=" not in query and "?date <=" not in query
 
 
 def test_fetch_without_window_sends_no_date_filter():
@@ -328,12 +326,18 @@ def test_unparseable_date_falls_back_and_is_counted():
     assert summary["skipped"] == {"unparseable_date": 1}
 
 
-def test_pinned_initial_corpus_filter_preserves_undated_acts():
+def test_current_snapshot_preserves_old_act_validity_and_undated_acts():
     from limes.sources.eurlex import _build_query
 
-    until = datetime(2026, 11, 10, tzinfo=UTC)
-    full = _build_query(None, until)
-    assert "!BOUND(?date) ||" in full
-    assert '?date <= "2026-11-10"^^xsd:date' in full
-    incremental = _build_query(datetime(2026, 11, 9, tzinfo=UTC), until)
-    assert "!BOUND(?date)" not in incremental
+    assert "?date >=" not in _build_query(NOW, NOW)
+    assert "?date <=" not in _build_query(NOW, NOW)
+    payload = json.dumps({"results": {"bindings": [
+        {"celex": {"value": "31995R0001"},
+         "author": {"value": "European Parliament"},
+         "date": {"value": "1995-01-01"}},
+        {"celex": {"value": "31996R0002"}},
+    ]}}).encode()
+    output = ADAPTER.normalize(_record(payload))
+    assert not output.errors
+    assert output.assertions[0].validity.valid_from == datetime(1995, 1, 1, tzinfo=UTC)
+    assert output.entities[0].entity_id == "celex:31996R0002"

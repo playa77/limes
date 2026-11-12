@@ -319,6 +319,7 @@ def check_runtime_contract(docs: dict[str, Doc], report: Report, repo: Path) -> 
         "service_user": "7474:7474", "host_docker_socket": False,
         "operations_authentication": "operator-bearer", "backup_transport": "private-http",
         "job_replay": "manual", "deployment": "immutable-image-ids",
+        "source_acquisition_start": "2020-01-01", "all_sources_required": True,
     }
     for key, expected in invariants.items():
         if contract.get(key) != expected:

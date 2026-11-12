@@ -1,5 +1,16 @@
 # BE-57 — Corpus ingestion reliability and source audit
 
+## Current acquisition scope — BE-58, 2026-11-12
+
+[The approved source-scope contract](SOURCE_DATA_SCOPE.md) limits historical
+acquisition to 2020-01-01 onward and preserves every existing source. Current
+snapshots retain older internal facts, observations and dates. TED starts January
+2020. EUR-Lex and DIP refresh current complete catalogues without excluding old
+acts/persons by adoption/update dates. Legacy scope-unversioned completeness and
+journals cannot certify this policy. Historical BE-57 measurements below remain
+unchanged evidence, including the now out-of-scope 2011 samples; they are not
+instructions to download or replay those editions.
+
 Selected 2026-11-10 on `codex/be-57-corpus-ingestion-reliability`, verified live
 baseline `5f6456b2b40c`. The user requests repairing full ingestion and auditing
 equivalent failures across sources. BE-41 is accepted. The archive remains the
@@ -54,9 +65,9 @@ checkout; its behavior is not attributed to a file that has not been inspected.
 
 | Source | Actual acquisition/coverage | Confirmed defect and disposition | Evidence boundary |
 |---|---|---|---|
-| TED | XML packages from January 2011; daily packages for partial/recent months | Replace per-notice corpus GETs with monthly/daily packages; retain an explicit individual-repair method. Durable package/load receipts; canonical legacy IDs/date/country/title parsing; shared settled-contract award joins. | Official package GETs succeeded for 2011, 2023, 2026. Three complete daily editions: 1,817 + 2,256 + 1,749 notices, zero normalization errors. Complete January 2011 monthly package: 32,511 notices, 325,124 assertions, zero normalization errors or ontology rejections. Not an all-years corpus reconciliation. |
-| EUR-Lex | Cellar SPARQL metadata and projected legal relations | First load has no lower date filter and retains undated acts despite a pinned upper date; no 40-page ceiling, durable response/load replay. Union relation facets instead of multiplying citations × amendments × topics. Malformed/missing CELEX rows count as errors. | Actual initial query returns 20 bindings / 23 assertions / two standalone acts without normalization errors; all CELEX inventory still requires reconciliation. Adoption-date incrementals do not prove discovery of amendments to old records. |
-| Bundestag DIP | All API person pages initially; historical participation metadata, not current membership | First load unfiltered; remove 100-page ceiling; preserve distinct terminal pages even when cursor repeats. Repeated-page/cursor checks remain. | Recorded current-shape fixtures and configured-key path; this executor has no attached DIP credential. |
+| TED | XML packages from January 2020; daily packages for partial/recent months | Replace per-notice corpus GETs with monthly/daily packages; retain an explicit individual-repair method. Durable package/load receipts; canonical legacy IDs/date/country/title parsing; shared settled-contract award joins. | Official package GETs succeeded for 2011, 2023, 2026. Three complete daily editions: 1,817 + 2,256 + 1,749 notices, zero normalization errors. Complete January 2011 monthly package: 32,511 notices, 325,124 assertions, zero normalization errors or ontology rejections. Not an all-years corpus reconciliation. |
+| EUR-Lex | Current complete Cellar metadata snapshot including old/undated acts | Every refresh observes the current catalogue; internal act dates do not govern source eligibility; no 40-page ceiling, durable response/load replay. Union relation facets instead of multiplying citations × amendments × topics. Malformed/missing CELEX rows count as errors. | Actual initial query returns 20 bindings / 23 assertions / two standalone acts without normalization errors; all CELEX inventory still requires reconciliation. Current snapshot refresh replaces adoption-date incrementals; live update reconciliation still needs evidence. |
+| Bundestag DIP | All current API person pages on each snapshot refresh; historical participation metadata, not current membership | Current snapshots unfiltered by internal update/term dates; remove 100-page ceiling; preserve distinct terminal pages even when cursor repeats. Repeated-page/cursor checks remain. | Recorded current-shape fixtures and configured-key path; this executor has no attached DIP credential. |
 | Gesetze im Internet | Full current index and linked law ZIPs | Cache downloaded index/ZIPs and loaded-record receipts. Missing index links fail coverage. Laws without a gazette citation retain a source-URL/member-derived entity identity instead of disappearing. | Official index HEAD 200; law ZIP fixtures. Current law texts are snapshots, not all historical text versions. |
 | GLEIF | Latest coherent legal-entity/relationship golden-copy publication | Stream ZIP artifacts to disk/archive; bounded CSV chunks and successful-load receipts; completed ZIPs skipped on resume. Missing entity IDs/unmaterializable required relationship endpoints count as errors. | Catalogue GET and both artifact HEADs 200: about 509 MB + 24 MB. ACTIVE-entity selection is an explicit existing projection, not complete historical corporate coverage. |
 | OffeneRegister | Published historical company snapshot | Stream bzip2 artifact; bounded JSONL chunks and load receipts. Original source row/publication vintage remains authoritative, never current fetch time. | Artifact HEAD 200, about 260 MB. This snapshot cannot establish a current German company/officer corpus. |

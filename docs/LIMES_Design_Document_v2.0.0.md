@@ -1,3 +1,10 @@
+> **2026-11-12 source-scope amendment (BE-58):** All existing sources remain
+> required. Acquisition/publication history starts **2020-01-01 inclusive**;
+> current snapshots retain all older entities, facts and original dates.
+> This is not a validity/as-of cutoff or authority to exclude a source.
+> [Every-source contract and recovery policy](SOURCE_DATA_SCOPE.md) supersede
+> earlier unbounded acquisition or adoption-date incremental descriptions.
+
 > Core product specification, including integrated news intelligence (D-79).
 > This document specifies the complete intended product; implementation status,
 > completed packages and remaining dependencies are recorded in [ROADMAP](ROADMAP.md).

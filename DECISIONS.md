@@ -5,6 +5,34 @@ reversibility: **R1** reversible in under an hour, **R2** bounded recoverable
 cost, **R3** one-way door. Written when each decision is made, latest first.
 Nothing here is a status report; unlogged decisions are unmade decisions.
 
+## 2026-11-12 — D-106 (R1) — Publish the complete BE-58 source-scope package
+
+The user requests: "prepare and open a pr with your work." This authorizes
+staging, commit, push and PR creation for the complete qualified BE-58 branch,
+`codex/be-58-data-scope-2020`. All sources remain required and enabled. Publish
+for review with A1–A6 locally accepted, preserving the distinction between the
+passed implementation candidate and outstanding deployed-corpus reconciliation.
+The qualified source digest remains unchanged; publication documentation receives
+lightweight checks. No merge, deployment, production ingestion, purge or paid run
+is included.
+
+## 2026-11-12 — D-105 (R2) — Source acquisition begins in 2020; every source stays
+
+The user defines a prototype/showcase universe in which all sources start
+publishing on 2020-01-01. Every existing source remains mandatory; no source may
+be removed or disabled without explicit user approval. Current snapshots retain
+older entities, relations, internal observations and original dates. Do not clip
+fact validity or interpret OffeneRegister's old row observations as permission to
+exclude the source. A proposed blanket exclusion was corrected before any data run.
+
+BE-58 on `codex/be-58-data-scope-2020` starts from live main `7ccdd365fc80`.
+[Acceptance and every-source policy](docs/SOURCE_DATA_SCOPE.md) govern the whole
+package. Historical acquisition calendars clamp to the inclusive UTC floor;
+current EUR-Lex/DIP catalogues are observed without internal date filtering.
+Scope-versioned journals and completeness prevent legacy evidence from silently
+certifying the new corpus. No production ingest, purge, deployment, staging,
+commit, push or PR publication is authorized by this implementation request.
+
 ## 2026-11-10 — D-104 (R1) — Publish the BE-57 corpus reliability review
 
 The user explicitly requests: "prepare and open a pr with your work." This

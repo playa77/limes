@@ -1,5 +1,16 @@
 # Backend work-package roadmap
 
+### BE-58 — Source acquisition from 2020 (2026-11-12)
+
+[Full package contract](SOURCE_DATA_SCOPE.md), branch
+`codex/be-58-data-scope-2020`, live base `7ccdd365fc80`. All sources remain
+mandatory. The inclusive acquisition floor does not exclude older facts inside
+current snapshots or constrain query/as-of dates. Scoped acquisition identities,
+completeness, replay, source/API/desktop wording and qualification belong to this
+single package. A1–A6 pass in the frozen full candidate ([evidence](VERIFICATION.md));
+this is local implementation acceptance. Production reconciliation and existing ingestion blockers remain
+separate from implementation qualification.
+
 ### BE-57 — Corpus ingestion reliability (2026-11-10)
 
 [Package acceptance and source audit](CORPUS_INGESTION_RELIABILITY.md) govern

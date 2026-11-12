@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Literal
 
 from limes.config import Settings
+from limes.data_scope import DATA_START
 from limes.pipeline.run import RunSpec
 from limes.pipeline.window import resolve_window
 from limes.types import SourceRecord
@@ -59,7 +60,7 @@ def _source(last_success_at: datetime | None) -> SourceRecord:
 def test_ac42_non_incremental_adapter_is_a_full_load():
     spec = RunSpec(source_id="gisco_nuts", mode="ingest")
     since, until = resolve_window(spec, _Adapter(False), None, _settings(), now=NOW)
-    assert since is None and until is None  # a full load
+    assert since == DATA_START and until is None  # full current snapshot, scoped observation
 
 
 def test_ac42_incremental_adapter_anchors_on_last_success_at():

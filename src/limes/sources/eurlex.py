@@ -7,11 +7,10 @@ and topic relations: `ADOPTED`, `AMENDS`, `REPEALS`, `CITES`, `ABOUT_TOPIC`,
 `APPLIES_TO`. The source is the Cellar SPARQL endpoint; each response is one
 SPARQL JSON results document.
 
-The window is honored at the source: `since`/`until` are compiled into a
-FILTER on the adoption date inside the query text, so the endpoint never
-returns acts adopted outside the window. The query travels as a GET with the
-query parameter URL-encoded because `fetch_bytes` (shared by every adapter)
-is a GET helper; the Cellar endpoint accepts GET (verified live).
+Acquisition observes the complete current Cellar metadata catalogue. Adoption
+and citation dates inside that snapshot may predate 2020 and are never filtered
+by the acquisition boundary. The query uses a URL-encoded GET; metadata refresh
+is a complete snapshot rather than an adoption-date incremental.
 
 Two choices are closed by the data available, and the parser stays honest
 about both:
@@ -38,7 +37,7 @@ from __future__ import annotations
 import json
 from collections import Counter
 from collections.abc import Iterator
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from typing import Any, Literal
 from urllib.parse import urlencode
 
@@ -75,8 +74,7 @@ AUTHOR_QIDS: dict[str, str] = {
     "European Parliament": "Q8889",
 }
 
-# The `{date_filter}` line is replaced with the adoption-date FILTER compiled
-# from the fetch window, or with nothing for an unfiltered full load.
+# Current catalogue query; the retained placeholder is always empty.
 PAGE_SIZE = 5000
 _QUERY_TEMPLATE = """\
 PREFIX cdm: <http://publications.europa.eu/ontology/cdm#>
@@ -126,17 +124,16 @@ class EurlexAdapter:
     kind: Literal["structured", "unstructured"] = "structured"
     trust_rank: float = 1.00
     supports_backfill: bool = True
-    supports_incremental: bool = True
+    supports_incremental: bool = False
     full_initial_load: bool = True
 
     def fetch(self, since: datetime | None, until: datetime | None) -> Iterator[RawRecord]:
-        """Query Cellar SPARQL for acts adopted in the window.
+        """Observe the current Cellar metadata snapshot, including older acts.
 
-        The window is compiled into the query text (a FILTER on the adoption
-        date), so an incremental run re-fetches only the newly adopted acts.
-        Yields one `RawRecord` per response.
+        work_date_document dates a legal act, not the source edition. Never
+        apply the publication-scope floor to that internal fact date.
         """
-        query = _build_query(since, until)
+        query = _build_query(None, None)
         seen_pages: set[str] = set()
         page = 0
         while True:
@@ -164,9 +161,6 @@ class EurlexAdapter:
             if len(bindings) < PAGE_SIZE:
                 return
             page += 1
-
-    def bound_ingest_window(self, since: datetime, until: datetime) -> datetime:
-        return min(since + timedelta(days=1), until)
 
     def normalize(self, record: RawRecord) -> NormalizedRecord:
         """One SPARQL JSON results document -> assertions.
@@ -327,23 +321,8 @@ class EurlexAdapter:
 
 
 def _build_query(since: datetime | None, until: datetime | None) -> str:
-    """Compile the fetch window into the query text as an adoption-date
-    FILTER, or leave the query unfiltered for a full load."""
-    clauses: list[str] = []
-    if since is not None:
-        clauses.append(f'?date >= "{since.date().isoformat()}"^^xsd:date')
-    if until is not None:
-        clauses.append(f'?date <= "{until.date().isoformat()}"^^xsd:date')
-    date_filter = " && ".join(clauses)
-    if date_filter and since is None:
-        # A pinned initial/as-of window must also retain undated legal acts;
-        # SPARQL comparisons on an unbound optional date otherwise drop them.
-        date_filter = f"!BOUND(?date) || ({date_filter})"
-    # .replace, not .format: the SPARQL braces are format fields and would
-    # be misparsed.
-    return _QUERY_TEMPLATE.replace(
-        "{date_filter}", f"FILTER ({date_filter})" if date_filter else ""
-    )
+    """Current snapshot query; legacy arguments never filter internal act dates."""
+    return _QUERY_TEMPLATE.replace("{date_filter}", "")
 
 
 def _binding_value(binding: Any) -> str | None:

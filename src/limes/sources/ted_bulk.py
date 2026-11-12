@@ -49,7 +49,7 @@ def _monthly_available(month: date, today: date) -> bool:
 def package_urls(since: datetime, until: datetime) -> Iterator[str]:
     day, end = since.astimezone(UTC).date(), until.astimezone(UTC).date()
     if day < CORPUS_START.date():
-        raise SourceFetchError("ted: XML package coverage starts January 2011")
+        raise SourceFetchError("ted: XML package coverage starts January 2020")
     today = now_utc().date()
     seen: set[str] = set()
     while day <= end:
@@ -123,6 +123,8 @@ def fetch_packages(since: datetime, until: datetime) -> Iterator[RawRecord]:
                     )
                     if match is None:
                         raise SourceFetchError("ted: unexpected notice filename")
+                    if int(match[2]) < CORPUS_START.year:
+                        raise SourceFetchError("ted: package contains a pre-2020 publication")
                     package_count += 1
                     if partial_month and not (
                         since.date() <= _publication_date(payload) <= until.date()

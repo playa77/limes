@@ -879,3 +879,30 @@ def test_explicit_historical_cutoff_does_not_certify_current_initial_corpus(
                    if "last_success_at" in parameters]
     assert len(checkpoints) == 1
     assert checkpoints[0]["corpus_complete"] is (not explicit_until)
+
+
+def test_clamped_gdelt_checkpoint_does_not_skip_first_eligible_export(tmp_path, monkeypatch):
+    from limes.data_scope import DATA_START
+    from limes.sources.gdelt import GdeltAdapter
+
+    adapter = FakeAdapter(normalize=lambda _: _structured_record())
+    adapter.source_id = "gdelt"
+    adapter.supports_incremental = True
+    adapter.bound_ingest_window = GdeltAdapter().bound_ingest_window
+    received = []
+
+    def fetch(since, until):
+        received.append((since, until))
+        yield from ()
+
+    monkeypatch.setattr(adapter, "fetch", fetch)
+    from neo4j.time import DateTime
+
+    source = _source_row(last_success_at=DateTime.from_native(
+        datetime(2019, 12, 31, tzinfo=UTC)))
+    source["source_id"] = "gdelt"
+    driver = FakeDriver(source_rows=[source])
+    execute_run(RunSpec(source_id="gdelt", mode="backfill",
+                        since=datetime(2026, 11, 1, tzinfo=UTC)),
+                _ctx(tmp_path, driver, adapter))
+    assert received == [(DATA_START, datetime(2020, 1, 1, 23, 45, tzinfo=UTC))]
