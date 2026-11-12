@@ -14,6 +14,7 @@ from pydantic import BaseModel
 
 from limes.api.deps import get_driver
 from limes.api.models import native_datetime
+from limes.data_scope import DATA_SCOPE_VERSION, DATA_START
 from limes.graph.driver import GraphDriver
 from limes.sources.registry import build_default_registry
 
@@ -24,6 +25,7 @@ MATCH (s:Source)
 RETURN s.source_id AS source_id,
        s.last_success_at AS last_success_at,
        s.corpus_complete AS corpus_complete,
+       s.data_scope_version AS data_scope_version,
        s.acquisition_manifest_hash AS acquisition_manifest_hash,
        s.last_run_id AS last_run_id
 """
@@ -44,6 +46,7 @@ class SourceView(BaseModel):
     last_run_id: str | None = None
     corpus_complete: bool = False
     acquisition_manifest_hash: str | None = None
+    source_evidence_start: str = DATA_START.date().isoformat()
 
 
 @router.get("/sources")
@@ -59,7 +62,8 @@ def sources(driver: Annotated[GraphDriver, Depends(get_driver)]) -> list[SourceV
             last.isoformat() if last is not None else None,
             row["last_run_id"],
         )
-        corpus[str(row["source_id"])] = bool(row.get("corpus_complete"))
+        corpus[str(row["source_id"])] = (bool(row.get("corpus_complete"))
+                                           and row.get("data_scope_version") == DATA_SCOPE_VERSION)
         manifests[str(row["source_id"])] = row.get("acquisition_manifest_hash")
     views: list[SourceView] = []
     for source_id in registry.source_ids():

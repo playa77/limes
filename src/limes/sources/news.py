@@ -61,7 +61,8 @@ class NewsAdapter:
         for query in self.targets:
             for language, country in (("de", "DE"), ("en", "GB")):
                 url = "https://news.google.com/rss/search?" + urlencode(
-                    {"q": query, "hl": language, "gl": country, "ceid": f"{country}:{language}"}
+                    {"q": query + " after:2019-12-31", "hl": language,
+                     "gl": country, "ceid": f"{country}:{language}"}
                 )
                 try:
                     payload = fetch_bytes(

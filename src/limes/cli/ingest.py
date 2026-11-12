@@ -75,7 +75,8 @@ def ingest_all() -> None:
     if failures:
         raise LimesError("ingest-all: failed sources: " + ", ".join(failures))
     typer.echo(
-        "ingest-all: complete requested source windows; historical coverage is source-specific"
+        "ingest-all: complete requested source windows; source evidence starts 2020-01-01; "
+        "coverage is source-specific"
     )
 
 

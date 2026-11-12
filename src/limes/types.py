@@ -229,6 +229,7 @@ class SourceRecord(BaseModel):
     initial_window_from: datetime | None = None
     last_run_id: str | None = None
     corpus_complete: bool = False
+    data_scope_version: str | None = None
 
 
 class IngestionRunRecord(BaseModel):

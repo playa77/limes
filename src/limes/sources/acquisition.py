@@ -22,6 +22,7 @@ from pathlib import Path
 from typing import Any
 
 from limes.archive.store import ArchiveStore
+from limes.data_scope import DATA_SCOPE_VERSION, require_source_date
 from limes.errors import SourceFetchError
 from limes.types import RawRecord
 
@@ -47,7 +48,7 @@ class AcquisitionStore:
         self, source_id: str, request: dict[str, Any], version: str
     ) -> Iterator[AcquisitionSession]:
         # source_id comes from the registered adapter, not an arbitrary file path.
-        directory = self.root / hashlib.sha256(source_id.encode()).hexdigest()
+        directory = self.root / DATA_SCOPE_VERSION / hashlib.sha256(source_id.encode()).hexdigest()
         directory.mkdir(parents=True, exist_ok=True)
         with (directory / "lock").open("a") as lock:
             try:
@@ -147,6 +148,8 @@ class AcquisitionSession:
         digest = self.response_hash(key)
         if digest is None:
             return None
+        if self.last_fetched_at is not None:
+            require_source_date(self.last_fetched_at, self.source_id)
         payload = self.archive.get(digest)
         if hashlib.sha256(payload).hexdigest() != digest:
             raise SourceFetchError("acquisition: cached response hash mismatch")

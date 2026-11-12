@@ -61,20 +61,19 @@ class BundestagDipAdapter:
     kind: Literal["structured", "unstructured"] = "structured"
     trust_rank: float = 1.00
     supports_backfill: bool = True
-    supports_incremental: bool = True
+    supports_incremental: bool = False
     full_initial_load: bool = True
 
     def __init__(self, api_key: str | None = None) -> None:
         self._api_key = api_key
 
     def fetch(self, since: datetime | None, until: datetime | None) -> Iterator[RawRecord]:
-        """Person search pages, filtered by the updated-time window.
-        Authentication stays in headers, outside archived source URLs."""
+        """Observe the current person catalogue, including older internal history.
+
+        No person is excluded because its last internal update predates 2020.
+        Authentication stays in headers, outside archived source URLs.
+        """
         params: list[tuple[str, str]] = []
-        if since is not None:
-            params.append(("f.aktualisiert.start", since.astimezone(UTC).isoformat()))
-        if until is not None:
-            params.append(("f.aktualisiert.end", until.astimezone(UTC).isoformat()))
         headers = {"Authorization": f"ApiKey {self._api_key}"} if self._api_key else {}
         cursor = None
         seen_cursors: set[str] = set()

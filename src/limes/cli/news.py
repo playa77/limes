@@ -53,10 +53,12 @@ def reextract(
 ) -> None:
     """Re-extract at most 200 archived reports; emit the next explicit page cursor."""
     import json
-    from datetime import UTC, datetime
+    from datetime import datetime
 
+    from limes.api.models import native_datetime
     from limes.cli.main import run_with_lock
     from limes.composition import build_run_context
+    from limes.data_scope import source_date_eligible
     from limes.types import RawRecord
 
     settings = load_settings().model_copy(
@@ -69,22 +71,27 @@ def reextract(
     try:
         rows = ctx.driver.read(
             "MATCH (d:NewsDocument {investigation_id:$id}) WHERE d.document_id > $after "
-            "RETURN d.document_id AS id, d.metadata AS metadata "
+            "RETURN d.document_id AS id, d.metadata AS metadata, d.recorded_at AS observed_at "
             "ORDER BY d.document_id LIMIT 201",
             {"id": investigation_id, "after": after_document},
             30,
         )
         adapter = ctx.registry.get("news")
         assert isinstance(adapter, NewsAdapter)
-        adapter.replay_records = [
-            RawRecord(
+        adapter.replay_records = []
+        for row in rows[:200]:
+            metadata = json.loads(row["metadata"])
+            observed = row.get("observed_at")
+            observed = native_datetime(observed)
+            # Re-extraction preserves the saved document observation.
+            # Publication/fact dates inside that eligible snapshot remain intact.
+            if not isinstance(observed, datetime) or not source_date_eligible(observed):
+                continue
+            adapter.replay_records.append(RawRecord(
                 payload=ctx.archive.get(row["id"]),
-                content_type="application/json",
-                fetched_at=datetime.now(UTC),
-                acquisition_context=json.loads(row["metadata"]),
-            )
-            for row in rows[:200]
-        ]
+                content_type="application/json", fetched_at=observed,
+                acquisition_context=metadata,
+            ))
         record = run_with_lock(ctx, "news", RunSpec(source_id="news", mode="reextract"))
         if record.errors:
             raise LimesError("partial re-extraction; retry the same page after inspection")

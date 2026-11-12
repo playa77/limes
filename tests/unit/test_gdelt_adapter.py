@@ -18,7 +18,7 @@ import respx
 import structlog
 from httpx import Response
 
-from limes.errors import SourceParseError
+from limes.errors import SourceFetchError, SourceParseError
 from limes.sources.gdelt import FILE_URL_TEMPLATE, GdeltAdapter, _parse_float
 from limes.types import RawRecord
 
@@ -79,12 +79,11 @@ def test_fetch_window_rounds_up_to_next_slot_boundary():
     assert len(records) == 4
 
 
-def test_fetch_empty_window_yields_nothing():
+def test_fetch_inverted_window_rejects_before_network():
     since = datetime(2026, 8, 1, 16, 0, 0, tzinfo=UTC)
     until = datetime(2026, 8, 1, 15, 0, 0, tzinfo=UTC)
-    with respx.mock:
-        records = list(GdeltAdapter().fetch(since, until))
-    assert records == []
+    with respx.mock, pytest.raises(SourceFetchError, match="window end"):
+        list(GdeltAdapter().fetch(since, until))
 
 
 def test_normalize_emits_event_with_actor_target_and_location_edges():

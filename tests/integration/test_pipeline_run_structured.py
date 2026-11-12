@@ -258,7 +258,7 @@ def test_source_and_run_nodes_are_durable(ctx, fixture_fetch):
 
     rows = ctx.driver.read(
         "MATCH (s:Source {source_id: 'gisco_nuts'}) RETURN s.name AS name, s.kind AS kind, "
-        "s.last_run_id AS run_id, s.last_success_at AS at",
+        "s.last_run_id AS run_id, s.last_success_at AS at, s.data_scope_version AS scope",
         {},
         30,
     )
@@ -266,15 +266,16 @@ def test_source_and_run_nodes_are_durable(ctx, fixture_fetch):
     assert rows[0]["kind"] == "structured"
     assert rows[0]["run_id"] == record.run_id
     assert rows[0]["at"] == record.window_to
+    assert rows[0]["scope"] == "source-evidence-from-2020-01-01-v1"
 
     rows = ctx.driver.read(
         "MATCH (r:IngestionRun {run_id: $run_id}) "
-        "RETURN r.mode AS mode, r.window_from IS NULL AS full_load, "
+        "RETURN r.mode AS mode, r.window_from AS acquisition_start, "
         "r.records_fetched AS fetched, r.assertions_written AS written",
         {"run_id": record.run_id},
         30,
     )
     assert rows[0]["mode"] == "ingest"
-    assert rows[0]["full_load"] is True
+    assert rows[0]["acquisition_start"] == datetime(2020, 1, 1, tzinfo=UTC)
     assert rows[0]["fetched"] == 2
     assert rows[0]["written"] == 9

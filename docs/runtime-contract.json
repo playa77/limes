@@ -16,5 +16,7 @@
   "job_replay": "manual",
   "deployment": "immutable-image-ids",
   "job_concurrency_default": 4,
-  "write_gate": true
+  "write_gate": true,
+  "source_acquisition_start": "2020-01-01",
+  "all_sources_required": true
 }

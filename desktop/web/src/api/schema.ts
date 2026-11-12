@@ -1602,6 +1602,11 @@ export interface components {
             corpus_complete: boolean;
             /** Acquisition Manifest Hash */
             acquisition_manifest_hash?: string | null;
+            /**
+             * Source Evidence Start
+             * @default 2020-01-01
+             */
+            source_evidence_start: string;
         };
         /** TrackingRequest */
         TrackingRequest: {

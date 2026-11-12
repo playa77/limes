@@ -86,14 +86,14 @@ def test_fetch_sends_apikey_when_configured():
     assert "f.known" not in params
 
 
-def test_fetch_window_adds_aktualisiert_filter():
+def test_current_person_snapshot_does_not_filter_internal_update_dates():
     since = datetime(2025, 1, 1, tzinfo=UTC)
     until = datetime(2025, 12, 31, tzinfo=UTC)
     with respx.mock:
         route = respx.get(PERSON_URL).mock(return_value=Response(200, content=_payload()))
         list(ADAPTER.fetch(since, until))
-    assert route.calls[0].request.url.params["f.aktualisiert.start"] == since.isoformat()
-    assert route.calls[0].request.url.params["f.aktualisiert.end"] == until.isoformat()
+    assert "f.aktualisiert.start" not in route.calls[0].request.url.params
+    assert "f.aktualisiert.end" not in route.calls[0].request.url.params
 
 
 def test_fetch_401_raises_source_fetch_error():

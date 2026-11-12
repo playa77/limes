@@ -22,6 +22,7 @@ from typing import Literal
 
 import structlog
 
+from limes.data_scope import DATA_START, scoped_window
 from limes.errors import SourceParseError
 from limes.sources.base import (
     coordinate_location,
@@ -169,6 +170,8 @@ class GdeltAdapter:
         stream across days under the run deadline. Missing slots abort without
         advancing the checkpoint.
         """
+        if since is not None or until is not None:
+            since, until = scoped_window(since, until)
         start = _first_slot(since, until)
         end = until if until is not None else now_utc()
         end = end.replace(tzinfo=UTC) if end.tzinfo is None else end.astimezone(UTC)
@@ -371,6 +374,7 @@ def _first_slot(since: datetime | None, until: datetime | None) -> datetime:
     until the next slot boundary — the window always has a start)."""
     anchor = since if since is not None else now_utc()
     anchor = anchor.replace(tzinfo=UTC) if anchor.tzinfo is None else anchor.astimezone(UTC)
+    anchor = max(DATA_START, anchor)
     slot = anchor.replace(second=0, microsecond=0)
     slot -= timedelta(minutes=slot.minute % 15)
     if slot < anchor:

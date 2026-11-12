@@ -11,6 +11,7 @@ full load.
 from datetime import UTC, datetime, timedelta
 
 from limes.config import Settings
+from limes.data_scope import DATA_SCOPE_VERSION, DATA_START
 from limes.pipeline.run import RunSpec
 from limes.pipeline.window import resolve_window
 from limes.types import SourceRecord
@@ -123,7 +124,7 @@ def test_non_incremental_is_full_load():
         _settings(),
         now=NOW,
     )
-    assert since is None
+    assert since == DATA_START
     assert until is None
 
 
@@ -172,7 +173,7 @@ def test_initial_structured_corpora_never_inherit_news_lookback():
     from limes.sources.ted import TedAdapter
 
     for adapter in (TedAdapter(), EurlexAdapter(), BundestagDipAdapter()):
-        assert resolve_window(_spec(), adapter, None, _settings(), now=NOW) == (None, None)
+        assert resolve_window(_spec(), adapter, None, _settings(), now=NOW) == (DATA_START, None)
 
 
 def test_legacy_recent_window_success_does_not_certify_historical_corpus():
@@ -180,8 +181,10 @@ def test_legacy_recent_window_success_does_not_certify_historical_corpus():
 
     source = SourceRecord(source_id="ted", name="TED", kind="structured", trust_rank=1,
                           last_success_at=LAST_SUCCESS)
-    assert resolve_window(_spec(), TedAdapter(), source, _settings(), now=NOW) == (None, None)
+    assert resolve_window(_spec(), TedAdapter(), source, _settings(), now=NOW) == (DATA_START, None)
     source.corpus_complete = True
+    assert resolve_window(_spec(), TedAdapter(), source, _settings(), now=NOW)[0] == DATA_START
+    source.data_scope_version = DATA_SCOPE_VERSION
     since, until = resolve_window(_spec(), TedAdapter(), source, _settings(), now=NOW)
     assert since == LAST_SUCCESS and until == LAST_SUCCESS + timedelta(days=1)
 
@@ -210,3 +213,35 @@ def test_gdelt_fresh_or_absent_checkpoint_keeps_start_and_uses_safe_publication_
                               trust_rank=0.5, last_success_at=checkpoint)
         assert resolve_window(spec, GdeltAdapter(), source, _settings(), now=NOW) == (
             cutoff, datetime(2026, 8, 1, 11, 45, tzinfo=UTC))
+
+
+def test_scope_clamps_explicit_checkpoint_and_long_lookback():
+    from limes.sources.gdelt import GdeltAdapter
+
+    old = datetime(2019, 12, 1, tzinfo=UTC)
+    source = SourceRecord(source_id="gdelt", name="GDELT", kind="structured",
+                          trust_rank=0.5, last_success_at=old)
+    assert resolve_window(_spec(since=old), _IncrementalAdapter(), None,
+                          _settings(), now=NOW)[0] == DATA_START
+    assert resolve_window(_spec(), _IncrementalAdapter(), source,
+                          _settings(), now=NOW)[0] == DATA_START
+    assert resolve_window(_spec(), _IncrementalAdapter(), None,
+                          _settings(backfill_days_unstructured=10000), now=NOW)[0] == DATA_START
+    start, end = resolve_window(
+        RunSpec(source_id="gdelt", mode="backfill", since=LAST_SUCCESS),
+        GdeltAdapter(), source, _settings(), now=NOW)
+    assert start == DATA_START
+    assert end == datetime(2020, 1, 1, 23, 45, tzinfo=UTC)
+
+
+def test_scope_rejects_old_upper_bound_and_handles_offset_boundary():
+    import pytest
+
+    from limes.data_scope import scoped_window
+    from limes.errors import SourceFetchError
+
+    with pytest.raises(SourceFetchError, match="2020-01-01"):
+        resolve_window(_spec(until=datetime(2019, 12, 31, tzinfo=UTC)),
+                       _StaticAdapter(), None, _settings(), now=NOW)
+    assert scoped_window(datetime.fromisoformat("2019-12-31T19:00:00-05:00"),
+                         DATA_START) == (DATA_START, DATA_START)

@@ -4388,6 +4388,11 @@
               }
             ],
             "title": "Acquisition Manifest Hash"
+          },
+          "source_evidence_start": {
+            "type": "string",
+            "title": "Source Evidence Start",
+            "default": "2020-01-01"
           }
         },
         "type": "object",

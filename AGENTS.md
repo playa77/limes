@@ -16,6 +16,19 @@ never equate a merged commit with completed acceptance. BE-41 documentation
 acceptance gates further runtime coding. Known implementation/measurement/operator
 gaps retain their assigned packages and closure conditions after that gate passes.
 
+## Source scope — mandatory (2026-11-12)
+
+Every existing source remains required and enabled. Source acquisition/publication
+history starts 2020-01-01 inclusive UTC; current snapshots retain older entities,
+relationships, internal observations and original dates. Do not filter fact
+validity, exclude a source because its content is old, or restamp vintage as fresh.
+No source removal or disabling without the user's explicit approval. Apply each
+source's current-snapshot or dated-publication acquisition strategy; if a genuine
+conflict remains, present the evidence and options before changing inclusion.
+[The complete source policy](docs/SOURCE_DATA_SCOPE.md) governs every source and
+scope-specific recovery/completeness. OffeneRegister remains included with honest
+original vintage, just as current Wikipedia pages retain their historical content.
+
 ## Delivery contract for LIMES
 
 This contract takes precedence over conflicting instructions elsewhere in this
