@@ -1,5 +1,29 @@
 # Backend work-package roadmap
 
+### BE-62 — Civil society: media, churches, Kammern, foundations, sport, culture (planned, 2026-11-17)
+
+[Plan](NRW_EXPANSION.md), decision D-110; not started. WDR and other media,
+churches and welfare associations, Kammern and social partners, foundations and
+large Vereine, sport clubs and governing bodies, cultural institutions with their
+operating bodies, and `wikidata_nrw` following subclasses. Board parts depend on
+BE-61's ontology changes. Thresholds and source approvals precede coding.
+
+### BE-61 — Ownership and boards: city and state holdings, corporate boards (planned, 2026-11-17)
+
+[Plan](NRW_EXPANSION.md), decision D-110; not started. Holdings of each NRW
+Großstadt (incl. Sparkassen) and of the Land with ownership and board seats,
+boards of large NRW companies, and the ontology changes for executive versus
+supervisory roles, offices at `InterestGroup`, delegation and `OPERATES`.
+Company threshold and source approvals precede coding.
+
+### BE-60 — Officeholders: municipal government and Landesregierung (planned, 2026-11-17)
+
+[Plan](NRW_EXPANSION.md), decision D-110; not started. Landesregierung NRW
+(Ministerpräsident, ministers, Staatssekretäre, ministries) and, for every NRW
+Großstadt, Oberbürgermeister, honorary Bürgermeister, Verwaltungsvorstand, Rat,
+Bezirksvertretungen, over the 2020 and 2025 council terms. Source approvals
+precede coding; recommended first of the three.
+
 ### BE-59 — Nordrhein-Westfalen rescope (2026-11-17)
 
 [Full package contract](NRW_SCOPE.md), branch `claude/gracious-sagan-hfh9fq`, live

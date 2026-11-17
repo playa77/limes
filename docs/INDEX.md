@@ -30,6 +30,7 @@ the product purpose in README, then this map.
 | What supports the status audit? | [Baseline audit](BASELINE_AUDIT.md), [news investigation](NEWS_REVIEW.md) | Artifact/ancestry/source evidence and limits; not competing architecture |
 | What were the original plans? | [Backend archive](archive/backend-roadmap-2026-08-01.md), [desktop archive](archive/desktop-plan-2026-09-09.md) | Historical definitions only; old commands, ceremonies and boxes are inactive |
 | What is proposed for the next version? | [GraphRAG future work](next-version/GRAPHRAG_WORK_PACKAGES.md) | Proposed packages only, after scoped ingestion stability; outside the current release sequence |
+| What NRW entity expansion is planned? | [BE-60–BE-62 plan](NRW_EXPANSION.md) | Planned packages only (D-110): officeholders, ownership and boards, civil society; no source approved or implemented |
 | How are NRW public officeholders acquired? | [BE-56 implementation plan](GERMAN_PARLIAMENT_MEMBERS.md), [NRW scope](NRW_SCOPE.md) | Roster model from BE-56; BE-59 keeps Landtag NRW, NRW Bundestag members and NRW Bundesrat members; the other 18 scopes are historical |
 
 Ingestion diagnoses BE-47–BE-57 describe the Germany/EU-scale corpus before

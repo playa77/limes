@@ -5,6 +5,24 @@ reversibility: **R1** reversible in under an hour, **R2** bounded recoverable
 cost, **R3** one-way door. Written when each decision is made, latest first.
 Nothing here is a status report; unlogged decisions are unmade decisions.
 
+## 2026-11-17 — D-110 (R1) — Split the NRW entity expansion into BE-60, BE-61 and BE-62
+
+**Context.** BE-59 excluded municipal councils and left major NRW power-holders
+unmodelled (Landesregierung, city and state holdings, boards, WDR, churches,
+Kammern, foundations, sport, culture). The user asked for the expansion as
+three work packages (2026-11-17). **Decision.** BE-60 officeholders (municipal
+government of every Großstadt plus the Landesregierung); BE-61 ownership and
+boards (city and state holdings, corporate boards, and the ontology changes for
+board roles, offices at `InterestGroup`, delegation and `OPERATES`); BE-62 civil
+society (media, churches and Kammern, foundations and Vereine, sport, culture,
+plus `wikidata_nrw` following subclasses). Each is one parent package with its
+own branch and PR; [plan](docs/NRW_EXPANSION.md). **Rationale.** Three
+independently deliverable parents; one package would exceed a reviewable
+delivery. **Consequences.** All three are planned, not started. No source is
+approved or registered by this record; each package's thresholds and source
+approvals are decided before its coding starts. BE-61's ontology changes precede
+the board parts of BE-62. Status: accepted (planning only).
+
 ## 2026-11-17 — D-109 (R2) — Build the NRW state-law interface on recht.nrw.de
 
 **Context.** The user rejected leaving NRW state law as an open gap (OI-37):

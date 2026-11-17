@@ -1,3 +1,10 @@
+## 2026-11-17 — NRW entity expansion planned (BE-60–BE-62)
+
+- Record three planned parent packages (D-110, `docs/NRW_EXPANSION.md`):
+  BE-60 officeholders (municipal government and Landesregierung), BE-61
+  ownership and boards with ontology changes, BE-62 civil society. Planning
+  only; no code, source or ontology change.
+
 ## 2026-11-17 — Nordrhein-Westfalen rescope (BE-59)
 
 - Narrow the product from Germany and the EU to Nordrhein-Westfalen (D-107); time
