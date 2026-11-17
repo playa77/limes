@@ -1,5 +1,36 @@
 # Verification and acceptance evidence
 
+## 2026-11-17 — Nordrhein-Westfalen rescope (BE-59)
+
+**N1–N6 implemented; N7 accepted for the lanes runnable in the delivery
+environment; graph-backed lanes pending (OI-38).** Branch
+`claude/gracious-sagan-hfh9fq`, live main verified as `846ef04e6a13`.
+[Package contract](NRW_SCOPE.md), decisions D-107/D-108. No production
+ingestion, purge, deployment or paid call was performed.
+
+| Item | Evidence |
+|---|---|
+| N1 geo scope | `limes.geo_scope`; pinned GISCO NRW postcode extract (874 postcodes, 393 municipality names, source SHA-256 recorded); `DATA_SCOPE_VERSION` = `source-evidence-from-2020-01-01-nrw-v1` |
+| N2 source set | Registry and its tests list exactly the NRW set; retired adapters/fixtures/tests removed; `ted_bulk`/`bulk` removed |
+| N3 selection at the source | GLEIF region filter + cursor paging, TED Search API NRW query, OSM NRW area, Bundestag Land facet, Bundesrat NRW page — each tested on recorded responses (2026-11-17) without live calls |
+| N4 Wikidata NRW | Constructed SPARQL-results fixture (Wikimedia rate-limited live probes); typing, LEI reuse and row bound tested |
+| N5 address filters | FSD (legacy and FSF export) and Transparency Register current export emit only NRW addresses; skips counted |
+| N6 documentation | Design 2.1.0, specification 2.2.0, runtime contract `geographic_scope: DEA`, regenerated runtime docs, index, issues, changelog, AGENTS r2 |
+| N7 checks | Candidate `27d24cc7953d`: ruff clean; mypy clean (155 files); `check_docs.py` PASS; runtime docs `--check` clean; `tests/unit` 909 passed; desktop unit/contract 42 passed; database-free acceptance `test_ac04_adapters.py` 4 passed; integration (187), acceptance (85) and desktop integration (2) collect without errors |
+
+Not executed here: `tests/integration`, graph-backed `tests/acceptance` and
+`desktop/tests/integration` require Docker for disposable Neo4j, which this
+environment lacks; their GISCO/GLEIF/TED expectations were updated by derivation
+from the changed fixtures. The web desktop lanes (`pnpm …`) were not rerun because
+no web source changed. CI runs the graph lanes on the pull request; OI-38 closes
+on that evidence. Live probes (one request at a time per host) established the
+NRW volumes quoted in NRW_SCOPE; they are not acceptance evidence.
+
+Diff against `846ef04`: handwritten source +872/−3,658; pinned reference data
++885; tests and helpers (excluding fixtures) +548/−3,424; fixtures +327/−4,040
+(mostly removed retired-scope captures); generated runtime docs +97/−98;
+documentation otherwise +578/−359 (approximate; overlapping categories).
+
 ## 2026-11-12 — Source acquisition from 2020 (BE-58)
 
 **A1–A6 implementation/qualification accepted locally.** All sources remain
