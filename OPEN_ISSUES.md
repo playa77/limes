@@ -1,5 +1,38 @@
 # OPEN_ISSUES.md — LIMES evidenced open-issue ledger
 
+## Current geographic-scope disposition — 2026-11-17 (BE-59)
+
+[The NRW scope contract](docs/NRW_SCOPE.md) narrows the product to
+Nordrhein-Westfalen (D-107) and supersedes BE-58's every-source rule. OI-36's
+Germany/EU-scale corpus blockers (TED package history, FSD availability, OSM
+capacity at national scale, complete ingest) are re-scoped: they now apply to the
+NRW source set, whose volumes are ≈76k TED result notices and ≈44k GLEIF records
+rather than EU-wide corpora. A complete NRW ingest, freshness measurement and
+deployed-graph reconciliation (removing or retaining non-NRW data already loaded
+in an operator graph) remain operator obligations; no purge, ingest or deployment
+is performed or claimed.
+
+### Closed — OI-37 NRW state law has no documented machine interface
+
+Gesetze im Internet (federal law) is retired. recht.nrw.de offers no documented
+API or bulk export. Per the user's direction (2026-11-17, "if there is no
+documented interface, you build one"), `recht_nrw` builds it on the portal's
+public, robots-permitted pages: sitemap discovery, one newest version page per
+law, serial requests at ≥1 s, `LegalAct`/`ADOPTED`/`AMENDS`/`REPEALS` mapping.
+The internal search backend is not used. Evidence:
+`venv/bin/python -m pytest tests/unit/test_recht_nrw_adapter.py -q` on recorded
+pages (D-109). Remaining limits: unlinked change clauses and law full text are not
+loaded.
+
+### Closed — OI-38 BE-59 graph-backed lanes not executed in the delivery environment
+
+The delivery environment lacked Docker, so the graph lanes first ran in PR CI.
+Its initial runs exposed five stale test expectations (no product defect), fixed
+on the branch. Evidence: GitHub Actions run 44090721561 on head `6b491bea8bff`,
+job `graph`: `tests/integration` 186 passed; `tests/acceptance` 85 passed;
+`desktop/tests/integration` 2 passed; `test_runtime_stack.py` 1 passed; `offline`,
+`web` and `candidate-check` succeeded. Re-run: the CI `graph` job on the PR head.
+
 ## Current source-scope disposition — 2026-11-12 (BE-58)
 
 [The approved source contract](docs/SOURCE_DATA_SCOPE.md) starts acquisition

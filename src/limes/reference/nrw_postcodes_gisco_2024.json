@@ -1,0 +1,9 @@
+{
+  "source_url": "https://gisco-services.ec.europa.eu/distribution/v2/pcode/csv/PCODE_PT_2024_4326.csv",
+  "source_sha256": "bfe85f045e227c9066b0d34f29df511301ffd66e8ec081053dec0b8ff8d2a75a",
+  "edition": "GISCO postal codes 2024 / NUTS 2024",
+  "filter": "CNTR_ID == 'DE' and NUTS3_2024 startswith 'DEA'",
+  "rows": 874,
+  "extracted_at": "2026-11-17T12:19:48+00:00",
+  "tool": "tools/build_nrw_postcodes.py 2026-11-17-r1"
+}

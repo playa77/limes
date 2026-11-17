@@ -121,7 +121,7 @@ def test_cli_ingest_gisco_nuts_end_to_end(graph, cli_env, fixture_fetch):
         {},
         30,
     )
-    assert rows[0]["c"] == 9
+    assert rows[0]["c"] == 7
 
     rows = graph.read(
         "MATCH (r:IngestionRun) RETURN r.mode AS mode, r.assertions_written AS written",
@@ -129,7 +129,7 @@ def test_cli_ingest_gisco_nuts_end_to_end(graph, cli_env, fixture_fetch):
         30,
     )
     assert rows[0]["mode"] == "ingest"
-    assert rows[0]["written"] == 9
+    assert rows[0]["written"] == 7
 
     # The lock was released: no :AdvisoryLock node remains.
     rows = graph.read("MATCH (l:AdvisoryLock) RETURN count(l) AS c", {}, 30)

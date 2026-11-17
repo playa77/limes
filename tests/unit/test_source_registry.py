@@ -80,48 +80,23 @@ def test_source_ids_sorted():
 def test_build_default_registry_contains_phase_two_sources():
     registry = build_default_registry()
     expected = {
-        "bundestag_dip",
-        "eurlex",
         "feeds",
         "fsd",
-        "gdelt",
-        "gesetze_im_internet",
         "gisco_nuts",
         "gleif",
-        "offeneregister",
         "osm",
+        "recht_nrw",
         "ted",
         "transparency_register",
         "wikidata",
+        "wikidata_nrw",
         "news",
         "wikipedia",
         "yahoo_finance",
     }
+    # NRW scope (BE-59): the Landtag plus NRW members of Bundestag and Bundesrat.
     assert set(registry.source_ids()) == expected | {
-        "public_offices_" + code
-        for code in (
-            "bt",
-            "bw",
-            "by",
-            "be",
-            "bb",
-            "hb",
-            "hh",
-            "he",
-            "mv",
-            "ni",
-            "nw",
-            "rp",
-            "sl",
-            "sn",
-            "st",
-            "sh",
-            "th",
-            "bverfg_1",
-            "bverfg_2",
-            "br",
-            "bp",
-        )
+        "public_offices_" + code for code in ("bt", "nw", "br")
     }
 
 
@@ -131,8 +106,7 @@ def test_build_default_registry_trust_ranks_match_source_table():
     assert registry.trust_rank("gleif") == 1.00
     assert registry.trust_rank("wikidata") == 0.90
     assert registry.trust_rank("osm") == 0.75
-    assert registry.trust_rank("offeneregister") == 0.30
-    assert registry.trust_rank("gdelt") == 0.50
+    assert registry.trust_rank("wikidata_nrw") == 0.90
     assert registry.trust_rank("feeds") == 0.60
 
 
@@ -144,15 +118,13 @@ def test_registry_get_is_the_only_public_construction_path():
     for module_name in (
         "limes.sources.gisco_nuts",
         "limes.sources.gleif",
-        "limes.sources.eurlex",
         "limes.sources.fsd",
         "limes.sources.ted",
         "limes.sources.transparency_register",
-        "limes.sources.bundestag_dip",
-        "limes.sources.gesetze_im_internet",
         "limes.sources.wikidata",
         "limes.sources.osm",
-        "limes.sources.offeneregister",
+        "limes.sources.recht_nrw",
+        "limes.sources.wikidata_nrw",
     ):
         module = importlib.import_module(module_name)
         for attribute_name in dir(module):

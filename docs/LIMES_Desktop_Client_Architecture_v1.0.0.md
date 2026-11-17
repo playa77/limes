@@ -15,7 +15,7 @@
 | Version | 1.1.0 |
 | Date | 2026-09-08; reconciled 2026-10-27, 2026-11-09 (DC-17 web-client/launcher swap, D-99) |
 | Status | Maintained architecture; current evidence in DESKTOP_ROADMAP.md |
-| Depends on | LIMES — Desktop Client Requirements v1.1.0 (all); LIMES — Technical Specification v2.1.0 (§6, §13.2, §15) |
+| Depends on | LIMES — Desktop Client Requirements v1.1.0 (all); LIMES — Technical Specification v2.2.0 (§6, §13.2, §15) |
 | Supersedes | the v1.0.0 content of this same filename (stable link identity preserved) |
 
 ## 1. Overview

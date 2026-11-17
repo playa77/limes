@@ -21,6 +21,8 @@
 			</Nationality>
 			<Address>
 				<Country>DE</Country>
+				<ZipCode>50667</ZipCode>
+				<City>Köln</City>
 			</Address>
 		</Sanction>
 		<Sanction>
@@ -35,6 +37,7 @@
 			</LegalBasis>
 			<Address>
 				<Country>DE</Country>
+				<City>Düsseldorf</City>
 			</Address>
 		</Sanction>
 		<Sanction>
@@ -47,6 +50,26 @@
 			<LegalBasis>
 				<LegalAct>2014/145/EU</LegalAct>
 			</LegalBasis>
+			<Address>
+				<Country>DE</Country>
+				<ZipCode>44135</ZipCode>
+			</Address>
+		</Sanction>
+		<Sanction>
+			<Id>999</Id>
+			<Regime>EU</Regime>
+			<SubjectType>E</SubjectType>
+			<NameAlias>
+				<WholeName>Berliner Beispiel GmbH</WholeName>
+			</NameAlias>
+			<LegalBasis>
+				<LegalAct>2014/145/EU</LegalAct>
+			</LegalBasis>
+			<Address>
+				<Country>DE</Country>
+				<ZipCode>10115</ZipCode>
+				<City>Berlin</City>
+			</Address>
 		</Sanction>
 	</Sanctions>
 </root>

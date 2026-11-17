@@ -15,6 +15,7 @@ from datetime import UTC, datetime
 
 import respx
 from httpx import Response
+from structlog.testing import capture_logs
 
 from limes.errors import SourceParseError
 from limes.sources.base import (
@@ -38,9 +39,22 @@ def _fixture() -> bytes:
     return (FIXTURES / "sanctions.xml").read_bytes()
 
 
+# BE-59: only NRW-addressed entries are in scope; inline legacy payloads that
+# exercise other rules get a Köln address unless they state their own.
+NRW_ADDRESS = b"<Address><Country>DE</Country><ZipCode>50667</ZipCode></Address>"
+
+
+def _in_nrw(payload: bytes) -> bytes:
+    parts = payload.split(b"</Sanction>")
+    return b"</Sanction>".join(
+        part + NRW_ADDRESS if b"<Sanction>" in part and b"<Address>" not in part else part
+        for part in parts
+    )
+
+
 def _record(payload: bytes | None = None) -> RawRecord:
     return RawRecord(
-        payload=_fixture() if payload is None else payload,
+        payload=_fixture() if payload is None else _in_nrw(payload),
         content_type="application/xml",
         source_url=FSD_URL,
         fetched_at=NOW,
@@ -277,3 +291,24 @@ def test_legal_basis_without_legal_act_falls_through_to_next_basis():
     established = [a for a in normalized.assertions if a.relation == "ESTABLISHED_BY"]
     assert len(established) == 1
     assert established[0].object.label == "2014/145/EU"
+
+
+def test_only_nrw_addressed_entries_are_emitted():
+    """BE-59: the Berlin entry is counted as outside NRW and never loaded."""
+    with capture_logs() as logs:
+        normalized = ADAPTER.normalize(_record())
+    labels = {a.object.label for a in normalized.assertions if a.relation == "TARGETS"}
+    assert "Berliner Beispiel GmbH" not in labels
+    summary = next(e for e in logs if e.get("event") == "fsd: consolidated list normalized")
+    assert summary["outside_nrw"] == 1
+    export = b"""<export xmlns="http://eu.europa.ec/fpi/fsd/export"
+      generationDate="2026-07-31T09:00:00+02:00">
+      <sanctionEntity euReferenceNumber="EU.1"><subjectType classificationCode="E"/>
+        <nameAlias wholeName="Rhein GmbH" strong="true"/><regulation numberTitle="R1"/>
+        <address countryIso2Code="DE" zipCode="40213" city="Duesseldorf"/></sanctionEntity>
+      <sanctionEntity euReferenceNumber="EU.2"><subjectType classificationCode="E"/>
+        <nameAlias wholeName="Spree GmbH" strong="true"/><regulation numberTitle="R1"/>
+        <address countryIso2Code="DE" zipCode="10115" city="Berlin"/></sanctionEntity>
+    </export>"""
+    result = ADAPTER.normalize(_record(export))
+    assert {a.object.label for a in result.assertions if a.relation == "TARGETS"} == {"Rhein GmbH"}

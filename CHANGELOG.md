@@ -1,3 +1,30 @@
+## 2026-11-17 — Nordrhein-Westfalen rescope (BE-59)
+
+- Narrow the product from Germany and the EU to Nordrhein-Westfalen (D-107); time
+  window, entity types and relation types are unchanged. `limes.geo_scope` owns
+  the NRW identifiers; `DATA_SCOPE_VERSION` gains the geographic scope.
+- Select NRW at the source: GLEIF via the LEI API region filter with cursor
+  paging; TED via Search API NRW result notices in monthly windows with durable
+  receipts; OSM via the NRW area within a 3×4 NRW grid; GISCO reduced to the DEA
+  subtree with a pinned NRW postcode extract (`tools/build_nrw_postcodes.py`).
+- Emit only NRW-addressed entries from the EU sanctions list and the EU
+  Transparency Register (single files without a query interface).
+- Add `wikidata_nrw`: NRW-headquartered companies and Vereine from one bounded
+  SPARQL query.
+- Add `recht_nrw`: NRW laws and ordinances through an interface built on
+  recht.nrw.de's public sitemap and law pages (no API exists), with Landtag
+  adoption and linked amendment/repeal relations.
+- Reduce official rosters to Landtag NRW, NRW Bundestag members (roster Land
+  facet) and NRW Bundesrat members; keep existing Bundestag office identities.
+- Retire EUR-Lex, GDELT, OffeneRegister, Gesetze im Internet, Bundestag DIP and
+  18 non-NRW roster scopes with their adapters, fixtures and tests; remove the
+  TED package and bulk-download modules. Archived evidence stays readable.
+- Curated feeds 2.0.0: land.nrw and WDR Politik in NRW.
+- Runtime contract replaces `all_sources_required` with `geographic_scope: DEA`;
+  Design Document 2.1.0 and Technical Specification 2.2.0 restate the contracts.
+- Record OI-38 (graph-backed lanes not executed without Docker); OI-37 (no NRW
+  state-law interface) is opened and closed by `recht_nrw`.
+
 ## 2026-11-12 — Source acquisition from 2020 (BE-58)
 
 - Limit historical acquisition windows and TED packages to 2020-01-01 onward,

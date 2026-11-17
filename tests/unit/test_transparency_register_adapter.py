@@ -262,7 +262,9 @@ def test_current_export_repairs_control_but_keeps_original_identity(bad):
     payload = (
         b"<ListOfIRPublicDetail><exportDate>2026-10-30</exportDate><numberOfIR>1</numberOfIR>"
         b"<interestRepresentative><identificationCode>TEST</identificationCode>"
-        b"<originalName>Alpha" + bad + b"Beta</originalName></interestRepresentative>"
+        b"<originalName>Alpha" + bad + b"Beta</originalName><headOffice>"
+        b"<postCode>40213</postCode><city>D</city><country>GERMANY</country></headOffice>"
+        b"</interestRepresentative>"
         b"</ListOfIRPublicDetail>"
     )
     record = RawRecord(payload=payload, content_type="application/xml", source_url=EXPORT_URL,

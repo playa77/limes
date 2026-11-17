@@ -1,5 +1,18 @@
 # LIMES delivery roadmap
 
+## BE-59 — Nordrhein-Westfalen rescope (2026-11-17)
+
+[Full package contract](NRW_SCOPE.md), branch `claude/gracious-sagan-hfh9fq`, live
+base `846ef04e6a13`, decisions D-107/D-108. The product narrows from Germany and
+the EU to Nordrhein-Westfalen; time window, entity and relation types unchanged.
+Every retained source selects NRW at the source. EUR-Lex, GDELT, OffeneRegister,
+Gesetze im Internet, Bundestag DIP and 18 non-NRW roster scopes are retired;
+`wikidata_nrw` and `recht_nrw` (NRW state law through an interface built on the
+portal's public pages) are added. Implementation acceptance N1–N7 and its limits are in
+[VERIFICATION](VERIFICATION.md): graph-backed integration/acceptance lanes were
+not executable without Docker locally and passed in PR CI (OI-38 closed). OI-37 is closed by `recht_nrw`. No production ingestion, purge or deployed
+graph reconciliation is part of this package.
+
 ## BE-58 — Source acquisition from 2020 (2026-11-12)
 
 [Full package contract](SOURCE_DATA_SCOPE.md), branch

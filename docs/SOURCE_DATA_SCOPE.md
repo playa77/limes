@@ -1,5 +1,13 @@
 # BE-58 — Source acquisition from 2020-01-01
 
+> **Amended 2026-11-17 by BE-59 (D-107).** The 2020-01-01 inclusive acquisition
+> floor, current-snapshot rules and scoped completeness below still govern. The
+> "every existing source remains mandatory" rule is superseded by the user-approved
+> Nordrhein-Westfalen rescope: EUR-Lex, GDELT, OffeneRegister, Gesetze im Internet,
+> Bundestag DIP and 18 non-NRW roster scopes are retired, and every retained source
+> selects NRW at the source. Rows below for retired sources are historical; the
+> current table is in [NRW scope](NRW_SCOPE.md).
+
 Approved 2026-11-12. Branch `codex/be-58-data-scope-2020`, live GitHub base
 `7ccdd365fc80`. This is the complete source-scope package; it changes neither the
 ontology's temporal semantics nor the required set of sources.

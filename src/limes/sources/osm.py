@@ -1,8 +1,9 @@
 # src/limes/sources/osm.py | v1.0.0 | introduced by WP-19
 """OpenStreetMap/Overpass adapter per Technical Specification §8.5.2 (source: `osm`).
 
-Loads KRITIS-relevant critical-infrastructure assets (Doc 1 §5.2) inside the
-German bounding box: `Asset` nodes keyed by OSM id, their operator as
+Loads KRITIS-relevant critical-infrastructure assets (Doc 1 §5.2) inside
+Nordrhein-Westfalen (BE-59: the NRW area within NRW bounding-box cells):
+`Asset` nodes keyed by OSM id, their operator as
 `OPERATES` (Corporation -> Asset), the region the postal-code correspondence
 resolves as `LOCATED_IN` (Asset -> AdministrativeRegion), and the matched
 KRITIS sector as a shared `Topic` node.
@@ -62,6 +63,7 @@ from limes.errors import (
     SourceRunBudgetExceeded,
     SourceSliceEnded,
 )
+from limes.geo_scope import BBOX, OSM_AREA_ID
 from limes.sources.base import (
     RetryExhausted,
     TransientFailure,
@@ -86,8 +88,12 @@ logger = structlog.get_logger(__name__)
 
 OVERPASS_URL = "https://overpass-api.de/api/interpreter"
 
-# South, west, north, east (Doc 2 §8.5.2: "DE bbox").
-GERMANY_BBOX = "47.27,5.87,55.06,15.04"
+# BE-59: Nordrhein-Westfalen. Every clause intersects the NRW administrative area
+# with a bounding-box cell, so subdivision stays geometric and border spill from
+# neighbouring states/countries is excluded server-side.
+NRW_BBOX = BBOX
+NRW_AREA = f"area(id:{OSM_AREA_ID})->.nrw;"
+GRID_ROWS, GRID_COLS = 3, 4
 
 # The KRITIS sector taxonomy (Doc 1 §5.2) as OSM tag selectors:
 # sector -> tag key -> values that mark an element as an asset of that sector.
@@ -102,7 +108,7 @@ _KRITIS_SECTORS: dict[str, dict[str, list[str]]] = {
 }
 
 
-def _overpass_query(bbox: str = GERMANY_BBOX) -> str:
+def _overpass_query(bbox: str = NRW_BBOX) -> str:
     """One bounded query covering every selector in map order,
     one clause per tag key, restricted to the supplied bbox.
 
@@ -116,23 +122,24 @@ def _overpass_query(bbox: str = GERMANY_BBOX) -> str:
         for tag_key, values in tag_map.items():
             merged.setdefault(tag_key, []).extend(values)
     clauses = [
-        f'  nwr["{tag_key}"~"^({"|".join(re.escape(v) for v in values)})$"]({bbox});'
+        f'  nwr["{tag_key}"~"^({"|".join(re.escape(v) for v in values)})$"](area.nrw)({bbox});'
         for tag_key, values in merged.items()
     ]
-    return "[out:json][timeout:25];\n(\n" + "\n".join(clauses) + "\n);\nout center;\n"
+    return ("[out:json][timeout:25];\n" + NRW_AREA + "\n(\n" + "\n".join(clauses)
+            + "\n);\nout center;\n")
 
 
 def _partition_queries() -> tuple[str, ...]:
-    # 8 x 10 adjoining cells cover the exact original bbox. Decimal arithmetic
+    # 3 x 4 adjoining cells cover the exact NRW bbox. Decimal arithmetic
     # preserves common boundaries; Overpass may return a way in several cells.
-    south, west, north, east = map(Decimal, GERMANY_BBOX.split(","))
-    height, width = (north - south) / 8, (east - west) / 10
+    south, west, north, east = map(Decimal, NRW_BBOX.split(","))
+    height, width = (north - south) / GRID_ROWS, (east - west) / GRID_COLS
     return tuple(
         _overpass_query(",".join(str(v) for v in (
             south + row * height, west + col * width,
             south + (row + 1) * height, west + (col + 1) * width,
         )))
-        for row in range(8) for col in range(10)
+        for row in range(GRID_ROWS) for col in range(GRID_COLS)
     )
 
 
@@ -150,7 +157,7 @@ class OverpassCapacityError(SourceParseError):
 
 
 def _split_query(query: str) -> tuple[str, ...]:
-    boxes = re.findall(r'\]\(([-\d.,]+)\);', query)
+    boxes = re.findall(r'\(area\.nrw\)\(([-\d.,]+)\);', query)
     if not boxes or len(set(boxes)) != 1:
         raise SourceFetchError("osm: cannot subdivide query with an invalid bbox")
     south, west, north, east = map(Decimal, boxes[0].split(","))
@@ -183,7 +190,7 @@ def _leaf_queries(splits: list[str]) -> list[tuple[str, str]]:
 
 
 class OsmAdapter:
-    """OpenStreetMap via Overpass - KRITIS assets in the German bbox."""
+    """OpenStreetMap via Overpass - KRITIS assets in Nordrhein-Westfalen."""
 
     source_id: str = "osm"
     name: str = "OpenStreetMap"

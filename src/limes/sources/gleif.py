@@ -1,65 +1,45 @@
-# src/limes/sources/gleif.py | v1.0.0 | introduced by WP-11
-"""GLEIF golden-copy adapter per Technical Specification §8.5.2.
+# src/limes/sources/gleif.py | v2.0.0 | introduced by WP-11, NRW API rewrite BE-59
+"""GLEIF LEI API adapter, selected to Nordrhein-Westfalen at the source.
 
-Loads the legal-entity backbone: `Corporation` nodes keyed by `lei`,
-`HEADQUARTERED_IN` edges to address-identity `Location` nodes, `LOCATED_IN`
-edges to the NUTS region the postal-code correspondence resolves, and
-direct/ultimate financial-consolidation edges (ontology 1.3.0). Legacy archived
-subsidiary/percentage rows retain their original interpretation.
+Loads the legal-entity backbone for NRW: `Corporation` nodes keyed by `lei`,
+`HEADQUARTERED_IN` edges to address-identity `Location` nodes, `LOCATED_IN` edges
+to the NUTS-3 region of an NRW headquarters postcode, and direct/ultimate
+accounting-consolidation edges (ontology 1.3.0).
 
-The golden copy is a full snapshot: `fetch` downloads both zips, ignores the
-window, and archives each original ZIP before yielding bounded CSV chunks.
-`supports_incremental` is True
-per the source table, but the snapshot always supersedes any window, so
-window resolution never changes what is fetched.
+BE-59 replaces the global golden copy (millions of records) with the public LEI
+API filtered server-side: `filter[entity.addresses.region]=DE-NW` returns every
+LEI record with a legal or headquarters address in NRW (≈44k on 2026-11-17).
+Deep page numbers are capped by the API at 10,000 results, so acquisition uses
+cursor pagination (`page[cursor]=*`, then each page's `links.next`). Each page
+is archived as one record.
 
 Non-obvious choices, each load-bearing:
-
-- Download URLs come from the latest publication catalog entry, with entity
-  and relationship CSV files selected from the same publication.
-- An address without geonames identity gets its `entity_id` from a SHA-256
-  over `country|postal|city` (the `coordinate_hash` key). The hash is
-  identity, not location: region membership is a lookup, never geometry
-  (Doc 2 §8.5.2), so the hash must be stable across runs, not spatial.
-- The direct percentage is not stamped as a property (the loader stamps no
-  arbitrary properties); it selects *whether* an `OWNS_STAKE_IN` assertion
-  is emitted. A positive direct percentage emits ownership; 0 or empty does
-  not — a deliberately coarse reading, documented here so nobody looks for
-  the value in the graph.
-- A relationship endpoint carries no legal name (the relationship file has
-  no name columns), so its Corporation label is the LEI itself. The loader
-  never overwrites a label on merge, so whichever record loads first
-  establishes it; the legal name wins when the entity file loads first.
-- The relationship file cannot be cross-checked against the entity file:
-  the two zips are separate records, `normalize` is pure and per-record,
-  and cross-record module state is forbidden (C-07). The adapter enforces
-  the endpoint-materializability check it can run per record — the LEI's
-  form — and emits every endpoint under the deterministic `lei:<LEI>`
-  identity the entity file would produce, so a relationship to an LEI
-  absent from the entity file still merges onto the same node identity.
-- A corporation with no HQ address and no relationship is a real and common
-  row (Doc 2 §5.6) and goes to `NormalizedRecord.entities`. The
-  no-relationship half is unknowable per record; the loader's idempotent
-  merge on `entity_id` absorbs the overlap if the relationship record later
-  names the same LEI.
+- Only `ACTIVE` entities are loaded, as before; inactive rows are counted.
+- Region assignment uses the pinned NRW postcode reference (`limes.geo_scope`),
+  a lookup and never geometry. A headquarters outside NRW (the record matched
+  on its legal address) gets its Location but no NRW region.
+- The API exposes each record's direct/ultimate parent as an LEI reference, or
+  a reporting exception (no parent). A parent is an observed current fact of
+  this snapshot: valid from the fetch instant, without the golden copy's
+  relationship periods. The parent node's label is its LEI until its own
+  record loads; the loader never overwrites an established label.
+- `next` URLs are accepted only on the API host with the same filter, so a
+  response can never redirect acquisition elsewhere.
 """
 
 from __future__ import annotations
 
-import csv
-import io
 import json
 import re
-import zipfile
-from collections import Counter
-from collections.abc import Callable, Iterator
-from datetime import UTC, datetime
-from typing import Literal
-from urllib.parse import urlsplit
+from collections.abc import Iterator
+from datetime import datetime
+from typing import Any, Literal
+from urllib.parse import parse_qs, urlencode, urlsplit
 
 import structlog
 
 from limes.errors import SourceFetchError, SourceParseError
+from limes.geo_scope import ISO_3166_2, postcode_table
 from limes.sources.base import (
     address_location,
     fetch_bytes,
@@ -68,152 +48,136 @@ from limes.sources.base import (
     now_utc,
     payload_hash,
 )
-from limes.types import (
-    Assertion,
-    EntityEndpoint,
-    NormalizedRecord,
-    RawRecord,
-)
+from limes.types import Assertion, EntityEndpoint, NormalizedRecord, RawRecord
 
 logger = structlog.get_logger(__name__)
 
-PUBLICATIONS_URL = "https://goldencopy.gleif.org/api/v2/golden-copies/publishes"
+API_URL = "https://api.gleif.org/api/v1/lei-records"
+REGION_FILTER = "filter[entity.addresses.region]"
+PAGE_SIZE = 200
+MAX_PAGES = 1_000  # ≈200k records; the NRW slice is ≈44k.
+MAX_PAGE_BYTES = 16 * 1024 * 1024
+CONTENT_TYPE = "application/vnd.api+json"
 
-ZIP_CONTENT_TYPE = "application/zip"
-
-_ENTITY_CSV_MARKERS = ("LEI", "Entity.EntityStatus")
-_RELATIONSHIP_CSV_MARKER = "Relationship.RelationshipType"
-_SUBSIDIARY_TYPE = "IS_SUBSIDIARY_OF"
 _ACTIVE_STATUS = "ACTIVE"
-
-# GLEIF LEIs are exactly 20 uppercase letters and digits. A relationship
-# endpoint that does not match cannot be addressed as a Corporation node.
 _LEI_PATTERN = re.compile(r"[A-Z0-9]{20}")
+_PARENTS = {
+    "direct-parent": "DIRECTLY_CONSOLIDATED_BY",
+    "ultimate-parent": "ULTIMATELY_CONSOLIDATED_BY",
+}
+
+
+def first_page_url() -> str:
+    return API_URL + "?" + urlencode(
+        {REGION_FILTER: ISO_3166_2, "page[size]": PAGE_SIZE, "page[cursor]": "*"}
+    )
+
+
+def _checked_next(url: str | None) -> str | None:
+    if not url:
+        return None
+    parts = urlsplit(url)
+    query = parse_qs(parts.query)
+    if (
+        parts.scheme != "https"
+        or f"{parts.netloc}{parts.path}" != "api.gleif.org/api/v1/lei-records"
+        or query.get(REGION_FILTER) != [ISO_3166_2]
+        or not query.get("page[cursor]")
+    ):
+        raise SourceFetchError("gleif: unexpected pagination link; acquisition stopped")
+    return url
 
 
 class GleifAdapter:
-    """GLEIF — legal-entity backbone: corporations, addresses, ownership."""
+    """GLEIF — NRW legal entities, addresses and consolidation parents."""
 
     source_id: str = "gleif"
     name: str = "GLEIF"
     kind: Literal["structured", "unstructured"] = "structured"
     trust_rank: float = 1.00
-    supports_backfill: bool = True
-    supports_incremental: bool = True
+    supports_backfill: bool = False
+    supports_incremental: bool = False
 
     def fetch(self, since: datetime | None, until: datetime | None) -> Iterator[RawRecord]:
-        """Download both golden-copy zips. The window is ignored: the golden
-        copy is a full snapshot and always supersedes any window."""
-        fetched_at = now_utc()
-        for url in _published_urls(fetch_bytes(PUBLICATIONS_URL, max_bytes=2 * 1024 * 1024)):
-            from limes.sources.bulk import zip_csv_artifact_records
+        """Every NRW LEI page. The window is ignored: each run is a snapshot."""
+        url: str | None = first_page_url()
+        seen: set[str] = set()
+        while url is not None:
+            if url in seen or len(seen) >= MAX_PAGES:
+                raise SourceFetchError("gleif: pagination cycle or page bound exceeded")
+            seen.add(url)
+            payload = fetch_bytes(url, max_bytes=MAX_PAGE_BYTES)
+            try:
+                links = json.loads(payload).get("links", {})
+            except ValueError as exc:
+                raise SourceFetchError(f"gleif: malformed API page: {exc}") from exc
+            yield RawRecord(
+                payload=payload, content_type=CONTENT_TYPE, source_url=url, fetched_at=now_utc()
+            )
+            url = _checked_next(links.get("next"))
 
-            yield from zip_csv_artifact_records(url, fetched_at)
-
-    def normalize(
-        self,
-        record: RawRecord,
-        *,
-        postal_lookup: Callable[[str, str], str | None] | None = None,
-    ) -> NormalizedRecord:
-        """A CSV chunk or legacy ZIP, routed by validated column headers.
-
-        `postal_lookup` resolves (country, postal code) to a NUTS code from
-        graph-resident reference data (C-07); the caller passes it when the
-        correspondence is available. A missing lookup or miss means no
-        `LOCATED_IN` — never guessed — counted and summarized once.
-        """
-        if (record.acquisition_context or {}).get("archive_only"):
-            return NormalizedRecord(content_hash=payload_hash(record.payload), kind="structured")
-        if record.content_type == "text/csv":
-            member, text = None, record.payload.decode("utf-8-sig")
-        else:
-            member, text = _read_zip(record)
-        if _RELATIONSHIP_CSV_MARKER in next(csv.reader(io.StringIO(text)), []):
-            normalized = self._normalize_relationships(text, record)
-        else:
-            normalized = self._normalize_entities(text, record, postal_lookup)
-        for assertion in normalized.assertions:
-            assertion.provenance.evidence_member = member
-        return normalized
-
-    def _normalize_entities(
-        self,
-        text: str,
-        record: RawRecord,
-        postal_lookup: Callable[[str, str], str | None] | None,
-    ) -> NormalizedRecord:
-        rows = _csv_rows(text, *_ENTITY_CSV_MARKERS)
+    def normalize(self, record: RawRecord) -> NormalizedRecord:
+        try:
+            document = json.loads(record.payload)
+            rows: list[dict[str, Any]] = document["data"]
+        except (ValueError, KeyError, TypeError) as exc:
+            raise SourceParseError(f"gleif: malformed API page: {exc}") from exc
         assertions: list[Assertion] = []
         entities: list[EntityEndpoint] = []
-        inactive = 0
-        malformed = 0
-        no_hq = 0
-        missing_regions = 0
+        inactive = malformed = 0
+        postcodes = postcode_table()
         for row in rows:
-            lei = (row.get("LEI") or "").strip()
-            if not lei:
+            lei = str(row.get("id") or "")
+            entity = (row.get("attributes") or {}).get("entity") or {}
+            if not _LEI_PATTERN.fullmatch(lei) or not entity:
                 malformed += 1
-                logger.warning("gleif: entity row without LEI skipped", row=row)
                 continue
-            status = (row.get("Entity.EntityStatus") or "").strip()
-            if status != _ACTIVE_STATUS:
+            if entity.get("status") != _ACTIVE_STATUS:
                 inactive += 1
-                logger.warning("gleif: non-ACTIVE entity skipped", lei=lei, status=status)
                 continue
-            legal_name = (row.get("Entity.LegalName") or "").strip() or lei
-            corporation = _corporation(lei, legal_name)
-            country = (row.get("Entity.HeadquartersAddress.Country") or "").strip()
-            postal = (row.get("Entity.HeadquartersAddress.PostalCode") or "").strip()
-            city = (row.get("Entity.HeadquartersAddress.City") or "").strip()
-            if not country or not postal:
-                no_hq += 1
+            name = ((entity.get("legalName") or {}).get("name") or "").strip() or lei
+            corporation = _corporation(lei, name)
+            emitted = False
+            hq = entity.get("headquartersAddress") or {}
+            country = (hq.get("country") or "").strip()
+            postal = (hq.get("postalCode") or "").strip()
+            city = (hq.get("city") or "").strip()
+            if country and postal:
+                location = address_location(country, postal, city)
+                assertions.append(make_assertion(self, record, corporation,
+                                                 "HEADQUARTERED_IN", location))
+                emitted = True
+                nuts = postcodes.get(postal) if country == "DE" else None
+                if nuts:
+                    region = EntityEndpoint(
+                        entity_id=key_entity_id(("nuts_code", nuts)),
+                        type="AdministrativeRegion",
+                        label=nuts,
+                        deterministic_key=("nuts_code", nuts),
+                    )
+                    assertions.append(make_assertion(self, record, location, "LOCATED_IN", region))
+            for name_, relation in _PARENTS.items():
+                ref = ((row.get("relationships") or {}).get(name_) or {}).get("data") or {}
+                parent = str(ref.get("id") or "")
+                if ref.get("type") != "lei-records":
+                    continue  # Reporting exception: the entity reports no such parent.
+                if not _LEI_PATTERN.fullmatch(parent):
+                    malformed += 1
+                    continue
+                assertions.append(make_assertion(
+                    self, record, corporation, relation, _corporation(parent, parent)))
+                emitted = True
+            if not emitted:
                 entities.append(corporation)
-                continue
-            location = address_location(country, postal, city)
-            assertions.append(
-                make_assertion(
-                    self,
-                    record,
-                    corporation,
-                    "HEADQUARTERED_IN",
-                    location,
-                    valid_from=record.fetched_at,
-                )
-            )
-            if postal_lookup is None:
-                missing_regions += 1
-                continue
-            nuts = postal_lookup(country, postal)
-            if not nuts:
-                missing_regions += 1
-                continue
-            region = EntityEndpoint(
-                entity_id=key_entity_id(("nuts_code", nuts)),
-                type="AdministrativeRegion",
-                label=nuts,
-                deterministic_key=("nuts_code", nuts),
-            )
-            assertions.append(
-                make_assertion(
-                    self, record, location, "LOCATED_IN", region, valid_from=record.fetched_at
-                )
-            )
-        if missing_regions:
-            logger.info(
-                "gisco correspondence missing for N addresses; region unassigned",
-                addresses=missing_regions,
-                source_id=self.source_id,
-            )
+        for assertion in assertions:
+            assertion.provenance.source_url = record.source_url
         logger.info(
-            "gleif: entity file normalized",
-            rows=len(rows),
-            corporations=len(rows) - malformed - inactive,
+            "gleif: API page normalized",
+            records=len(rows),
+            assertions=len(assertions),
+            standalone=len(entities),
             inactive_skipped=inactive,
-            malformed_skipped=malformed,
-            standalone_entities=len(entities),
-            missing_regions=missing_regions,
-            source_id=self.source_id,
+            malformed=malformed,
         )
         return NormalizedRecord(
             content_hash=payload_hash(record.payload),
@@ -223,219 +187,6 @@ class GleifAdapter:
             errors=malformed,
         )
 
-    def _normalize_relationships(self, text: str, record: RawRecord) -> NormalizedRecord:
-        rows = _csv_rows(text, _RELATIONSHIP_CSV_MARKER)
-        if "Relationship.StartNode.NodeID" in rows[0]:
-            return self._normalize_current_relationships(rows, record)
-        assertions: list[Assertion] = []
-        subsidiary = 0
-        ownership = 0
-        other_types = 0
-        unmaterializable = 0
-        date_fallback = 0
-        unparseable_pct = 0
-        for row in rows:
-            record_id = row.get("Relationship.RecordID") or ""
-            rel_type = (row.get("Relationship.RelationshipType") or "").strip()
-            if rel_type != _SUBSIDIARY_TYPE:
-                other_types += 1
-                logger.warning(
-                    "gleif: non-subsidiary relationship skipped",
-                    record_id=record_id,
-                    relationship_type=rel_type,
-                )
-                continue
-            start_lei = (row.get("Relationship.StartNodeID") or "").strip()
-            end_lei = (row.get("Relationship.EndNodeID") or "").strip()
-            if not (_LEI_PATTERN.fullmatch(start_lei) and _LEI_PATTERN.fullmatch(end_lei)):
-                unmaterializable += 1
-                logger.warning(
-                    "gleif: relationship endpoint LEI cannot be materialized; skipped",
-                    record_id=record_id,
-                    start_node=start_lei,
-                    end_node=end_lei,
-                )
-                continue
-            raw_start = (row.get("Relationship.Periods.StartDate") or "").strip()
-            valid_from = _parse_period_start(raw_start) if raw_start else None
-            if raw_start and valid_from is None:
-                date_fallback += 1
-                logger.warning(
-                    "gleif: unparseable period start date; falling back to fetch time",
-                    record_id=record_id,
-                    raw=raw_start,
-                )
-            valid_from = valid_from or record.fetched_at
-            subsidiary_corp = _corporation(start_lei, start_lei)
-            parent_corp = _corporation(end_lei, end_lei)
-            assertions.append(
-                make_assertion(
-                    self,
-                    record,
-                    subsidiary_corp,
-                    "SUBSIDIARY_OF",
-                    parent_corp,
-                    valid_from=valid_from,
-                )
-            )
-            subsidiary += 1
-            raw_pct = (row.get("Relationship.Ownership.DirectPercentage") or "").strip()
-            if raw_pct:
-                try:
-                    pct = float(raw_pct)
-                except ValueError:
-                    unparseable_pct += 1
-                    logger.warning(
-                        "gleif: unparseable direct percentage; no ownership assertion",
-                        record_id=record_id,
-                        raw=raw_pct,
-                    )
-                else:
-                    if pct > 0:
-                        assertions.append(
-                            make_assertion(
-                                self,
-                                record,
-                                parent_corp,
-                                "OWNS_STAKE_IN",
-                                subsidiary_corp,
-                                valid_from=valid_from,
-                            )
-                        )
-                        ownership += 1
-        logger.info(
-            "gleif: relationship file normalized",
-            rows=len(rows),
-            subsidiary_assertions=subsidiary,
-            ownership_assertions=ownership,
-            other_types_skipped=other_types,
-            unmaterializable_skipped=unmaterializable,
-            date_fallback=date_fallback,
-            unparseable_percentages=unparseable_pct,
-            source_id=self.source_id,
-        )
-        return NormalizedRecord(
-            content_hash=payload_hash(record.payload),
-            kind="structured",
-            assertions=assertions,
-            errors=unmaterializable,
-        )
-
-    def _normalize_current_relationships(
-        self, rows: list[dict[str, str]], record: RawRecord
-    ) -> NormalizedRecord:
-        mapping = {
-            "IS_DIRECTLY_CONSOLIDATED_BY": "DIRECTLY_CONSOLIDATED_BY",
-            "IS_ULTIMATELY_CONSOLIDATED_BY": "ULTIMATELY_CONSOLIDATED_BY",
-        }
-        assertions: list[Assertion] = []
-        errors = 0
-        unsupported: Counter[str] = Counter()
-        for ordinal, row in enumerate(rows, 1):
-            relation = mapping.get(row.get("Relationship.RelationshipType", ""))
-            if relation is None:
-                unsupported[row.get("Relationship.RelationshipType", "unknown")] += 1
-                continue  # Fund-management relationships have different semantics.
-            start = row.get("Relationship.StartNode.NodeID", "").strip()
-            end = row.get("Relationship.EndNode.NodeID", "").strip()
-            if not (_LEI_PATTERN.fullmatch(start) and _LEI_PATTERN.fullmatch(end)):
-                errors += 1
-                continue
-            periods = [
-                n
-                for n in range(1, 6)
-                if row.get(f"Relationship.Period.{n}.periodType") == "RELATIONSHIP_PERIOD"
-            ]
-            if len(periods) > 1:
-                errors += 1
-                continue  # Do not choose among conflicting relationship intervals.
-            n = periods[0] if periods else 1
-            prefix = f"Relationship.Period.{n}."
-            raw_start = row.get(prefix + "startDate", "") if periods else ""
-            raw_end = row.get(prefix + "endDate", "") if periods else ""
-            valid_from = _parse_period_start(raw_start) if raw_start else record.fetched_at
-            valid_to = _parse_period_start(raw_end) if raw_end else None
-            if (
-                valid_from is None
-                or (raw_end and valid_to is None)
-                or (valid_to is not None and valid_to < valid_from)
-            ):
-                errors += 1
-                continue
-            if row.get("Relationship.RelationshipStatus") != "ACTIVE" and valid_to is None:
-                continue  # Inactive without an end date cannot assert current consolidation.
-            assertion = make_assertion(
-                self,
-                record,
-                _corporation(start, start),
-                relation,
-                _corporation(end, end),
-                valid_from=valid_from,
-                valid_to=valid_to,
-            )
-            assertion.provenance.evidence_row = ordinal
-            assertion.provenance.source_url = record.source_url
-            assertion.provenance.source_recorded_at = _parse_period_start(
-                row.get("Registration.LastUpdateDate", "")
-            )
-            assertions.append(assertion)
-        logger.info(
-            "gleif: current RR normalized",
-            rows=len(rows),
-            consolidation_assertions=len(assertions),
-            errors=errors,
-            unsupported_relationship_types=dict(unsupported),
-        )
-        return NormalizedRecord(
-            content_hash=payload_hash(record.payload),
-            kind="structured",
-            assertions=assertions,
-            errors=errors,
-        )
-
-
-def _read_zip(record: RawRecord) -> tuple[str, str]:
-    """The inner CSV member name and its decoded text; non-CSV members
-    (README, LICENSE) are ignored."""
-    try:
-        archive = zipfile.ZipFile(io.BytesIO(record.payload))
-    except zipfile.BadZipFile as exc:
-        raise SourceParseError(f"gleif: payload is not a zip archive: {exc}") from exc
-    members = [name for name in archive.namelist() if name.lower().endswith(".csv")]
-    if not members:
-        raise SourceParseError("gleif: zip contains no CSV member")
-    member = members[0]
-    if len(members) > 1:
-        logger.warning(
-            "gleif: zip has multiple CSV members; using the first",
-            member=member,
-        )
-    return member, archive.read(member).decode("utf-8-sig", errors="replace")
-
-
-def _csv_rows(text: str, *markers: str) -> list[dict[str, str]]:
-    """All non-empty rows of a GLEIF CSV, with the header validated against
-    the given column markers. A file whose header lacks the markers is not a
-    GLEIF file and is rejected whole."""
-    reader = csv.DictReader(io.StringIO(text))
-    if reader.fieldnames is None or not all(marker in reader.fieldnames for marker in markers):
-        first = text.splitlines()[0] if text else ""
-        raise SourceParseError(f"gleif: unrecognized CSV header ({first[:80]!r})")
-    rows = [row for row in reader if any((row.get(k) or "").strip() for k in row)]
-    if not rows:
-        raise SourceParseError("gleif: CSV file has no data rows")
-    return rows
-
-
-def _parse_period_start(raw: str) -> datetime | None:
-    """GLEIF period dates are `YYYY-MM-DD`; a bare date is treated as UTC
-    midnight so assertion ids stay timezone-stable."""
-    try:
-        parsed = datetime.fromisoformat(raw.replace("Z", "+00:00"))
-        return parsed.replace(tzinfo=UTC) if parsed.tzinfo is None else parsed.astimezone(UTC)
-    except ValueError:
-        return None
-
 
 def _corporation(lei: str, label: str) -> EntityEndpoint:
     return EntityEndpoint(
@@ -444,26 +195,3 @@ def _corporation(lei: str, label: str) -> EntityEndpoint:
         label=label,
         deterministic_key=("lei", lei),
     )
-
-
-def _published_urls(payload: bytes) -> tuple[str, str]:
-    """Resolve both full CSV archives from one official publication."""
-    try:
-        latest = json.loads(payload)["data"][0]
-        urls = [latest[kind]["full_file"]["csv"]["url"] for kind in ("lei2", "rr")]
-        for url in urls:
-            parts = urlsplit(url)
-            if (
-                parts.scheme != "https"
-                or parts.netloc != "goldencopy.gleif.org"
-                or not parts.path.startswith("/storage/golden-copy-files/")
-                or not parts.path.endswith(".csv.zip")
-                or parts.query
-                or parts.fragment
-            ):
-                raise ValueError("unexpected download URL")
-        return urls[0], urls[1]
-    except (ValueError, KeyError, IndexError, TypeError, AttributeError) as exc:
-        raise SourceFetchError(
-            "gleif: invalid publication catalog; expected full lei2/rr CSV URLs"
-        ) from exc

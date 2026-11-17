@@ -139,6 +139,7 @@ HOST_CONCURRENCY_OVERRIDES: dict[str, int] = {
     "webgate.ec.europa.eu": 1,
     "overpass": 1,  # matches any overpass host by substring
     "bundestag.de": 1,
+    "recht.nrw.de": 1,
 }
 
 # A user agent that names the project; several sources (FSD, GISCO) are picky
@@ -202,8 +203,9 @@ def topic_endpoint(vocabulary: str, code: str, *, label: str | None = None) -> E
     The ontology declares `[vocabulary, code]` as a Topic's identifying keys,
     but the loader stamps one key property; the vocabulary therefore rides in
     the `entity_id` while the deterministic key is the code alone. Every
-    adapter that emits topics (TED/CPV, EUR-Lex/EuroVoc, Gesetze im Internet/
-    Sachgebiet, OSM/KRITIS) must use this constructor — two vocabularies or
+    adapter that emits topics (TED/CPV, OSM/KRITIS, Transparency Register
+    interests; historically EUR-Lex/EuroVoc and Gesetze im Internet/Sachgebiet)
+    must use this constructor — two vocabularies or
     two code spellings for the same topic would fork the node.
     """
     return EntityEndpoint(
@@ -235,7 +237,7 @@ def address_location(country: str, postal: str, city: str) -> EntityEndpoint:
 def coordinate_location(lat: float, lon: float, *, label: str | None = None) -> EntityEndpoint:
     """A Location whose identity is the rounded-coordinate digest (D-13).
 
-    Shared by GDELT and OSM: five decimal places (~1 m) rounded before
+    Shared by OSM and Wikidata NRW (historically GDELT): five decimal places (~1 m) rounded before
     hashing, so re-readings of the same place converge on one node. The hash
     is identity, never geometry.
     """
@@ -311,7 +313,7 @@ def make_assertion(
     without a source-stated start date is valid from its fetch instant
     (`valid_from=None`), and `recorded_at` is the fetch instant — except for
     sources that publish their own vintage, which pass their dataset
-    publication date explicitly (`offeneregister`; the recorded_at-honesty
+    publication date explicitly (historically `offeneregister`; the recorded_at-honesty
     rule). `valid_to` stays `None` unless the source states an end date; a
     `valid_to` on a non-temporal relation is rejected downstream by the
     ontology validator.

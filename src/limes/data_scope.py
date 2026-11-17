@@ -3,9 +3,12 @@
 from datetime import UTC, datetime
 
 from limes.errors import SourceFetchError
+from limes.geo_scope import GEO_SCOPE_VERSION
 
 DATA_START = datetime(2020, 1, 1, tzinfo=UTC)
-DATA_SCOPE_VERSION = "source-evidence-from-2020-01-01-v1"
+# The geographic scope is part of the version (BE-59): Germany/EU journals and
+# completeness written under the previous scope never certify the NRW corpus.
+DATA_SCOPE_VERSION = f"source-evidence-from-2020-01-01-{GEO_SCOPE_VERSION}"
 
 
 def utc(value: datetime) -> datetime:

@@ -21,9 +21,10 @@ Non-obvious choices, each load-bearing:
   the postal-code correspondence (`postal_lookup`) is consulted only
   otherwise. A miss or an absent lookup leaves the region unassigned —
   counted and summarized once, never guessed.
-- Corpus acquisition uses monthly/daily XML packages from January 2020.
-  Original compressed artifacts and member identities remain archived;
-  the individual Search API/rendering path is explicit repair tooling only.
+- BE-59: acquisition selects Nordrhein-Westfalen at the source through the
+  Search API (`ted_search`), in monthly windows from January 2020, and reads
+  notices from its structured fields. This module's XML normalization remains
+  for archived notice evidence from earlier acquisition.
 - A contractor's VAT, postal code, town, and country are read by no path:
   no ontology relation consumes them and the loader stamps no arbitrary
   properties. Only the name and, when present, the LEI drive identity.
@@ -32,7 +33,6 @@ Non-obvious choices, each load-bearing:
 from __future__ import annotations
 
 import hashlib
-import json
 import re
 from collections.abc import Callable, Iterator
 from datetime import UTC, datetime, timedelta
@@ -41,12 +41,10 @@ from typing import Literal
 import structlog
 from lxml import etree  # type: ignore[import-untyped]
 
-from limes.data_scope import DATA_START, scoped_window
-from limes.errors import SourceFetchError, SourceParseError
+from limes.data_scope import scoped_window
+from limes.errors import SourceParseError
 from limes.sources.base import (
     address_location,
-    fetch_bytes,
-    fetch_bytes_post,
     hash_entity_id,
     key_entity_id,
     make_assertion,
@@ -63,15 +61,8 @@ from limes.types import (
 
 logger = structlog.get_logger(__name__)
 
-SEARCH_URL = "https://api.ted.europa.eu/v3/notices/search"
-
-# Per-page bound for the explicit individual-notice repair path.
-FETCH_LIMIT = 50
 
 NOTICE_CONTENT_TYPE = "application/xml"
-CORPUS_START = DATA_START
-MONTHLY_URL = "https://ted.europa.eu/packages/monthly/{year}-{month}"
-DAILY_URL = "https://ted.europa.eu/packages/daily/{year}{issue:05d}"
 
 
 class TedAdapter:
@@ -86,84 +77,11 @@ class TedAdapter:
     full_initial_load: bool = True
 
     def fetch(self, since: datetime | None, until: datetime | None) -> Iterator[RawRecord]:
-        """Acquire the XML corpus using monthly/daily packages, never notice GETs."""
-        from limes.sources.ted_bulk import fetch_packages
+        """NRW result notices from the Search API, one record per page (BE-59)."""
+        from limes.sources.ted_search import fetch_nrw
 
         since, until = scoped_window(since, until)
-        yield from fetch_packages(since, until or now_utc())
-
-    def fetch_individual(
-        self, since: datetime | None, until: datetime | None
-    ) -> Iterator[RawRecord]:
-        """Search for notices in the window, then GET each notice XML.
-
-        The window is compiled into the search query text as an ISO
-        publication-date range; without a window the query is a match-all
-        and the run is a full load. The notices are fetched sequentially
-        (politeness: zero concurrency against the source).
-        """
-        since, until = scoped_window(since, until)
-        body: dict[str, object] = {
-            "query": _build_query(since, until),
-            "limit": FETCH_LIMIT,
-            "fields": ["publication-number", "links"],
-            "paginationMode": "ITERATION",
-            "scope": "ALL", "onlyLatestVersions": False,
-        }
-        seen_tokens: set[str] = set()
-        seen_notices: set[str] = set()
-        expected: int | None = None
-        page = 0
-        while True:
-            search_payload = fetch_bytes_post(SEARCH_URL, body)
-            hits = _search_hits(search_payload)
-            if not hits and page == 0:
-                logger.info("ted: search returned no notices", source_id=self.source_id)
-            document = json.loads(search_payload)
-            if isinstance(document, dict):
-                count = document.get("totalNoticeCount")
-                if isinstance(count, int):
-                    expected = count if expected is None else expected
-                    if expected != count:
-                        raise SourceFetchError(
-                            "ted: search count changed during pagination; retry window"
-                        )
-            for notice_id, uri in hits:
-                publication = re.fullmatch(r"\d+-(\d{4})", notice_id)
-                if publication is not None and int(publication[1]) < DATA_START.year:
-                    raise SourceFetchError("ted: search returned a pre-2020 publication")
-                if notice_id in seen_notices:
-                    raise SourceFetchError(
-                        "ted: repeated notice during pagination; checkpoint unchanged"
-                    )
-                seen_notices.add(notice_id)
-                payload = fetch_bytes(uri, max_bytes=16 * 1024 * 1024)
-                yield RawRecord(
-                    payload=payload,
-                    content_type=NOTICE_CONTENT_TYPE,
-                    source_url=uri,
-                    fetched_at=now_utc(),
-                    acquisition_context={
-                        "requested_notice_id": notice_id,
-                        "search_request": dict(body),
-                        "search_response": search_payload.decode(),
-                        "search_page": page + 1,
-                    },
-                )
-            if expected is not None and len(seen_notices) == expected:
-                return
-            token = document.get("iterationNextToken") if isinstance(document, dict) else None
-            if not token:
-                if expected is not None and len(seen_notices) != expected:
-                    raise SourceFetchError("ted: incomplete search; checkpoint unchanged")
-                return
-            if not isinstance(token, str) or token in seen_tokens or not hits:
-                raise SourceFetchError(
-                    "ted: invalid or repeated iteration token; checkpoint unchanged"
-                )
-            seen_tokens.add(token)
-            body["iterationNextToken"] = token
-            page += 1
+        yield from fetch_nrw(self, since, until or now_utc())
 
     def bound_ingest_window(self, since: datetime, until: datetime) -> datetime:
         """Catch up in daily checkpointed requests; explicit windows remain operator-selected."""
@@ -184,6 +102,10 @@ class TedAdapter:
         skipped and counted; a notice without a buyer still normalizes the
         contract.
         """
+        if record.content_type.startswith("application/json"):
+            from limes.sources.ted_search import normalize_page
+
+            return normalize_page(self, record)
         try:
             root = etree.fromstring(record.payload)
         except (etree.XMLSyntaxError, ValueError) as exc:
@@ -401,55 +323,6 @@ class TedAdapter:
             assertions=assertions,
             entities=[] if contract_involved else [contract],
         )
-
-
-def _build_query(since: datetime | None, until: datetime | None) -> str:
-    """The search query text: an ISO publication-date range compiled from
-    the window, or a match-all for a full load."""
-    if since is None and until is None:
-        return "*"
-    clauses = []
-    if since is not None:
-        clauses.append(f"PD >= {since:%Y%m%d}")
-    if until is not None:
-        clauses.append(f"PD <= {until:%Y%m%d}")
-    return " AND ".join(clauses)
-
-
-def _search_hits(payload: bytes) -> list[tuple[str, str]]:
-    """The (notice id, notice uri) pairs in a search response; hits missing
-    either field are skipped and counted, never dropped."""
-    try:
-        data = json.loads(payload.decode("utf-8"))
-    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
-        raise SourceParseError(f"ted: search response is not valid JSON: {exc}") from exc
-    if isinstance(data, dict) and data.get("timedOut"):
-        raise SourceFetchError("ted: search timed out; retry a narrower window")
-    results = data.get("notices", data.get("results")) if isinstance(data, dict) else data
-    if not isinstance(results, list):
-        raise SourceParseError("ted: search response has no results list")
-    hits: list[tuple[str, str]] = []
-    malformed = 0
-    for item in results:
-        if not isinstance(item, dict):
-            malformed += 1
-            continue
-        notice_id = item.get("publication-number", item.get("id"))
-        links = item.get("links", {})
-        xml = links.get("xml", {}) if isinstance(links, dict) else {}
-        uri = xml.get("MUL", item.get("uri")) if isinstance(xml, dict) else item.get("uri")
-        if not isinstance(notice_id, str) or not notice_id.strip():
-            malformed += 1
-            continue
-        if not isinstance(uri, str) or not uri.strip():
-            malformed += 1
-            continue
-        hits.append((notice_id.strip(), uri.strip()))
-    if malformed:
-        if isinstance(data, dict) and "notices" in data:
-            raise SourceFetchError("ted: malformed current search hit; checkpoint unchanged")
-        logger.warning("ted: search hits without id or uri skipped", skipped=malformed)
-    return hits
 
 
 def _descendants(element: etree._Element, name: str) -> list[etree._Element]:

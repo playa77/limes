@@ -10,11 +10,11 @@
       "retrieved_at": "2026-11-07T17:53:15.415992+00:00"
     },
     {
-      "url": "https://www.bundestag.de/ajax/filterlist/de/abgeordnete/biografien/1040594-1040594?all=true",
-      "final_url": "https://www.bundestag.de/ajax/filterlist/de/abgeordnete/biografien/1040594-1040594?all=true",
-      "file": "9156ddfdcc0162e4aa28a1a1fae92fc4dd9cb120f4e55c474f1bce7778351dbc.gz",
-      "sha256": "9156ddfdcc0162e4aa28a1a1fae92fc4dd9cb120f4e55c474f1bce7778351dbc",
-      "retrieved_at": "2026-11-07T17:53:20.157678+00:00"
+      "url": "https://www.bundestag.de/ajax/filterlist/de/abgeordnete/biografien/1040594-1040594?all=true&subjecttaxonomy=440452%2314150",
+      "final_url": "https://www.bundestag.de/ajax/filterlist/de/abgeordnete/biografien/1040594-1040594?all=true&subjecttaxonomy=440452%2314150",
+      "file": "09eab00eeb8510ff3aad0bf910fda011f516eb22efdad9d74e03e658aab97fd2.gz",
+      "sha256": "09eab00eeb8510ff3aad0bf910fda011f516eb22efdad9d74e03e658aab97fd2",
+      "retrieved_at": "2026-11-17T12:24:00+00:00"
     },
     {
       "url": "https://www.bundestag.de/abgeordnete/biografien/ausgeschiedene",
@@ -144,5 +144,6 @@
   "profile_conflicts": [],
   "check_basis": "official_directory_set",
   "source_updates": [],
-  "qualified_term": "21"
+  "qualified_term": "21",
+  "note": "BE-59: roster endpoint captured with the official Bundesland facet for Nordrhein-Westfalen (2026-11-17)."
 }

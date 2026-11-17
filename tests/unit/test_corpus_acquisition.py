@@ -1,7 +1,5 @@
 """Recovery and real corpus shapes; network is always mocked in tests."""
 
-import io
-import tarfile
 from datetime import UTC, datetime
 
 import httpx
@@ -13,91 +11,10 @@ from limes.errors import SourceFetchError, SourceRunBudgetExceeded
 from limes.sources.acquisition import AcquisitionStore
 from limes.sources.base import fetch_bytes, now_utc, source_run_scope
 from limes.sources.fsd import FsdAdapter
-from limes.sources.ted import SEARCH_URL, TedAdapter
-from limes.sources.ted_bulk import fetch_packages, package_urls
+from limes.sources.ted import TedAdapter
 from limes.types import RawRecord
 
 NOW = datetime(2026, 11, 10, tzinfo=UTC)
-
-
-def _tar(*members):
-    output = io.BytesIO()
-    with tarfile.open(fileobj=output, mode="w:gz") as archive:
-        for name, payload in members:
-            member = tarfile.TarInfo(name)
-            member.size = len(payload)
-            archive.addfile(member, io.BytesIO(payload))
-    return output.getvalue()
-
-
-def test_scoped_backfill_uses_72_monthly_packages_without_notice_or_search_requests():
-    with respx.mock:
-        urls = list(package_urls(datetime(2020, 1, 1, tzinfo=UTC),
-                                 datetime(2025, 12, 31, tzinfo=UTC)))
-    assert len(urls) == 72
-    assert urls[0] == "https://ted.europa.eu/packages/monthly/2020-1"
-    assert urls[-1] == "https://ted.europa.eu/packages/monthly/2025-12"
-
-
-def test_daily_discovery_uses_one_search_and_one_package_for_all_notices(tmp_path):
-    archive = ArchiveStore(tmp_path / "archive")
-    store = AcquisitionStore(archive, tmp_path / "progress")
-    url = "https://ted.europa.eu/packages/daily/202600001"
-    payload = _tar(("edition/00000001_2026.xml", b"<notice/>"),
-                   ("edition/00000002_2026.xml", b"<notice id='2'/>"))
-    with respx.mock:
-        search = respx.post(SEARCH_URL).respond(200, json={
-            "totalNoticeCount": 2, "notices": [{"ojs-number": "1/2026"}]
-        })
-        download = respx.get(url).respond(200, content=payload)
-        with store.session("ted", {}, "v1") as acquisition:
-            records = list(fetch_packages(datetime(2026, 1, 2, tzinfo=UTC),
-                                          datetime(2026, 1, 2, tzinfo=UTC)))
-            assert len(records) == 2
-            assert search.call_count == download.call_count == 1
-            digest = records[0].acquisition_context["source_archive_hash"]
-            assert archive.get(digest) == payload
-            assert [r.acquisition_context["requested_notice_id"] for r in records] == [
-                "1-2026", "2-2026"
-            ]
-            replayed = list(fetch_packages(datetime(2026, 1, 2, tzinfo=UTC),
-                                            datetime(2026, 1, 2, tzinfo=UTC)))
-            assert replayed == records  # original payloads AND response observation timestamps
-            for raw in records:
-                acquisition.acknowledge(raw)
-            acquisition.finish_unit(url, [acquisition.record_key(raw) for raw in records])
-        # A completed package is skipped without even decompressing it on restart.
-        with store.session("ted", {}, "v1"):
-            assert list(fetch_packages(datetime(2026, 1, 2, tzinfo=UTC),
-                                       datetime(2026, 1, 2, tzinfo=UTC))) == []
-        assert search.call_count == download.call_count == 1
-
-
-def test_historical_monthly_package_contains_nested_daily_archives():
-    payload = _tar(("2020-01-04.tar.gz", _tar(("20200104_001/000036_2020.xml", b"<notice/>"))))
-    with respx.mock:
-        respx.get("https://ted.europa.eu/packages/monthly/2020-1").respond(200, content=payload)
-        records = list(fetch_packages(datetime(2020, 1, 1, tzinfo=UTC),
-                                      datetime(2020, 1, 31, tzinfo=UTC)))
-    assert len(records) == 1
-    assert records[0].acquisition_context["source_member"] == (
-        "2020-01-04.tar.gz!/20200104_001/000036_2020.xml"
-    )
-
-
-@pytest.mark.parametrize("payload", [
-    _tar(("../00000001_2026.xml", b"<x/>")),
-    _tar(("00000001_2026.xml", b"<x/>"), ("00000001_2026.xml", b"<x/>")),
-    _tar(("readme.txt", b"not a corpus")),
-    b"<html>blocked</html>",
-    _tar(("00000001_2026.xml", b"<x/>"))[:-8],
-])
-def test_invalid_or_truncated_package_never_certifies_completion(payload):
-    with respx.mock:
-        respx.get("https://ted.europa.eu/packages/monthly/2020-1").respond(200, content=payload)
-        with pytest.raises(SourceFetchError):
-            list(fetch_packages(datetime(2020, 1, 1, tzinfo=UTC),
-                                datetime(2020, 1, 31, tzinfo=UTC)))
 
 
 def test_window_network_cache_and_versioned_load_receipts_survive_reopening(tmp_path):
@@ -162,6 +79,7 @@ def test_current_fsd_export_is_namespace_aware_and_uses_source_generation_date()
         <regulation numberTitle="1210/2003 (OJ L169)" programme="IRQ"/>
         <subjectType classificationCode="P"/>
         <nameAlias wholeName="Example Person" strong="true"/>
+        <address countryIso2Code="DE" zipCode="50667" city="Koeln"/>
       </sanctionEntity></export>'''
     raw = RawRecord(payload=payload, content_type="application/xml", fetched_at=NOW)
     result = FsdAdapter().normalize(raw)
@@ -191,44 +109,6 @@ def test_historical_ted_identity_country_title_and_publication_date():
         datetime(2023, 1, 2, tzinfo=UTC)
     }
     assert any(a.relation == "HEADQUARTERED_IN" for a in result.assertions)
-
-
-def test_eurlex_can_cross_the_previous_40_page_ceiling(monkeypatch):
-    import json
-
-    from limes.sources import eurlex
-
-    monkeypatch.setattr(eurlex, "PAGE_SIZE", 1)
-    count = 0
-
-    def response(url, **kwargs):
-        nonlocal count
-        count += 1
-        return json.dumps({"results": {"bindings": [{"celex": {"value": str(count)}}]
-                                      if count <= 45 else []}}).encode()
-
-    monkeypatch.setattr(eurlex, "fetch_bytes", response)
-    assert len(list(eurlex.EurlexAdapter().fetch(None, None))) == 46
-    assert count == 46
-
-
-def test_dip_can_cross_100_pages_and_retains_distinct_terminal_page(monkeypatch):
-    import json
-
-    from limes.sources import bundestag_dip
-
-    count = 0
-
-    def response(url, **kwargs):
-        nonlocal count
-        count += 1
-        return json.dumps({"documents": [{"id": str(count)}],
-                           "cursor": str(min(count, 104))}).encode()
-
-    monkeypatch.setattr(bundestag_dip, "fetch_bytes", response)
-    assert len(list(bundestag_dip.BundestagDipAdapter().fetch(None, None))) == 105
-    assert count == 105
-
 
 def test_invalid_payload_refreshes_without_losing_archived_evidence(tmp_path):
     archive = ArchiveStore(tmp_path / "archive")
@@ -280,20 +160,6 @@ def test_transparency_current_export_has_bounded_chunks_and_original_evidence():
     assert records[0].payload == payload and records[0].acquisition_context["archive_only"]
     assert [len(adapter.normalize(raw).entities) for raw in records[1:]] == [250, 1]
 
-
-def test_gdelt_explicit_multiday_window_requires_and_uses_durable_context(tmp_path, monkeypatch):
-    from datetime import timedelta
-
-    from limes.sources import gdelt
-
-    calls = []
-    monkeypatch.setattr(gdelt, "fetch_bytes", lambda url, **kwargs: (calls.append(url) or b"zip"))
-    store = AcquisitionStore(ArchiveStore(tmp_path / "archive"), tmp_path / "progress")
-    with store.session("gdelt", {}, "v1"):
-        records = list(gdelt.GdeltAdapter().fetch(NOW, NOW + timedelta(days=1)))
-    assert len(records) == len(calls) == 97
-
-
 def test_changed_package_cannot_complete_with_equally_many_obsolete_receipts(tmp_path):
     store = AcquisitionStore(ArchiveStore(tmp_path / "archive"), tmp_path / "progress")
     with store.session("ted", {}, "v1") as acquisition:
@@ -306,36 +172,3 @@ def test_changed_package_cannot_complete_with_equally_many_obsolete_receipts(tmp
         acquisition.acknowledge(corrected)
         acquisition.finish_unit("package", [acquisition.record_key(corrected)])
         assert acquisition.unit_loaded("package")
-
-
-def test_empty_historical_search_uses_monthly_archive_and_filters_publication_dates():
-    url = "https://ted.europa.eu/packages/monthly/2020-1"
-    payload = _tar(("20200104_001/000036_2020.xml",
-                    b"<TED_EXPORT><DATE_PUB>20200104</DATE_PUB></TED_EXPORT>"),
-                   ("20200105_002/000037_2020.xml",
-                    b"<TED_EXPORT><DATE_PUB>20200105</DATE_PUB></TED_EXPORT>"))
-    with respx.mock:
-        search = respx.post(SEARCH_URL).respond(200, json={
-            "totalNoticeCount": 0, "notices": []})
-        archive = respx.get(url).respond(200, content=payload)
-        records = list(fetch_packages(datetime(2020, 1, 4, tzinfo=UTC),
-                                      datetime(2020, 1, 4, tzinfo=UTC)))
-    assert search.call_count == archive.call_count == 1
-    assert len(records) == 1
-    assert records[0].acquisition_context["requested_notice_id"] == "36-2020"
-
-
-def test_empty_historical_weekend_is_checked_against_nonempty_archive():
-    payload = _tar(("20200104_001/000036_2020.xml",
-                    b"<TED_EXPORT><DATE_PUB>20200104</DATE_PUB></TED_EXPORT>"))
-    with respx.mock:
-        respx.post(SEARCH_URL).respond(200, json={"totalNoticeCount": 0, "notices": []})
-        respx.get("https://ted.europa.eu/packages/monthly/2020-1").respond(200, content=payload)
-        assert list(fetch_packages(datetime(2020, 1, 8, tzinfo=UTC),
-                                   datetime(2020, 1, 8, tzinfo=UTC))) == []
-
-
-def test_pre_scope_ted_package_request_is_rejected_before_network():
-    with respx.mock as network, pytest.raises(SourceFetchError, match="2020"):
-        list(package_urls(datetime(2019, 12, 1, tzinfo=UTC), NOW))
-    assert not network.calls

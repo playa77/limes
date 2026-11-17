@@ -4,21 +4,25 @@
 
 ## Source evidence scope
 
-Source acquisition starts **2020-01-01**, inclusive UTC.
-Every existing source remains required and enabled. Current snapshots retain older
-entities, relationships, internal observations and original dates; this boundary
-never clips validity intervals or query/as-of dates. Historical TED packages and
-GDELT export windows cannot start earlier. EUR-Lex/DIP observe complete current
-catalogues. OffeneRegister stays included with its original historical vintage.
-[Every-source scope and recovery policy](docs/SOURCE_DATA_SCOPE.md) governs receipts,
-scoped completeness and legacy reconciliation. No production data is purged or
+The product covers **Nordrhein-Westfalen** (NUTS `DEA`).
+Every source selects NRW at the source — a server-side filter or a request set
+that names only NRW objects — and never downloads a nationwide or EU-wide corpus
+to search it. Source acquisition starts **2020-01-01**,
+inclusive UTC. Current snapshots retain older entities, relationships, internal
+observations and original dates; this boundary never clips validity intervals or
+query/as-of dates. [NRW source dispositions](docs/NRW_SCOPE.md) govern which sources
+are retargeted, filtered, added or retired; the [time scope](docs/SOURCE_DATA_SCOPE.md)
+governs receipts and scoped completeness. No production data is purged or
 re-ingested by an implementation update.
 
-**An evidence-backed world model for German and European policy research.**
+**An evidence-backed world model of Nordrhein-Westfalen's companies, associations,
+public bodies, officeholders and infrastructure.**
 
-LIMES connects official registries, Wikipedia entity context, Yahoo Finance company
-and shareholder information, agency dispatches, curated reporting and coded event
-observations in a shared, queryable model of entities, relationships and change.
+LIMES connects official registries, procurement notices, parliamentary rosters,
+Wikipedia entity context, Yahoo Finance company and shareholder information and
+curated NRW reporting in a shared, queryable model of entities, relationships and
+change. It is a portfolio/demonstration project scoped to one German Land so the
+complete corpus stays acquirable and reproducible.
 It brings AI-assisted extraction,
 ontology-driven knowledge representation and visual investigation into one
 research platform, turning fragmented public information into a connected view
@@ -45,7 +49,7 @@ read-only queries.
   claim was valid from when it was recorded. Conflicting claims are preserved,
   keeping disagreement and evolving knowledge available for analysis.
 - **Keep the evidence within reach.** Provenance connects claims to their
-  immutable dispatch versions, text spans or coded export rows. Corrections and
+  immutable dispatch versions, text spans or source records. Corrections and
   syndication retain their lineage; copied reports do not become independent
   corroboration. A content-addressed archive remains the system of record.
   Hop-level coverage and diagnosis accompany empty results, helping researchers
@@ -72,12 +76,12 @@ status. Those records distinguish current artifacts, evidence gaps and open repa
 BE-46 adds revision-linked Wikipedia context and Yahoo Finance company,
 governance, shareholder and earnings/report observations with source-section
 evidence, unknown-data semantics and reviewed company/security/listing identity.
-Scope remains German and European policy; comprehensive
-EU-27 coverage is deferred to a possible later version.
+BE-59 narrows the product to Nordrhein-Westfalen; other Länder, federal-only and
+EU-wide corpora are outside its scope.
 
 ## Architecture and runtime
 
-<!-- limes-runtime: {"services":["api","neo4j","worker"],"api_publication":"127.0.0.1:8000:8000","database_published":false,"api_authentication":"bearer","desktop_credentials":"session-only","budget_enforcement":false,"service_user":"7474:7474","host_docker_socket":false,"operations_authentication":"operator-bearer","backup_transport":"private-http","job_replay":"manual","deployment":"immutable-image-ids","job_concurrency_default":4,"write_gate":true,"source_acquisition_start":"2020-01-01","all_sources_required":true} -->
+<!-- limes-runtime: {"services":["api","neo4j","worker"],"api_publication":"127.0.0.1:8000:8000","database_published":false,"api_authentication":"bearer","desktop_credentials":"session-only","budget_enforcement":false,"service_user":"7474:7474","host_docker_socket":false,"operations_authentication":"operator-bearer","backup_transport":"private-http","job_replay":"manual","deployment":"immutable-image-ids","job_concurrency_default":4,"write_gate":true,"source_acquisition_start":"2020-01-01","geographic_scope":"DEA"} -->
 
 | Runtime fact | Current contract |
 |---|---|
@@ -87,8 +91,8 @@ EU-27 coverage is deferred to a possible later version.
 | API authentication | Bearer token |
 | Desktop credentials | Session memory only |
 | Spending enforcement | None |
+| Geographic scope | Nordrhein-Westfalen (NUTS `DEA`) |
 | Source acquisition starts | 2020-01-01 (inclusive UTC) |
-| Required source set | All existing sources |
 | Service user | `7474:7474` |
 | Operations authentication | Separate operator bearer token |
 | Host Docker socket | Absent |
@@ -139,7 +143,7 @@ credential for desktop backup; a consumer token cannot submit operational jobs.
 # On the client; supply the operator token in the environment, never an argument.
 export LIMES_REMOTE_URL=https://your-api.example
 venv/bin/limes remote run ingest --source gleif
-venv/bin/limes remote run backfill --source gdelt --days 1
+venv/bin/limes remote run backfill --source feeds --days 1
 venv/bin/limes remote run backup
 venv/bin/limes remote status JOB_UUID --wait
 ```

@@ -11,8 +11,8 @@ from limes.graph.loader import load
 from limes.pipeline.run import RunSpec, execute_run
 from limes.public_offices.catalogue import BY_CODE
 from limes.public_offices.models import Member, Snapshot
+from limes.public_offices.normalization import bundestag_office
 from limes.resolution.resolve import RunContext
-from limes.sources.bundestag_dip import _office, _period_start
 from limes.sources.public_offices import PublicOfficesAdapter
 from limes.sources.registry import SourceRegistry
 from limes.types import RawRecord
@@ -97,7 +97,7 @@ def test_dip_migration_replay_preserves_ids_other_sources_and_rollback(
 ):
     ontology = load_ontology_artifact()
     person = endpoint("old-canonical", "Person", "Ada Müller", ("bundestag_id", "42"))
-    office = _office(21, _period_start(21)).model_copy(
+    office = bundestag_office(21).model_copy(
         update={"deterministic_key": ("body_id", "BT"), "properties": {}}
     )
     party = endpoint("legacy-party", "PoliticalParty", "CDU/CSU")
@@ -177,8 +177,8 @@ def test_current_asof_belief_replacement_reentry_and_missing_scopes(
     )
     with make_api_client(neo4j_instance, tmp_path) as client:
         current = client.get("/public-offices").json()
-        assert len(current["scopes"]) == 21
-        assert sum(s["status"] == "missing" for s in current["scopes"]) == 20
+        assert len(current["scopes"]) == len(BY_CODE) == 3  # nw, bt, br (BE-59)
+        assert sum(s["status"] == "missing" for s in current["scopes"]) == len(BY_CODE) - 1
         assert current["members"][0]["service_start"].startswith("2026-11-03")
         historical = client.get(
             "/public-offices", params={"scope": "bt", "as_of": T2.isoformat()}
@@ -239,7 +239,7 @@ def test_company_person_name_only_candidate_stays_unresolved_and_scoped_ids_do_n
     corporation = endpoint("company", "Corporation", "Company")
     load(graph, [assertion("director", existing, "DIRECTOR_OF", corporation)], ontology)
     ingest(graph, neo4j_instance, tmp_path, monkeypatch, [member()], scope="bt")
-    ingest(graph, neo4j_instance, tmp_path, monkeypatch, [member()], scope="be")
+    ingest(graph, neo4j_instance, tmp_path, monkeypatch, [member()], scope="nw")
     with make_api_client(neo4j_instance, tmp_path) as client:
         data = client.get("/public-offices").json()
     bt = next(s for s in data["scopes"] if s["scope"] == "bt")

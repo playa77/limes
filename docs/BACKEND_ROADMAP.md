@@ -1,5 +1,18 @@
 # Backend work-package roadmap
 
+### BE-59 — Nordrhein-Westfalen rescope (2026-11-17)
+
+[Full package contract](NRW_SCOPE.md), branch `claude/gracious-sagan-hfh9fq`, live
+base `846ef04e6a13`, decisions D-107/D-108. The product narrows from Germany and
+the EU to Nordrhein-Westfalen; time window, entity and relation types unchanged.
+Every retained source selects NRW at the source. EUR-Lex, GDELT, OffeneRegister,
+Gesetze im Internet, Bundestag DIP and 18 non-NRW roster scopes are retired;
+`wikidata_nrw` and `recht_nrw` (NRW state law through an interface built on the
+portal's public pages) are added. Implementation acceptance N1–N7 and its limits are in
+[VERIFICATION](VERIFICATION.md): graph-backed integration/acceptance lanes were
+not executable without Docker locally and passed in PR CI (OI-38 closed). OI-37 is closed by `recht_nrw`. No production ingestion, purge or deployed
+graph reconciliation is part of this package.
+
 ### BE-58 — Source acquisition from 2020 (2026-11-12)
 
 [Full package contract](SOURCE_DATA_SCOPE.md), branch
@@ -78,16 +91,16 @@ ledger entries. Current code, tests and explicit issues govern status.
 | BE-09 | WP-09: Sources/normalizer | `416de56` | [registry.py](../src/limes/sources/registry.py) | [verification source](../tests/unit/test_source_registry.py) | H — implementation and relevant tests present; no specific open defect found in this audit; full current acceptance remains unclaimed (BE-45).  |
 | BE-10 | WP-10: GISCO/NUTS | `beaa26c` | [gisco_nuts.py](../src/limes/sources/gisco_nuts.py) | [verification source](../tests/unit/test_gisco_nuts_adapter.py) | H — fixture/postcode coverage; real acquisition qualification remains BE-45. |
 | BE-11 | WP-11: GLEIF | `f4ad3c8` | [gleif.py](../src/limes/sources/gleif.py) | [verification source](../tests/unit/test_gleif_adapter.py) | H — implementation and relevant tests present; no specific open defect found in this audit; full current acceptance remains unclaimed (BE-45).  |
-| BE-12 | WP-12: EUR-Lex | `f4ad3c8` | [eurlex.py](../src/limes/sources/eurlex.py) | [verification source](../tests/unit/test_eurlex_adapter.py) | H — implementation and relevant tests present; no specific open defect found in this audit; full current acceptance remains unclaimed (BE-45).  |
+| BE-12 | WP-12: EUR-Lex | `f4ad3c8` | `eurlex.py` (retired by BE-59; in Git history) | `test_eurlex_adapter.py` (retired by BE-59) | H — implementation and relevant tests present; no specific open defect found in this audit; full current acceptance remains unclaimed (BE-45).  |
 | BE-13 | WP-13: FSD | `f4ad3c8` | [fsd.py](../src/limes/sources/fsd.py) | [verification source](../tests/unit/test_fsd_adapter.py) | H — implementation and relevant tests present; no specific open defect found in this audit; full current acceptance remains unclaimed (BE-45).  |
 | BE-14 | WP-14: TED | `0ddacbc` | [ted.py](../src/limes/sources/ted.py) | [verification source](../tests/unit/test_ted_adapter.py) | H — implementation and relevant tests present; no specific open defect found in this audit; full current acceptance remains unclaimed (BE-45).  |
 | BE-15 | WP-15: Transparency Register | `0ddacbc` | [transparency_register.py](../src/limes/sources/transparency_register.py) | [verification source](../tests/unit/test_transparency_register_adapter.py) | H — implementation and relevant tests present; no specific open defect found in this audit; full current acceptance remains unclaimed (BE-45).  |
-| BE-16 | WP-16: Bundestag DIP | `0ddacbc` | [bundestag_dip.py](../src/limes/sources/bundestag_dip.py) | [verification source](../tests/unit/test_bundestag_dip_adapter.py) | H — implementation and relevant tests present; no specific open defect found in this audit; full current acceptance remains unclaimed (BE-45).  |
-| BE-17 | WP-17: Gesetze im Internet | `6cf853c` | [gesetze_im_internet.py](../src/limes/sources/gesetze_im_internet.py) | [verification source](../tests/unit/test_gesetze_im_internet_adapter.py) | H — implementation and relevant tests present; no specific open defect found in this audit; full current acceptance remains unclaimed (BE-45).  |
+| BE-16 | WP-16: Bundestag DIP | `0ddacbc` | `bundestag_dip.py` (retired by BE-59; in Git history) | `test_bundestag_dip_adapter.py` (retired by BE-59) | H — implementation and relevant tests present; no specific open defect found in this audit; full current acceptance remains unclaimed (BE-45).  |
+| BE-17 | WP-17: Gesetze im Internet | `6cf853c` | `gesetze_im_internet.py` (retired by BE-59; in Git history) | `test_gesetze_im_internet_adapter.py` (retired by BE-59) | H — implementation and relevant tests present; no specific open defect found in this audit; full current acceptance remains unclaimed (BE-45).  |
 | BE-18 | WP-18: Wikidata | `6cf853c` | [wikidata.py](../src/limes/sources/wikidata.py) | [verification source](../tests/unit/test_wikidata_adapter.py) | H — implementation and relevant tests present; no specific open defect found in this audit; full current acceptance remains unclaimed (BE-45).  |
 | BE-19 | WP-19: OSM | `6cf853c` | [osm.py](../src/limes/sources/osm.py) | [verification source](../tests/unit/test_osm_adapter.py) | H — implementation and relevant tests present; no specific open defect found in this audit; full current acceptance remains unclaimed (BE-45).  |
-| BE-20 | WP-20: OffeneRegister | `085e43c` | [offeneregister.py](../src/limes/sources/offeneregister.py) | [verification source](../tests/unit/test_offeneregister_adapter.py) | H — implementation and relevant tests present; no specific open defect found in this audit; full current acceptance remains unclaimed (BE-45).  |
-| BE-21 | WP-21: GDELT/feeds | `cfe157a` | [gdelt.py](../src/limes/sources/gdelt.py) | [verification source](../tests/unit/test_gdelt_adapter.py) | BE-42 candidate — OI-19/21/22 repaired with upstream/disposable evidence; no production qualification. |
+| BE-20 | WP-20: OffeneRegister | `085e43c` | `offeneregister.py` (retired by BE-59; in Git history) | `test_offeneregister_adapter.py` (retired by BE-59) | H — implementation and relevant tests present; no specific open defect found in this audit; full current acceptance remains unclaimed (BE-45).  |
+| BE-21 | WP-21: GDELT/feeds | `cfe157a` | `gdelt.py` (retired by BE-59; in Git history) | `test_gdelt_adapter.py` (retired by BE-59) | BE-42 candidate — OI-19/21/22 repaired with upstream/disposable evidence; no production qualification. |
 | BE-22 | WP-22: Extraction | `40d968e` | [schema.py](../src/limes/extraction/schema.py) | [verification source](../tests/unit/test_extraction_schema.py) | H — strict text schema exists; qualified claims absent, BE-43 extends it. |
 | BE-23 | WP-23: Extraction cache | `031c0a0` | [cache.py](../src/limes/extraction/cache.py) | [verification source](../tests/unit/test_extraction_cache.py) | H — implementation and relevant tests present; no specific open defect found in this audit; full current acceptance remains unclaimed (BE-45).  |
 | BE-24 | WP-24: Gate/passages | `73a9a49` | [gate.py](../src/limes/pipeline/gate.py) | [verification source](../tests/unit/test_gate.py) | H — implementation and relevant tests present; no specific open defect found in this audit; full current acceptance remains unclaimed (BE-45).  |

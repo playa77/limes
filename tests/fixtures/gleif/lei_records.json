@@ -1,0 +1,168 @@
+{
+  "meta": {
+    "pagination": {
+      "perPage": 200,
+      "total": 4
+    }
+  },
+  "links": {
+    "first": "https://api.gleif.org/api/v1/lei-records?filter%5Bentity.addresses.region%5D=DE-NW&page%5Bcursor%5D=%2A&page%5Bsize%5D=200"
+  },
+  "data": [
+    {
+      "type": "lei-records",
+      "id": "5493000TEST000000001",
+      "attributes": {
+        "lei": "5493000TEST000000001",
+        "entity": {
+          "legalName": {
+            "name": "Beispiel AG",
+            "language": "de"
+          },
+          "status": "ACTIVE",
+          "legalAddress": {
+            "country": "DE",
+            "postalCode": "50667",
+            "city": "Köln",
+            "region": "DE-NW"
+          },
+          "headquartersAddress": {
+            "country": "DE",
+            "postalCode": "50667",
+            "city": "Köln",
+            "region": "DE-NW"
+          }
+        }
+      },
+      "relationships": {
+        "direct-parent": {
+          "data": {
+            "type": "lei-records",
+            "id": "5493000TEST000000002"
+          }
+        },
+        "ultimate-parent": {
+          "data": {
+            "type": "reporting-exceptions",
+            "id": "5493000TEST000000001|0|y|ULTIMATE_ACCOUNTING_CONSOLIDATION_PARENT|"
+          }
+        }
+      }
+    },
+    {
+      "type": "lei-records",
+      "id": "5493000TEST000000002",
+      "attributes": {
+        "lei": "5493000TEST000000002",
+        "entity": {
+          "legalName": {
+            "name": "Esimerkki Oyj",
+            "language": "de"
+          },
+          "status": "ACTIVE",
+          "legalAddress": {
+            "country": "FI",
+            "postalCode": "00100",
+            "city": "Helsinki",
+            "region": "FI-18"
+          },
+          "headquartersAddress": {
+            "country": "FI",
+            "postalCode": "00100",
+            "city": "Helsinki",
+            "region": "FI-18"
+          }
+        }
+      },
+      "relationships": {
+        "direct-parent": {
+          "data": {
+            "type": "reporting-exceptions",
+            "id": "5493000TEST000000002|0|x|DIRECT_ACCOUNTING_CONSOLIDATION_PARENT|"
+          }
+        },
+        "ultimate-parent": {
+          "data": {
+            "type": "reporting-exceptions",
+            "id": "5493000TEST000000002|0|y|ULTIMATE_ACCOUNTING_CONSOLIDATION_PARENT|"
+          }
+        }
+      }
+    },
+    {
+      "type": "lei-records",
+      "id": "5493000TEST000000003",
+      "attributes": {
+        "lei": "5493000TEST000000003",
+        "entity": {
+          "legalName": {
+            "name": "Standalone B.V.",
+            "language": "de"
+          },
+          "status": "ACTIVE",
+          "legalAddress": {
+            "country": "DE",
+            "postalCode": "50667",
+            "city": "Köln",
+            "region": "DE-NW"
+          },
+          "headquartersAddress": {}
+        }
+      },
+      "relationships": {
+        "direct-parent": {
+          "data": {
+            "type": "reporting-exceptions",
+            "id": "5493000TEST000000003|0|x|DIRECT_ACCOUNTING_CONSOLIDATION_PARENT|"
+          }
+        },
+        "ultimate-parent": {
+          "data": {
+            "type": "reporting-exceptions",
+            "id": "5493000TEST000000003|0|y|ULTIMATE_ACCOUNTING_CONSOLIDATION_PARENT|"
+          }
+        }
+      }
+    },
+    {
+      "type": "lei-records",
+      "id": "5493000TEST000000004",
+      "attributes": {
+        "lei": "5493000TEST000000004",
+        "entity": {
+          "legalName": {
+            "name": "Alte GmbH",
+            "language": "de"
+          },
+          "status": "LAPSED",
+          "legalAddress": {
+            "country": "DE",
+            "postalCode": "40213",
+            "city": "Düsseldorf",
+            "region": "DE-NW"
+          },
+          "headquartersAddress": {
+            "country": "DE",
+            "postalCode": "40213",
+            "city": "Düsseldorf",
+            "region": "DE-NW"
+          }
+        }
+      },
+      "relationships": {
+        "direct-parent": {
+          "data": {
+            "type": "reporting-exceptions",
+            "id": "5493000TEST000000004|0|x|DIRECT_ACCOUNTING_CONSOLIDATION_PARENT|"
+          }
+        },
+        "ultimate-parent": {
+          "data": {
+            "type": "reporting-exceptions",
+            "id": "5493000TEST000000004|0|y|ULTIMATE_ACCOUNTING_CONSOLIDATION_PARENT|"
+          }
+        }
+      }
+    }
+  ]
+}

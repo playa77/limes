@@ -168,11 +168,9 @@ def test_until_passes_through_unmodified():
 
 
 def test_initial_structured_corpora_never_inherit_news_lookback():
-    from limes.sources.bundestag_dip import BundestagDipAdapter
-    from limes.sources.eurlex import EurlexAdapter
     from limes.sources.ted import TedAdapter
 
-    for adapter in (TedAdapter(), EurlexAdapter(), BundestagDipAdapter()):
+    for adapter in (TedAdapter(),):
         assert resolve_window(_spec(), adapter, None, _settings(), now=NOW) == (DATA_START, None)
 
 
@@ -188,38 +186,9 @@ def test_legacy_recent_window_success_does_not_certify_historical_corpus():
     since, until = resolve_window(_spec(), TedAdapter(), source, _settings(), now=NOW)
     assert since == LAST_SUCCESS and until == LAST_SUCCESS + timedelta(days=1)
 
-
-def test_gdelt_backfill_old_checkpoint_is_bounded_oldest_prefix():
-    from limes.sources.gdelt import GdeltAdapter
-
-    checkpoint = datetime(2026, 7, 1, 12, 7, tzinfo=UTC)
-    source = SourceRecord(source_id='gdelt', name='GDELT', kind='structured',
-                          trust_rank=0.5, last_success_at=checkpoint)
-    since, until = resolve_window(
-        RunSpec(source_id='gdelt', mode='backfill', since=NOW - timedelta(days=1)),
-        GdeltAdapter(), source, _settings(), now=NOW)
-    assert since == checkpoint
-    # 96 boundaries from July 1 12:15 to July 2 12:00, independent arithmetic.
-    assert until == datetime(2026, 7, 2, 12, 0, tzinfo=UTC)
-
-
-def test_gdelt_fresh_or_absent_checkpoint_keeps_start_and_uses_safe_publication_end():
-    from limes.sources.gdelt import GdeltAdapter
-
-    cutoff = NOW - timedelta(days=1)
-    spec = RunSpec(source_id='gdelt', mode='backfill', since=cutoff)
-    for checkpoint in (None, cutoff, cutoff + timedelta(hours=1)):
-        source = SourceRecord(source_id='gdelt', name='GDELT', kind='structured',
-                              trust_rank=0.5, last_success_at=checkpoint)
-        assert resolve_window(spec, GdeltAdapter(), source, _settings(), now=NOW) == (
-            cutoff, datetime(2026, 8, 1, 11, 45, tzinfo=UTC))
-
-
 def test_scope_clamps_explicit_checkpoint_and_long_lookback():
-    from limes.sources.gdelt import GdeltAdapter
-
     old = datetime(2019, 12, 1, tzinfo=UTC)
-    source = SourceRecord(source_id="gdelt", name="GDELT", kind="structured",
+    source = SourceRecord(source_id="feeds", name="Feeds", kind="unstructured",
                           trust_rank=0.5, last_success_at=old)
     assert resolve_window(_spec(since=old), _IncrementalAdapter(), None,
                           _settings(), now=NOW)[0] == DATA_START
@@ -227,11 +196,6 @@ def test_scope_clamps_explicit_checkpoint_and_long_lookback():
                           _settings(), now=NOW)[0] == DATA_START
     assert resolve_window(_spec(), _IncrementalAdapter(), None,
                           _settings(backfill_days_unstructured=10000), now=NOW)[0] == DATA_START
-    start, end = resolve_window(
-        RunSpec(source_id="gdelt", mode="backfill", since=LAST_SUCCESS),
-        GdeltAdapter(), source, _settings(), now=NOW)
-    assert start == DATA_START
-    assert end == datetime(2020, 1, 1, 23, 45, tzinfo=UTC)
 
 
 def test_scope_rejects_old_upper_bound_and_handles_offset_boundary():

@@ -1,5 +1,8 @@
 # BE-56 — German parliamentary members and federal officeholders: implementation plan
 
+> **Historical for retired scope (BE-59, 2026-11-17).** The roster model, identities and evidence rules remain in force for the retained `nw`, `bt` and `br` scopes; the other 18 scopes and the DIP integration are retired. The current
+> NRW source set and acquisition methods are in [NRW scope](NRW_SCOPE.md).
+
 Status: implementation candidate on `codex/be-56-german-parliament-members`,
 from live-verified main `d967bae244dc` (2026-11-07). This session implements the
 full A1–A8 contract; final qualification is recorded in [VERIFICATION](VERIFICATION.md).

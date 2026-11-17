@@ -23,8 +23,8 @@ def render(contract: dict) -> dict[str, str]:
 | API authentication | Bearer token |
 | Desktop credentials | Session memory only |
 | Spending enforcement | None |
+| Geographic scope | Nordrhein-Westfalen (NUTS `{contract['geographic_scope']}`) |
 | Source acquisition starts | {contract['source_acquisition_start']} (inclusive UTC) |
-| Required source set | All existing sources |
 | Service user | `{contract['service_user']}` |
 | Operations authentication | Separate operator bearer token |
 | Host Docker socket | Absent |
@@ -36,25 +36,30 @@ def render(contract: dict) -> dict[str, str]:
               "regenerate after changing the contract. -->\n")
     source_scope = f"""## Source evidence scope
 
-Source acquisition starts **{contract['source_acquisition_start']}**, inclusive UTC.
-Every existing source remains required and enabled. Current snapshots retain older
-entities, relationships, internal observations and original dates; this boundary
-never clips validity intervals or query/as-of dates. Historical TED packages and
-GDELT export windows cannot start earlier. EUR-Lex/DIP observe complete current
-catalogues. OffeneRegister stays included with its original historical vintage.
-[Every-source scope and recovery policy](SOURCE_DATA_SCOPE.md) governs receipts,
-scoped completeness and legacy reconciliation. No production data is purged or
+The product covers **Nordrhein-Westfalen** (NUTS `{contract['geographic_scope']}`).
+Every source selects NRW at the source — a server-side filter or a request set
+that names only NRW objects — and never downloads a nationwide or EU-wide corpus
+to search it. Source acquisition starts **{contract['source_acquisition_start']}**,
+inclusive UTC. Current snapshots retain older entities, relationships, internal
+observations and original dates; this boundary never clips validity intervals or
+query/as-of dates. [NRW source dispositions](NRW_SCOPE.md) govern which sources
+are retargeted, filtered, added or retired; the [time scope](SOURCE_DATA_SCOPE.md)
+governs receipts and scoped completeness. No production data is purged or
 re-ingested by an implementation update.
 """
     readme = f"""# LIMES
 
 {notice}
-{source_scope.replace("(SOURCE_DATA_SCOPE.md)", "(docs/SOURCE_DATA_SCOPE.md)")}
-**An evidence-backed world model for German and European policy research.**
+{source_scope.replace("(SOURCE_DATA_SCOPE.md)", "(docs/SOURCE_DATA_SCOPE.md)").replace(
+        "(NRW_SCOPE.md)", "(docs/NRW_SCOPE.md)")}
+**An evidence-backed world model of Nordrhein-Westfalen's companies, associations,
+public bodies, officeholders and infrastructure.**
 
-LIMES connects official registries, Wikipedia entity context, Yahoo Finance company
-and shareholder information, agency dispatches, curated reporting and coded event
-observations in a shared, queryable model of entities, relationships and change.
+LIMES connects official registries, procurement notices, parliamentary rosters,
+Wikipedia entity context, Yahoo Finance company and shareholder information and
+curated NRW reporting in a shared, queryable model of entities, relationships and
+change. It is a portfolio/demonstration project scoped to one German Land so the
+complete corpus stays acquirable and reproducible.
 It brings AI-assisted extraction,
 ontology-driven knowledge representation and visual investigation into one
 research platform, turning fragmented public information into a connected view
@@ -81,7 +86,7 @@ read-only queries.
   claim was valid from when it was recorded. Conflicting claims are preserved,
   keeping disagreement and evolving knowledge available for analysis.
 - **Keep the evidence within reach.** Provenance connects claims to their
-  immutable dispatch versions, text spans or coded export rows. Corrections and
+  immutable dispatch versions, text spans or source records. Corrections and
   syndication retain their lineage; copied reports do not become independent
   corroboration. A content-addressed archive remains the system of record.
   Hop-level coverage and diagnosis accompany empty results, helping researchers
@@ -108,8 +113,8 @@ status. Those records distinguish current artifacts, evidence gaps and open repa
 BE-46 adds revision-linked Wikipedia context and Yahoo Finance company,
 governance, shareholder and earnings/report observations with source-section
 evidence, unknown-data semantics and reviewed company/security/listing identity.
-Scope remains German and European policy; comprehensive
-EU-27 coverage is deferred to a possible later version.
+BE-59 narrows the product to Nordrhein-Westfalen; other Länder, federal-only and
+EU-wide corpora are outside its scope.
 
 ## Architecture and runtime
 
@@ -158,7 +163,7 @@ credential for desktop backup; a consumer token cannot submit operational jobs.
 # On the client; supply the operator token in the environment, never an argument.
 export LIMES_REMOTE_URL=https://your-api.example
 venv/bin/limes remote run ingest --source gleif
-venv/bin/limes remote run backfill --source gdelt --days 1
+venv/bin/limes remote run backfill --source feeds --days 1
 venv/bin/limes remote run backup
 venv/bin/limes remote status JOB_UUID --wait
 ```
@@ -236,13 +241,14 @@ packages under the existing archive volume. Resubmitting the same interrupted
 request resumes its pinned window; failures never advance coverage checkpoints.
 Productive clean time slices continue inside the same active operation, under its
 outer deadline; blocked transport and processing errors fail rather than looping.
-TED uses official monthly/daily packages and bounded deterministic graph batches
-(flush at 50 notices, 500 assertions or 8 MiB raw input; individual notices are
-bounded to 16 MiB and graph transactions to 500 assertions). Receipts follow
-successful batch loading; pending work flushes on interruption/package completion.
+TED reads NRW result notices (`place-of-performance IN (DEA)`) from the official
+Search API in monthly windows, one archived record per search page, with bounded
+deterministic graph batches (graph transactions hold at most 500 assertions).
+Closed months complete durable receipts after successful loading; an interrupted
+initial load resumes at the first unfinished month.
 Structured loaders group ontology-generated queries with parameterized UNWIND
 writes, preserving identity, per-notice evidence and nearest later intervals.
-Initial TED/EUR-Lex/DIP acquisition
+Initial TED acquisition
 does not inherit the news lookback or trust a legacy recent-window checkpoint.
 The ingestion status API exposes blocked transport and stale progress separately
 from service health. [Corpus/source audit](CORPUS_INGESTION_RELIABILITY.md) records
@@ -316,14 +322,11 @@ and Neo4j-native entity vectors. Assertions preserve bitemporal provenance.
 Current extraction cannot explicitly represent attribution, denial, modality or
 event lifecycle; Event declares only label, source_event_id and occurred_at.
 
-BE-42 decodes bounded official 61-column ZIP/TSV exports and loads coded
-observations independently of document gating/cache. Row-scoped provenance
-retains archive hash, ZIP member, row, event ID, export/report URLs and DATEADDED;
-SQLDATE remains event validity, fetch time remains recorded time. FIPS country
-codes are converted explicitly. The API exposes missing article text; exports
-are never fabricated into documents. Only SOURCEURL report associations are
-covered; Mentions and article retrieval remain future acquisition work.
-See [VERIFICATION](VERIFICATION.md) for candidate evidence and its limits.
+BE-42 added coded GDELT observations; BE-59 retired GDELT because its global
+exports have no server-side geographic filter. Previously loaded coded
+observations remain readable evidence, and the API still exposes missing article
+text for them. NRW developments now come from curated NRW feeds and
+investigation news. See [VERIFICATION](VERIFICATION.md) for candidate evidence.
 
 The accepted target is integrated news intelligence inside the existing worker,
 archive, resolver, ontology, loader, API and desktop. Preserve independent coded
@@ -370,18 +373,20 @@ Existing desktop entity/evidence views consume these artifacts through HTTP.
 Trust ranks are Wikipedia 0.65 and Yahoo Finance 0.70. Source-format evidence and
 access/retention review are in tests/fixtures/enrichment/README.md; these are
 secondary incomplete sources, with no commercial redistribution or production
-qualification inferred. German and European policy remains the scope.
+qualification inferred. Nordrhein-Westfalen is the product scope (BE-59).
 [Core design §3.6](LIMES_Design_Document_v2.0.0.md),
 [technical specification §8.5.3](LIMES_Technical_Specification_v2.1.0.md),
 [BE-46](BACKEND_ROADMAP.md) and [verification](VERIFICATION.md) retain acceptance
-and qualification boundaries. Comprehensive EU-27 coverage remains deferred.
+and qualification boundaries.
 
-## German public-officeholder acquisition (BE-56)
+## NRW public-officeholder acquisition (BE-56, narrowed by BE-59)
 
 Ontology 1.4 adds scoped PersonIdentifier, ParliamentaryGroup, RosterSnapshot and
-RosterMembership artifacts. All 21 official source mappings use bounded structured
-jobs, original evidence archives and per-source resumable cursors. Observed rosters
-are separate from actual personal service dates and historical DIP participation.
+RosterMembership artifacts. Three official roster scopes remain: the complete
+Landtag Nordrhein-Westfalen, Bundestag members selected by the official roster's
+NRW Land facet, and the Bundesrat's NRW Land page (regular and deputy members).
+Each uses bounded structured jobs, original evidence archives and per-source
+resumable cursors. Observed rosters are separate from actual personal service dates.
 Authenticated GET /public-offices reports missing/failed/partial/stale scopes and
 member-set reconciliation; desktop coverage/evidence views consume this HTTP surface.
 [Implementation/handoff](GERMAN_PARLIAMENT_MEMBERS.md), [qualified sources](BE56_SOURCES.md)
@@ -396,12 +401,11 @@ and [verification](VERIFICATION.md) distinguish capability from production popul
 
 ## Public-officeholder jobs
 
-Submit ingest for `public_offices_<scope>` using the 21 scope codes in
-[the BE-56 handoff](GERMAN_PARLIAMENT_MEMBERS.md). Preserve a pre-migration backup;
-run the declared 1.4 ontology/DIP data repair explicitly. Historical DIP persons
-never certify current membership. The runtime DIP key remains configured through
-LIMES_BUNDESTAG_DIP_API_KEY; [public key source/validation](BE56_SOURCES.md) is dated
-and does not replace credential configuration. Set nl2cypher_prompt_version=1.1.0
+Submit ingest for `public_offices_<scope>` with the scope codes `nw`, `bt` and `br`
+([NRW scope](NRW_SCOPE.md); [BE-56 handoff](GERMAN_PARLIAMENT_MEMBERS.md) for the
+roster model). Preserve a pre-migration backup; run the declared 1.4 ontology data
+repair explicitly. Bundestag DIP is retired (BE-59) and needs no key; an existing
+`LIMES_BUNDESTAG_DIP_API_KEY` entry is ignored. Set nl2cypher_prompt_version=1.1.0
 for roster-aware query generation; old explicit pins remain available.
 Identity reviews require an archived evidence hash, explicit existing canonical
 Person, scoped identifier, note and immutable request_id. They are operator writes;
@@ -442,9 +446,8 @@ embedding credentials fail at first embedding use, before any HTTP request.
 Keep the chat workspace guardrails unchanged; the embeddings workspace should
 allow only the selected embedding model and its serving providers. Embedding
 prices come from the embedding catalogue, with the existing logged fallback
-when that catalogue or price is unavailable. Set `LIMES_BUNDESTAG_DIP_API_KEY` there for
-Bundestag DIP (sent as a header, excluded from source URLs). Public test keys
-expire and must be replaced; no key is committed. Keep tokens out
+when that catalogue or price is unavailable. No source credential is required by the
+NRW source set; no key is committed. Keep tokens out
 of history, CLI arguments and logs. Use independent consumer, operator and backup
 tokens. Back up configuration securely; it is untracked and excluded from images.
 
@@ -536,24 +539,17 @@ actual authorized deployment. CI records JUnit results for every required suite.
 
 ## Investigation-driven news acquisition
 
-Default GDELT ingest drains prefixes of at most 96 slots through its safe
-publication cutoff within one operation. TED/EUR-Lex bounded incremental windows
-also continue through the invocation target; initial historical acquisition is
-unfiltered. `ingest-all` attempts all sources and fails its aggregate job if any
+TED's bounded daily incremental windows continue through the invocation target;
+initial historical acquisition covers every month from 2020 in NRW-filtered
+search windows. `ingest-all` attempts all sources and fails its aggregate job if any
 source fails. A clean result certifies its requested source windows, not unavailable
 historical feed/snapshot coverage. Initial window anchors and active acquisition
 windows are durable, so failed retries cannot slide the lookback start.
 
-GDELT `backfill --days N` addresses an older source checkpoint before the fresh
-window and continues clean prefixes through the invocation target. Explicit windows
-over 96 slots are supported with the composed durable acquisition journal;
-standalone adapter use without that journal retains the 96-slot guard. Per-file
-byte/row bounds remain. Completed downloads and loads survive an interrupted job;
-resubmit the same request explicitly to resume it. Interrupted jobs are never
-replayed automatically. A checkpoint already advanced past a gap cannot infer its
-lost coverage; preserve evidence and repair the historical window separately.
-[Corpus/source audit](CORPUS_INGESTION_RELIABILITY.md) supersedes the old one-prefix-
-per-submission instructions in [GDELT/OSM recovery](GDELT_BACKLOG_OSM_LEAVES.md).
+Completed downloads and loads survive an interrupted job; resubmit the same
+request explicitly to resume it. Interrupted jobs are never replayed automatically.
+A checkpoint already advanced past a gap cannot infer its lost coverage; preserve
+evidence and repair the historical window separately.
 
 OSM exhausted leaf fetch failures are recorded in `failed_leaves` in the durable
 acquisition cursor. Eligible siblings continue within the existing 200-call cap;
@@ -561,13 +557,15 @@ any failed or pending leaf fails the job before loading or checkpoint advancemen
 An explicit resubmission retries incomplete leaves and reuses acquired responses.
 Old cursors need no migration; older binaries cannot read the new optional field.
 
-Compressed responses are capped at 16 MiB, decompressed exports
-at 128 MiB and rows at 250,000. GLEIF and OffeneRegister archive original compressed
-snapshots before bounded normalization chunks (1,000 rows/8 MiB input, 1 MiB per
-row). Chunk manifests link original archive hashes/member/row offsets. OffeneRegister
-uses historical source `retrieved_at`, never the current clock. GLEIF consolidation
-relations distinguish accounting consolidation from ownership. Current TED eForms
-and the daily Transparency Register XML are supported with completeness checks.
+GLEIF pages through the LEI API with `filter[entity.addresses.region]=DE-NW` and
+cursor pagination, archiving each page; consolidation relations distinguish
+accounting consolidation from ownership. Wikidata NRW organisations come from one
+bounded SPARQL query. FSD and the daily Transparency Register XML are single small
+files without a query interface; only NRW-addressed entries are emitted, with
+completeness checks. GISCO emits the pinned NRW postcode extract instead of the
+EU-wide correspondence file. `recht_nrw` acquires NRW laws and ordinances from
+recht.nrw.de's public sitemap and newest version pages (the portal has no API),
+serially at one request per second, archiving every sitemap and page.
 Malformed/partial records block checkpoint
 advancement; successful checkpoints use the covered window endpoint and never
 move backward. Failed document loads remain replayable; reextract bypasses the
@@ -674,7 +672,8 @@ action; integration smoke uses only disposable configuration and mocked paid pat
 
 ## News design and verification status — 2026-10-28
 
-[NEWS_REVIEW](NEWS_REVIEW.md) records the original GDELT investigation.
+[NEWS_REVIEW](NEWS_REVIEW.md) records the original GDELT investigation (GDELT is
+retired by BE-59).
 BE-42 repairs its format, mixed-channel loss, row/report provenance, geography
 and slot rounding defects; [VERIFICATION](VERIFICATION.md) records exact candidate
 results. Tests include unchanged upstream TSV rows, explicit format/size failures,

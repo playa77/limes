@@ -36,6 +36,11 @@ Identity choices, all load-bearing:
   produces new intervals rather than skipped duplicates — honest, because a
   full snapshot cannot know when an entry entered the list.
 
+BE-59 NRW scope: the list has no query interface, so the one current file is
+read and only entries with an address in Nordrhein-Westfalen are emitted (a
+German postcode in the pinned NRW reference; an NRW municipality name only when
+the address has no postcode). Skipped entries are counted, never loaded.
+
 Not emitted on purpose: the person's nationality countries. The sanction
 targets the person, not their country, and TARGETS is one edge per subject;
 emitting `Sanction → Country` would claim a targeting semantics the source
@@ -58,6 +63,7 @@ import structlog
 from lxml import etree  # type: ignore[import-untyped]
 
 from limes.errors import SourceParseError
+from limes.geo_scope import address_in_nrw
 from limes.sources.base import (
     fetch_bytes,
     hash_entity_id,
@@ -149,9 +155,16 @@ class FsdAdapter:
             "skipped_unnamed": 0,
             "skipped_regime": 0,
             "skipped_legal_basis": 0,
+            "outside_nrw": 0,
         }
         for element in container.findall("Sanction"):
             counts["sanctions"] += 1
+            if not any(
+                address_in_nrw(_text(a, "Country"), _text(a, "ZipCode"), _text(a, "City"))
+                for a in element.findall("Address")
+            ):
+                counts["outside_nrw"] += 1  # BE-59: NRW-addressed entries only.
+                continue
             assertions.extend(_normalize_sanction(self, element, record, counts))
 
         logger.info(
@@ -186,7 +199,7 @@ def _normalize_export(
     if not entries:
         raise SourceParseError("fsd: export contains no sanctionEntity records")
     assertions: list[Assertion] = []
-    errors = 0
+    errors = outside = 0
     seen: set[str] = set()
     for entry in entries:
         identifier = (entry.get("euReferenceNumber") or "").strip()
@@ -199,6 +212,12 @@ def _normalize_export(
         name = next((name for name in names if name), None)
         if not identifier or identifier in seen or code not in _SUBJECT_TYPES or not name:
             errors += 1
+            continue
+        if not any(
+            address_in_nrw(a.get("countryIso2Code"), a.get("zipCode"), a.get("city"))
+            for a in entry.findall(f"{{{namespace}}}address")
+        ):
+            outside += 1  # BE-59: only entries with an NRW address are in scope.
             continue
         seen.add(identifier)
         sanction = EntityEndpoint(
@@ -235,6 +254,8 @@ def _normalize_export(
             assertions.append(make_assertion(
                 adapter, record, sanction, "ESTABLISHED_BY", legal_act, valid_from=generated
             ))
+    logger.info("fsd: export normalized", entries=len(entries), outside_nrw=outside,
+                assertions=len(assertions), errors=errors)
     return NormalizedRecord(
         content_hash=payload_hash(record.payload), kind="structured", assertions=assertions,
         errors=errors,

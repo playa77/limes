@@ -11,6 +11,7 @@ from urllib.parse import urlsplit
 
 from limes.archive.store import ArchiveStore
 from limes.errors import SourceFetchError, SourceParseError
+from limes.geo_scope import NAME as NRW_NAME
 from limes.graph.driver import GraphDriver
 from limes.public_offices.catalogue import BY_CODE, Scope
 from limes.public_offices.models import Member, Snapshot
@@ -23,22 +24,7 @@ MAX_TOTAL_BYTES = 40_000_000
 MAX_SECONDS = 1800
 AW_PARLIAMENTS = {
     "bt": 5,
-    "bw": 6,
-    "by": 13,
-    "be": 2,
-    "bb": 16,
-    "hb": 10,
-    "hh": 3,
-    "he": 11,
-    "mv": 9,
-    "ni": 12,
     "nw": 4,
-    "rp": 7,
-    "sl": 14,
-    "sn": 17,
-    "st": 8,
-    "sh": 18,
-    "th": 15,
 }
 
 
@@ -166,10 +152,6 @@ class Acquisition:
     def _allow(scope: Scope, url: str) -> None:
         parts = urlsplit(url)
         hosts = {urlsplit(scope.url).hostname, "www.abgeordnetenwatch.de"}
-        if scope.code == "hb":
-            hosts.add("static.bremische-buergerschaft.de")
-        if scope.code == "rp":
-            hosts.add("api.landtag-rlp.de")
         if (
             parts.scheme != "https"
             or parts.hostname not in hosts
@@ -232,8 +214,6 @@ class Acquisition:
                     if old != new:
                         raise SourceParseError("conflicting duplicate official person ID")
                 members[member.external_id] = member
-            if page.pagination and any(u in seen for u in page.next_urls):
-                raise SourceFetchError("public offices: pagination cycle; checkpoint unchanged")
             todo.extend(u for u in page.next_urls if u not in seen)
         for former in historical_members:
             listed = members.get(former.external_id)
@@ -292,21 +272,17 @@ class Acquisition:
                 from limes.public_offices.profiles import apply_profile
 
                 profile_url = member.profile_url
-                if scope.code == "bp":
-                    profile_url = (
-                        "https://www.bundespraesident.de/DE/bundespraesident/"
-                        "biographie/biographie_node.html"
-                    )
                 raw, digest, retrieved_at = read(profile_url, fresh)
                 pages.append({"url": profile_url, "sha256": digest, "retrieved_at": retrieved_at})
                 apply_profile(scope.code, member, raw, digest)
-        # BR must traverse exactly all 16 distinct official Land selectors.
+        if scope.code == "bt":
+            # The departure table is Bundestag-wide and carries no Land. Retain
+            # only departures of members the NRW-filtered roster lists (re-entry).
+            historical_members = [m for m in historical_members if m.external_id in members]
+            for member in members.values():
+                member.land = NRW_NAME
+            basis += ";official_land_filter"
         if scope.code == "br":
-            from urllib.parse import parse_qs
-
-            states = {parse_qs(urlsplit(p["url"]).query).get("param1", [""])[0] for p in pages}
-            if not {f"state-{i}" for i in range(2, 18)} <= states:
-                raise SourceParseError("Bundesrat Land coverage is incomplete")
             if {m.role for m in members.values()} != {"regular", "deputy"}:
                 raise SourceParseError("Bundesrat member-class coverage is incomplete")
         return Snapshot(

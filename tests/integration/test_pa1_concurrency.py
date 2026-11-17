@@ -20,8 +20,8 @@ from limes.composition import build_run_context
 from limes.config import Settings
 from limes.errors import SourceRunBudgetExceeded
 from limes.pipeline.run import RunSpec, execute_run
+from limes.sources.fsd import FsdAdapter
 from limes.sources.gisco_nuts import GiscoNutsAdapter
-from limes.sources.offeneregister import OffeneRegisterAdapter
 from limes.types import RawRecord
 from tests.integration.conftest import Neo4jInstance
 
@@ -84,7 +84,7 @@ def test_two_sources_run_concurrently_and_both_land_through_the_gate(
 ):
     ctx = contexts[0]
     monkeypatch.setattr(GiscoNutsAdapter, "fetch", lambda self, s, u: iter(_gisco_records()))
-    monkeypatch.setattr(OffeneRegisterAdapter, "fetch", lambda self, s, u: iter(_gisco_records()))
+    monkeypatch.setattr(FsdAdapter, "fetch", lambda self, s, u: iter(_gisco_records()))
 
     records: dict[str, object] = {}
     errors: list[Exception] = []
@@ -97,7 +97,7 @@ def test_two_sources_run_concurrently_and_both_land_through_the_gate(
 
     threads = [
         threading.Thread(target=run, args=("gisco_nuts",)),
-        threading.Thread(target=run, args=("offeneregister",)),
+        threading.Thread(target=run, args=("fsd",)),
     ]
     for thread in threads:
         thread.start()
@@ -105,7 +105,7 @@ def test_two_sources_run_concurrently_and_both_land_through_the_gate(
         thread.join(timeout=180)
     assert not errors, errors
     gisco_record = records["gisco_nuts"]
-    other_record = records["offeneregister"]
+    other_record = records["fsd"]
     # the healthy run must be clean; the appended-source run may carry
     # record-level parse errors (its normalize is its own) — what matters is
     # that BOTH durably closed while writing through one gate
@@ -132,7 +132,7 @@ def test_hanging_run_aborts_within_budget_while_other_completes(
             time.sleep(0.6)
             yield record
 
-    monkeypatch.setattr(OffeneRegisterAdapter, "fetch", hang_fetch)
+    monkeypatch.setattr(FsdAdapter, "fetch", hang_fetch)
 
     records: dict[str, object] = {}
     budget_errors: list[SourceRunBudgetExceeded] = []
@@ -148,12 +148,12 @@ def test_hanging_run_aborts_within_budget_while_other_completes(
     def hanging_run() -> None:
         start = time.monotonic()
         try:
-            records["offeneregister"] = execute_run(
-                RunSpec(source_id="offeneregister", mode="ingest"), hanging_ctx
+            records["fsd"] = execute_run(
+                RunSpec(source_id="fsd", mode="ingest"), hanging_ctx
             )
         except SourceRunBudgetExceeded as exc:
             budget_errors.append(exc)
-            records["offeneregister_elapsed"] = time.monotonic() - start
+            records["fsd_elapsed"] = time.monotonic() - start
 
     threads = [threading.Thread(target=healthy_run), threading.Thread(target=hanging_run)]
     for thread in threads:
@@ -163,14 +163,14 @@ def test_hanging_run_aborts_within_budget_while_other_completes(
     assert not other_errors, other_errors
     assert budget_errors, "hang must abort via the run budget, not finish"
 
-    elapsed = records["offeneregister_elapsed"]
+    elapsed = records["fsd_elapsed"]
     assert elapsed < 3.0, elapsed  # the 2026-11-08 defect burned 5+ hours; this is seconds
     assert started_at is not None
     healthy = records["gisco_nuts"]
     assert healthy.finished_at is not None and healthy.errors == 0
     # the aborted run still closed its durable record (checkpoint untouched)
     rows = hanging_ctx.driver.read(
-        "MATCH (r:IngestionRun {source_id: 'offeneregister'}) RETURN r.errors AS errors",
+        "MATCH (r:IngestionRun {source_id: 'fsd'}) RETURN r.errors AS errors",
         {},
         30,
     )

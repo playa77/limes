@@ -13,10 +13,7 @@ No test touches the network.
 
 from __future__ import annotations
 
-import gzip
-import io
 import json
-import zipfile
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -26,12 +23,8 @@ from limes.ontology.registry import load_ontology
 from limes.public_offices.catalogue import SCOPES
 from limes.public_offices.models import Snapshot
 from limes.sources import (
-    bundestag_dip,
-    eurlex,
     feeds,
     fsd,
-    gdelt,
-    offeneregister,
     osm,
     transparency_register,
     wikidata,
@@ -46,20 +39,17 @@ ONTOLOGY_PATH = REPO_ROOT / "ontology" / "ontology.yaml"
 FETCHED_AT = datetime(2026, 8, 1, 12, 0, 0, tzinfo=UTC)
 
 EXPECTED_SOURCE_IDS = [
-    "bundestag_dip",
-    "eurlex",
     "feeds",
     "fsd",
-    "gdelt",
-    "gesetze_im_internet",
     "gisco_nuts",
     "gleif",
     "news",
-    "offeneregister",
     "osm",
+    "recht_nrw",
     "ted",
     "transparency_register",
     "wikidata",
+    "wikidata_nrw",
     "wikipedia",
     "yahoo_finance",
 ]
@@ -74,21 +64,6 @@ def _csv_record(path: str, content_type: str, url: str) -> RawRecord:
         fetched_at=FETCHED_AT,
     )
 
-
-def _zip_record(path: str, member: str, url: str) -> RawRecord:
-    buffer = io.BytesIO()
-    with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as archive:
-        archive.writestr(member, (FIXTURES / path).read_text(encoding="utf-8"))
-    return RawRecord(
-        payload=buffer.getvalue(),
-        content_type="application/zip",
-        source_url=url,
-        fetched_at=FETCHED_AT,
-    )
-
-
-def _law_zip_record(path: str, member: str, url: str) -> RawRecord:
-    return _zip_record(path, member, url)
 
 
 def _records_for(source_id: str) -> list[RawRecord]:
@@ -108,23 +83,9 @@ def _records_for(source_id: str) -> list[RawRecord]:
             ),
         ]
     if source_id == "gleif":
-        return [
-            _zip_record("gleif/entities.csv", "entities.csv", "https://example.test/entities.zip"),
-            _zip_record(
-                "gleif/relationships.csv",
-                "relationships.csv",
-                "https://example.test/relationships.zip",
-            ),
-        ]
-    if source_id == "eurlex":
-        return [
-            RawRecord(
-                payload=(FIXTURES / "eurlex" / "sparql_results.json").read_bytes(),
-                content_type="application/json",
-                source_url=eurlex.SPARQL_URL,
-                fetched_at=FETCHED_AT,
-            )
-        ]
+        from tests.acceptance.conftest import gleif_fixture_records
+
+        return gleif_fixture_records()
     if source_id == "fsd":
         return [
             RawRecord(
@@ -152,66 +113,12 @@ def _records_for(source_id: str) -> list[RawRecord]:
                 fetched_at=FETCHED_AT,
             )
         ]
-    if source_id == "bundestag_dip":
-        return [
-            RawRecord(
-                payload=(FIXTURES / "bundestag_dip" / "persons.json").read_bytes(),
-                content_type="application/json",
-                source_url=bundestag_dip.PERSON_URL,
-                fetched_at=FETCHED_AT,
-            )
-        ]
-    if source_id == "gesetze_im_internet":
-        # The TOC record is a fetch artifact, not a normalize input: the
-        # adapter's `normalize` rejects non-law payloads with
-        # `SourceParseError` by design, and the pipeline counts that as a
-        # record-level error. Only the law zips normalize.
-        return [
-            _law_zip_record(
-                "gesetze_im_internet/gesetz_mit_sachgebiet.xml",
-                "BJNR204500000.xml",
-                "https://example.test/law-with-topics.zip",
-            ),
-            _law_zip_record(
-                "gesetze_im_internet/gesetz_ohne_sachgebiet.xml",
-                "BJNR104200013.xml",
-                "https://example.test/law-without-topics.zip",
-            ),
-        ]
     if source_id == "osm":
         return [
             RawRecord(
                 payload=(FIXTURES / "osm" / "overpass_response.json").read_bytes(),
                 content_type="application/json",
                 source_url=osm.OVERPASS_URL,
-                fetched_at=FETCHED_AT,
-            )
-        ]
-    if source_id == "offeneregister":
-        return [
-            RawRecord(
-                payload=(FIXTURES / "offeneregister" / "meta.json").read_bytes(),
-                content_type="application/json",
-                source_url="https://example.test/offeneregister/meta.json",
-                fetched_at=FETCHED_AT,
-            ),
-            RawRecord(
-                payload=gzip.compress(
-                    (FIXTURES / "offeneregister" / "companies.jsonl").read_bytes()
-                ),
-                content_type="application/gzip",
-                source_url=offeneregister.DATA_URL,
-                fetched_at=FETCHED_AT,
-            ),
-        ]
-    if source_id == "gdelt":
-        return [
-            RawRecord(
-                payload=_gdelt_zip(),
-                content_type="application/zip",
-                source_url=gdelt.FILE_URL_TEMPLATE.format(
-                    slot=datetime(2026, 8, 1, 15, 45, tzinfo=UTC)
-                ),
                 fetched_at=FETCHED_AT,
             )
         ]
@@ -270,6 +177,25 @@ def _records_for(source_id: str) -> list[RawRecord]:
         return []  # Investigation-driven transport is covered by test_news_pipeline.
     if source_id == "wikidata":
         return []  # enrichment-only: no fetch, no normalize-from-fetch
+    if source_id == "recht_nrw":
+        return [
+            RawRecord(
+                payload=(FIXTURES / "recht_nrw" / "gesetz_2025.html").read_bytes(),
+                content_type="text/html",
+                source_url="https://recht.nrw.de/lrgv/gesetz/01012025-gesetz-zur-errichtung-"
+                "eines-fonds-fuer-die-beteiligung-des-landes-nordrhein/",
+                fetched_at=FETCHED_AT,
+            )
+        ]
+    if source_id == "wikidata_nrw":
+        return [
+            RawRecord(
+                payload=(FIXTURES / "wikidata_nrw" / "organisations.json").read_bytes(),
+                content_type="application/sparql-results+json",
+                source_url="https://query.wikidata.org/sparql",
+                fetched_at=FETCHED_AT,
+            )
+        ]
     raise AssertionError(f"no fixture mapping for adapter {source_id!r}")
 
 
@@ -318,8 +244,8 @@ def test_ac04_fixture_records_produce_expected_deterministic_keys():
         + [a.object for a in normalized.assertions]
         + normalized.entities
     ]
-    assert any(endpoint.deterministic_key == ("nuts_code", "DE11") for endpoint in endpoints), (
-        "the DE11 region must carry its canonical NUTS key"
+    assert any(endpoint.deterministic_key == ("nuts_code", "DEA2") for endpoint in endpoints), (
+        "the DEA2 region must carry its canonical NUTS key"
     )
 
     gleif = registry.get("gleif")
@@ -334,6 +260,9 @@ def test_ac04_fixture_records_produce_expected_deterministic_keys():
             # endpoints of HEADQUARTERED_IN carry the address hash.
             if endpoint.type == "Corporation":
                 assert endpoint.deterministic_key[0] == "lei", endpoint
+            elif endpoint.type == "AdministrativeRegion":
+                # BE-59: NRW headquarters resolve to their NUTS-3 region.
+                assert endpoint.deterministic_key[0] == "nuts_code", endpoint
             else:
                 assert endpoint.deterministic_key[0] in ("coordinate_hash", "geonames_id"), endpoint
 
@@ -347,9 +276,3 @@ def test_ac04_wikidata_is_enrichment_only():
     with pytest.raises(NotImplementedError):
         list(adapter.fetch(None, None))
 
-
-def _gdelt_zip() -> bytes:
-    stream = io.BytesIO()
-    with zipfile.ZipFile(stream, "w") as archive:
-        archive.writestr("20260801154500.export.CSV", (FIXTURES / "gdelt/events.tsv").read_bytes())
-    return stream.getvalue()

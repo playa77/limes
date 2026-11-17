@@ -15,7 +15,7 @@
 | Version | 1.1.0 |
 | Date | 2026-09-08; reconciled 2026-10-27, 2026-11-09 (DC-17 web-client/launcher swap, D-99) |
 | Status | Maintained requirements; per-package evidence in DESKTOP_ROADMAP.md |
-| Depends on | LIMES — Design Document v2.0.0 (§4, §6); LIMES — Technical Specification v2.1.0 (§6 API, §13.2 topology) |
+| Depends on | LIMES — Design Document v2.1.0 (§4, §6); LIMES — Technical Specification v2.2.0 (§6 API, §13.2 topology) |
 | Supersedes | the v1.0.0 content of this same filename (stable link identity preserved) |
 
 This document defines the requirements for the LIMES desktop client: a browser
