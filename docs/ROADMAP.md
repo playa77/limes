@@ -4,9 +4,10 @@
 
 [Plan](NRW_EXPANSION.md), decision D-110. Three parent packages, none started:
 **BE-60** officeholders (municipal government of every NRW Großstadt plus the
-Landesregierung); **BE-61** ownership and boards (city and state holdings,
+Landesregierung, Kreise, RVR and LVR/LWL bodies — D-111); **BE-61** ownership and boards (city and state holdings,
 corporate boards, board-related ontology changes); **BE-62** civil society
-(media incl. WDR, churches and Kammern, foundations and Vereine, sport, culture,
+(media incl. WDR, churches and Kammern, foundations and Vereine, party
+Landes- and Kreisverbände, sport, culture,
 `wikidata_nrw` subclass fix). Source approvals and size thresholds are decided
 per package before coding; no source is registered.
 

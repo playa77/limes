@@ -5,6 +5,21 @@ reversibility: **R1** reversible in under an hour, **R2** bounded recoverable
 cost, **R3** one-way door. Written when each decision is made, latest first.
 Nothing here is a status report; unlogged decisions are unmade decisions.
 
+## 2026-11-17 — D-111 (R1) — Assign four omitted categories to BE-60 and BE-62
+
+**Context.** Review of the D-110 plan found categories named in the gap analysis
+but missing from the plan: Kreise and Landräte (only an open question), the
+Regionalverband Ruhr, LVR and LWL as governing bodies (only their cultural
+institutions were listed), and party Landes- and Kreisverbände. The user chose to
+assign them rather than list them as unassigned (2026-11-17). **Decision.**
+BE-60 adds the 31 Kreise (Landrat, Kreistag), RVR (Regionaldirektor,
+Verbandsversammlung) and LVR/LWL (Direktor/in, Landesräte,
+Landschaftsversammlung); BE-62 adds the parties' NRW Landesverbände and the
+Kreisverbände in the Großstädte with their leadership. LVR/LWL cultural
+institutions stay in BE-62. **Consequences.** Plan scope only; still no source
+approved or implemented. The Regierungsbezirke remain an open BE-60 question.
+Status: accepted (planning only).
+
 ## 2026-11-17 — D-110 (R1) — Split the NRW entity expansion into BE-60, BE-61 and BE-62
 
 **Context.** BE-59 excluded municipal councils and left major NRW power-holders

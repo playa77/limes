@@ -1,6 +1,6 @@
 # BE-60–BE-62 — NRW entity expansion
 
-Recorded 2026-11-17 (D-110) on branch `claude/trusting-mendel-j3aiz6`, live base
+Recorded 2026-11-17 (D-110, scope completed by D-111) on branch `claude/trusting-mendel-j3aiz6`, live base
 `6aae817063a7`. BE-59 ([NRW scope](NRW_SCOPE.md)) fixed the geographic scope and
 source set; it excluded municipal councils and left several categories of NRW
 power-holders unmodelled. The user split the follow-up into three parent work
@@ -29,14 +29,20 @@ Every new source requires the user's explicit approval before it is registered
   Bezirksbürgermeister.
 - Both council terms inside the window: the 2020 and the September 2025
   Kommunalwahl, as dated memberships.
+- The 31 Kreise: Landrat and Kreistag.
+- Regional bodies: Regionalverband Ruhr (Regionaldirektor, Verbandsversammlung)
+  and the Landschaftsverbände Rheinland (LVR) and Westfalen-Lippe (LWL) with
+  their Direktor/in, Landesräte and Landschaftsversammlung. Their cultural
+  institutions stay in BE-62.
 
 **Candidate sources (approval pending).** OParl endpoints of the cities'
-Ratsinformationssysteme where offered; official city pages where not; IT.NRW
-municipal election results; the Landesregierung's official cabinet pages.
+Ratsinformationssysteme where offered; official city, Kreis, RVR, LVR and LWL
+pages where not; IT.NRW municipal election results; the Landesregierung's
+official cabinet pages.
 
-**Decisions required before coding.** Source approval per city/channel; how a
-city without OParl is covered; whether Kreise/Landräte and Regierungsbezirke join
-this package or remain out of scope.
+**Decisions required before coding.** Source approval per city, Kreis and
+channel; how a body without OParl is covered; whether the Regierungsbezirke
+(Regierungspräsidenten) join this package or remain out of scope.
 
 ## BE-61 — Ownership and boards: city and state holdings, corporate boards
 
@@ -81,6 +87,8 @@ names and cardinalities.
   unions and employer associations.
 - Foundations and large Vereine, including the party foundations headquartered
   in NRW.
+- Political parties' NRW Landesverbände and the Kreisverbände in the
+  Großstädte, with their elected leadership.
 - Sport: large clubs as e.V. and their spun-off companies, stadium operators,
   Landessportbund and the regional football associations.
 - Culture: opera houses, theatres, concert halls and museums with their

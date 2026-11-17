@@ -4,7 +4,7 @@
 
 [Plan](NRW_EXPANSION.md), decision D-110; not started. WDR and other media,
 churches and welfare associations, Kammern and social partners, foundations and
-large Vereine, sport clubs and governing bodies, cultural institutions with their
+large Vereine, party Landes- and Kreisverbände (D-111), sport clubs and governing bodies, cultural institutions with their
 operating bodies, and `wikidata_nrw` following subclasses. Board parts depend on
 BE-61's ontology changes. Thresholds and source approvals precede coding.
 
@@ -21,7 +21,8 @@ Company threshold and source approvals precede coding.
 [Plan](NRW_EXPANSION.md), decision D-110; not started. Landesregierung NRW
 (Ministerpräsident, ministers, Staatssekretäre, ministries) and, for every NRW
 Großstadt, Oberbürgermeister, honorary Bürgermeister, Verwaltungsvorstand, Rat,
-Bezirksvertretungen, over the 2020 and 2025 council terms. Source approvals
+Bezirksvertretungen, over the 2020 and 2025 council terms; Kreise (Landrat,
+Kreistag), Regionalverband Ruhr and LVR/LWL governing bodies (D-111). Source approvals
 precede coding; recommended first of the three.
 
 ### BE-59 — Nordrhein-Westfalen rescope (2026-11-17)
