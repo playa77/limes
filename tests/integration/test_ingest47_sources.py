@@ -8,17 +8,14 @@ import io
 import json
 import tarfile
 import zipfile
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from pathlib import Path
 
-import pytest
 import respx
 from httpx import Response
 
 from limes.composition import build_run_context
-from limes.errors import SourceFetchError
 from limes.pipeline.run import RunSpec, execute_run
-from limes.sources.gdelt import GdeltAdapter
 from limes.sources.gleif import PUBLICATIONS_URL
 from tests.fixtures.graph_data import make_api_client, wipe_graph
 from tests.integration.test_pipeline_run_structured import _settings
@@ -136,53 +133,5 @@ def test_current_structured_sources_preserve_archive_graph_api(
                 if n["edge"]["assertion_id"] == rows[0]["p"]["assertion_id"]
             )
             assert edge["evidence_manifest_hash"] == manifest_hash
-    finally:
-        ctx.driver.close()
-
-
-def test_default_gdelt_catchup_failure_and_resume_preserve_checkpoint(
-    neo4j_instance, tmp_path, monkeypatch
-):
-    wipe_graph(neo4j_instance)
-    from limes.pipeline import window
-
-    original = window.resolve_window
-    clock = [NOW]
-    monkeypatch.setattr(window, "resolve_window", lambda *a, **kw: original(*a, **kw, now=clock[0]))
-    captured = []
-
-    def fetch(self, since, until):
-        captured.append((since, until))
-        return iter(())
-
-    monkeypatch.setattr(GdeltAdapter, "fetch", fetch)
-    ctx = build_run_context(_settings(neo4j_instance, tmp_path), needs_inference=False)
-    spec = RunSpec(source_id="gdelt", mode="ingest")
-
-    def failed(self, since, until):
-        captured.append((since, until))
-        raise SourceFetchError("missing export")
-
-    try:
-        monkeypatch.setattr(GdeltAdapter, "fetch", failed)
-        with pytest.raises(SourceFetchError, match="missing export"):
-            execute_run(spec, ctx)
-        clock[0] += timedelta(hours=2)
-        monkeypatch.setattr(GdeltAdapter, "fetch", fetch)
-        first = execute_run(spec, ctx)
-        assert captured[0] == captured[1]  # initial retry cannot slide the lookback start
-        assert first.window_to < NOW
-        monkeypatch.setattr(GdeltAdapter, "fetch", failed)
-        with pytest.raises(SourceFetchError, match="missing export"):
-            execute_run(spec, ctx)
-        at = ctx.driver.read(
-            'MATCH (s:Source {source_id:"gdelt"}) RETURN s.last_success_at AS at', {}, 30
-        )[0]["at"]
-        assert at == first.window_to
-        monkeypatch.setattr(GdeltAdapter, "fetch", fetch)
-        second = execute_run(spec, ctx)
-        assert second.window_from == first.window_to
-        assert captured[2] == captured[3]
-        assert second.window_to > first.window_to
     finally:
         ctx.driver.close()

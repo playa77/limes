@@ -18,16 +18,12 @@ from tests.integration.conftest import Neo4jInstance
 REGISTERED_SOURCES = {
     "gisco_nuts",
     "gleif",
-    "eurlex",
     "fsd",
     "ted",
     "transparency_register",
-    "bundestag_dip",
-    "gesetze_im_internet",
     "wikidata",
+    "wikidata_nrw",
     "osm",
-    "offeneregister",
-    "gdelt",
     "feeds",
     "news",
     "wikipedia",
@@ -56,7 +52,7 @@ def test_sources_returns_registry_with_trust_ranks(neo4j_instance: Neo4jInstance
             "public_offices_" + scope.code for scope in SCOPES
         }
         assert sources["gleif"]["trust_rank"] == 1.0
-        assert sources["offeneregister"]["trust_rank"] == 0.3
+        assert sources["wikidata_nrw"]["trust_rank"] == 0.9
         assert sources["feeds"]["kind"] == "unstructured"
         assert sources["gisco_nuts"]["supports_incremental"] is False
         assert sources["gleif"]["supports_incremental"] is True

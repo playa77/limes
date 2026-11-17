@@ -13,7 +13,6 @@ No test touches the network.
 
 from __future__ import annotations
 
-import gzip
 import io
 import json
 import zipfile
@@ -26,12 +25,8 @@ from limes.ontology.registry import load_ontology
 from limes.public_offices.catalogue import SCOPES
 from limes.public_offices.models import Snapshot
 from limes.sources import (
-    bundestag_dip,
-    eurlex,
     feeds,
     fsd,
-    gdelt,
-    offeneregister,
     osm,
     transparency_register,
     wikidata,
@@ -46,20 +41,16 @@ ONTOLOGY_PATH = REPO_ROOT / "ontology" / "ontology.yaml"
 FETCHED_AT = datetime(2026, 8, 1, 12, 0, 0, tzinfo=UTC)
 
 EXPECTED_SOURCE_IDS = [
-    "bundestag_dip",
-    "eurlex",
     "feeds",
     "fsd",
-    "gdelt",
-    "gesetze_im_internet",
     "gisco_nuts",
     "gleif",
     "news",
-    "offeneregister",
     "osm",
     "ted",
     "transparency_register",
     "wikidata",
+    "wikidata_nrw",
     "wikipedia",
     "yahoo_finance",
 ]
@@ -87,9 +78,6 @@ def _zip_record(path: str, member: str, url: str) -> RawRecord:
     )
 
 
-def _law_zip_record(path: str, member: str, url: str) -> RawRecord:
-    return _zip_record(path, member, url)
-
 
 def _records_for(source_id: str) -> list[RawRecord]:
     """The recorded fixtures of one adapter as raw records, wrapped exactly
@@ -115,15 +103,6 @@ def _records_for(source_id: str) -> list[RawRecord]:
                 "relationships.csv",
                 "https://example.test/relationships.zip",
             ),
-        ]
-    if source_id == "eurlex":
-        return [
-            RawRecord(
-                payload=(FIXTURES / "eurlex" / "sparql_results.json").read_bytes(),
-                content_type="application/json",
-                source_url=eurlex.SPARQL_URL,
-                fetched_at=FETCHED_AT,
-            )
         ]
     if source_id == "fsd":
         return [
@@ -152,66 +131,12 @@ def _records_for(source_id: str) -> list[RawRecord]:
                 fetched_at=FETCHED_AT,
             )
         ]
-    if source_id == "bundestag_dip":
-        return [
-            RawRecord(
-                payload=(FIXTURES / "bundestag_dip" / "persons.json").read_bytes(),
-                content_type="application/json",
-                source_url=bundestag_dip.PERSON_URL,
-                fetched_at=FETCHED_AT,
-            )
-        ]
-    if source_id == "gesetze_im_internet":
-        # The TOC record is a fetch artifact, not a normalize input: the
-        # adapter's `normalize` rejects non-law payloads with
-        # `SourceParseError` by design, and the pipeline counts that as a
-        # record-level error. Only the law zips normalize.
-        return [
-            _law_zip_record(
-                "gesetze_im_internet/gesetz_mit_sachgebiet.xml",
-                "BJNR204500000.xml",
-                "https://example.test/law-with-topics.zip",
-            ),
-            _law_zip_record(
-                "gesetze_im_internet/gesetz_ohne_sachgebiet.xml",
-                "BJNR104200013.xml",
-                "https://example.test/law-without-topics.zip",
-            ),
-        ]
     if source_id == "osm":
         return [
             RawRecord(
                 payload=(FIXTURES / "osm" / "overpass_response.json").read_bytes(),
                 content_type="application/json",
                 source_url=osm.OVERPASS_URL,
-                fetched_at=FETCHED_AT,
-            )
-        ]
-    if source_id == "offeneregister":
-        return [
-            RawRecord(
-                payload=(FIXTURES / "offeneregister" / "meta.json").read_bytes(),
-                content_type="application/json",
-                source_url="https://example.test/offeneregister/meta.json",
-                fetched_at=FETCHED_AT,
-            ),
-            RawRecord(
-                payload=gzip.compress(
-                    (FIXTURES / "offeneregister" / "companies.jsonl").read_bytes()
-                ),
-                content_type="application/gzip",
-                source_url=offeneregister.DATA_URL,
-                fetched_at=FETCHED_AT,
-            ),
-        ]
-    if source_id == "gdelt":
-        return [
-            RawRecord(
-                payload=_gdelt_zip(),
-                content_type="application/zip",
-                source_url=gdelt.FILE_URL_TEMPLATE.format(
-                    slot=datetime(2026, 8, 1, 15, 45, tzinfo=UTC)
-                ),
                 fetched_at=FETCHED_AT,
             )
         ]
@@ -347,9 +272,3 @@ def test_ac04_wikidata_is_enrichment_only():
     with pytest.raises(NotImplementedError):
         list(adapter.fetch(None, None))
 
-
-def _gdelt_zip() -> bytes:
-    stream = io.BytesIO()
-    with zipfile.ZipFile(stream, "w") as archive:
-        archive.writestr("20260801154500.export.CSV", (FIXTURES / "gdelt/events.tsv").read_bytes())
-    return stream.getvalue()

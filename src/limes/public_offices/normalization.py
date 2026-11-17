@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from datetime import UTC, datetime
 
 from limes.public_offices.models import Snapshot
 from limes.sources.base import (
@@ -45,30 +46,12 @@ def normalize_snapshot(
         label=adapter.name.removesuffix(" — official serving roster"),
         deterministic_key=("institution_id", body_key),
         properties={
-            "jurisdiction": "DE"
-            if scope in ("bt", "br", "bp") or scope.startswith("bverfg")
-            else "DE-" + scope.upper()
+            "jurisdiction": "DE" if scope in ("bt", "br") else "DE-" + scope.upper()
         },
     )
     assertions: list[Assertion] = []
     entities = [snapshot_node, body]
     court = body
-    if scope.startswith("bverfg"):
-        court = EntityEndpoint(
-            entity_id="institution_id:DE:BVerfG",
-            type="PublicBody",
-            label="Bundesverfassungsgericht",
-            deterministic_key=("institution_id", "DE:BVerfG"),
-        )
-        entities.append(court)
-        structure = make_assertion(adapter, raw, body, "PART_OF_BODY", court)
-        structure.provenance.validity_basis = "roster_observation"
-        structure.provenance.roster_snapshot_id = snapshot_id
-        structure.provenance.evidence_document_id = (
-            snapshot.pages[0]["sha256"] if snapshot.pages else None
-        )
-        structure.provenance.source_url = raw.source_url
-        assertions.append(structure)
     rows = [(row, True) for row in snapshot.members] + [
         (row, False) for row in snapshot.historical_members
     ]
@@ -120,9 +103,7 @@ def normalize_snapshot(
             },
         )
         if scope == "bt" and snapshot.term is not None and snapshot.term.isdigit():
-            from limes.sources.bundestag_dip import _office, _period_start
-
-            office = _office(int(snapshot.term), _period_start(int(snapshot.term)))
+            office = bundestag_office(int(snapshot.term))
         member_id = hash_entity_id("roster-member", snapshot_id, row.external_id, episode_key)
         membership = EntityEndpoint(
             entity_id=member_id,
@@ -231,4 +212,39 @@ def normalize_snapshot(
         assertions=assertions,
         entities=entities,
         errors=sum(bool(m.conflicts) for m in snapshot.members),
+    )
+
+
+# Frozen legacy Bundestag Office identity inputs (moved from the retired DIP
+# adapter, BE-59). They are hash inputs, never personal service dates; new
+# periods use the scoped office key without inventing an unknown start date.
+WAHLPERIODE_STARTS: dict[int, str] = {
+    19: "2017-10-24",
+    20: "2021-10-26",
+    21: "2025-03-25",
+}
+_BT_BODY_ID = "BT"
+_BT_TITLE_PREFIX = "Mitglied des Deutschen Bundestages"
+
+
+def bundestag_office(period: int) -> EntityEndpoint:
+    """Bundestag term office with the identity earlier graphs already hold."""
+    title = f"{_BT_TITLE_PREFIX} (Wahlperiode {period})"
+    office_key = json.dumps(["bt", "member", str(period), None], ensure_ascii=False)
+    raw = WAHLPERIODE_STARTS.get(period)
+    identity = (
+        hash_entity_id(
+            "office", _BT_BODY_ID, title,
+            datetime.fromisoformat(raw).replace(tzinfo=UTC).isoformat(),
+        )
+        if raw is not None
+        else key_entity_id(("office_key", office_key))
+    )
+    return EntityEndpoint(
+        entity_id=identity,
+        type="Office",
+        label=title,
+        deterministic_key=("office_key", office_key),
+        aliases=[title],
+        properties={"scope": "bt", "term": str(period), "role": "member"},
     )

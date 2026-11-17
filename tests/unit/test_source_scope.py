@@ -100,7 +100,7 @@ def test_sources_keep_complete_registry_and_require_scoped_completeness():
     driver = SimpleNamespace(read=lambda *a: [state])
     first = {row.source_id: row for row in sources(driver)}
     assert set(first) == set(build_default_registry().source_ids())
-    assert "offeneregister" in first and not first["ted"].corpus_complete
+    assert "gleif" in first and not first["ted"].corpus_complete
     assert all(row.source_evidence_start == "2020-01-01" for row in first.values())
     state["data_scope_version"] = DATA_SCOPE_VERSION
     second = {row.source_id: row for row in sources(driver)}

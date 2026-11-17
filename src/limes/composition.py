@@ -78,7 +78,6 @@ def build_run_context(
     offices_acquisition = Acquisition(driver, archive)
     osm_acquisition = OsmAcquisition(archive, settings.archive_path / ".acquisition" / "osm")
     registry = build_default_registry(
-        bundestag_dip_api_key=settings.bundestag_dip_api_key.get_secret_value(),
         osm_acquisition=osm_acquisition,
         osm_http_timeout_seconds=settings.osm_http_timeout_seconds,
         osm_overpass_endpoints=settings.osm_overpass_endpoints,

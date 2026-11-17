@@ -22,14 +22,6 @@ if TYPE_CHECKING:
     from limes.pipeline.run import RunSpec
 
 
-def checkpoint_anchored_backfill(spec: RunSpec, source_node: SourceRecord | None) -> bool:
-    """Only GDELT's rolling backfill surface opts into oldest-prefix addressing."""
-    return (spec.mode == "backfill" and spec.source_id == "gdelt"
-            and spec.since is not None and spec.until is None
-            and source_node is not None and source_node.last_success_at is not None
-            and source_node.last_success_at < spec.since)
-
-
 def _resolve_window(
     spec: RunSpec,
     adapter: SourceAdapter,
@@ -39,8 +31,7 @@ def _resolve_window(
 ) -> tuple[datetime | None, datetime | None]:
     """The ingestion window `(since, until)` for one run (AC-42).
 
-    An explicit `since` wins except for checkpoint-anchored GDELT backfill.
-    Otherwise an incremental
+    An explicit `since` wins. Otherwise an incremental
     source starts at `Source.last_success_at` — or at
     `now − LIMES_BACKFILL_DAYS_UNSTRUCTURED` when the source has never run
     — and a non-incremental source observes the complete current snapshot.
@@ -51,19 +42,6 @@ def _resolve_window(
     production callers omit it.
     """
     if spec.since is not None:
-        # Resolve after the locked checkpoint read, never in the CLI before locking.
-        # Only GDELT opted into oldest-prefix backfill; other sources retain D-44.
-        if checkpoint_anchored_backfill(spec, source_node):
-            assert source_node is not None and source_node.last_success_at is not None
-            cutoff = max(DATA_START, source_node.last_success_at)
-            # A pre-scope checkpoint has not consumed the first eligible slot.
-            first = (cutoff + timedelta(microseconds=1)
-                     if source_node.last_success_at >= DATA_START else cutoff)
-            return cutoff, adapter.bound_ingest_window(  # type: ignore[attr-defined]
-                first, now or datetime.now(UTC))
-        if spec.source_id == "gdelt" and spec.until is None:
-            return spec.since, adapter.ingest_target(  # type: ignore[attr-defined]
-                now or datetime.now(UTC))
         return spec.since, spec.until
     if not adapter.supports_incremental:
         return None, spec.until

@@ -7,7 +7,7 @@ import csv
 import io
 import json
 import zipfile
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from pathlib import Path
 
 import httpx
@@ -16,14 +16,10 @@ import respx
 from lxml import etree
 
 from limes.errors import LimesError, SourceFetchError, SourceParseError
-from limes.pipeline.run import RunSpec
-from limes.pipeline.window import resolve_window
-from limes.sources.gdelt import GdeltAdapter
 from limes.sources.gleif import GleifAdapter
-from limes.sources.offeneregister import OffeneRegisterAdapter
 from limes.sources.ted import SEARCH_URL, TedAdapter
 from limes.sources.transparency_register import TransparencyRegisterAdapter
-from limes.types import RawRecord, SourceRecord
+from limes.types import RawRecord
 
 FIXTURES = Path(__file__).parents[1] / "fixtures/ingest47"
 NOW = datetime(2026, 10, 29, 12, tzinfo=UTC)
@@ -63,30 +59,6 @@ def test_current_rr_financial_consolidation_not_ownership():
         assert assertion.validity.valid_from < NOW
         assert assertion.provenance.evidence_member == "gleif-rr.csv"
         assert assertion.provenance.ontology_version == "1.4.0"
-
-
-def test_offene_actual_unwrapped_rows_use_individual_historical_vintage():
-    record = source_record("offeneregister.jsonl", "application/x-bzip2")
-    result = OffeneRegisterAdapter().normalize(record)
-    assert result.errors == 0 and len(result.assertions) == 3
-    companies = [
-        json.loads(line) for line in (FIXTURES / "offeneregister.jsonl").read_text().splitlines()
-    ]
-    dates = {
-        "german_register_number:" + row["company_number"]: datetime.fromisoformat(
-            row["retrieved_at"].replace("Z", "+00:00")
-        )
-        for row in companies
-    }
-    for assertion in result.assertions:
-        assert assertion.validity.recorded_at == dates[assertion.object.entity_id]
-        assert assertion.validity.recorded_at.year == 2018
-    row = companies[0]
-    row.pop("retrieved_at")
-    missing = record.model_copy(update={"payload": bz2.compress(json.dumps(row).encode())})
-    with pytest.raises(SourceParseError, match="refusing a wall-clock vintage"):
-        OffeneRegisterAdapter().normalize(missing)
-
 
 def test_current_transparency_export_counts_and_missing_people_are_honest():
     record = source_record("transparency.xml")
@@ -172,28 +144,6 @@ def test_ted_iteration_covers_all_pages_and_rejects_truncated_results():
         with pytest.raises(SourceFetchError, match="incomplete search"):
             list(TedAdapter().fetch_individual(None, None))
 
-
-def test_gdelt_initial_and_resume_keep_backlog_within_96_slots():
-    from tests.unit.test_pipeline_window import _settings
-
-    adapter = GdeltAdapter()
-    since, until = resolve_window(
-        RunSpec(source_id="gdelt", mode="ingest"), adapter, None, _settings(), now=NOW
-    )
-    assert since == NOW - timedelta(days=90)
-    assert until == since + timedelta(hours=23, minutes=45)
-    checkpoint = SourceRecord(
-        source_id="gdelt", name="GDELT", kind="structured", trust_rank=0.5, last_success_at=until
-    )
-    next_since, next_until = resolve_window(
-        RunSpec(source_id="gdelt", mode="ingest"), adapter, checkpoint, _settings(), now=NOW
-    )
-    assert next_since == until
-    assert next_until == until + timedelta(hours=23, minutes=45)
-    # One inclusive overlap slot; no gap and no leap over the remaining 89 days.
-    assert next_until < NOW - timedelta(days=87)
-
-
 def test_ingest_all_continues_then_fails_aggregate(monkeypatch, capsys):
     from limes.cli import ingest
 
@@ -215,7 +165,7 @@ def test_ingest_all_continues_then_fails_aggregate(monkeypatch, capsys):
 
 
 def test_bulk_original_first_then_bounded_chunks_and_invalid_tail(monkeypatch):
-    from limes.sources.bulk import bz2_jsonl_records, zip_csv_records
+    from limes.sources.bulk import zip_csv_records
 
     monkeypatch.setattr("limes.sources.bulk.CHUNK_ROWS", 1)
     raw = source_record("gleif-rr.csv", "application/zip")
@@ -225,97 +175,6 @@ def test_bulk_original_first_then_bounded_chunks_and_invalid_tail(monkeypatch):
     assert len(records) == 4
     assert [r.acquisition_context["source_row_offset"] for r in records[1:]] == [0, 1, 2]
     assert all(r.acquisition_context["rows"] == 1 for r in records[1:])
-    raw = source_record("offeneregister.jsonl", "application/x-bzip2")
-    records = list(bz2_jsonl_records(raw.payload, raw.source_url, NOW))
-    assert records[0].payload == raw.payload and len(records) == 3
-    assert b"".join(bz2.decompress(r.payload) for r in records[1:]) == bz2.decompress(raw.payload)
-    monkeypatch.setattr("limes.sources.bulk.MAX_LINE_BYTES", 8)
-    it = bz2_jsonl_records(raw.payload, raw.source_url, NOW)
-    assert next(it).payload == raw.payload  # archive retained even when normalization is unsafe
-    with pytest.raises(SourceFetchError, match="row exceeds byte limit"):
-        next(it)
-
-
-def test_law_index_is_archived_without_creating_a_permanent_parse_error(monkeypatch):
-    from limes.sources.gesetze_im_internet import GesetzeImInternetAdapter
-    from tests.unit.test_gesetze_im_internet_adapter import MEMBER_WITH_TOPICS, _law_zip_bytes, _toc
-
-    monkeypatch.setattr(
-        "limes.sources.gesetze_im_internet.fetch_bytes",
-        lambda url: _toc() if url.endswith("gii-toc.xml") else _law_zip_bytes(MEMBER_WITH_TOPICS),
-    )
-    adapter = GesetzeImInternetAdapter()
-    records = list(adapter.fetch(None, None))
-    assert records[0].acquisition_context["archive_only"]
-    result = adapter.normalize(records[0])
-    assert result.errors == 0 and not result.assertions and not result.entities
-
-
-def test_eurlex_standalone_act_survives_absent_relations():
-    from limes.sources.eurlex import EurlexAdapter
-
-    payload = json.dumps(
-        {
-            "results": {
-                "bindings": [
-                    {
-                        "celex": {"value": "32024R1689"},
-                        "title": {"value": "Artificial Intelligence Act"},
-                    }
-                ]
-            }
-        }
-    ).encode()
-    result = EurlexAdapter().normalize(
-        RawRecord(payload=payload, content_type="application/json", fetched_at=NOW)
-    )
-    assert not result.assertions
-    assert result.entities[0].entity_id == "celex:32024R1689"
-    assert result.entities[0].label == "Artificial Intelligence Act"
-
-
-def test_eurlex_actual_cdm_response_and_canonical_predicates():
-    from limes.sources.eurlex import EurlexAdapter, _build_query
-
-    record = source_record("eurlex.json", "application/json")
-    result = EurlexAdapter().normalize(record)
-    assert len(result.assertions) == 1 and len(result.entities) == 1
-    assert result.assertions[0].relation == "AMENDS"
-    assert result.assertions[0].object.entity_id == "celex:11972B/AFI/DCL/07"
-    query = _build_query(None, None)
-    assert "cdm:resource_legal_id_celex" in query
-    assert "cdm:work_date_document" in query
-    assert "cdm:resource-legal-id-celex" not in query
-
-
-def test_eurlex_pages_are_ordered_archived_and_repeated_data_fails(monkeypatch):
-    from limes.sources.eurlex import EurlexAdapter
-
-    monkeypatch.setattr("limes.sources.eurlex.PAGE_SIZE", 1)
-    requests = []
-    pages = [
-        json.dumps({"results": {"bindings": [{"celex": {"value": code}}]}}).encode()
-        for code in ["32024R1689", "32025R0001"]
-    ]
-    replies = iter(pages + [b'{"results":{"bindings":[]}}'])
-
-    def fetch(url, **kwargs):
-        requests.append(url)
-        return next(replies)
-
-    monkeypatch.setattr("limes.sources.eurlex.fetch_bytes", fetch)
-    records = list(EurlexAdapter().fetch(None, None))
-    assert len(records) == 3
-    assert records[1].payload == pages[1]
-    assert [r.acquisition_context["page"] for r in records] == [1, 2, 3]
-    from urllib.parse import parse_qs, urlsplit
-
-    assert "OFFSET 1" in parse_qs(urlsplit(requests[1]).query)["query"][0]
-    # Whitespace variation is not a new data page.
-    replies = iter([pages[0], json.dumps(json.loads(pages[0]), indent=2).encode()])
-    with pytest.raises(SourceFetchError, match="repeated SPARQL page"):
-        list(EurlexAdapter().fetch(None, None))
-
 
 def test_ubl_iso3_country_preserves_existing_buyer_address_identity_and_lookup():
     import hashlib

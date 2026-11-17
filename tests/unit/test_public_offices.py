@@ -27,27 +27,9 @@ FIXTURES = Path(__file__).parents[1] / "fixtures" / "public_offices"
 NOW = datetime(2026, 11, 7, 18, tzinfo=UTC)
 # Dated fixture sets, not legal seat quotas or live population claims.
 EXPECTED = {
-    "bt": 630,
-    "bw": 157,
-    "by": 202,
-    "be": 153,
-    "bb": 88,
-    "hb": 87,
-    "hh": 121,
-    "he": 133,
-    "mv": 71,
-    "ni": 146,
+    "bt": 136,
     "nw": 195,
-    "rp": 105,
-    "sl": 49,
-    "sn": 120,
-    "st": 83,
-    "sh": 69,
-    "th": 88,
-    "bverfg_1": 8,
-    "bverfg_2": 8,
-    "br": 180,
-    "bp": 1,
+    "br": 13,
 }
 
 
@@ -72,7 +54,7 @@ def test_every_qualified_official_mapping_archives_and_normalizes(scope):
     )
     assert len(snapshot.members) == EXPECTED[scope]
     assert set(snapshot.expected_ids) == {m.external_id for m in snapshot.members}
-    assert (snapshot.term is not None) == (scope not in ("bverfg_1", "bverfg_2", "br", "bp"))
+    assert (snapshot.term is not None) == (scope != "br")
     snapshot.consistent = True
     raw = RawRecord(
         payload=snapshot.model_dump_json().encode(),
@@ -98,23 +80,19 @@ def test_every_qualified_official_mapping_archives_and_normalizes(scope):
     assert all(e.properties["evidence_hash"] for e in members)
     assert normalized.model_dump() == adapter.normalize(raw).model_dump()
     if scope == "br":
-        assert Counter(m.role for m in snapshot.members) == {"regular": 69, "deputy": 111}
-        assert all(m.land for m in snapshot.members)
+        assert Counter(m.role for m in snapshot.members) == {"regular": 6, "deputy": 7}
+        assert {m.land for m in snapshot.members} == {"Nordrhein-Westfalen"}
         conflict = next(m for m in snapshot.members if "Dorothee Feller" in m.name)
         assert conflict.service_start == datetime(2022, 6, 30, tzinfo=UTC)
         assert not conflict.conflicts
         assert normalized.errors == sum(bool(m.conflicts) for m in snapshot.members)
     if scope == "bt":
-        assert all(m.name != "Junge, Frank" for m in snapshot.members)
-        former = next(m for m in snapshot.historical_members if m.name == "Junge, Frank")
-        assert former.service_end == datetime(2026, 7, 19, tzinfo=UTC)
-        zschau = next(m for m in snapshot.members if m.name == "Zschau, Katrin")
-        assert zschau.service_start == datetime(2026, 7, 20, tzinfo=UTC)
-    if scope == "bverfg_1":
-        leader = next(m for m in snapshot.members if "Harbarth" in m.name)
-        assert leader.leadership == ["Vorsitzender des Ersten Senats", "Präsident"]
-        assert leader.service_start is None  # Month precision is not an invented day.
-        assert any(e["interval"] == "November 2018" for e in leader.service_evidence)
+        # Selected at the source by the roster's Bundesland facet (BE-59); the
+        # Bundestag-wide departure table never adds non-NRW former members.
+        assert {m.land for m in snapshot.members} == {"Nordrhein-Westfalen"}
+        assert "official_land_filter" in snapshot.check_basis
+        assert any(m.name == "Bas, Bärbel" for m in snapshot.members)
+        assert not snapshot.historical_members
 
 
 class CursorDriver:
@@ -142,33 +120,46 @@ class CursorDriver:
         return SimpleNamespace(properties_set=1)
 
 
+def nw_fetcher(transform=lambda roster_calls, raw: raw):
+    """Landtag NRW roster plus its archived term evidence; counts roster reads."""
+    pages = fixture_payloads("nw")
+    roster_url = BY_CODE["nw"].url
+    roster_calls = []
+
+    def fetch(url):
+        if url != roster_url:
+            return pages[url][0]
+        roster_calls.append(url)
+        return transform(len(roster_calls), pages[roster_url][0])
+
+    return fetch, roster_calls
+
+
 @pytest.mark.parametrize("failure", ["changed", "empty", "overflow", "count"])
 def test_incomplete_or_changing_snapshot_never_emits_complete_record(
     tmp_path, monkeypatch, failure
 ):
     driver = CursorDriver()
     archive = ArchiveStore(tmp_path / "archive")
-    original = fixture_payloads("bb")[BY_CODE["bb"].url][0]
-    original = original.replace(b"</body>", b"<p>8. Wahlperiode</p></body>")
-    calls = 0
 
-    def fetch(url):
-        nonlocal calls
-        calls += 1
+    def transform(call, original):
         if failure == "empty":
             return b"<html><main>No directory</main></html>"
         if failure == "overflow":
             return b"x" * 11
         if failure == "count":
-            return original.replace(b'data-anzahl="">88 ', b'data-anzahl="">89 ')
-        if calls == 2:
-            return original.replace("Jean-René".encode(), b"Changed")
+            return original.replace(
+                b"</main>", "<p>196 Abgeordnete für diese Auswahl</p></main>".encode()
+            )
+        if call == 2:
+            return original.replace(b"Achtermeyer", b"Changed")
         return original
 
+    fetch, _ = nw_fetcher(transform)
     if failure == "overflow":
         monkeypatch.setattr("limes.public_offices.acquisition.MAX_PAGE_BYTES", 10)
     with pytest.raises((SourceFetchError, SourceParseError)):
-        Acquisition(driver, archive, fetch).acquire(BY_CODE["bb"])
+        Acquisition(driver, archive, fetch).acquire(BY_CODE["nw"])
     assert driver.failure
     assert driver.cursor
     assert driver.successful_run is None
@@ -178,41 +169,25 @@ def test_incomplete_or_changing_snapshot_never_emits_complete_record(
 def test_resume_reuses_archived_pages_but_rechecks_and_success_starts_fresh(tmp_path):
     driver = CursorDriver()
     archive = ArchiveStore(tmp_path / "archive")
-    original = fixture_payloads("bb")[BY_CODE["bb"].url][0]
-    original = original.replace(b"</body>", b"<p>8. Wahlperiode</p></body>")
-    calls = []
 
-    def fetch(url):
-        calls.append(url)
-        if len(calls) == 2:
+    def transform(call, original):
+        if call == 2:
             raise SourceFetchError("consistency recheck transport failed")
         return original
 
+    fetch, calls = nw_fetcher(transform)
     acquisition = Acquisition(driver, archive, fetch)
     with pytest.raises(SourceFetchError):
-        acquisition.acquire(BY_CODE["bb"])
+        acquisition.acquire(BY_CODE["nw"])
     driver.active_run = "attempt-2"
-    snapshot = acquisition.acquire(BY_CODE["bb"])
+    snapshot = acquisition.acquire(BY_CODE["nw"])
     assert snapshot.consistent
     assert len(calls) == 3
     assert all(p["retrieved_at"] for p in snapshot.pages)
     driver.successful_run = "attempt-2"
     driver.active_run = "attempt-3"
-    acquisition.acquire(BY_CODE["bb"])
+    acquisition.acquire(BY_CODE["nw"])
     assert len(calls) == 5
-
-
-def test_forward_pagination_cycle_is_loud():
-    url = BY_CODE["by"].url
-    raw = (
-        '<table><tr><td></td><td><a href="/abgeordnete/abgeordnete-von-a-z/profil/a/">'
-        "A</a></td><td>Ada</td><td></td><td>Joint group</td></tr></table>"
-        f'<a href="{url}">Weiter</a>'
-    ).encode()
-    with pytest.raises(SourceFetchError, match="cycle"):
-        Acquisition._collect(
-            BY_CODE["by"], lambda *args: (raw, "a" * 64, NOW.isoformat()), False, NOW.isoformat()
-        )
 
 
 def test_verified_dip_key_reuses_existing_person_without_name_merging():
@@ -249,7 +224,7 @@ def test_verified_dip_key_reuses_existing_person_without_name_merging():
 
 def test_changed_markup_and_incomplete_compound_office_key_fail_closed():
     with pytest.raises(SourceParseError):
-        parse_page("bw", b"<html><main>New layout</main></html>", BY_CODE["bw"].url)
+        parse_page("nw", b"<html><main>New layout</main></html>", BY_CODE["nw"].url)
     from limes.resolution.keys import deterministic_key
     from limes.types import Mention
 
@@ -282,7 +257,7 @@ def test_operator_identity_review_is_bounded_and_only_accepted_by_its_command():
     assert json.loads(job.argv()[-1]) == [review]
     with pytest.raises(ValidationError):
         JobRequest(
-            request_id=uuid4(), command="ingest", source="bundestag_dip", identity_reviews=[review]
+            request_id=uuid4(), command="ingest", source="gleif", identity_reviews=[review]
         )
     with pytest.raises(ValidationError):
         JobRequest(

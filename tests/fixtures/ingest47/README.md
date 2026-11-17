@@ -1,5 +1,8 @@
 # BE-47 current-source format evidence
 
+OffeneRegister and EUR-Lex fixtures were removed with their retired adapters
+(BE-59); they remain in Git history.
+
 Collected 2026-10-29 using bounded public metadata/format probes. No paid model
 or graph ingestion was used to collect these fixtures. Tests mock all transports.
 
@@ -11,12 +14,6 @@ or graph ingestion was used to collect these fixtures. Tests mock all transports
   Selection/order is reduced for tests; no full ZIP checksum/download is claimed.
   GLEIF public data; source definitions distinguish accounting consolidation from
   legal ownership. Fund management is retained in the archive, not relabeled.
-- `offeneregister.jsonl`: first two complete unchanged JSONL records decompressed
-  from a bounded prefix of https://daten.offeneregister.de/de_companies_ocdata.jsonl.bz2 .
-  Attribution: **from OpenCorporates**, published by OffeneRegister under CC-BY 4.0.
-  Source/readme: https://offeneregister.de/daten/ . Rows carry 2018 `retrieved_at`
-  observations. HTTP Last-Modified (2019-02-05) is not a publication or observation
-  timestamp and is not used in assertions. No date of birth is required or used.
 - `transparency.xml`: first two complete interest-representative elements from
   https://transparency-register.europa.eu/odplastorganisationxml_en (redirects to
   https://ec.europa.eu/transparencyregister/public/files/ODP/download/XML/latest).
@@ -34,13 +31,6 @@ or graph ingestion was used to collect these fixtures. Tests mock all transports
   https://github.com/OP-TED/eForms-SDK . No SDK source file is redistributed.
   Synthetic identities/publication dates are explicit. One winning result points
   at three party members; a losing lot references a tender but creates no award.
-- `eurlex.json`: unchanged two-binding response to the corrected CDM query
-  (`_build_query(None, None) LIMIT 2`) at
-  https://publications.europa.eu/webapi/rdf/sparql . It contains one standalone
-  legal act and one amendment; unknown author identifiers remain unmapped.
-  EU Publications Office public metadata. Separate one-row probes proved the
-  canonical `resource_legal_id_celex` predicate returns data and the old
-  `resource-legal-id-celex` predicate returns none.
 
 Production source availability, full data coverage, redistribution outside the
 source's stated terms and production-scale resources are not established by a

@@ -65,7 +65,7 @@ class SourceRegistry:
 
 
 def build_default_registry(
-    *, bundestag_dip_api_key: str = "", osm_acquisition: OsmAcquisition | None = None,
+    *, osm_acquisition: OsmAcquisition | None = None,
     osm_http_timeout_seconds: int = 180, osm_overpass_endpoints: tuple[str, ...] | None = None,
     offices_acquisition: Acquisition | None = None,
 ) -> SourceRegistry:
@@ -88,14 +88,6 @@ def build_default_registry(
 
     registry.register(NewsAdapter())
 
-    from limes.sources.bundestag_dip import BundestagDipAdapter
-
-    registry.register(BundestagDipAdapter(api_key=bundestag_dip_api_key))
-
-    from limes.sources.eurlex import EurlexAdapter
-
-    registry.register(EurlexAdapter())
-
     from limes.sources.feeds import FeedsAdapter
 
     registry.register(FeedsAdapter())
@@ -104,14 +96,6 @@ def build_default_registry(
 
     registry.register(FsdAdapter())
 
-    from limes.sources.gdelt import GdeltAdapter
-
-    registry.register(GdeltAdapter())
-
-    from limes.sources.gesetze_im_internet import GesetzeImInternetAdapter
-
-    registry.register(GesetzeImInternetAdapter())
-
     from limes.sources.gisco_nuts import GiscoNutsAdapter
 
     registry.register(GiscoNutsAdapter())
@@ -119,10 +103,6 @@ def build_default_registry(
     from limes.sources.gleif import GleifAdapter
 
     registry.register(GleifAdapter())
-
-    from limes.sources.offeneregister import OffeneRegisterAdapter
-
-    registry.register(OffeneRegisterAdapter())
 
     from limes.sources.osm import OsmAdapter
 
@@ -141,6 +121,11 @@ def build_default_registry(
     from limes.sources.wikidata import WikidataAdapter
 
     registry.register(WikidataAdapter())
+
+    # BE-59: NRW-headquartered companies and Vereine, selected at the source.
+    from limes.sources.wikidata_nrw import WikidataNrwAdapter
+
+    registry.register(WikidataNrwAdapter())
 
     from limes.sources.wikipedia import WikipediaAdapter
     from limes.sources.yahoo_finance import YahooFinanceAdapter

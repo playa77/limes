@@ -45,7 +45,6 @@ class Page(BaseModel):
     check_basis: str = "official_directory_set"
     departed_ids: list[str] = []
     entry_dates: dict[str, datetime] = {}
-    pagination: bool = False
     source_update_note: str | None = None
     historical_members: list[Member] = []
     name_aliases: dict[str, list[str]] = {}

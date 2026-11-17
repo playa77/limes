@@ -41,7 +41,7 @@ import sqlite3
 import time
 import uuid
 from contextlib import ExitStack, nullcontext
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from decimal import Decimal
 from typing import TYPE_CHECKING, Literal
 
@@ -332,12 +332,6 @@ def _execute_run(
         progress("acquiring")
     try:
         fetch_since = since
-        if (window_module.checkpoint_anchored_backfill(spec, source_node)
-                and source_node is not None and source_node.last_success_at is not None
-                and source_node.last_success_at >= DATA_START):
-            assert since is not None
-            # Preserve the recorded checkpoint anchor, but exclude its consumed slot.
-            fetch_since = since + timedelta(microseconds=1)
         # Inside the try scope so a malformed override aborts a run that has a
         # durable record to close (review F8).
         budget_seconds, budget_attempts = _source_budget(ctx.settings, spec.source_id)

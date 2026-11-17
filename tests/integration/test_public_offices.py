@@ -11,8 +11,8 @@ from limes.graph.loader import load
 from limes.pipeline.run import RunSpec, execute_run
 from limes.public_offices.catalogue import BY_CODE
 from limes.public_offices.models import Member, Snapshot
+from limes.public_offices.normalization import bundestag_office
 from limes.resolution.resolve import RunContext
-from limes.sources.bundestag_dip import _office, _period_start
 from limes.sources.public_offices import PublicOfficesAdapter
 from limes.sources.registry import SourceRegistry
 from limes.types import RawRecord
@@ -97,7 +97,7 @@ def test_dip_migration_replay_preserves_ids_other_sources_and_rollback(
 ):
     ontology = load_ontology_artifact()
     person = endpoint("old-canonical", "Person", "Ada Müller", ("bundestag_id", "42"))
-    office = _office(21, _period_start(21)).model_copy(
+    office = bundestag_office(21).model_copy(
         update={"deterministic_key": ("body_id", "BT"), "properties": {}}
     )
     party = endpoint("legacy-party", "PoliticalParty", "CDU/CSU")
