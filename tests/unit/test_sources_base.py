@@ -203,7 +203,8 @@ def test_upstream_failures_without_retry_after_are_bounded_and_log_every_attempt
     import structlog
 
     from limes.sources.fsd import FSD_URL, FsdAdapter
-    from limes.sources.ted import SEARCH_URL, TedAdapter
+    from limes.sources.ted import TedAdapter
+    from limes.sources.ted_search import SEARCH_URL
 
     delays = []
     monkeypatch.setattr("time.sleep", delays.append)

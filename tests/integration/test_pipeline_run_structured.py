@@ -105,12 +105,12 @@ def test_trace1_structured_run_end_to_end(ctx, fixture_fetch):
     assert record.cost_eur == 0
     assert record.finished_at is not None
 
-    # The NUTS fixture: 9 region→parent assertions over 10 entity nodes,
-    # plus 3 :PostalCode lookup nodes — nodes_created counts every merged
-    # node, lookup rows included.
-    assert record.assertions_written == 9
+    # The NRW NUTS fixture (BE-59): 7 region→parent assertions over 8 entity
+    # nodes (DE plus the DEA subtree), plus 2 NRW :PostalCode lookup nodes —
+    # nodes_created counts every merged node, lookup rows included.
+    assert record.assertions_written == 7
     assert record.assertions_skipped == 0
-    assert record.nodes_created == 13
+    assert record.nodes_created == 10
     assert record.nodes_matched == 0
 
     rows = ctx.driver.read(
@@ -118,15 +118,15 @@ def test_trace1_structured_run_end_to_end(ctx, fixture_fetch):
         {},
         30,
     )
-    assert rows[0]["c"] == 9
+    assert rows[0]["c"] == 7
     rows = ctx.driver.read("MATCH (n:PostalCode) RETURN count(n) AS c", {}, 30)
-    assert rows[0]["c"] == 3
+    assert rows[0]["c"] == 2
     rows = ctx.driver.read(
-        "MATCH (e:Entity {entity_id: 'nuts_code:DE111'}) RETURN e.label AS label",
+        "MATCH (e:Entity {entity_id: 'nuts_code:DEA23'}) RETURN e.label AS label",
         {},
         30,
     )
-    assert rows[0]["label"] == "Stuttgart, Stadtkreis"
+    assert rows[0]["label"] == "Köln, Kreisfreie Stadt"
 
 
     # Provenance is stamped from the registry (§15.2).
@@ -173,27 +173,27 @@ def test_interrupted_acquisition_resumes_loaded_prefix_on_real_graph(ctx, monkey
     try:
         run = execute_run(spec, recovered)
         assert not run.errors
-        assert run.nodes_created == 3  # only the unfinished postal rows
+        assert run.nodes_created == 2  # only the unfinished postal rows
         assert run.assertions_written == run.assertions_skipped == 0
         assert recovered.driver.read(
             "MATCH ()-[r:PART_OF_REGION]->() RETURN count(r) AS n", {}, 30
-        )[0]["n"] == 9
+        )[0]["n"] == 7
     finally:
         recovered.driver.close()
 
 
 def test_ac05_reingest_writes_nothing_new(ctx, fixture_fetch):
     first = execute_run(RunSpec(source_id="gisco_nuts", mode="ingest"), ctx)
-    assert first.assertions_written == 9
+    assert first.assertions_written == 7
 
     second = execute_run(RunSpec(source_id="gisco_nuts", mode="ingest"), ctx)
     # AC-05: identical re-ingest — zero new nodes, zero new relationships,
     # every assertion reported as skipped. nodes_matched counts entity
-    # merges (10); lookup nodes are not part of the entity-match derivation.
+    # merges (8); lookup nodes are not part of the entity-match derivation.
     assert second.assertions_written == 0
-    assert second.assertions_skipped == 9
+    assert second.assertions_skipped == 7
     assert second.nodes_created == 0
-    assert second.nodes_matched == 10
+    assert second.nodes_matched == 8
     assert second.errors == 0
 
     rows = ctx.driver.read(
@@ -201,7 +201,7 @@ def test_ac05_reingest_writes_nothing_new(ctx, fixture_fetch):
         {},
         30,
     )
-    assert rows[0]["c"] == 9
+    assert rows[0]["c"] == 7
 
 
 def test_record_level_parse_error_is_counted_and_skipped(ctx, fixture_fetch, monkeypatch):
@@ -221,7 +221,7 @@ def test_record_level_parse_error_is_counted_and_skipped(ctx, fixture_fetch, mon
     record = execute_run(RunSpec(source_id="gisco_nuts", mode="ingest"), ctx)
     assert record.records_fetched == 3
     assert record.errors == 1
-    assert record.assertions_written == 9
+    assert record.assertions_written == 7
     assert record.finished_at is not None
 
 
@@ -278,4 +278,4 @@ def test_source_and_run_nodes_are_durable(ctx, fixture_fetch):
     assert rows[0]["mode"] == "ingest"
     assert rows[0]["acquisition_start"] == datetime(2020, 1, 1, tzinfo=UTC)
     assert rows[0]["fetched"] == 2
-    assert rows[0]["written"] == 9
+    assert rows[0]["written"] == 7

@@ -8,13 +8,11 @@ from types import SimpleNamespace
 from unittest.mock import Mock
 
 import pytest
-import respx
 
 from limes.archive.store import ArchiveStore
 from limes.data_scope import DATA_SCOPE_VERSION, DATA_START
 from limes.errors import SourceFetchError
 from limes.sources.acquisition import AcquisitionStore
-from limes.sources.ted import SEARCH_URL, TedAdapter
 
 NOW = datetime(2026, 11, 12, tzinfo=UTC)
 
@@ -42,19 +40,6 @@ def test_scope_journals_preserve_but_do_not_replay_legacy_evidence(tmp_path):
         archive.get.assert_not_called()
         archive.get = original_get
     assert old_journal.read_bytes() == b"retained pre-policy evidence"
-
-
-def test_ted_out_of_scope_search_hit_is_rejected_before_notice_download():
-    with respx.mock as transport:
-        respx.post(SEARCH_URL).respond(200, json={
-            "totalNoticeCount": 1,
-            "notices": [{"publication-number": "12-2019",
-                         "links": {"xml": {"MUL": "https://ted.europa.eu/old.xml"}}}],
-        })
-        with pytest.raises(SourceFetchError, match="pre-2020"):
-            list(TedAdapter().fetch_individual(None, None))
-        assert len(transport.calls) == 1
-
 
 def test_news_replay_preserves_original_acquisition_and_internal_old_publication(
     monkeypatch,
@@ -94,7 +79,7 @@ def test_sources_keep_complete_registry_and_require_scoped_completeness():
 
     contract = json.loads((Path(__file__).parents[2] / "docs/runtime-contract.json").read_text())
     assert contract["source_acquisition_start"] == DATA_START.date().isoformat()
-    assert contract["all_sources_required"] is True
+    assert contract["geographic_scope"] == "DEA"
     state = {"source_id": "ted", "last_success_at": NOW, "last_run_id": "legacy",
              "corpus_complete": True}
     driver = SimpleNamespace(read=lambda *a: [state])

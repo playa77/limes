@@ -313,28 +313,30 @@ def test_element_without_usable_coordinates_skips_location():
     assert len(skipped) == 2
 
 
-def test_grid_exactly_covers_original_bbox_without_interior_gaps():
+def test_grid_exactly_covers_nrw_bbox_and_every_clause_is_nrw_area_limited():
     import re
     from decimal import Decimal
 
     boxes = []
     for query in osm.OVERPASS_QUERIES:
         assert '[timeout:25]' in query
-        clauses = re.findall(r'\]\(([-\d.,]+)\);', query)
+        assert 'area(id:3600062761)->.nrw;' in query  # Nordrhein-Westfalen (BE-59)
+        clauses = re.findall(r'\(area\.nrw\)\(([-\d.,]+)\);', query)
         assert len(clauses) == 7
         assert len(set(clauses)) == 1
         boxes.append(tuple(map(Decimal, clauses[0].split(','))))
-    assert len(boxes) == 80
-    assert boxes[0][:2] == (Decimal('47.27'), Decimal('5.87'))
-    assert boxes[-1][2:] == (Decimal('55.06'), Decimal('15.04'))
-    for row in range(8):
-        for col in range(10):
-            s, w, n, e = boxes[row * 10 + col]
+    rows, cols = osm.GRID_ROWS, osm.GRID_COLS
+    assert len(boxes) == rows * cols == 12
+    assert boxes[0][:2] == (Decimal('50.32'), Decimal('5.86'))
+    assert boxes[-1][2:] == (Decimal('52.54'), Decimal('9.47'))
+    for row in range(rows):
+        for col in range(cols):
+            s, w, n, e = boxes[row * cols + col]
             assert 0 < n - s < 1 and 0 < e - w < 1
-            if col < 9:
-                assert e == boxes[row * 10 + col + 1][1]
-            if row < 7:
-                assert n == boxes[(row + 1) * 10 + col][0]
+            if col < cols - 1:
+                assert e == boxes[row * cols + col + 1][1]
+            if row < rows - 1:
+                assert n == boxes[(row + 1) * cols + col][0]
 
 
 def test_restart_resumes_only_missing_partitions_and_replays_stable_records(tmp_path, monkeypatch):

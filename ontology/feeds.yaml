@@ -4,23 +4,22 @@
 # Each entry: url (RSS/Atom), name (curator label), language (de|en — the
 # feed's declared language, used as the document language), trust_rank
 # (per-feed override of the adapter's 0.60 default; Doc 1 §5.8 ranks
-# Commission RAPID and Bundesregierung releases at 0.70 and curated news
-# outlets at 0.60). Feeds without a trust_rank default to 0.60.
+# government releases at 0.70 and curated news outlets at 0.60). Feeds
+# without a trust_rank default to 0.60.
+#
+# 2.0.0 (BE-59): Nordrhein-Westfalen scope. EU Commission RAPID, Bundesregierung
+# and tagesschau are replaced by the NRW state government portal and WDR's NRW
+# politics feed; both URLs answered with RSS/Atom on 2026-11-17.
 #
 # The URLs are the single refresh point: a feed that moves is updated here
-# and nowhere else. They are the documented public endpoints of the listed
-# publishers; the first live backfill (WP-27) is the verification.
-version: "1.0.0"
+# and nowhere else.
+version: "2.0.0"
 feeds:
-  - url: https://ec.europa.eu/commission/presscorner/api/rss
-    name: European Commission RAPID press releases
-    language: en
-    trust_rank: 0.70
-  - url: https://www.bundesregierung.de/service/rss/breg-de/1151244/feed.xml
-    name: Bundesregierung press releases
+  - url: https://www.land.nrw/rss.xml
+    name: Landesregierung Nordrhein-Westfalen (land.nrw)
     language: de
     trust_rank: 0.70
-  - url: https://www.tagesschau.de/xml/rss2/
-    name: tagesschau
+  - url: https://www1.wdr.de/politik/politik-in-nrw/uebersicht-landespolitik-100.feed
+    name: WDR Politik in NRW
     language: de
     trust_rank: 0.60

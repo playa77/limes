@@ -1,6 +1,5 @@
 """Regressions from the first full ingest; all upstream transports are mocked."""
 
-import json
 from datetime import UTC, datetime
 
 import httpx
@@ -10,8 +9,6 @@ import respx
 from limes.errors import SourceFetchError
 from limes.extraction.base import build_extraction_messages
 from limes.sources.base import HTTP_MAX_ATTEMPTS, fetch_bytes
-from limes.sources.gleif import _published_urls
-from limes.sources.ted import _search_hits
 from limes.types import Passage
 
 
@@ -36,38 +33,6 @@ def test_disconnect_retries_and_surfaces_source_error(monkeypatch):
         with pytest.raises(SourceFetchError, match="after 4 attempts"):
             fetch_bytes("https://example.test/fsd")
         assert route.call_count == HTTP_MAX_ATTEMPTS
-
-def test_catalog_rejects_foreign_download_host():
-    payload = {
-        "data": [
-            {
-                kind: {"full_file": {"csv": {"url": "https://foreign.test/x.csv.zip"}}}
-                for kind in ("lei2", "rr")
-            }
-        ]
-    }
-    with pytest.raises(SourceFetchError, match="invalid publication catalog"):
-        _published_urls(json.dumps(payload).encode())
-
-
-def test_ted_current_shape_and_partial_search_fail_closed():
-    page = {
-        "notices": [
-            {
-                "publication-number": "123-2026",
-                "links": {"xml": {"MUL": "https://ted.europa.eu/en/notice/123-2026/xml"}},
-            }
-        ],
-        "totalNoticeCount": 1,
-        "timedOut": False,
-    }
-    assert _search_hits(json.dumps(page).encode()) == [
-        ("123-2026", "https://ted.europa.eu/en/notice/123-2026/xml")
-    ]
-    page["timedOut"] = True
-    with pytest.raises(SourceFetchError, match="timed out"):
-        _search_hits(json.dumps(page).encode())
-
 
 def test_record_errors_fail_operator_command_and_close_context(monkeypatch):
     from types import SimpleNamespace

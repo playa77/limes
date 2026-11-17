@@ -3,21 +3,16 @@
 from __future__ import annotations
 
 import bz2
-import csv
 import io
-import json
 import zipfile
 from datetime import UTC, datetime
 from pathlib import Path
 
-import httpx
 import pytest
-import respx
 from lxml import etree
 
 from limes.errors import LimesError, SourceFetchError, SourceParseError
-from limes.sources.gleif import GleifAdapter
-from limes.sources.ted import SEARCH_URL, TedAdapter
+from limes.sources.ted import TedAdapter
 from limes.sources.transparency_register import TransparencyRegisterAdapter
 from limes.types import RawRecord
 
@@ -41,30 +36,12 @@ def source_record(name, kind="application/xml"):
         fetched_at=NOW,
     )
 
-
-def test_current_rr_financial_consolidation_not_ownership():
-    record = source_record("gleif-rr.csv", "application/zip")
-    result = GleifAdapter().normalize(record)
-    assert result.errors == 0
-    assert {a.relation for a in result.assertions} == {
-        "DIRECTLY_CONSOLIDATED_BY",
-        "ULTIMATELY_CONSOLIDATED_BY",
-    }
-    assert len(result.assertions) == 2
-    source = list(csv.DictReader((FIXTURES / "gleif-rr.csv").open()))
-    for assertion in result.assertions:
-        row = source[assertion.provenance.evidence_row - 1]
-        assert assertion.subject.entity_id == "lei:" + row["Relationship.StartNode.NodeID"]
-        assert assertion.object.entity_id == "lei:" + row["Relationship.EndNode.NodeID"]
-        assert assertion.validity.valid_from < NOW
-        assert assertion.provenance.evidence_member == "gleif-rr.csv"
-        assert assertion.provenance.ontology_version == "1.4.0"
-
 def test_current_transparency_export_counts_and_missing_people_are_honest():
     record = source_record("transparency.xml")
     result = TransparencyRegisterAdapter().normalize(record)
-    assert result.errors == 0 and len(result.entities) == 2
-    assert len(result.assertions) == 14
+    # BE-59: the Köln-relocated organisation is kept; the Prague one is outside NRW.
+    assert result.errors == 0 and len(result.entities) == 1
+    assert len(result.assertions) == 8
     assert {a.relation for a in result.assertions} == {"LOBBIES_FOR"}
     assert {a.subject.entity_id for a in result.assertions} == {
         e.entity_id for e in result.entities
@@ -110,40 +87,6 @@ def test_ubl_awards_join_winning_result_to_exact_lot_and_parties():
     broken = record.model_copy(update={"payload": etree.tostring(root)})
     assert TedAdapter().normalize(broken).errors > 0
 
-
-def test_ted_iteration_covers_all_pages_and_rejects_truncated_results():
-    payload = (FIXTURES / "ted-contract.xml").read_bytes()
-
-    def page(number, token):
-        return {
-            "notices": [
-                {
-                    "publication-number": str(number),
-                    "links": {"xml": {"MUL": f"https://ted.europa.eu/en/notice/{number}/xml"}},
-                }
-            ],
-            "totalNoticeCount": 2,
-            "iterationNextToken": token,
-            "timedOut": False,
-        }
-
-    with respx.mock:
-        search = respx.post(SEARCH_URL).mock(
-            side_effect=[
-                httpx.Response(200, json=page(1, "next")),
-                httpx.Response(200, json=page(2, None)),
-            ]
-        )
-        respx.get("https://ted.europa.eu/en/notice/1/xml").respond(200, content=payload)
-        respx.get("https://ted.europa.eu/en/notice/2/xml").respond(200, content=payload)
-        records = list(TedAdapter().fetch_individual(None, None))
-        assert len(records) == 2
-        assert json.loads(search.calls[1].request.content)["iterationNextToken"] == "next"
-        assert records[1].acquisition_context["search_page"] == 2
-        search.mock(return_value=httpx.Response(200, json=page(1, None)))
-        with pytest.raises(SourceFetchError, match="incomplete search"):
-            list(TedAdapter().fetch_individual(None, None))
-
 def test_ingest_all_continues_then_fails_aggregate(monkeypatch, capsys):
     from limes.cli import ingest
 
@@ -162,19 +105,6 @@ def test_ingest_all_continues_then_fails_aggregate(monkeypatch, capsys):
         ingest.ingest_all()
     assert calls == ["a", "b", "c"]
     assert "upstream unavailable" in capsys.readouterr().err
-
-
-def test_bulk_original_first_then_bounded_chunks_and_invalid_tail(monkeypatch):
-    from limes.sources.bulk import zip_csv_records
-
-    monkeypatch.setattr("limes.sources.bulk.CHUNK_ROWS", 1)
-    raw = source_record("gleif-rr.csv", "application/zip")
-    records = list(zip_csv_records(raw.payload, raw.source_url, NOW))
-    assert records[0].payload == raw.payload
-    assert records[0].acquisition_context["archive_only"]
-    assert len(records) == 4
-    assert [r.acquisition_context["source_row_offset"] for r in records[1:]] == [0, 1, 2]
-    assert all(r.acquisition_context["rows"] == 1 for r in records[1:])
 
 def test_ubl_iso3_country_preserves_existing_buyer_address_identity_and_lookup():
     import hashlib

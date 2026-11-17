@@ -214,30 +214,17 @@ def gisco_fixture_records() -> list[RawRecord]:
     ]
 
 
-def _gleif_zip(name: str) -> bytes:
-    import io
-    import zipfile
-
-    buffer = io.BytesIO()
-    with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as archive:
-        archive.writestr(name, (FIXTURES / "gleif" / name).read_text(encoding="utf-8"))
-    return buffer.getvalue()
-
-
 def gleif_fixture_records() -> list[RawRecord]:
-    """The recorded GLEIF CSVs, wrapped in the zip the adapter fetches."""
-
-    def record(name: str, url: str) -> RawRecord:
-        return RawRecord(
-            payload=_gleif_zip(name),
-            content_type="application/zip",
-            source_url=url,
-            fetched_at=FETCHED_AT,
-        )
+    """The recorded-shape GLEIF API page (BE-59 NRW acquisition)."""
+    from limes.sources.gleif import CONTENT_TYPE, first_page_url
 
     return [
-        record("entities.csv", "https://example.test/entities.zip"),
-        record("relationships.csv", "https://example.test/relationships.zip"),
+        RawRecord(
+            payload=(FIXTURES / "gleif" / "lei_records.json").read_bytes(),
+            content_type=CONTENT_TYPE,
+            source_url=first_page_url(),
+            fetched_at=FETCHED_AT,
+        )
     ]
 
 

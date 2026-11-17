@@ -19,13 +19,10 @@ import hashlib
 import json
 from datetime import UTC, datetime
 
-import pytest
-import respx
-from httpx import Response
 from structlog.testing import capture_logs
 
 from limes.errors import SourceParseError
-from limes.sources.ted import FETCH_LIMIT, SEARCH_URL, TedAdapter
+from limes.sources.ted import TedAdapter
 from limes.types import RawRecord
 
 FIXTURES = __import__("pathlib").Path(__file__).parents[1] / "fixtures" / "ted"
@@ -76,86 +73,6 @@ def _search_payload() -> bytes:
             ]
         }
     ).encode()
-
-
-def test_fetch_yields_one_raw_record_per_notice_and_honors_window():
-    since = datetime(2025, 1, 1, tzinfo=UTC)
-    until = datetime(2025, 12, 31, tzinfo=UTC)
-    with respx.mock:
-        search = respx.post(SEARCH_URL).mock(return_value=Response(200, content=_search_payload()))
-        respx.get(NOTICE_URI_LEI).mock(return_value=Response(200, content=_lei_notice().payload))
-        respx.get(NOTICE_URI_NAME).mock(
-            return_value=Response(200, content=_name_only_notice().payload)
-        )
-        records = list(ADAPTER.fetch_individual(since, until))
-        body = json.loads(search.calls[0].request.content)
-
-    assert [r.source_url for r in records] == [NOTICE_URI_LEI, NOTICE_URI_NAME]
-    assert all(r.content_type == "application/xml" for r in records)
-    assert all(r.fetched_at.tzinfo is not None for r in records)
-    # The window is compiled into the search query text as an ISO date range.
-    assert body["query"] == "PD >= 20250101 AND PD <= 20251231"
-    assert body["limit"] == FETCH_LIMIT
-
-
-def test_fetch_without_window_starts_at_project_boundary():
-    with respx.mock:
-        search = respx.post(SEARCH_URL).mock(return_value=Response(200, content=_search_payload()))
-        respx.get(NOTICE_URI_LEI).mock(return_value=Response(200, content=_lei_notice().payload))
-        respx.get(NOTICE_URI_NAME).mock(
-            return_value=Response(200, content=_name_only_notice().payload)
-        )
-        records = list(ADAPTER.fetch_individual(None, None))
-        body = json.loads(search.calls[0].request.content)
-
-    assert len(records) == 2
-    assert body["query"] == "PD >= 20200101"
-
-
-def test_fetch_empty_search_yields_no_records_and_logs():
-    with respx.mock:
-        respx.post(SEARCH_URL).mock(return_value=Response(200, json={"results": []}))
-        with capture_logs() as captured:
-            records = list(ADAPTER.fetch_individual(None, None))
-    assert records == []
-    summary = [e for e in captured if e.get("event") == "ted: search returned no notices"]
-    assert len(summary) == 1
-
-
-def test_search_hits_without_id_or_uri_are_skipped_and_counted():
-    hits = [
-        {"id": "123456-2025", "uri": NOTICE_URI_LEI},
-        42,
-        {"uri": NOTICE_URI_NAME},
-        {"id": "999999-2025"},
-        {"id": "888888-2025", "uri": "  "},
-    ]
-    with respx.mock:
-        respx.post(SEARCH_URL).mock(return_value=Response(200, json={"results": hits}))
-        respx.get(NOTICE_URI_LEI).mock(return_value=Response(200, content=_lei_notice().payload))
-        with capture_logs() as captured:
-            records = list(ADAPTER.fetch_individual(None, None))
-    assert [r.source_url for r in records] == [NOTICE_URI_LEI]
-    skipped = [
-        e for e in captured if e.get("event") == "ted: search hits without id or uri skipped"
-    ]
-    assert len(skipped) == 1
-    assert skipped[0]["skipped"] == 4
-
-
-def test_search_response_that_is_not_json_raises():
-    with respx.mock:
-        respx.post(SEARCH_URL).mock(return_value=Response(200, content=b"not json"))
-        with pytest.raises(SourceParseError):
-            list(ADAPTER.fetch_individual(None, None))
-
-
-def test_search_response_without_results_list_raises():
-    with respx.mock:
-        respx.post(SEARCH_URL).mock(return_value=Response(200, json={"results": "nope"}))
-        with pytest.raises(SourceParseError):
-            list(ADAPTER.fetch_individual(None, None))
-
 
 def test_normalize_lei_notice_produces_expected_records():
     normalized = ADAPTER.normalize(_lei_notice())

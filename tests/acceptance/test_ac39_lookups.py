@@ -26,7 +26,7 @@ from tests.integration.conftest import Neo4jInstance
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
 # A correspondence present in the recorded GISCO fixture (and its miss).
-PRESENT = ("FI", "15701")
+PRESENT = ("DE", "50667")
 ABSENT = ("DE", "99999")
 
 
@@ -75,7 +75,7 @@ def test_ac39_lookup_is_readable_from_a_separate_process(
         "from limes.graph.lookups import postal_code_to_nuts\n"
         "d = GraphDriver(os.environ['URI'], os.environ['USER'], "
         "os.environ['PASSWORD'], os.environ['DB'])\n"
-        "nuts = postal_code_to_nuts(d, 'FI', '15701')\n"
+        "nuts = postal_code_to_nuts(d, 'DE', '50667')\n"
         "assert nuts is not None, 'the written correspondence must be readable'\n"
         "assert postal_code_to_nuts(d, 'DE', '99999') is None, 'a miss must return None'\n"
         "print('CROSS-PROCESS OK')\n"

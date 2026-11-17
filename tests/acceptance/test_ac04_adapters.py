@@ -13,9 +13,7 @@ No test touches the network.
 
 from __future__ import annotations
 
-import io
 import json
-import zipfile
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -66,18 +64,6 @@ def _csv_record(path: str, content_type: str, url: str) -> RawRecord:
     )
 
 
-def _zip_record(path: str, member: str, url: str) -> RawRecord:
-    buffer = io.BytesIO()
-    with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as archive:
-        archive.writestr(member, (FIXTURES / path).read_text(encoding="utf-8"))
-    return RawRecord(
-        payload=buffer.getvalue(),
-        content_type="application/zip",
-        source_url=url,
-        fetched_at=FETCHED_AT,
-    )
-
-
 
 def _records_for(source_id: str) -> list[RawRecord]:
     """The recorded fixtures of one adapter as raw records, wrapped exactly
@@ -96,14 +82,9 @@ def _records_for(source_id: str) -> list[RawRecord]:
             ),
         ]
     if source_id == "gleif":
-        return [
-            _zip_record("gleif/entities.csv", "entities.csv", "https://example.test/entities.zip"),
-            _zip_record(
-                "gleif/relationships.csv",
-                "relationships.csv",
-                "https://example.test/relationships.zip",
-            ),
-        ]
+        from tests.acceptance.conftest import gleif_fixture_records
+
+        return gleif_fixture_records()
     if source_id == "fsd":
         return [
             RawRecord(
@@ -195,6 +176,15 @@ def _records_for(source_id: str) -> list[RawRecord]:
         return []  # Investigation-driven transport is covered by test_news_pipeline.
     if source_id == "wikidata":
         return []  # enrichment-only: no fetch, no normalize-from-fetch
+    if source_id == "wikidata_nrw":
+        return [
+            RawRecord(
+                payload=(FIXTURES / "wikidata_nrw" / "organisations.json").read_bytes(),
+                content_type="application/sparql-results+json",
+                source_url="https://query.wikidata.org/sparql",
+                fetched_at=FETCHED_AT,
+            )
+        ]
     raise AssertionError(f"no fixture mapping for adapter {source_id!r}")
 
 
@@ -243,8 +233,8 @@ def test_ac04_fixture_records_produce_expected_deterministic_keys():
         + [a.object for a in normalized.assertions]
         + normalized.entities
     ]
-    assert any(endpoint.deterministic_key == ("nuts_code", "DE11") for endpoint in endpoints), (
-        "the DE11 region must carry its canonical NUTS key"
+    assert any(endpoint.deterministic_key == ("nuts_code", "DEA2") for endpoint in endpoints), (
+        "the DEA2 region must carry its canonical NUTS key"
     )
 
     gleif = registry.get("gleif")
@@ -259,6 +249,9 @@ def test_ac04_fixture_records_produce_expected_deterministic_keys():
             # endpoints of HEADQUARTERED_IN carry the address hash.
             if endpoint.type == "Corporation":
                 assert endpoint.deterministic_key[0] == "lei", endpoint
+            elif endpoint.type == "AdministrativeRegion":
+                # BE-59: NRW headquarters resolve to their NUTS-3 region.
+                assert endpoint.deterministic_key[0] == "nuts_code", endpoint
             else:
                 assert endpoint.deterministic_key[0] in ("coordinate_hash", "geonames_id"), endpoint
 

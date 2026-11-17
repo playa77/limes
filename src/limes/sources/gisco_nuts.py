@@ -16,14 +16,19 @@ double quoting; `_parse_rows` normalizes single-quoted fields to the
 double-quoted form the CSV module understands, so a quoted field containing a
 comma parses as one field, not two.
 
-Both files are static snapshots. The hierarchy stays together; the postcode
-artifact is archived and split into bounded chunks. The adapter ignores the
-window and every assertion's `valid_from` is the original observation instant.
+BE-59 NRW scope: the hierarchy (one small EU-wide table) is reduced to the
+country `DE` and the `DEA*` regions of Nordrhein-Westfalen. GISCO publishes the
+postcode correspondence only as one EU-wide CSV (~127 MB), so it is no longer
+downloaded at ingestion: the adapter emits the pinned, provenance-stamped NRW
+extract (`limes/reference/`, rebuilt by `tools/build_nrw_postcodes.py`). The
+adapter ignores the window and every assertion's `valid_from` is the original
+observation instant.
 """
 
 from __future__ import annotations
 
 import csv
+import json
 import re
 from collections.abc import Iterator
 from datetime import datetime
@@ -32,6 +37,7 @@ from typing import Literal
 import structlog
 
 from limes.errors import SourceParseError
+from limes.geo_scope import COUNTRY_ISO2, NUTS1, POSTCODE_REFERENCE, is_nrw_nuts
 from limes.sources.base import (
     fetch_bytes,
     key_entity_id,
@@ -76,7 +82,7 @@ class GiscoNutsAdapter:
         """Fetch both CSV files. The window is ignored: static snapshots are
         always full loads (§8.6.2 — `supports_incremental` is False)."""
         fetched_at = now_utc()
-        for url in (NUTS_URL,):
+        for url in (NUTS_URL,):  # Small EU-wide table; reduced to NRW in normalize.
             payload = fetch_bytes(url, max_bytes=8 * 1024 * 1024)
             logger.info(
                 "gisco payload fetched",
@@ -90,9 +96,22 @@ class GiscoNutsAdapter:
                 source_url=url,
                 fetched_at=now_utc(),
             )
-        from limes.sources.bulk import line_artifact_records
+        from importlib.resources import files
 
-        yield from line_artifact_records(POSTCODE_URL, fetched_at)
+        reference = files("limes.reference")
+        provenance = json.loads(reference.joinpath(
+            POSTCODE_REFERENCE.removesuffix(".csv") + ".json").read_text(encoding="utf-8"))
+        yield RawRecord(
+            payload=reference.joinpath(POSTCODE_REFERENCE).read_bytes(),
+            content_type=NUTS_CONTENT_TYPE,
+            source_url=POSTCODE_URL,
+            # The extract's observation instant, never this run's clock.
+            fetched_at=datetime.fromisoformat(provenance["extracted_at"]),
+            acquisition_context={
+                "pinned_reference": POSTCODE_REFERENCE,
+                "source_sha256": provenance["source_sha256"],
+            },
+        )
 
     def normalize(self, record: RawRecord) -> NormalizedRecord:
         """One file → assertions (hierarchy) or lookup rows (postcodes)."""
@@ -115,6 +134,8 @@ class GiscoNutsAdapter:
         if any(len(row) < 3 or not row[1] or not row[2] for row in rows):
             raise SourceParseError("gisco_nuts: malformed hierarchy identity/name row")
 
+        # NRW scope: the country row and the NUTS-1 DEA subtree only.
+        rows = [row for row in rows if row[1] == COUNTRY_ISO2 or row[1].startswith(NUTS1)]
         names: dict[str, str] = {row[1]: row[2] for row in rows}
         assertions: list[Assertion] = []
         entities: list[EntityEndpoint] = []
@@ -171,15 +192,23 @@ class GiscoNutsAdapter:
         if len(rows) < 2:
             raise SourceParseError("gisco_nuts: postcode file has no data rows")
 
+        header = rows[0]
+        try:
+            columns = [header.index(name) for name in ("POSTCODE", "CNTR_ID", "NUTS3_2024")]
+        except ValueError as exc:
+            raise SourceParseError(f"gisco_nuts: postcode header lacks {exc}") from exc
         lookup_rows: list[LookupRow] = []
-        skipped = 0
+        skipped = outside = 0
         for row in rows[1:]:
-            if len(row) < 7:
+            if len(row) <= max(columns):
                 skipped += 1
                 continue
-            postal_code, country_code, nuts3 = row[0], row[1], row[6]
+            postal_code, country_code, nuts3 = (row[i] for i in columns)
             if not postal_code or not country_code or not nuts3:
                 skipped += 1
+                continue
+            if not is_nrw_nuts(nuts3):
+                outside += 1
                 continue
             lookup_rows.append(
                 LookupRow(
@@ -193,6 +222,7 @@ class GiscoNutsAdapter:
             records=len(rows) - 1,
             lookup_rows=len(lookup_rows),
             skipped=skipped,
+            outside_nrw=outside,
             source_id=self.source_id,
         )
         return NormalizedRecord(

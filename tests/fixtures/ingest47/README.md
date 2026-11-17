@@ -18,7 +18,9 @@ or graph ingestion was used to collect these fixtures. Tests mock all transports
   https://transparency-register.europa.eu/odplastorganisationxml_en (redirects to
   https://ec.europa.eu/transparencyregister/public/files/ODP/download/XML/latest).
   Export date is unchanged; numberOfIR is adjusted from 18068 to 2 to describe
-  this deliberately reduced fixture. Catalog:
+  this deliberately reduced fixture. BE-59: the first element's head office is
+  relocated to 50667 Köln, GERMANY so the NRW filter has one in-scope and one
+  out-of-scope organisation; all other content is unchanged. Catalog:
   https://data.europa.eu/api/hub/search/datasets/transparency-register .
   License: European Commission reuse notice, Decision 2011/833/EU. Current export
   does not carry the legacy fixture's head-person/meeting relationships.

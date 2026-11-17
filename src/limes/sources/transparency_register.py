@@ -12,6 +12,11 @@ but a full snapshot always supersedes any window.
 
 Non-obvious choices, each load-bearing:
 
+- BE-59 NRW scope: the export has no query interface, so the one current file is
+  read and only organisations whose head office is in Nordrhein-Westfalen are
+  emitted (pinned NRW postcode reference; municipality name only without a
+  postcode); others are counted. Legacy `Templates` payloads carry no address
+  and are replayed unscoped only from pre-BE-59 archives.
 - The current daily XML endpoint is linked by the official transparency-register
   dataset catalog. ListOfIRPublicDetail export date/count are required. Current
   exports supply interests but no head-person or meetings: neither is inferred.
@@ -51,6 +56,7 @@ import structlog
 from lxml import etree  # type: ignore[import-untyped]
 
 from limes.errors import SourceParseError
+from limes.geo_scope import address_in_nrw
 from limes.sources.base import (
     fetch_bytes,
     hash_entity_id,
@@ -263,11 +269,18 @@ class TransparencyRegisterAdapter:
             )
         assertions: list[Assertion] = []
         entities: list[EntityEndpoint] = []
-        errors = 0
+        errors = outside = 0
         for ordinal, row in enumerate(rows, 1):
             identifier, name = text(row, "identificationCode"), text(row, "originalName")
             if not identifier or not name:
                 errors += 1
+                continue
+            offices = row.xpath("./*[local-name()='headOffice']")
+            office = offices[0] if offices else None
+            if office is None or not address_in_nrw(
+                text(office, "country"), text(office, "postCode"), text(office, "city")
+            ):
+                outside += 1  # BE-59: head office outside NRW (or absent) is out of scope.
                 continue
             group = EntityEndpoint(
                 entity_id=key_entity_id(("transparency_register_id", identifier)),
@@ -295,6 +308,8 @@ class TransparencyRegisterAdapter:
                 assertion.provenance.source_url = record.source_url
                 assertion.provenance.evidence_row = ordinal
                 assertions.append(assertion)
+        logger.info("transparency_register: export normalized", rows=len(rows),
+                    outside_nrw=outside, groups=len(entities), errors=errors)
         return NormalizedRecord(
             content_hash=payload_hash(record.payload),
             kind="structured",
