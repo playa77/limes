@@ -1,5 +1,8 @@
 # BE-56 source qualification
 
+> **Historical for retired scope (BE-59, 2026-11-17).** Qualification rows for the 18 retired scopes and Bundestag DIP are historical; `nw`, `bt` (now NRW-filtered) and `br` (NRW Land page) remain. The current
+> NRW source set and acquisition methods are in [NRW scope](NRW_SCOPE.md).
+
 Qualification began on 2026-11-07 against live main `d967bae244dc`.
 Exact original responses, retrieval times, URLs and SHA-256 hashes are pinned
 under `tests/fixtures/public_offices/`; gzip files decompress to the original

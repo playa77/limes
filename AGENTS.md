@@ -1,6 +1,6 @@
 # AGENTS.md — LIMES testing phase
 
-**Revision: 2026-11-13-limes-r1**
+**Revision: 2026-11-17-limes-r2**
 
 This policy is self-contained; no global instruction file is required. Its rules describe behavior, not technical enforcement. Verify relevant controls rather than claiming that prose enforces them.
 
@@ -73,7 +73,7 @@ Graph suites use disposable Docker containers; `LIMES_TEST_NEO4J_URI` may select
 
 ## Source scope and surviving invariants
 
-Every existing source remains required and enabled; removal/disabling requires explicit user approval. Acquisition/publication history starts **2020-01-01 inclusive UTC**. Current snapshots retain older entities, relationships, internal observations and original dates: do not filter fact validity, exclude old content or restamp vintage as fresh. Apply each source's current-snapshot or dated-publication strategy. `docs/SOURCE_DATA_SCOPE.md` governs all sources and scope-specific recovery/completeness; present evidence/options before changing inclusion where a genuine conflict remains. OffeneRegister stays included with honest original vintage, as historical content remains in current Wikipedia pages.
+The product covers **Nordrhein-Westfalen** only (BE-59, D-107). Every source selects NRW at the source — a server-side filter or a request set naming only NRW objects — and never downloads a nationwide or EU-wide corpus to search it for NRW rows; small single files without a query interface may be reduced to NRW-addressed entries during normalization. `limes.geo_scope` owns the NRW identifiers. Every registered source remains required and enabled; adding, removing or disabling a source requires explicit user approval. `docs/NRW_SCOPE.md` governs the source set. Acquisition/publication history starts **2020-01-01 inclusive UTC**. Current snapshots retain older entities, relationships, internal observations and original dates: do not filter fact validity, exclude old content or restamp vintage as fresh. Apply each source's current-snapshot or dated-publication strategy. `docs/SOURCE_DATA_SCOPE.md` governs time scope and scope-specific recovery/completeness; present evidence/options before changing inclusion where a genuine conflict remains. Retired sources' archived evidence stays readable and is never purged by an implementation change.
 
 - Tests never make real paid model calls; mock OpenRouter transports.
 - `composition.py` owns infrastructure construction, with API startup's existing documented exception; none inside pipeline consumers.
@@ -133,4 +133,5 @@ Check scope/symlinks before recursive searches, archives, copies or cleanup; nev
 
 ## Revision record
 
+- **2026-11-17-limes-r2:** Source scope restated for the user-approved Nordrhein-Westfalen rescope (BE-59, D-107): NRW selection at the source, the registered source set as the required set, and retirement of the OffeneRegister/every-source rule. All other rules unchanged.
 - **2026-11-13-limes-r1:** Synthesizes the approved operating policy and LIMES project instructions. By explicit user choice, live-baseline retries are bounded; live-baseline verification remains mandatory with no cached fallback.

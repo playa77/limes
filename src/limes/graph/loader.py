@@ -305,8 +305,8 @@ def _entity_properties(endpoint: EntityEndpoint, ontology: Ontology) -> dict[str
 
 def _relationship_properties(assertion: Assertion, temporal: bool) -> dict[str, Any]:
     """Every §5.6 metadata property. `recorded_at` comes from the
-    assertion's validity, never the wall clock: sources like OffeneRegister
-    publish their own vintage, and stamping ingestion time would make
+    assertion's validity, never the wall clock: sources that publish their own
+    vintage (historically OffeneRegister) keep it, and stamping ingestion time would make
     multi-year-stale data look current (Doc 1 §5.8). Non-temporal relations
     never carry `valid_to` (Doc 2 §5.1)."""
     provenance = assertion.provenance

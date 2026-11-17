@@ -1,5 +1,8 @@
 # BE-57 — Corpus ingestion reliability and source audit
 
+> **Historical for retired scope (BE-59, 2026-11-17).** This audit describes the Germany/EU-scale corpus before BE-59; TED packages, GLEIF golden copy, OffeneRegister, EUR-Lex, DIP and GDELT findings are historical. The current
+> NRW source set and acquisition methods are in [NRW scope](NRW_SCOPE.md).
+
 ## Current acquisition scope — BE-58, 2026-11-12
 
 [The approved source-scope contract](SOURCE_DATA_SCOPE.md) limits historical

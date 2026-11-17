@@ -1,5 +1,8 @@
 # BE-55 — GDELT backlog addressing and OSM leaf failures
 
+> **Historical for retired scope (BE-59, 2026-11-17).** The GDELT part describes a retired source; the OSM per-leaf recovery remains in force with the NRW grid. The current
+> NRW source set and acquisition methods are in [NRW scope](NRW_SCOPE.md).
+
 Current ingestion behavior is governed by [BE-57 corpus reliability](CORPUS_INGESTION_RELIABILITY.md).
 The bounded-pass/page-ceiling and explicit-window instructions below describe the
 older implementation; they are superseded by durable in-operation continuation.

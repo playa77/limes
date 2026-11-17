@@ -1,5 +1,36 @@
 # OPEN_ISSUES.md — LIMES evidenced open-issue ledger
 
+## Current geographic-scope disposition — 2026-11-17 (BE-59)
+
+[The NRW scope contract](docs/NRW_SCOPE.md) narrows the product to
+Nordrhein-Westfalen (D-107) and supersedes BE-58's every-source rule. OI-36's
+Germany/EU-scale corpus blockers (TED package history, FSD availability, OSM
+capacity at national scale, complete ingest) are re-scoped: they now apply to the
+NRW source set, whose volumes are ≈76k TED result notices and ≈44k GLEIF records
+rather than EU-wide corpora. A complete NRW ingest, freshness measurement and
+deployed-graph reconciliation (removing or retaining non-NRW data already loaded
+in an operator graph) remain operator obligations; no purge, ingest or deployment
+is performed or claimed.
+
+### Open — OI-37 NRW state law has no documented machine interface
+
+Gesetze im Internet (federal law) is retired. The intended NRW replacement,
+recht.nrw.de (SGV.NRW / GV.NRW), offers no documented API or bulk export as of
+2026-11-17; its search page calls an internal backend that was not used because
+that is not an authorized interface. No `LegalAct` is acquired for NRW law.
+Closure: a documented interface or explicit user authorization for a specific
+access method, an adapter with recorded fixtures, and its source-table entry.
+
+### Open — OI-38 BE-59 graph-backed lanes not executed in the delivery environment
+
+The BE-59 candidate ran lint, type checks, documentation checks, the unit and
+desktop unit/contract lanes and the database-free acceptance adapter checks.
+Integration, acceptance (graph) and desktop integration lanes need Docker for
+disposable Neo4j, which the delivery environment lacked; their expectations were
+updated by derivation from the changed fixtures. Closure: one full candidate run
+of `tests/integration`, `tests/acceptance` and `desktop/tests/integration` on the
+BE-59 head (CI or a Docker host), recorded in VERIFICATION.
+
 ## Current source-scope disposition — 2026-11-12 (BE-58)
 
 [The approved source contract](docs/SOURCE_DATA_SCOPE.md) starts acquisition

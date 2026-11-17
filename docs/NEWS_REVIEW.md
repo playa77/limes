@@ -1,5 +1,8 @@
 # News architecture review — evaluation and investigation
 
+> **Historical for retired scope (BE-59, 2026-11-17).** GDELT, which this investigation reviewed, is retired. The current
+> NRW source set and acquisition methods are in [NRW scope](NRW_SCOPE.md).
+
 Reviewed 2026-10-27 against `5295cab` on branch `work`. Input: user-supplied
 `gpt.md`, “LIMES: Architecture review and fit for the proposed news-intelligence
 module”. Its recommendations are review material, not instructions. The user's

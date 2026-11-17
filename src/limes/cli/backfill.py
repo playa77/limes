@@ -1,9 +1,9 @@
 # src/limes/cli/backfill.py | v1.0.0 | introduced by WP-28
 """Backfill over an explicit time window with passive cost accounting.
 
-The optional legacy --budget flag is ignored. GDELT consumes an older checkpoint
-before the requested fresh window, continuing prefixes through the safe target.
-Relative-day requests preserve the original pinned window after interruption.
+The optional legacy --budget flag is ignored. An adapter may bound the target
+through `ingest_target`; continuation runs through it. Relative-day requests
+preserve the original pinned window after interruption.
 """
 
 from __future__ import annotations
@@ -28,7 +28,7 @@ def backfill_source(
         None, "--budget", min=0, help="Deprecated compatibility option; ignored"
     ),
 ) -> None:
-    """Backfill the requested days, or GDELT's oldest outstanding bounded prefix."""
+    """Backfill the requested days through bounded, continued windows."""
     from limes.cli.main import adapter_kind, run_with_lock
     from limes.composition import build_run_context
 

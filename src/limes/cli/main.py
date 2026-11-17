@@ -201,9 +201,10 @@ def _run(fn: Callable[..., Any]) -> Callable[..., Any]:
 app = typer.Typer(
     no_args_is_help=True,
     add_completion=False,
-    help="LIMES — ontology-driven knowledge graph for German and European "
-    "policy analysis. Ingestion is manual (Doc 1 §6.6); backfill and "
-    "reextract record passive usage; remote operations need an operator token.",
+    help="LIMES — ontology-driven knowledge graph for Nordrhein-Westfalen "
+    "(companies, associations, public bodies, officeholders, procurement). "
+    "Ingestion is manual (Doc 1 §6.6); backfill and reextract record passive "
+    "usage; remote operations need an operator token.",
 )
 
 # The command modules import `parse_iso_datetime`, `adapter_kind`, and
