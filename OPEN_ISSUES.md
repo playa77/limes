@@ -24,15 +24,14 @@ The internal search backend is not used. Evidence:
 pages (D-109). Remaining limits: unlinked change clauses and law full text are not
 loaded.
 
-### Open — OI-38 BE-59 graph-backed lanes not executed in the delivery environment
+### Closed — OI-38 BE-59 graph-backed lanes not executed in the delivery environment
 
-The BE-59 candidate ran lint, type checks, documentation checks, the unit and
-desktop unit/contract lanes and the database-free acceptance adapter checks.
-Integration, acceptance (graph) and desktop integration lanes need Docker for
-disposable Neo4j, which the delivery environment lacked; their expectations were
-updated by derivation from the changed fixtures. Closure: one full candidate run
-of `tests/integration`, `tests/acceptance` and `desktop/tests/integration` on the
-BE-59 head (CI or a Docker host), recorded in VERIFICATION.
+The delivery environment lacked Docker, so the graph lanes first ran in PR CI.
+Its initial runs exposed five stale test expectations (no product defect), fixed
+on the branch. Evidence: GitHub Actions run 44090721561 on head `6b491bea8bff`,
+job `graph`: `tests/integration` 186 passed; `tests/acceptance` 85 passed;
+`desktop/tests/integration` 2 passed; `test_runtime_stack.py` 1 passed; `offline`,
+`web` and `candidate-check` succeeded. Re-run: the CI `graph` job on the PR head.
 
 ## Current source-scope disposition — 2026-11-12 (BE-58)
 

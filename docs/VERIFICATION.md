@@ -2,8 +2,9 @@
 
 ## 2026-11-17 — Nordrhein-Westfalen rescope (BE-59)
 
-**N1–N6 implemented; N7 accepted for the lanes runnable in the delivery
-environment; graph-backed lanes pending (OI-38).** Branch
+**N1–N7 accepted.** Graph-backed lanes passed in PR CI on `6b491bea8bff`
+(run 44090721561: integration 186, acceptance 85, desktop integration 2, runtime
+stack 1; offline/web/candidate-check green), closing OI-38. Branch
 `claude/gracious-sagan-hfh9fq`, live main verified as `846ef04e6a13`.
 [Package contract](NRW_SCOPE.md), decisions D-107/D-108. No production
 ingestion, purge, deployment or paid call was performed.
