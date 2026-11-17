@@ -55,7 +55,8 @@ def test_sources_returns_registry_with_trust_ranks(neo4j_instance: Neo4jInstance
         assert sources["wikidata_nrw"]["trust_rank"] == 0.9
         assert sources["feeds"]["kind"] == "unstructured"
         assert sources["gisco_nuts"]["supports_incremental"] is False
-        assert sources["gleif"]["supports_incremental"] is True
+        # BE-59: GLEIF is a current NRW API snapshot, not an incremental feed.
+        assert sources["gleif"]["supports_incremental"] is False
         # No source has ever run in this database.
         assert sources["gleif"]["last_success_at"] is None
 

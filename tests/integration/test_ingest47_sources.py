@@ -25,7 +25,9 @@ def test_current_structured_sources_preserve_archive_graph_api(
     neo4j_instance, tmp_path, monkeypatch
 ):
     wipe_graph(neo4j_instance)
-    gleif_page = (FIXTURES / "gleif_api/page_with_parents.json").read_bytes()
+    gleif_document = json.loads((FIXTURES / "gleif_api/page_with_parents.json").read_text())
+    gleif_document["links"].pop("next")  # one page: the captured cursor continues live
+    gleif_page = json.dumps(gleif_document).encode()
     ted_page = json.loads((FIXTURES / "ted_search/results_2025.json").read_text())
     ted_page.pop("iterationNextToken", None)
     ted_page["totalNoticeCount"] = len(ted_page["notices"])

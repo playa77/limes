@@ -177,7 +177,7 @@ def test_current_asof_belief_replacement_reentry_and_missing_scopes(
     )
     with make_api_client(neo4j_instance, tmp_path) as client:
         current = client.get("/public-offices").json()
-        assert len(current["scopes"]) == 21
+        assert len(current["scopes"]) == len(BY_CODE) == 3  # nw, bt, br (BE-59)
         assert sum(s["status"] == "missing" for s in current["scopes"]) == 20
         assert current["members"][0]["service_start"].startswith("2026-11-03")
         historical = client.get(
@@ -239,7 +239,7 @@ def test_company_person_name_only_candidate_stays_unresolved_and_scoped_ids_do_n
     corporation = endpoint("company", "Corporation", "Company")
     load(graph, [assertion("director", existing, "DIRECTOR_OF", corporation)], ontology)
     ingest(graph, neo4j_instance, tmp_path, monkeypatch, [member()], scope="bt")
-    ingest(graph, neo4j_instance, tmp_path, monkeypatch, [member()], scope="be")
+    ingest(graph, neo4j_instance, tmp_path, monkeypatch, [member()], scope="nw")
     with make_api_client(neo4j_instance, tmp_path) as client:
         data = client.get("/public-offices").json()
     bt = next(s for s in data["scopes"] if s["scope"] == "bt")
