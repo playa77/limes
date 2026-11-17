@@ -39,27 +39,27 @@ independent legal seat quotas. Bundesrat vote weights are never member counts.
 
 | Scope | Institution | Format / completion path | Fixture serving IDs | Evidence |
 |---|---|---|---:|---|
-| `bb` | Landtag Brandenburg | HTML table with published count | 88 | [bb.json](../tests/fixtures/public_offices/bb.json) |
-| `be` | Abgeordnetenhaus von Berlin | HTML alphabetic directory | 153 | [be.json](../tests/fixtures/public_offices/be.json) |
-| `bp` | Bundespräsidialamt | Official incumbent link + current biography | 1 | [bp.json](../tests/fixtures/public_offices/bp.json) |
+| `bb` | Landtag Brandenburg | HTML table with published count | 88 | `bb.json` (retired by BE-59; in Git history) |
+| `be` | Abgeordnetenhaus von Berlin | HTML alphabetic directory | 153 | `be.json` (retired by BE-59; in Git history) |
+| `bp` | Bundespräsidialamt | Official incumbent link + current biography | 1 | `bp.json` (retired by BE-59; in Git history) |
 | `br` | Bundesrat | 16 official Land directories, both classes + individual profiles | 180 | [br.json](../tests/fixtures/public_offices/br.json) |
 | `bt` | Deutscher Bundestag | HTML AJAX + dated departure/replacement table | 630 | [bt.json](../tests/fixtures/public_offices/bt.json) |
-| `bverfg_1` | Bundesverfassungsgericht — Erster Senat | Official Senate directory + individual judicial profiles | 8 | [bverfg_1.json](../tests/fixtures/public_offices/bverfg_1.json) |
-| `bverfg_2` | Bundesverfassungsgericht — Zweiter Senat | Official Senate directory + individual judicial profiles | 8 | [bverfg_2.json](../tests/fixtures/public_offices/bverfg_2.json) |
-| `bw` | Landtag von Baden-Württemberg | HTML AJAX + result-count metadata | 157 | [bw.json](../tests/fixtures/public_offices/bw.json) |
-| `by` | Bayerischer Landtag | HTML forward pagination | 202 | [by.json](../tests/fixtures/public_offices/by.json) |
-| `hb` | Bremische Bürgerschaft (Landtag) | Official temporary static HTML directory | 87 | [hb.json](../tests/fixtures/public_offices/hb.json) |
-| `he` | Hessischer Landtag | HTML member cards | 133 | [he.json](../tests/fixtures/public_offices/he.json) |
-| `hh` | Hamburgische Bürgerschaft | HTML group sections/member cards | 121 | [hh.json](../tests/fixtures/public_offices/hh.json) |
-| `mv` | Landtag Mecklenburg-Vorpommern | HTML searchable cards | 71 | [mv.json](../tests/fixtures/public_offices/mv.json) |
-| `ni` | Niedersächsischer Landtag | HTML alphabet partitions; exclude explicit non-mandate ministers | 146 | [ni.json](../tests/fixtures/public_offices/ni.json) |
+| `bverfg_1` | Bundesverfassungsgericht — Erster Senat | Official Senate directory + individual judicial profiles | 8 | `bverfg_1.json` (retired by BE-59; in Git history) |
+| `bverfg_2` | Bundesverfassungsgericht — Zweiter Senat | Official Senate directory + individual judicial profiles | 8 | `bverfg_2.json` (retired by BE-59; in Git history) |
+| `bw` | Landtag von Baden-Württemberg | HTML AJAX + result-count metadata | 157 | `bw.json` (retired by BE-59; in Git history) |
+| `by` | Bayerischer Landtag | HTML forward pagination | 202 | `by.json` (retired by BE-59; in Git history) |
+| `hb` | Bremische Bürgerschaft (Landtag) | Official temporary static HTML directory | 87 | `hb.json` (retired by BE-59; in Git history) |
+| `he` | Hessischer Landtag | HTML member cards | 133 | `he.json` (retired by BE-59; in Git history) |
+| `hh` | Hamburgische Bürgerschaft | HTML group sections/member cards | 121 | `hh.json` (retired by BE-59; in Git history) |
+| `mv` | Landtag Mecklenburg-Vorpommern | HTML searchable cards | 71 | `mv.json` (retired by BE-59; in Git history) |
+| `ni` | Niedersächsischer Landtag | HTML alphabet partitions; exclude explicit non-mandate ministers | 146 | `ni.json` (retired by BE-59; in Git history) |
 | `nw` | Landtag Nordrhein-Westfalen | HTML member table | 195 | [nw.json](../tests/fixtures/public_offices/nw.json) |
-| `rp` | Landtag Rheinland-Pfalz | Official JSON API discovered from current-period component | 105 | [rp.json](../tests/fixtures/public_offices/rp.json) |
-| `sh` | Schleswig-Holsteinischer Landtag | HTML list with two official profile systems | 69 | [sh.json](../tests/fixtures/public_offices/sh.json) |
-| `sl` | Landtag des Saarlandes | HTML profile cards | 49 | [sl.json](../tests/fixtures/public_offices/sl.json) |
-| `sn` | Sächsischer Landtag | HTML alphabetical cards | 120 | [sn.json](../tests/fixtures/public_offices/sn.json) |
-| `st` | Landtag von Sachsen-Anhalt | HTML directory with published count | 83 | [st.json](../tests/fixtures/public_offices/st.json) |
-| `th` | Thüringer Landtag | HTML directory with duplicate presentation views | 88 | [th.json](../tests/fixtures/public_offices/th.json) |
+| `rp` | Landtag Rheinland-Pfalz | Official JSON API discovered from current-period component | 105 | `rp.json` (retired by BE-59; in Git history) |
+| `sh` | Schleswig-Holsteinischer Landtag | HTML list with two official profile systems | 69 | `sh.json` (retired by BE-59; in Git history) |
+| `sl` | Landtag des Saarlandes | HTML profile cards | 49 | `sl.json` (retired by BE-59; in Git history) |
+| `sn` | Sächsischer Landtag | HTML alphabetical cards | 120 | `sn.json` (retired by BE-59; in Git history) |
+| `st` | Landtag von Sachsen-Anhalt | HTML directory with published count | 83 | `st.json` (retired by BE-59; in Git history) |
+| `th` | Thüringer Landtag | HTML directory with duplicate presentation views | 88 | `th.json` (retired by BE-59; in Git history) |
 
 All 17 parliamentary scopes have pinned current legislative-period metadata.
 Explicit official term labels are preferred; otherwise the separately attributed,

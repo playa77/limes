@@ -1,3 +1,8 @@
+> **2026-11-17 geographic rescope (BE-59, D-107, v2.2.0):** Nordrhein-Westfalen
+> only, selected at each source. §8.5.2 and §8.5.2a state the NRW source table
+> and officeholder scopes; [NRW source dispositions](NRW_SCOPE.md) supersede
+> BE-58's "every source stays" rule below. Ontology types are unchanged.
+
 > **2026-11-12 source-scope amendment (BE-58):** All existing sources remain
 > required. Acquisition/publication history starts **2020-01-01 inclusive**;
 > current snapshots retain all older entities, facts and original dates.
@@ -20,20 +25,21 @@
 | Field | Value |
 |---|---|
 | Document | LIMES — Technical Specification (Document 2 of 3) |
-| Version | 2.1.0 |
-| Date | 2026-08-01; reconciled 2026-10-28 |
+| Version | 2.2.0 |
+| Date | 2026-08-01; reconciled 2026-10-28; NRW rescope 2026-11-17 |
 | Status | Maintained implementation contract; acceptance status in both roadmaps |
-| Depends on | LIMES — Design Document v2.0.0 (all sections) |
+| Depends on | LIMES — Design Document v2.1.0 (all sections) |
 | Supersedes | v2.0.0 (amended in §5.2, §5.3, §5.6, §8.3, §13.3, §15.2); v1.0.0 – v1.3.0, all withdrawn |
 
 ## Revision History
 
 | Version | Date | Changes |
 |---|---|---|
+| 2.2.0 | 2026-11-17 | BE-59 / D-107 NRW rescope. §8.5.2 source table: GLEIF LEI API region filter, TED Search API NRW result notices, GISCO NRW subtree with pinned postcode extract, OSM NRW area, FSD/Transparency Register NRW-address filter, NRW feeds, new `wikidata_nrw`; EUR-Lex, GDELT, OffeneRegister, Gesetze im Internet and Bundestag DIP retired. §8.5.2a reduced to the `nw`, `bt` and `br` roster scopes. Scope table S-06/S-07/S-31 and §4 layout updated. |
 | 2.1.0 | 2026-08-01 | Embedding merge-stamp amendment (WP-25a). §5.6 stamps `label_embedding = embed(label)` in the loader's merge — the single choke point every entity creation passes through — closing the seam conflict found during WP-25: the §5.3 vector index previously had no registered writer. §5.2 and §15.2 attribute the property to the shared merge routine, not a new writer; §8.3 documents the `embedder` seam and the one-shot backfill `stamp_missing_embeddings`; §13.3 orders the backfill before the first unstructured backfill. The resolver remains read-only against the index (§8.8.3). |
-| 2.0.0 | 2026-07-28 | Clean re-issue. Resolves all six open questions in Design Document v2.0.0 §11.2 and all fifteen defects found in the v1.x set. §15 is new and mandatory: a seam register derived from end-to-end call traces, which is the artifact whose absence allowed the v1.x defects. |
+| 2.0.0 | 2026-07-28 | Clean re-issue. Resolves all six open questions in the previous Design Document v2.0.0 §11.2 and all fifteen defects found in the v1.x set. §15 is new and mandatory: a seam register derived from end-to-end call traces, which is the artifact whose absence allowed the v1.x defects. |
 
-### Resolution of Design Document v2.0.0 §11.2
+### Resolution of the previous Design Document v2.0.0 §11.2
 
 | Question | Resolved in |
 |---|---|
@@ -77,8 +83,8 @@ Recorded so the same ground is not re-covered. Each is resolved in the section n
 | S-03 | Neo4j driver, session modes, schema and index provisioning |
 | S-04 | Raw archive store, content addressing, compression |
 | S-05 | `SourceAdapter` protocol, source registry, registry population |
-| S-06 | Structured adapters: GISCO/NUTS, GLEIF, EUR-Lex, FSD, TED, Transparency Register, Bundestag DIP, Gesetze im Internet, Wikidata, OSM, OffeneRegister |
-| S-07 | Integrated inputs: GDELT coded observations, curated DE/EN feeds and agency dispatches |
+| S-06 | Structured adapters, NRW-selected at the source (BE-59): GISCO/NUTS, GLEIF, FSD, TED, Transparency Register, Wikidata (enrichment), Wikidata NRW organisations, OSM |
+| S-07 | Integrated inputs: curated NRW feeds and investigation news (GDELT retired by BE-59) |
 | S-08 | Normalizer: independent structured/document channels, source/version lineage, language and precise times |
 | S-09 | Gate: hash deduplication, spaCy NER, passage selection |
 | S-10 | Shared extractor protocol, model implementations, qualified claim/event schema, attribution and evidence |
@@ -102,7 +108,7 @@ Recorded so the same ground is not re-covered. Each is resolved in the section n
 | S-28 | Cross-process reference data |
 | S-29 | Wikipedia revision-linked entity context, DE/EN, shared document processing (BE-46) |
 | S-30 | Yahoo Finance governance, shareholder structure and earnings/report metadata; identity, schema/loader/API migration and availability semantics (BE-46) |
-| S-31 | BE-56: Bundestag/all 16 state parliaments, both Bundesverfassungsgericht Senates, Bundesrat regular/deputy members and Bundespräsident/in; canonical persons, institution-appropriate offices, provenance/migration and all 21 coverage scopes; implemented candidate; qualification and deployed population reported separately |
+| S-31 | BE-56 narrowed by BE-59: Landtag NRW, NRW Bundestag members and NRW Bundesrat regular/deputy members; canonical persons, institution-appropriate offices, roster snapshots and per-scope coverage |
 
 **Out of scope:** Design Document §2.4 applies. CI already exists. Agency/news processing is core scope; no separate extractor product, event-ledger application or second vector database is included.
 
@@ -152,9 +158,8 @@ limes/
 │   ├── graph/{driver,schema,loader,temporal,lookups,queries,embeddings}.py
 │   ├── archive/store.py
 │   ├── sources/{base,registry}.py
-│   ├── sources/{gisco_nuts,gleif,eurlex,fsd,ted,transparency_register,
-│   │            bundestag_dip,gesetze_im_internet,wikidata,osm,
-│   │            offeneregister,gdelt,feeds}.py
+│   ├── sources/{gisco_nuts,gleif,fsd,ted,ted_search,transparency_register,
+│   │            wikidata,wikidata_nrw,osm,feeds,news,public_offices}.py
 │   ├── pipeline/{run,normalize,gate,passages,idempotency,window}.py
 │   ├── extraction/{base,openrouter_client,openrouter,ollama,schema,cache}.py
 │   ├── extraction/prompts/{extraction,adjudication,nl2cypher}_v1.0.0.md
@@ -861,20 +866,16 @@ Adapters emit records and **write nothing to the graph**.
 
 | `source_id` | Access | Emits | Incremental | Trust |
 |---|---|---|---|---|
-| `gisco_nuts` | Static CSV | `AdministrativeRegion`, `PART_OF_REGION`, `LookupRow(postal_code)` | no | 1.00 |
-| `gleif` | Published golden copy CSV | `Corporation`, `HEADQUARTERED_IN`, `DIRECTLY_CONSOLIDATED_BY`, `ULTIMATELY_CONSOLIDATED_BY` | yes | 1.00 |
-| `eurlex` | Current complete Cellar SPARQL snapshot | `LegalAct`, `Topic`, `ADOPTED`, `AMENDS`, `REPEALS`, `CITES`, `ABOUT_TOPIC` | no; internal act dates unrestricted | 1.00 |
-| `fsd` | Consolidated XML | `Sanction`, `TARGETS`, `IMPOSED_BY`, `ESTABLISHED_BY` | yes | 1.00 |
-| `ted` | Bulk XML | `Contract`, `AWARDED_TO`, `BUYER_OF`, `ABOUT_TOPIC` | yes | 1.00 |
-| `transparency_register` | Export XML | `InterestGroup`, `LOBBIES_FOR`, `MET_WITH`, `MEMBER_OF` | yes | 1.00 |
-| `bundestag_dip` | DIP API | `Person`, `Office`, `PublicBody`, `ParliamentaryGroup`, historical term/group evidence; never current-roster certification | no; complete current catalogue | 1.00 |
-| `public_offices_<scope>` (21) | Official current directories/API/profile evidence | `Person`, `PersonIdentifier`, `Office`, `PublicBody`, `ParliamentaryGroup`, `RosterSnapshot`, `RosterMembership` | no; current snapshots only | 1.00 |
-| `gesetze_im_internet` | Index + XML | `LegalAct`, `APPLIES_TO`, `Topic` | yes | 1.00 |
-| `wikidata` | SPARQL, read-only enrichment | aliases and QIDs; never bulk-loaded | n/a | 0.90 |
-| `osm` | Overpass, DE bbox in bounded resumable partitions | `Asset`, `LOCATED_IN`, `OPERATES`, KRITIS `Topic` | no | 0.75 |
-| `offeneregister` | Current exposed historical bzip2 JSONL snapshot; original row vintage retained | `Corporation`, `DIRECTOR_OF` | no | 0.30 |
-| `gdelt` | 15-min ZIP containing 61-column TSV | Coded `Event` observations, role/location edges, export/row/report provenance; original report documents only when separately acquired | yes | 0.50 |
-| `feeds` | RSS/Atom per `feeds.yaml` | One source-versioned document per entry | yes | 0.60–0.70 |
+| `gisco_nuts` | Small EU NUTS CSV reduced to `DE`/`DEA*`; pinned NRW postcode extract (no EU-wide postcode download) | `AdministrativeRegion`, `PART_OF_REGION`, `LookupRow(postal_code)` | no | 1.00 |
+| `gleif` | LEI API, `filter[entity.addresses.region]=DE-NW`, cursor pages | `Corporation`, `HEADQUARTERED_IN`, `LOCATED_IN`, `DIRECTLY_CONSOLIDATED_BY`, `ULTIMATELY_CONSOLIDATED_BY` | no; current snapshot | 1.00 |
+| `fsd` | Consolidated XML (no query interface); NRW-addressed entries only | `Sanction`, `TARGETS`, `IMPOSED_BY`, `ESTABLISHED_BY` | yes | 1.00 |
+| `ted` | Search API, `place-of-performance IN (DEA)` result notices, monthly windows | `Contract`, `AWARDED_TO`, `BUYER_OF`, `ABOUT_TOPIC`, buyer `HEADQUARTERED_IN`/`LOCATED_IN` | yes | 1.00 |
+| `transparency_register` | Export XML (no query interface); NRW head offices only | `InterestGroup`, `LOBBIES_FOR` (legacy archives: `MET_WITH`, `MEMBER_OF`) | yes | 1.00 |
+| `public_offices_<scope>` (`nw`, `bt`, `br`) | Official current directories/profiles, NRW-selected | `Person`, `PersonIdentifier`, `Office`, `PublicBody`, `ParliamentaryGroup`, `RosterSnapshot`, `RosterMembership` | no; current snapshots only | 1.00 |
+| `wikidata` | MediaWiki API, read-only enrichment | aliases and QIDs; never bulk-loaded | n/a | 0.90 |
+| `wikidata_nrw` (BE-59) | One bounded SPARQL query: organisation classes with headquarters `P131*` NRW | `Corporation` (LEI or QID key), `InterestGroup`, `HEADQUARTERED_IN` | no; current snapshot | 0.90 |
+| `osm` | Overpass, NRW area within 12 NRW bbox cells, bounded resumable partitions | `Asset`, `LOCATED_IN`, `OPERATES`, KRITIS `Topic` | no | 0.75 |
+| `feeds` | RSS/Atom per `feeds.yaml` 2.0.0 (land.nrw, WDR Politik in NRW) | One source-versioned document per entry | yes | 0.60–0.70 |
 | `wikipedia` (BE-46) | MediaWiki API, verified Wikidata sitelinks | Revision-linked entity context and optional evidence-linked extracted claims | Revision-aware refresh, not full history | 0.65 |
 | `yahoo_finance` (BE-46) | Yahoo Finance through pinned `yfinance` transport | Company/security identity, available officers/board roles, shareholder structure, earnings/report metadata | Dated snapshots, not reconstructed history | 0.70 |
 | `news` (BE-43/DC-15) | Dynamic DE/EN public search RSS | Archived index responses and report versions, qualified NewsClaim artifacts; full article text unavailable | Investigation-driven bounded cycles | 0.50 index trust |
@@ -889,8 +890,12 @@ content hashes and successful extraction caches avoid duplicate processing witho
 dropping undated/corrected entries through a publisher-date filter. Rejections stay
 archived and replayable. Feed URL disposition remains an operator decision.
 
-BE-57 acquires the TED XML corpus via monthly/daily packages rather than individual
-rendering URLs. Initial TED/EUR-Lex/DIP loads do not inherit the news lookback;
+BE-59 acquires TED through the Search API (NRW result notices, monthly windows,
+one archived record per search page, durable receipts for closed months) because
+the per-notice XML rendering answers automated clients with an empty WAF
+challenge; legacy-schema notices expose no winners there. Retired sources
+(EUR-Lex, GDELT, OffeneRegister, Gesetze im Internet, Bundestag DIP) keep their
+archived evidence readable but are not registered. Initial TED loads do not inherit the news lookback;
 legacy recent-window success does not certify their historical baseline.
 Composition supplies durable HTTP/load/package receipts on the archive volume;
 receipts follow successful writes and checkpoints require clean iterator
@@ -900,7 +905,8 @@ and completed windows separately from infrastructure health. The
 limitations and remaining corpus acceptance; no automated test result substitutes
 for a completed reconciled ingest.
 
-OSM acquisition (BE-49) covers the original bbox with 80 deterministic cells,
+OSM acquisition (BE-49, NRW grid by BE-59) covers the NRW bbox with 12 deterministic
+cells, each clause also restricted to the NRW administrative area,
 rejects error remarks even on HTTP 200, archives original responses and retains a
 per-partition cursor under the archive volume until the complete load succeeds.
 Retries replay cached partitions with their original fetch times; this is a
@@ -931,38 +937,37 @@ loading. No automatic jobs or rollback migration. See
 
 Both BE-46 adapters are registered selection-only sources; generic ingest-all excludes them.
 Wikipedia must not be confused with the existing enrichment-only Wikidata adapter.
-German and European policy remains the scope; neither new adapter promises
-comprehensive EU-27 coverage. Core design §3.6 defines the enrichment semantics.
+Nordrhein-Westfalen is the scope (BE-59); neither adapter promises completeness.
+Core design §3.6 defines the enrichment semantics.
 
-#### 8.5.2a BE-56 parliamentary and federal-officeholder contract
+#### 8.5.2a BE-56 officeholder contract, NRW scopes (BE-59)
 
-[BE-56 implementation plan](GERMAN_PARLIAMENT_MEMBERS.md) is the detailed contract
-for Bundestag, all 16 state parliaments, all serving judges in both
-Bundesverfassungsgericht Senates, regular/deputy Bundesrat members and the serving
-Bundespräsident or Bundespräsidentin. It adds nationwide roster acquisition
-to existing DIP capability. All 21 mappings and exact original-response fixtures
-are qualified in [BE56_SOURCES](BE56_SOURCES.md); production population remains
-separate. Sources are registered as `public_offices_<scope>` and use ordinary
-structured ingestion jobs with source-owned resumable cursors.
+[BE-56 implementation plan](GERMAN_PARLIAMENT_MEMBERS.md) is the detailed roster
+model. BE-59 keeps three scopes: `nw` (Landtag Nordrhein-Westfalen, complete),
+`bt` (Bundestag members selected by the official roster's Bundesland facet for
+Nordrhein-Westfalen) and `br` (regular and deputy Bundesrat members on the
+directory's NRW Land page). The other Landtage, both Bundesverfassungsgericht
+Senates, the Bundespräsident roster and Bundestag DIP are retired. Sources are
+registered as `public_offices_<scope>` and use ordinary structured ingestion jobs
+with source-owned resumable cursors. Bundestag term offices keep their earlier
+identities (the frozen Wahlperiode hash inputs moved into office normalization).
 
 Persist source/chamber-scoped external person identifiers through shared resolution,
 preserving existing `bundestag_id` and canonical IDs. Link a person's mandate to an
 Office scoped by chamber/role/legislative term and then to a parliamentary PublicBody.
 Keep party and parliamentary group identities distinct; version any required new
-types, properties, keys and API/desktop mirrors together. Correct the existing DIP
-group-as-party and office-target interpretation with retained historical evidence.
+types, properties, keys and API/desktop mirrors together. Earlier DIP
+group-as-party data stays corrected by migration 0002 with retained evidence.
 
 Separate source-provided mandate dates, term boundaries, current-roster observation,
 retrieval and recording times. Unknown appointment/resignation dates remain unknown;
 open-ended historical mandates do not certify current membership. Archive exact
 source/row evidence and expose per-chamber/term member-set reconciliation, counts,
 freshness, unresolved matches and partial failures. Use bounded resumable jobs with
-per-chamber checkpoint ownership; incomplete acquisition cannot certify national
-coverage. Extend these rules to court, Bundesrat and presidency sources: retain
-Senate assignment, regular/deputy membership and represented Land, and presidential
-tenure; use appointment/service intervals instead of legislative terms where
-appropriate. All 21 coverage scopes and migration/query/evidence behavior belong to one BE-56
-delivery; local implementation acceptance is separate from deployed acquisition.
+per-chamber checkpoint ownership; incomplete acquisition cannot certify NRW
+coverage. For the Bundesrat retain regular/deputy membership and represented Land;
+use service intervals instead of legislative terms. Local implementation
+acceptance is separate from deployed acquisition.
 
 #### 8.5.3 BE-46 adapter, identity and persistence contract
 
@@ -1050,40 +1055,16 @@ complete boards/ownership or model quality. The same-major additive migration
 retains all pre-existing stamps and adds constraints/indexes one transaction at
 a time under the existing provision lock.
 
-Verified source specifics, adopted from live checks rather than assumed: the NUTS hierarchy file carries no level column, so level derives from `NUTS_ID` length and parent by prefix; the postcode correspondence is at `/v2/pcode/csv/`, not `/postalcodes/`; that file uses mixed single and double quoting requiring explicit quote handling.
+Verified source specifics, adopted from live checks rather than assumed: the NUTS hierarchy file carries no level column, so level derives from `NUTS_ID` length and parent by prefix; the postcode correspondence is at `/v2/pcode/csv/`, not `/postalcodes/`; that file uses mixed single and double quoting requiring explicit quote handling. BE-59: that file is one EU-wide ~127 MB CSV, so ingestion emits a pinned NRW extract (`src/limes/reference/`, rebuilt by `tools/build_nrw_postcodes.py` with the source SHA-256 recorded) instead of downloading it.
 
-`offeneregister` sets `recorded_at` to each company's source-provided historical `retrieved_at`; an explicitly supplied legacy metadata publication date remains a fallback for archived wrapped records. Missing both is a parse failure. The current clock and HTTP Last-Modified are never substituted for source observation/publication time. This BE-47 clarification preserves stale directorships as stale rather than guessing a nonexistent dataset publication date.
+`offeneregister` (retired by BE-59) set `recorded_at` to each company's source-provided historical `retrieved_at`; archived payloads keep that evidence.
 
 `wikidata` does not ingest. It exposes `enrich(entity_type, label) -> WikidataMatch | None` for the resolver, returning `None` on ambiguity rather than guessing.
 
-GDELT acquisition uses `/gdeltv2/YYYYMMDDHHMMSS.export.CSV.zip`, bounded ZIP
-inspection/decompression, tab parsing and the complete 61-column map including
-ADM2Code/FeatureID for all three geography groups. Decode FIPS10-4 explicitly into
-ontology country keys; handle geographic types 1–5 or count unsupported cases.
-SQLDATE, DATEADDED, fetch time and report publication are distinct. First slot is
-the first boundary at or after `since`, including seconds/microseconds correctly.
-SOURCEURL and optional Mentions rows link coded observations to reports; neither
-proves availability of article text. No extraction over fabricated summaries.
-Malformed archives/schema drift fail or produce explicit counted rejections.
-BE-42 implements this export contract. Only export SOURCEURL coverage is claimed;
-Full GDELT Mentions coverage and licensed full-article retrieval remain explicit
-source-coverage gaps; BE-43 discovers and acquires public investigation search
-feeds with missing full text visible. No index response establishes article access.
-The adapter is structured-only because exports contain no article text. Maximum
-standalone window without durable acquisition: 96 slots. Composed ingestion/backfill
-supports longer windows with durable file/load receipts and productive continuation.
-Each export remains bounded to 16 MiB compressed, 128 MiB expanded and 250,000 rows.
-Provenance adds nullable `evidence_channel`, `evidence_member`, `evidence_row`,
-`source_event_id`, `source_url`, `report_url`, `source_recorded_at` and
-`article_text_available` across loader/API/desktop mirrors. Old absent fields stay
-unknown. Row-scoped coded IDs retain separate export/report observations; generic
-mixed structured payload has a separate identity from extracted assertions.
-Document cache never suppresses structured output; partial normalization/extraction
-or validation errors prevent checkpoint advancement and document success caching.
-Successful checkpoints use `until` or the run start (not completion), never regress,
-and reextract cannot retract coded/structured evidence. Retraction follows successful
-replacement loading; a successful empty extraction can retract prior extracted
-assertions. Reextract bypasses document cache hits, including retries.
+GDELT acquisition (BE-42) is retired by BE-59: its global 15-minute exports have no
+server-side geographic filter. Coded observations already loaded keep their
+row/report provenance; BE-43 public investigation search feeds remain the news
+discovery path with missing full text visible.
 
 ### 8.6 Pipeline
 
@@ -1114,12 +1095,8 @@ legacy budget flags cannot terminate or protect a run.
 def resolve_window(spec: RunSpec, adapter: SourceAdapter,
                    source_node: SourceRecord | None) -> tuple[datetime | None, datetime | None]: ...
 ```
-An explicit `since` in the `RunSpec` wins except for BE-55 rolling GDELT
-backfill (no explicit `until`): if `last_success_at` is older than `since`, record
-the checkpoint as the window anchor and fetch the next at most 96 unconsumed
-slots, excluding the already covered checkpoint slot. Resolve against the source
-read under the CLI source lock. Fresh/absent-checkpoint GDELT and other sources
-retain explicit-window semantics. Otherwise: if `adapter.supports_incremental`, the window starts at `Source.last_success_at`, or at `now - LIMES_BACKFILL_DAYS_UNSTRUCTURED` if the source has never run; if not incremental, acquire the full current snapshot. Every resolved acquisition lower bound is at least `2020-01-01T00:00:00Z`; old checkpoints and explicit earlier starts clamp to it, and wholly earlier/inverted windows fail before I/O. Initial corpus coverage is scope-versioned. A clamped old GDELT checkpoint has not consumed the first eligible slot. Internal fact dates remain unrestricted. This is why `supports_incremental` exists on the protocol and why `Source.last_success_at` is read and not merely written.
+An explicit `since` in the `RunSpec` wins (the BE-55 rolling GDELT backfill
+exception was removed with GDELT by BE-59). Otherwise: if `adapter.supports_incremental`, the window starts at `Source.last_success_at`, or at `now - LIMES_BACKFILL_DAYS_UNSTRUCTURED` if the source has never run; if not incremental, acquire the full current snapshot. Every resolved acquisition lower bound is at least `2020-01-01T00:00:00Z`; old checkpoints and explicit earlier starts clamp to it, and wholly earlier/inverted windows fail before I/O. Initial corpus coverage is scope-versioned. Internal fact dates remain unrestricted. This is why `supports_incremental` exists on the protocol and why `Source.last_success_at` is read and not merely written.
 
 #### 8.6.3 Gate
 ```python
@@ -1430,7 +1407,7 @@ The worker container mounts the repository's `gold_set/` directory read-write; t
 The corpus must cover dispatch versions/corrections, syndication, denials,
 proposals, unknown attribution/time, and false cross-source event matches. Report
 quality by distinct behavior, evidence fidelity and failure mode, separately from
-truth assessment and source trust. Compare news value beyond feeds/GDELT on
+truth assessment and source trust. Compare news value beyond NRW feeds on
 matched coverage. Independently sourced ZIP/TSV fixtures validate real field order;
 implementation-generated URLs and synthetic CSV cannot be the oracle. A disposable
 source-to-graph-to-API/desktop scenario proves both channels and evidence survive.
@@ -1470,9 +1447,7 @@ Initialize split configuration and secrets privately; build/start via administra
 commands in OPERATIONS. An operator first ingests the structured geography/entity
 backbone, then stamps missing embeddings before unstructured extraction. Select
 provisional model pins, build independently annotated corpus and calibration data,
-then run measured selection/evaluation explicitly. A submitted GDELT command is
-not a successful source run: OI-19..OI-22 must be repaired before it is treated as
-working coverage. Agency feed/corpus terms and bounded work precede unattended
+then run measured selection/evaluation explicitly. Agency feed/corpus terms and bounded work precede unattended
 news. None of these production/data steps is run by documentation verification.
 
 ### 13.4 Neo4j Runtime
@@ -1844,40 +1819,28 @@ ownership and legal subsidiary relationships. Read relationship periods/status a
 source update dates; preserve source row/member evidence. Additive schema changes
 need no destructive migration and never relabel historical assertions.
 
-TED search uses bounded iteration (400 pages of 50 notices) with count/token,
-timeout and duplicate validation. Default TED and EUR-Lex catch-up is at most one day per run;
+TED search uses bounded iteration (400 pages of 250 notices per monthly window) with
+count/token, timeout, duplicate and pre-2020 validation. Default TED catch-up is at most one day per run;
 explicit excessive windows fail without a checkpoint. eForms UBL isolates lots
 under notice-plus-lot keys; only winning LotResult/TenderingParty joins produce
 awards. Unsuccessful tenders and subcontractors are not awardees. A reference-backed
 ISO3-to-ISO2 conversion keeps buyer/address identity compatible with legacy TED and
-GLEIF, and enables the existing ISO2 postal lookup. Unknown codes remain unknown. Archive search
-request/response manifests alongside notice XML. Current TR XML exports must match
+GLEIF, including the BE-59 search-field mapping. Unknown codes remain unknown. Search
+responses are archived as the source records. Current TR XML exports must match
 their declared row count/export date; absent head-person and meeting data stays
 absent, rather than inferred from names or free-text descriptions.
 
-GLEIF and OffeneRegister retain original compressed downloads, then process at
-most 1,000 rows/8 MiB input per normalization chunk with 1 MiB row bounds. Chunk
-manifests reference the original archive hash, member and row offset; optional
-evidence_manifest_hash passes through provenance, graph edges, API and desktop
-models to make that pointer inspectable. Streaming artifact downloads are
-bounded to 2 GiB per artifact. This is a transport bound with disk/archive
-streaming, not an in-memory buffer or a production-scale capacity certification.
+GLEIF (BE-59) archives each LEI API page as the source record; cursor links are
+accepted only on the API host with the same NRW filter. Optional
+evidence_manifest_hash still passes through provenance, graph edges, API and
+desktop models for chunked archives acquired before BE-59. EUR-Lex (retired by
+BE-59) keeps its archived Cellar responses readable.
 
-EUR-Lex uses canonical underscore CDM predicates and ordered pages of 5,000
-bindings without a fixed page ceiling; repeated pages fail without a checkpoint.
-Relation facets are unioned rather than multiplying citations, amendments and topics.
-Standalone legal acts survive missing relations. The laws TOC is archived as
-metadata rather than counted as a law parse failure.
-
-Default GDELT ingestion drains clean bounded prefixes through a publication-safe
-invocation cutoff, checkpointing only completed prefixes. A durable initial-window
-anchor and pinned acquisition window keep failed retries from sliding the lookback
-start. Explicit larger windows use the same durable acquisition context; only
-standalone adapter calls without recovery retain the 96-slot guard. Failures never
-advance over unprocessed history. `ingest-all` attempts remaining sources and
+A durable initial-window anchor and pinned acquisition window keep failed retries
+from sliding the lookback start. Failures never advance over unprocessed history. `ingest-all` attempts remaining sources and
 returns a failed aggregate when any fails. A clean requested window is not a claim
 of unavailable historical coverage. Structured writes use bounded parameterized
-UNWIND batches; TED flushes pending work at 50 notices, 500 assertions or 8 MiB
-raw input (a single notice can cross a trigger but is bounded to 16 MiB; graph
-transactions remain bounded to 500 assertions). Per-notice original evidence remains distinct. Journal receipts
+UNWIND batches; structured runs flush pending work at 50 records, 500 assertions or
+8 MiB raw input (graph transactions remain bounded to 500 assertions). Each TED
+assertion keeps its notice id as evidence member within the archived search page. Journal receipts
 follow successful loading; failed batches stay pending.

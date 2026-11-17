@@ -1,3 +1,10 @@
+> **2026-11-17 geographic rescope (BE-59, D-107, v2.1.0):** The product covers
+> **Nordrhein-Westfalen** only. Every source selects NRW at the source; EUR-Lex,
+> GDELT, OffeneRegister, Gesetze im Internet, Bundestag DIP and the non-NRW
+> roster scopes are retired, and Wikidata NRW organisations are added.
+> [NRW source dispositions](NRW_SCOPE.md) govern; they supersede BE-58's
+> "every source stays" rule below. Entity and relation types are unchanged.
+
 > **2026-11-12 source-scope amendment (BE-58):** All existing sources remain
 > required. Acquisition/publication history starts **2020-01-01 inclusive**;
 > current snapshots retain all older entities, facts and original dates.
@@ -20,12 +27,12 @@
 | Field | Value |
 |---|---|
 | Document | LIMES — Design Document (Document 1 of 3) |
-| Version | 2.0.0 |
-| Date | 2026-07-28; reconciled 2026-10-28 |
+| Version | 2.1.0 |
+| Date | 2026-07-28; reconciled 2026-10-28; NRW rescope 2026-11-17 |
 | Status | Maintained core specification; implementation status in ROADMAP.md |
 | Ontology version | 1.0.0 |
 | Supersedes | v1.0.0 (2026-07-23), withdrawn |
-| Companion documents | Technical Specification v2.1.0; Desktop Client Requirements v1.0.0 and Desktop Client Architecture v1.0.0 |
+| Companion documents | Technical Specification v2.2.0; Desktop Client Requirements v1.0.0 and Desktop Client Architecture v1.0.0 |
 
 ## Revision History
 
@@ -33,7 +40,8 @@
 |---|---|---|
 | 1.0.0 | 2026-07-23 | Initial issue. Withdrawn — see below. |
 | 2.0.0 | 2026-07-28 | Clean re-issue for a from-zero restart. The v1.x document set accumulated fifteen defects of two kinds: seams specified without a named constructor or invoker (twelve), and sections designing against constraints stated earlier in the same document set (three). Three were found by a coding agent during implementation, twelve by a call-trace audit afterward. All are resolved at source here rather than by revision. Substantive changes from v1.0.0: §7 no longer claims database-enforced read-only separation, which Neo4j Community cannot provide (C-01); §4.14 adds the composition root as a named component; §5.5 distinguishes pre-resolution from resolved assertions; §4.7 assigns node creation to the loader. |
-| 2.0.0 | 2026-08-01 | Companion-document references updated for the v2.1.0 amendments (Technical Specification v2.1.0, Implementation Roadmap v2.1.0 — the §5.6 `label_embedding` merge stamp and WP-25a). No substantive change; the design decisions this document records are unaffected. |
+| 2.1.0 | 2026-11-17 | BE-59 / D-107: product scope narrowed to Nordrhein-Westfalen. §1.1, §1.2, §3.1, §3.2, §3.2.1, §5.8, §10 (DD-15) and §11 restated for NRW selection at the source, retired sources (EUR-Lex, GDELT, OffeneRegister, Gesetze im Internet, Bundestag DIP, non-NRW roster scopes) and the added Wikidata NRW organisation source. Ontology entity/relation types unchanged. |
+| 2.0.0 | 2026-08-01 | Companion-document references updated for the previous v2.1.0 amendments (Technical Specification v2.1.0, Implementation Roadmap v2.1.0 — the §5.6 `label_embedding` merge stamp and WP-25a). No substantive change; the design decisions this document records are unaffected. |
 
 ### Why v1.x Was Withdrawn
 
@@ -57,22 +65,27 @@ Design decisions in §10 carry a reversibility tag:
 
 ### 1.1 What LIMES Is
 
-LIMES is a single-operator, ontology-driven research platform for German and European policy and geostrategic analysis. Official registries, agency dispatches, curated German- and English-language reporting and GDELT coded observations feed one evidence-backed world model. Shared entity and event resolution connects institutional relationships with proposals, announcements, denials and later documented outcomes. A native desktop workspace provides network, geographic and temporal investigation through the authenticated API.
+LIMES is a single-operator, ontology-driven research platform for Nordrhein-Westfalen: its companies, associations, public bodies, officeholders, procurement and critical infrastructure. Official registries and rosters, procurement notices, curated NRW reporting and investigation news feed one evidence-backed world model. Shared entity and event resolution connects institutional relationships with proposals, announcements, denials and later documented outcomes. A native desktop workspace provides network, geographic and temporal investigation through the authenticated API.
 
 It follows the data-fusion and link-analysis paradigm, not the business-intelligence one. It does not count transactions. It records that a specific corporation was a subsidiary of a specific parent during a specific interval, according to a specific source, with a specific confidence — and lets the operator traverse outward from there.
 
-The scope remains **German and European policy**, including relevant companies
-and people outside Germany. Comprehensive, comparable coverage of all 27 member
-states is deferred to a possible later version. EU-level sources do not establish
-complete national coverage; Germany-specific acquisition and DE/EN language limits
-remain explicit. Wikipedia context and Yahoo Finance enrichment are accepted
-planned inputs (BE-46), not currently shipped adapters.
+The scope is **Nordrhein-Westfalen** (NUTS `DEA`, BE-59). LIMES is a
+portfolio/demonstration project; one German Land keeps the complete corpus
+acquirable and reproducible. Entities outside NRW appear only as endpoints of NRW
+facts (for example a foreign parent of an NRW company or a non-NRW contract
+winner). Sources are selected at the source: a server-side NRW filter or a request
+set that names only NRW objects, never a nationwide or EU-wide download searched
+for NRW rows. Small single files without a query interface (EU sanctions, EU
+Transparency Register) are reduced to NRW-addressed entries during normalization.
+[NRW source dispositions](NRW_SCOPE.md) list every source. DE/EN language limits
+remain explicit. Wikipedia context and Yahoo Finance enrichment (BE-46) apply to
+reviewed NRW identities.
 
 ### 1.2 Goals
 
 | ID | Goal |
 |---|---|
-| G-01 | A standing analytical instrument the operator can query about German and EU policy over months, with the dataset accumulating rather than being rebuilt. |
+| G-01 | A standing analytical instrument the operator can query about Nordrhein-Westfalen over months, with the dataset accumulating rather than being rebuilt. |
 | G-02 | Confront and solve, at proof-of-concept scale, the three engineering problems characteristic of this system class: ontology design, entity resolution, temporal provenance. |
 | G-03 | Support open-ended, unanticipated exploration. The operator's questions are not known in advance and will change. |
 | G-04 | Make every displayed claim traceable to its source, its extraction provenance, and where applicable the exact sentence that produced it. |
@@ -166,8 +179,8 @@ C-01 and C-07 are the two constraints the v1.x set violated after stating them. 
 ### 3.1 Style
 
 Four layers with downward dependencies and a composition root construct one
-integrated system. Adapters acquire registry data, agency dispatches, RSS entries
-and coded GDELT exports. The worker archives originals, normalizes independent
+integrated system. Adapters acquire NRW-selected registry data, rosters,
+procurement notices, RSS entries and investigation news. The worker archives originals, normalizes independent
 structured/document channels, filters and extracts qualified claims, resolves
 entities/events, validates the ontology and loads Neo4j. Neo4j-native vectors
 supply identity candidates; no separate vector store is required. User-facing
@@ -175,7 +188,7 @@ components access the graph only through the authenticated API.
 
 ```mermaid
 flowchart TD
-    S[Registries / agency dispatches / RSS / GDELT / Wikipedia / Yahoo Finance] --> A[Source adapters]
+    S[NRW registries / rosters / TED / RSS / news / Wikipedia / Yahoo Finance] --> A[Source adapters]
     A --> R[Content-addressed archive]
     R --> N[Normalization with source and version identity]
     N --> C[Structured and coded observations]
@@ -193,9 +206,9 @@ flowchart TD
 
 Structured registries supply deterministic observations about ownership,
 sanctions, contracts and office-holding. News reporting supplies attributed claims
-and developments registries do not publish. GDELT supplies machine-coded secondary
-observations, with different provenance and error characteristics from article
-text. These are core inputs to the same world model.
+and developments registries do not publish. GDELT coded observations were retired
+by BE-59 (no server-side geographic filter); observations already loaded remain
+readable evidence. These are core inputs to the same world model.
 
 A normalized record may carry both deterministic assertions and documents. Process
 both channels explicitly: gate rejection, cache hits or empty document extraction
@@ -209,35 +222,31 @@ Yahoo Finance supplies secondary company observations. Neither is an official
 registry or independent corroboration of underlying reused reports. Their planned
 integration is specified in §3.6; BE-46 owns implementation and acceptance.
 
-### 3.2.1 German public-officeholder coverage: German parliamentary members and federal officeholders (BE-56 / D-97)
+### 3.2.1 NRW public-officeholder coverage (BE-56 / D-97, narrowed by BE-59 / D-107)
 
-The BE-56 acquisition contract covers every serving member of the Bundestag and all
-16 German state parliaments, including Berlin's Abgeordnetenhaus and the Bremen
-and Hamburg Bürgerschaften, all serving judges of the First and Second Senates of
-the Bundesverfassungsgericht, all regular/deputy Bundesrat members, and the serving
-Bundespräsident or Bundespräsidentin. Initial coverage is the then-current roster at a
-recorded acquisition/as-of date; exhaustive historical backfill is not required.
-This goal does not depend on completing company-board coverage.
+Officeholder coverage is every serving member of the Landtag Nordrhein-Westfalen,
+every serving Bundestag member whose official profile places the mandate in NRW
+(selected through the Bundestag roster's own Land facet), and every regular and
+deputy Bundesrat member representing NRW (the Bundesrat directory's NRW Land
+page). Initial coverage is the then-current roster at a recorded acquisition/as-of
+date; exhaustive historical backfill is not required. The other 15 Landtage, both
+Bundesverfassungsgericht Senates, the Bundespräsident roster and Bundestag DIP are
+retired; their archived evidence stays readable.
 
-Use official parliamentary rosters as primary evidence, reuse existing DIP where
-sufficient and qualify all state sources. Model canonical Person identities and
-dated mandates through Office to the parliamentary PublicBody. Distinguish parties
-from parliamentary groups, legislative terms from individual service intervals,
-and an observed current roster from an undated historical office assertion.
-Preserve source-scoped IDs, uncertain matches, original evidence and both time axes.
-Measure completeness and freshness for each of 21 coverage scopes: the 17
-parliamentary chambers, both court Senates, Bundesrat and presidency. Retain Senate
-assignment, Bundesrat member class and represented Land, and presidential tenure.
-Use institution-appropriate office intervals; judicial appointments, Bundesrat
-service and presidential tenure must not inherit fabricated legislative terms or
-party membership. Reuse canonical people across multiple institutional roles.
+Use official parliamentary rosters as primary evidence. Model canonical Person
+identities and dated mandates through Office to the parliamentary PublicBody.
+Distinguish parties from parliamentary groups, legislative terms from individual
+service intervals, and an observed current roster from an undated historical
+office assertion. Preserve source-scoped IDs, uncertain matches, original evidence
+and both time axes. Measure completeness and freshness for each of the three
+coverage scopes (`nw`, `bt`, `br`). Retain Bundesrat member class and represented
+Land. Bundesrat service must not inherit fabricated legislative terms or party
+membership. Reuse canonical people across multiple institutional roles.
 
-[BE-56 plan and acceptance](GERMAN_PARLIAMENT_MEMBERS.md) specify source selection,
-existing DIP corrections, migration, acquisition, API/desktop compatibility and
-qualification. The D-98 implementation candidate supplies all 21 bounded source
-mappings, scoped identifiers, roster snapshots/membership evidence and coverage reads.
-[Qualified sources](BE56_SOURCES.md) and [verification](VERIFICATION.md) distinguish
-local capability from production population; no deployed loaded coverage is inferred.
+[BE-56 plan and acceptance](GERMAN_PARLIAMENT_MEMBERS.md) specify the roster model,
+migration, API/desktop compatibility and qualification; [NRW scope](NRW_SCOPE.md)
+records the BE-59 reduction. [Verification](VERIFICATION.md) distinguishes local
+capability from production population; no deployed loaded coverage is inferred.
 
 ### 3.3 Container Topology
 
@@ -555,15 +564,14 @@ Geography is stored as points. Region membership is assigned at ingest through t
 
 | Rank | Sources |
 |---|---|
-| 1.00 | GLEIF, EUR-Lex, EU FSD, TED, Transparency Register, Bundestag DIP, Gesetze im Internet, GISCO/NUTS |
-| 0.90 | Wikidata |
+| 1.00 | GLEIF, EU FSD, TED, Transparency Register, GISCO/NUTS, official NRW rosters |
+| 0.90 | Wikidata (identity enrichment and NRW organisations) |
 | 0.75 | OpenStreetMap |
-| 0.70 | Commission RAPID, Bundesregierung releases |
-| 0.60 | Curated news outlets |
-| 0.50 | GDELT |
-| 0.30 | OffeneRegister |
+| 0.70 | Landesregierung NRW releases |
+| 0.60 | Curated news outlets (WDR) |
+| 0.50 | Investigation news discovery |
 
-OffeneRegister sits at the bottom deliberately. Its data is materially stale, and it records the dataset's own publication date as `recorded_at`, not the ingestion timestamp. With honest vintage, low trust, and reversible merges, stale data is safely representable; no free current alternative exists for German directorships.
+BE-59 retired EUR-Lex, Bundestag DIP and Gesetze im Internet (1.00), GDELT (0.50) and OffeneRegister (0.30). Assertions they loaded earlier keep their recorded source and trust; nothing is re-ranked retroactively. Current NRW directorships remain structurally weak (§11.3).
 
 The existing ranking heuristic multiplies source trust and extraction confidence for ordering only. Both components remain inspectable; that score does not establish truth, independence or corroboration. Qualified assessment carries its own evidence and rule/version.
 
@@ -729,17 +737,15 @@ Each operator job records source, window, counts, errors, usage, latency and cos
 Agency acquisition requires selected access, retention and display terms. External
 timers may submit authenticated jobs only with bounded work, durable per-channel
 checkpoints and non-overlapping windows; failed paid work is not replayed
-automatically. One dispatch/version remains an archived source document. GDELT
-exports retain row identity and report links; optional Mentions associations
-expand coverage without fabricating missing article text.
+automatically. One dispatch/version remains an archived source document.
 
 ### 9.2 Backfill
 
 Structured sources backfill fully without inference. Text backfill targets the
 configured window, subject to provider availability/rights and explicit document,
 byte and window limits. Deferred work and reasons remain visible. A timeout is
-not a spending cap. GDELT decoding uses the published ZIP/TSV format and complete
-column map; geography codes require explicit conversion.
+not a spending cap. Structured backfill stays inside the NRW selection of each
+source; no historical edition is downloaded to reconstruct a pre-2020 state.
 
 ### 9.3 Cost Control
 
@@ -757,7 +763,7 @@ A prompt, schema, or model version change invalidates nothing automatically — 
 Use a representative, independently annotated DE/EN corpus of entities, events,
 claims and evidence. Evaluate extraction fidelity, attribution, modality, temporal
 precision, correction/syndication handling and false event merges separately from
-truth assessment. Compare value against existing feeds/GDELT on overlapping
+truth assessment. Compare value against existing NRW feeds on overlapping
 coverage. Grow the annotated evaluation pool from acquired investigation evidence; define
 justified quality thresholds for measured release qualification, not as a coding
 prerequisite. No fixed test quotas.
@@ -794,7 +800,8 @@ No monitoring stack. The observable surfaces are the run log, the cost ledger, p
 | DD-12 | Region membership assigned at ingest via lookup | Avoids the only geospatial operation Neo4j cannot perform, keeping a second engine out of scope | PostGIS sidecar | R2 |
 | DD-13 | `Office` reified as a first-class node | Interval-joined questions are otherwise inexpressible | Office as a relationship property | R2 |
 | DD-14 | Authenticated FastAPI and native desktop; Dash retired | Keeps all analyst surfaces behind one API contract with shared selection and typed responses | Streamlit; direct SPA | R1 |
-| DD-15 | OffeneRegister at lowest trust with honest vintage | Stale data is safely representable given provenance; no free current alternative for German directorships | Permanent exclusion | R1 |
+| DD-15 | OffeneRegister at lowest trust with honest vintage — **superseded by D-107 (BE-59)**: retired, because its only form is a nationwide bulk dump; NRW companies and Vereine come from the GLEIF API region filter and Wikidata NRW organisations | Stale data is safely representable given provenance; no free current alternative for German directorships | Permanent exclusion | R1 |
+| DD-17 | Nordrhein-Westfalen scope with selection at the source (BE-59 / D-107) | A complete, reproducible corpus for a demonstration project; avoids nationwide/EU-wide downloads searched for NRW rows | Keep Germany/EU; keep all sources and filter locally | R3 |
 | DD-16 | Ontology as declarative versioned artifact consumed by four components | One definition rather than four drifting copies | Conventions in code | R3 |
 | DD-17 | Bounded operator jobs; external timer submission | One execution path with request identity and manual replay; unattended news waits for work limits | Internal scheduler or separate utility | R1 |
 | DD-18 | **Single composition root** | Every CLI invocation is a fresh process (C-07); a single named construction site makes "who builds this" answerable by reading one file. Its absence stalled the v1.x implementation three times | Per-module construction; import-time side effects | R2 |
@@ -832,18 +839,19 @@ No monitoring stack. The observable surfaces are the run log, the cost ledger, p
 ### 11.3 Known Coverage Limitations
 
 These are source and acquisition limits. The existing coverage report exposes
-sources, counts and refresh times, not EU-27 completeness. BE-46 adds explicit
+sources, counts and refresh times, not NRW completeness. BE-46 adds explicit
 section availability for its new inputs; it does not certify geographic completeness.
 
 1. **Supplier relationships have no structured source.** GLEIF gives ownership, TED gives buyer-to-prime-contractor; neither gives supply chains. Relevant supplier assertions come from news extraction only — sparse, low-confidence, biased toward what was reported.
-2. **Current German directorships are structurally weak.** OffeneRegister is stale, Bundesanzeiger is awkward at scale, Wikidata covers only notable executives.
-3. **OpenStreetMap acquisition is restricted to the German bounding box**, with uneven completeness and tagging discipline inside it.
-4. **National acquisition is Germany-centred.** Other member states do not have equivalent parliamentary, legislation and officer adapters. This is within the confirmed current scope, not complete EU coverage.
+2. **Current NRW directorships are structurally weak.** OffeneRegister is retired (nationwide 2018 dump), the Handelsregister has no open bulk/query interface, and Wikidata covers only notable organisations and executives. GLEIF covers only entities holding an LEI.
+3. **OpenStreetMap acquisition is restricted to the NRW administrative area**, with uneven completeness and tagging discipline inside it.
+4. **NRW state law is not acquired.** recht.nrw.de exposes no documented machine interface (OI-37); federal and EU law sources are retired. `LegalAct` nodes come only from FSD citations and earlier archives.
 5. **Wikipedia and Yahoo Finance are secondary and incomplete.** Wikipedia is limited to available DE/EN articles; Yahoo Finance principally covers listed companies and may omit board roles, holders and report metadata. BE-46 must expose those gaps, including unlisted/unsupported companies, instead of interpreting them as negative facts.
+6. **Legacy TED notices carry no winners in the search index.** Before the 2023 eForms switch the Search API exposes buyers, CPV and place but not award winners; those awards are not asserted.
 
 ### 11.4 Deferred
 
-Comprehensive EU-27 national and multilingual coverage is deferred to a possible later version. Person-scope predicates and pseudonymization, polygon-capable geography and multi-user accounts remain deferred. External timer submission is in core news scope; bounded recurring acquisition runs inside the existing worker once an investigation is tracked. BE-43 implements dynamic investigation-driven acquisition and an evolving evaluation pool (D-82); user-supplied feeds or a pre-existing corpus are not prerequisites.
+Coverage beyond Nordrhein-Westfalen (other Länder, federal-only and EU-wide corpora) is outside the BE-59 product scope. Person-scope predicates and pseudonymization, polygon-capable geography and multi-user accounts remain deferred. External timer submission is in core news scope; bounded recurring acquisition runs inside the existing worker once an investigation is tracked. BE-43 implements dynamic investigation-driven acquisition and an evolving evaluation pool (D-82); user-supplied feeds or a pre-existing corpus are not prerequisites.
 
 ## Investigation-driven reporting contract (BE-43 / D-82)
 
