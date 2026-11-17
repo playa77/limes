@@ -45,6 +45,7 @@ EXPECTED_SOURCE_IDS = [
     "gleif",
     "news",
     "osm",
+    "recht_nrw",
     "ted",
     "transparency_register",
     "wikidata",
@@ -176,6 +177,16 @@ def _records_for(source_id: str) -> list[RawRecord]:
         return []  # Investigation-driven transport is covered by test_news_pipeline.
     if source_id == "wikidata":
         return []  # enrichment-only: no fetch, no normalize-from-fetch
+    if source_id == "recht_nrw":
+        return [
+            RawRecord(
+                payload=(FIXTURES / "recht_nrw" / "gesetz_2025.html").read_bytes(),
+                content_type="text/html",
+                source_url="https://recht.nrw.de/lrgv/gesetz/01012025-gesetz-zur-errichtung-"
+                "eines-fonds-fuer-die-beteiligung-des-landes-nordrhein/",
+                fetched_at=FETCHED_AT,
+            )
+        ]
     if source_id == "wikidata_nrw":
         return [
             RawRecord(

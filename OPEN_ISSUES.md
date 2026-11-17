@@ -12,14 +12,17 @@ deployed-graph reconciliation (removing or retaining non-NRW data already loaded
 in an operator graph) remain operator obligations; no purge, ingest or deployment
 is performed or claimed.
 
-### Open — OI-37 NRW state law has no documented machine interface
+### Closed — OI-37 NRW state law has no documented machine interface
 
-Gesetze im Internet (federal law) is retired. The intended NRW replacement,
-recht.nrw.de (SGV.NRW / GV.NRW), offers no documented API or bulk export as of
-2026-11-17; its search page calls an internal backend that was not used because
-that is not an authorized interface. No `LegalAct` is acquired for NRW law.
-Closure: a documented interface or explicit user authorization for a specific
-access method, an adapter with recorded fixtures, and its source-table entry.
+Gesetze im Internet (federal law) is retired. recht.nrw.de offers no documented
+API or bulk export. Per the user's direction (2026-11-17, "if there is no
+documented interface, you build one"), `recht_nrw` builds it on the portal's
+public, robots-permitted pages: sitemap discovery, one newest version page per
+law, serial requests at ≥1 s, `LegalAct`/`ADOPTED`/`AMENDS`/`REPEALS` mapping.
+The internal search backend is not used. Evidence:
+`venv/bin/python -m pytest tests/unit/test_recht_nrw_adapter.py -q` on recorded
+pages (D-109). Remaining limits: unlinked change clauses and law full text are not
+loaded.
 
 ### Open — OI-38 BE-59 graph-backed lanes not executed in the delivery environment
 

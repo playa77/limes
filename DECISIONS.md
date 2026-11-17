@@ -5,6 +5,22 @@ reversibility: **R1** reversible in under an hour, **R2** bounded recoverable
 cost, **R3** one-way door. Written when each decision is made, latest first.
 Nothing here is a status report; unlogged decisions are unmade decisions.
 
+## 2026-11-17 — D-109 (R2) — Build the NRW state-law interface on recht.nrw.de
+
+**Context.** The user rejected leaving NRW state law as an open gap (OI-37):
+"if there is no documented interface, you build one." recht.nrw.de publishes no
+API or bulk export; an earlier probe of its internal search backend was blocked
+as unauthorized access. **Decision.** Add `recht_nrw`, built only on the public,
+robots-permitted surface: the sitemap (every law/ordinance version), then the
+newest version page per law, serially at ≥1 s and one in flight. Map each page to
+a `LegalAct` (own linked GV. NRW. citation as `bgb_citation`, else the portal's
+base-law id), `ADOPTED` by the Landtag for Gesetze, and `AMENDS`/`REPEALS` from
+linked change-history citations. **Alternatives rejected.** The internal search
+backend (not an authorized interface); fetching every version (≈9.4k pages instead
+of about one per law). **Consequences.** HTML layout changes fail loudly; law full
+text is not loaded; unlinked change clauses are counted, not guessed. Status:
+accepted, BE-59.
+
 ## 2026-11-17 — D-108 (R1) — Publish the BE-59 NRW rescope for review
 
 The user chose "Commit, push, open PR" for the rescope. This authorizes staging,

@@ -14,6 +14,7 @@ ingestion, purge, deployment or paid call was performed.
 | N2 source set | Registry and its tests list exactly the NRW set; retired adapters/fixtures/tests removed; `ted_bulk`/`bulk` removed |
 | N3 selection at the source | GLEIF region filter + cursor paging, TED Search API NRW query, OSM NRW area, Bundestag Land facet, Bundesrat NRW page — each tested on recorded responses (2026-11-17) without live calls |
 | N4 Wikidata NRW | Constructed SPARQL-results fixture (Wikimedia rate-limited live probes); typing, LEI reuse and row bound tested |
+| N4 recht.nrw.de (D-109) | `test_recht_nrw_adapter.py` on unchanged public pages and real sitemap entries captured 2026-11-17: one newest page per law, coverage re-fetch, Landtag adoption, dated linked amendments, own-citation identity, unlinked repeal counted |
 | N5 address filters | FSD (legacy and FSF export) and Transparency Register current export emit only NRW addresses; skips counted |
 | N6 documentation | Design 2.1.0, specification 2.2.0, runtime contract `geographic_scope: DEA`, regenerated runtime docs, index, issues, changelog, AGENTS r2 |
 | N7 checks | Candidate `27d24cc7953d`: ruff clean; mypy clean (155 files); `check_docs.py` PASS; runtime docs `--check` clean; `tests/unit` 909 passed; desktop unit/contract 42 passed; database-free acceptance `test_ac04_adapters.py` 4 passed; integration (187), acceptance (85) and desktop integration (2) collect without errors |

@@ -139,6 +139,7 @@ HOST_CONCURRENCY_OVERRIDES: dict[str, int] = {
     "webgate.ec.europa.eu": 1,
     "overpass": 1,  # matches any overpass host by substring
     "bundestag.de": 1,
+    "recht.nrw.de": 1,
 }
 
 # A user agent that names the project; several sources (FSD, GISCO) are picky

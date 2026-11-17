@@ -40,7 +40,7 @@
 |---|---|---|
 | 1.0.0 | 2026-07-23 | Initial issue. Withdrawn — see below. |
 | 2.0.0 | 2026-07-28 | Clean re-issue for a from-zero restart. The v1.x document set accumulated fifteen defects of two kinds: seams specified without a named constructor or invoker (twelve), and sections designing against constraints stated earlier in the same document set (three). Three were found by a coding agent during implementation, twelve by a call-trace audit afterward. All are resolved at source here rather than by revision. Substantive changes from v1.0.0: §7 no longer claims database-enforced read-only separation, which Neo4j Community cannot provide (C-01); §4.14 adds the composition root as a named component; §5.5 distinguishes pre-resolution from resolved assertions; §4.7 assigns node creation to the loader. |
-| 2.1.0 | 2026-11-17 | BE-59 / D-107: product scope narrowed to Nordrhein-Westfalen. §1.1, §1.2, §3.1, §3.2, §3.2.1, §5.8, §10 (DD-15) and §11 restated for NRW selection at the source, retired sources (EUR-Lex, GDELT, OffeneRegister, Gesetze im Internet, Bundestag DIP, non-NRW roster scopes) and the added Wikidata NRW organisation source. Ontology entity/relation types unchanged. |
+| 2.1.0 | 2026-11-17 | BE-59 / D-107: product scope narrowed to Nordrhein-Westfalen. §1.1, §1.2, §3.1, §3.2, §3.2.1, §5.8, §10 (DD-15) and §11 restated for NRW selection at the source, retired sources (EUR-Lex, GDELT, OffeneRegister, Gesetze im Internet, Bundestag DIP, non-NRW roster scopes) and the added Wikidata NRW organisation and recht.nrw.de state-law sources. Ontology entity/relation types unchanged. |
 | 2.0.0 | 2026-08-01 | Companion-document references updated for the previous v2.1.0 amendments (Technical Specification v2.1.0, Implementation Roadmap v2.1.0 — the §5.6 `label_embedding` merge stamp and WP-25a). No substantive change; the design decisions this document records are unaffected. |
 
 ### Why v1.x Was Withdrawn
@@ -564,7 +564,7 @@ Geography is stored as points. Region membership is assigned at ingest through t
 
 | Rank | Sources |
 |---|---|
-| 1.00 | GLEIF, EU FSD, TED, Transparency Register, GISCO/NUTS, official NRW rosters |
+| 1.00 | GLEIF, EU FSD, TED, Transparency Register, GISCO/NUTS, official NRW rosters, recht.nrw.de |
 | 0.90 | Wikidata (identity enrichment and NRW organisations) |
 | 0.75 | OpenStreetMap |
 | 0.70 | Landesregierung NRW releases |
@@ -845,7 +845,7 @@ section availability for its new inputs; it does not certify geographic complete
 1. **Supplier relationships have no structured source.** GLEIF gives ownership, TED gives buyer-to-prime-contractor; neither gives supply chains. Relevant supplier assertions come from news extraction only — sparse, low-confidence, biased toward what was reported.
 2. **Current NRW directorships are structurally weak.** OffeneRegister is retired (nationwide 2018 dump), the Handelsregister has no open bulk/query interface, and Wikidata covers only notable organisations and executives. GLEIF covers only entities holding an LEI.
 3. **OpenStreetMap acquisition is restricted to the NRW administrative area**, with uneven completeness and tagging discipline inside it.
-4. **NRW state law is not acquired.** recht.nrw.de exposes no documented machine interface (OI-37); federal and EU law sources are retired. `LegalAct` nodes come only from FSD citations and earlier archives.
+4. **NRW state law comes from a portal, not an API.** recht.nrw.de publishes no machine interface; `recht_nrw` builds one on the public sitemap and law pages. Only act metadata and linked change history are loaded; unlinked amendments/repeals and law full text are not. Federal and EU law sources are retired.
 5. **Wikipedia and Yahoo Finance are secondary and incomplete.** Wikipedia is limited to available DE/EN articles; Yahoo Finance principally covers listed companies and may omit board roles, holders and report metadata. BE-46 must expose those gaps, including unlisted/unsupported companies, instead of interpreting them as negative facts.
 6. **Legacy TED notices carry no winners in the search index.** Before the 2023 eForms switch the Search API exposes buyers, CPV and place but not award winners; those awards are not asserted.
 

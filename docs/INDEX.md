@@ -7,7 +7,7 @@ the product purpose in README, then this map.
 |---|---|---|
 | What does the complete product do? | [README](../README.md) | Intended finished product; not proof of current readiness |
 | What is the integrated system design? | [Core design](LIMES_Design_Document_v2.0.0.md) (v2.1.0) | Integrated NRW registries, rosters, procurement, news and Wikipedia/Yahoo Finance enrichment; Nordrhein-Westfalen scope |
-| Which sources, and how is NRW selected? | [NRW scope](NRW_SCOPE.md) | BE-59 per-source disposition (retarget, filter, add, retire), selection at the source, acceptance N1–N7 and exclusions |
+| Which sources, and how is NRW selected? | [NRW scope](NRW_SCOPE.md) | BE-59 per-source disposition (retarget, filter, add — incl. the built recht.nrw.de interface — retire), selection at the source, acceptance N1–N7 and exclusions |
 | What must modules/data/API deliver? | [Technical specification](LIMES_Technical_Specification_v2.1.0.md) (v2.2.0) | Current contracts plus explicitly assigned target obligations |
 | Where are we in each sequence? | [Delivery index](ROADMAP.md), [backend](BACKEND_ROADMAP.md), [desktop](DESKTOP_ROADMAP.md) | Package status and dependencies; BE and DC never share an ambiguous ID |
 | What must the desktop display/do? | [Desktop requirements](LIMES_Desktop_Client_Requirements_v1.0.0.md), [architecture](LIMES_Desktop_Client_Architecture_v1.0.0.md) | HTTP consumer with shared claim semantics; acceptance gaps stay explicit |

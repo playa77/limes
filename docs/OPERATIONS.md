@@ -182,7 +182,9 @@ accounting consolidation from ownership. Wikidata NRW organisations come from on
 bounded SPARQL query. FSD and the daily Transparency Register XML are single small
 files without a query interface; only NRW-addressed entries are emitted, with
 completeness checks. GISCO emits the pinned NRW postcode extract instead of the
-EU-wide correspondence file.
+EU-wide correspondence file. `recht_nrw` acquires NRW laws and ordinances from
+recht.nrw.de's public sitemap and newest version pages (the portal has no API),
+serially at one request per second, archiving every sitemap and page.
 Malformed/partial records block checkpoint
 advancement; successful checkpoints use the covered window endpoint and never
 move backward. Failed document loads remain replayable; reextract bypasses the

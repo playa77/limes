@@ -24,6 +24,7 @@ REGISTERED_SOURCES = {
     "wikidata",
     "wikidata_nrw",
     "osm",
+    "recht_nrw",
     "feeds",
     "news",
     "wikipedia",

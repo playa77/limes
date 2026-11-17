@@ -11,6 +11,9 @@
   Transparency Register (single files without a query interface).
 - Add `wikidata_nrw`: NRW-headquartered companies and Vereine from one bounded
   SPARQL query.
+- Add `recht_nrw`: NRW laws and ordinances through an interface built on
+  recht.nrw.de's public sitemap and law pages (no API exists), with Landtag
+  adoption and linked amendment/repeal relations.
 - Reduce official rosters to Landtag NRW, NRW Bundestag members (roster Land
   facet) and NRW Bundesrat members; keep existing Bundestag office identities.
 - Retire EUR-Lex, GDELT, OffeneRegister, Gesetze im Internet, Bundestag DIP and
@@ -19,8 +22,8 @@
 - Curated feeds 2.0.0: land.nrw and WDR Politik in NRW.
 - Runtime contract replaces `all_sources_required` with `geographic_scope: DEA`;
   Design Document 2.1.0 and Technical Specification 2.2.0 restate the contracts.
-- Record OI-37 (no documented NRW state-law interface) and OI-38 (graph-backed
-  lanes not executed without Docker).
+- Record OI-38 (graph-backed lanes not executed without Docker); OI-37 (no NRW
+  state-law interface) is opened and closed by `recht_nrw`.
 
 ## 2026-11-12 — Source acquisition from 2020 (BE-58)
 

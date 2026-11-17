@@ -109,6 +109,11 @@ def build_default_registry(
     registry.register(OsmAdapter(osm_acquisition, read_timeout_s=osm_http_timeout_seconds,
                                  endpoints=osm_overpass_endpoints))
 
+    # BE-59: NRW state law from recht.nrw.de public pages (sitemap + law pages).
+    from limes.sources.recht_nrw import RechtNrwAdapter
+
+    registry.register(RechtNrwAdapter())
+
     from limes.sources.ted import TedAdapter
 
     registry.register(TedAdapter())

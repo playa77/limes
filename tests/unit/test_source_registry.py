@@ -85,6 +85,7 @@ def test_build_default_registry_contains_phase_two_sources():
         "gisco_nuts",
         "gleif",
         "osm",
+        "recht_nrw",
         "ted",
         "transparency_register",
         "wikidata",
@@ -122,6 +123,7 @@ def test_registry_get_is_the_only_public_construction_path():
         "limes.sources.transparency_register",
         "limes.sources.wikidata",
         "limes.sources.osm",
+        "limes.sources.recht_nrw",
         "limes.sources.wikidata_nrw",
     ):
         module = importlib.import_module(module_name)
