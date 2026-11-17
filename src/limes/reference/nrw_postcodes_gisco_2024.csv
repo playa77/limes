@@ -1,0 +1,875 @@
+POSTCODE,CNTR_ID,LAU_NAME,NUTS3_2024
+04728,DE,"Aachen, Stadt",DEA2D
+04730,DE,"Aachen, Stadt",DEA2D
+04731,DE,"Aachen, Stadt",DEA2D
+04760,DE,Hellenthal,DEA28
+32049,DE,"Herford, Hansestadt",DEA43
+32051,DE,"Herford, Hansestadt",DEA43
+32052,DE,"Herford, Hansestadt",DEA43
+32105,DE,"Bad Salzuflen, Stadt",DEA45
+32107,DE,"Bad Salzuflen, Stadt",DEA45
+32108,DE,"Bad Salzuflen, Stadt",DEA45
+32120,DE,Hiddenhausen,DEA43
+32130,DE,"Enger, Widukindstadt",DEA43
+32139,DE,"Spenge, Stadt",DEA43
+32257,DE,"Spenge, Stadt",DEA43
+32278,DE,Kirchlengern,DEA43
+32289,DE,Rödinghausen,DEA43
+32312,DE,"Lübbecke, Stadt",DEA46
+32339,DE,"Espelkamp, Stadt",DEA46
+32351,DE,Stemwede,DEA46
+32361,DE,"Preußisch Oldendorf, Stadt",DEA46
+32369,DE,"Rahden, Stadt",DEA46
+32423,DE,"Minden, Stadt",DEA46
+32425,DE,"Minden, Stadt",DEA46
+32427,DE,"Minden, Stadt",DEA46
+32429,DE,"Minden, Stadt",DEA46
+32457,DE,"Porta Westfalica, Stadt",DEA46
+32469,DE,"Petershagen, Stadt",DEA46
+32479,DE,Hille,DEA46
+32545,DE,"Bad Oeynhausen, Stadt",DEA46
+32547,DE,"Bad Oeynhausen, Stadt",DEA46
+32549,DE,"Bad Oeynhausen, Stadt",DEA46
+32584,DE,"Löhne, Stadt",DEA43
+32602,DE,"Vlotho, Stadt",DEA43
+32609,DE,Hüllhorst,DEA46
+32657,DE,"Lemgo, Stadt",DEA45
+32676,DE,"Lügde, Stadt der Osterräder",DEA45
+32683,DE,"Barntrup, Stadt",DEA45
+32689,DE,Kalletal,DEA45
+32694,DE,Dörentrup,DEA45
+32699,DE,Extertal,DEA45
+32756,DE,"Detmold, Stadt",DEA45
+32758,DE,"Detmold, Stadt",DEA45
+32760,DE,"Detmold, Stadt",DEA45
+32791,DE,"Lage, Stadt",DEA45
+32805,DE,"Horn-Bad Meinberg, Stadt",DEA45
+32816,DE,"Schieder-Schwalenberg, Stadt",DEA45
+32825,DE,"Blomberg, Stadt",DEA45
+32832,DE,Augustdorf,DEA45
+32839,DE,"Steinheim, Stadt",DEA44
+33014,DE,"Bad Driburg, Stadt",DEA44
+33034,DE,"Brakel, Stadt",DEA44
+33039,DE,"Nieheim, Stadt",DEA44
+33098,DE,"Paderborn, Stadt",DEA47
+33100,DE,"Paderborn, Stadt",DEA47
+33102,DE,"Paderborn, Stadt",DEA47
+33104,DE,"Paderborn, Stadt",DEA47
+33106,DE,"Paderborn, Stadt",DEA47
+33129,DE,"Delbrück, Stadt",DEA47
+33142,DE,"Büren, Stadt",DEA47
+33154,DE,"Salzkotten, Stadt",DEA47
+33161,DE,"Hövelhof, Sennegemeinde",DEA47
+33165,DE,"Lichtenau, Stadt",DEA47
+33175,DE,"Bad Lippspringe, Stadt",DEA47
+33178,DE,Borchen,DEA47
+33181,DE,"Bad Wünnenberg, Stadt",DEA47
+33184,DE,Altenbeken,DEA47
+33189,DE,Schlangen,DEA45
+33311,DE,"Gütersloh, Stadt",DEA42
+33330,DE,"Gütersloh, Stadt",DEA42
+33332,DE,"Gütersloh, Stadt",DEA42
+33333,DE,"Gütersloh, Stadt",DEA42
+33334,DE,"Gütersloh, Stadt",DEA42
+33335,DE,"Gütersloh, Stadt",DEA42
+33378,DE,"Rheda-Wiedenbrück, Stadt",DEA42
+33397,DE,"Rietberg, Stadt",DEA42
+33415,DE,"Verl, Stadt",DEA42
+33428,DE,"Harsewinkel, Die Mähdrescherstadt",DEA42
+33442,DE,Herzebrock-Clarholz,DEA42
+33449,DE,Langenberg,DEA42
+33519,DE,"Bielefeld, Stadt",DEA41
+33602,DE,"Bielefeld, Stadt",DEA41
+33604,DE,"Bielefeld, Stadt",DEA41
+33605,DE,"Bielefeld, Stadt",DEA41
+33607,DE,"Bielefeld, Stadt",DEA41
+33609,DE,"Bielefeld, Stadt",DEA41
+33611,DE,"Bielefeld, Stadt",DEA41
+33613,DE,"Bielefeld, Stadt",DEA41
+33615,DE,"Bielefeld, Stadt",DEA41
+33617,DE,"Bielefeld, Stadt",DEA41
+33619,DE,"Bielefeld, Stadt",DEA41
+33647,DE,"Bielefeld, Stadt",DEA41
+33649,DE,"Bielefeld, Stadt",DEA41
+33659,DE,"Bielefeld, Stadt",DEA41
+33689,DE,"Bielefeld, Stadt",DEA41
+33699,DE,"Bielefeld, Stadt",DEA41
+33719,DE,"Bielefeld, Stadt",DEA41
+33729,DE,"Bielefeld, Stadt",DEA41
+33739,DE,"Bielefeld, Stadt",DEA41
+33758,DE,"Schloß Holte-Stukenbrock, Stadt",DEA42
+33775,DE,"Versmold, Stadt",DEA42
+33790,DE,"Halle (Westf.), Stadt",DEA42
+33803,DE,Steinhagen,DEA42
+33813,DE,"Oerlinghausen, Stadt",DEA45
+33818,DE,Leopoldshöhe,DEA45
+33824,DE,"Werther (Westf.), Stadt",DEA42
+33829,DE,"Borgholzhausen, Stadt",DEA42
+34414,DE,"Warburg, Hansestadt",DEA44
+34431,DE,"Marsberg, Stadt",DEA57
+34434,DE,"Borgentreich, Orgelstadt",DEA44
+34439,DE,"Willebadessen, Stadt",DEA44
+37671,DE,"Höxter, Stadt",DEA44
+37688,DE,"Beverungen, Stadt",DEA44
+37696,DE,"Marienmünster, Stadt",DEA44
+40210,DE,"Düsseldorf, Stadt",DEA11
+40211,DE,"Düsseldorf, Stadt",DEA11
+40212,DE,"Düsseldorf, Stadt",DEA11
+40213,DE,"Düsseldorf, Stadt",DEA11
+40215,DE,"Düsseldorf, Stadt",DEA11
+40217,DE,"Düsseldorf, Stadt",DEA11
+40219,DE,"Düsseldorf, Stadt",DEA11
+40221,DE,"Düsseldorf, Stadt",DEA11
+40223,DE,"Düsseldorf, Stadt",DEA11
+40225,DE,"Düsseldorf, Stadt",DEA11
+40227,DE,"Düsseldorf, Stadt",DEA11
+40229,DE,"Düsseldorf, Stadt",DEA11
+40231,DE,"Düsseldorf, Stadt",DEA11
+40233,DE,"Düsseldorf, Stadt",DEA11
+40235,DE,"Düsseldorf, Stadt",DEA11
+40237,DE,"Düsseldorf, Stadt",DEA11
+40239,DE,"Düsseldorf, Stadt",DEA11
+40468,DE,"Düsseldorf, Stadt",DEA11
+40470,DE,"Düsseldorf, Stadt",DEA11
+40472,DE,"Düsseldorf, Stadt",DEA11
+40474,DE,"Düsseldorf, Stadt",DEA11
+40476,DE,"Düsseldorf, Stadt",DEA11
+40477,DE,"Düsseldorf, Stadt",DEA11
+40479,DE,"Düsseldorf, Stadt",DEA11
+40489,DE,"Düsseldorf, Stadt",DEA11
+40545,DE,"Düsseldorf, Stadt",DEA11
+40547,DE,"Düsseldorf, Stadt",DEA11
+40549,DE,"Düsseldorf, Stadt",DEA11
+40589,DE,"Düsseldorf, Stadt",DEA11
+40591,DE,"Düsseldorf, Stadt",DEA11
+40593,DE,"Düsseldorf, Stadt",DEA11
+40595,DE,"Düsseldorf, Stadt",DEA11
+40597,DE,"Düsseldorf, Stadt",DEA11
+40599,DE,"Düsseldorf, Stadt",DEA11
+40625,DE,"Düsseldorf, Stadt",DEA11
+40627,DE,"Düsseldorf, Stadt",DEA11
+40629,DE,"Düsseldorf, Stadt",DEA11
+40667,DE,"Meerbusch, Stadt",DEA1D
+40668,DE,"Meerbusch, Stadt",DEA1D
+40670,DE,"Meerbusch, Stadt",DEA1D
+40699,DE,"Erkrath, Fundort des Neanderthalers, Stadt",DEA1C
+40721,DE,"Hilden, Stadt",DEA1C
+40723,DE,"Hilden, Stadt",DEA1C
+40724,DE,"Hilden, Stadt",DEA1C
+40764,DE,"Langenfeld (Rheinland), Stadt",DEA1C
+40789,DE,"Monheim am Rhein, Stadt",DEA1C
+40822,DE,"Mettmann, Stadt",DEA1C
+40832,DE,"Ratingen, Stadt",DEA1C
+40878,DE,"Ratingen, Stadt",DEA1C
+40880,DE,"Ratingen, Stadt",DEA1C
+40882,DE,"Ratingen, Stadt",DEA1C
+40883,DE,"Ratingen, Stadt",DEA1C
+40885,DE,"Ratingen, Stadt",DEA1C
+41061,DE,"Mönchengladbach, Stadt",DEA15
+41063,DE,"Mönchengladbach, Stadt",DEA15
+41065,DE,"Mönchengladbach, Stadt",DEA15
+41066,DE,"Mönchengladbach, Stadt",DEA15
+41068,DE,"Mönchengladbach, Stadt",DEA15
+41069,DE,"Mönchengladbach, Stadt",DEA15
+41169,DE,"Mönchengladbach, Stadt",DEA15
+41179,DE,"Mönchengladbach, Stadt",DEA15
+41189,DE,"Mönchengladbach, Stadt",DEA15
+41199,DE,"Mönchengladbach, Stadt",DEA15
+41236,DE,"Mönchengladbach, Stadt",DEA15
+41238,DE,"Mönchengladbach, Stadt",DEA15
+41239,DE,"Mönchengladbach, Stadt",DEA15
+41334,DE,"Nettetal, Stadt",DEA1E
+41352,DE,"Korschenbroich, Stadt",DEA1D
+41363,DE,"Jüchen, Stadt",DEA1D
+41366,DE,Schwalmtal,DEA1E
+41372,DE,Niederkrüchten,DEA1E
+41379,DE,"Brüggen, Burggemeinde",DEA1E
+41460,DE,"Neuss, Stadt",DEA1D
+41462,DE,"Neuss, Stadt",DEA1D
+41464,DE,"Neuss, Stadt",DEA1D
+41466,DE,"Neuss, Stadt",DEA1D
+41468,DE,"Neuss, Stadt",DEA1D
+41469,DE,"Neuss, Stadt",DEA1D
+41470,DE,"Neuss, Stadt",DEA1D
+41472,DE,"Neuss, Stadt",DEA1D
+41515,DE,"Grevenbroich, Stadt",DEA1D
+41516,DE,"Grevenbroich, Stadt",DEA1D
+41517,DE,"Grevenbroich, Stadt",DEA1D
+41539,DE,"Dormagen, Stadt",DEA1D
+41540,DE,"Dormagen, Stadt",DEA1D
+41541,DE,"Dormagen, Stadt",DEA1D
+41542,DE,"Dormagen, Stadt",DEA1D
+41564,DE,"Kaarst, Stadt",DEA1D
+41569,DE,Rommerskirchen,DEA1D
+41747,DE,"Viersen, Stadt",DEA1E
+41748,DE,"Viersen, Stadt",DEA1E
+41749,DE,"Viersen, Stadt",DEA1E
+41751,DE,"Viersen, Stadt",DEA1E
+41812,DE,"Erkelenz, Stadt",DEA29
+41836,DE,"Hückelhoven, Stadt",DEA29
+41844,DE,"Wegberg, Stadt",DEA29
+41849,DE,"Wassenberg, Stadt",DEA29
+42103,DE,"Wuppertal, Stadt",DEA1A
+42105,DE,"Wuppertal, Stadt",DEA1A
+42107,DE,"Wuppertal, Stadt",DEA1A
+42109,DE,"Wuppertal, Stadt",DEA1A
+42111,DE,"Wuppertal, Stadt",DEA1A
+42113,DE,"Wuppertal, Stadt",DEA1A
+42115,DE,"Wuppertal, Stadt",DEA1A
+42117,DE,"Wuppertal, Stadt",DEA1A
+42119,DE,"Wuppertal, Stadt",DEA1A
+42275,DE,"Wuppertal, Stadt",DEA1A
+42277,DE,"Wuppertal, Stadt",DEA1A
+42279,DE,"Wuppertal, Stadt",DEA1A
+42281,DE,"Wuppertal, Stadt",DEA1A
+42283,DE,"Wuppertal, Stadt",DEA1A
+42285,DE,"Wuppertal, Stadt",DEA1A
+42287,DE,"Wuppertal, Stadt",DEA1A
+42289,DE,"Wuppertal, Stadt",DEA1A
+42327,DE,"Wuppertal, Stadt",DEA1A
+42329,DE,"Wuppertal, Stadt",DEA1A
+42349,DE,"Wuppertal, Stadt",DEA1A
+42369,DE,"Wuppertal, Stadt",DEA1A
+42389,DE,"Wuppertal, Stadt",DEA1A
+42399,DE,"Wuppertal, Stadt",DEA1A
+42477,DE,"Radevormwald, Stadt auf der Höhe",DEA2A
+42489,DE,"Wülfrath, Stadt",DEA1C
+42499,DE,"Hückeswagen, Schloss-Stadt",DEA2A
+42549,DE,"Velbert, Stadt",DEA1C
+42551,DE,"Velbert, Stadt",DEA1C
+42553,DE,"Velbert, Stadt",DEA1C
+42555,DE,"Velbert, Stadt",DEA1C
+42579,DE,"Heiligenhaus, Stadt",DEA1C
+42651,DE,"Solingen, Klingenstadt",DEA19
+42653,DE,"Solingen, Klingenstadt",DEA19
+42655,DE,"Solingen, Klingenstadt",DEA19
+42657,DE,"Solingen, Klingenstadt",DEA19
+42659,DE,"Solingen, Klingenstadt",DEA19
+42697,DE,"Solingen, Klingenstadt",DEA19
+42699,DE,"Solingen, Klingenstadt",DEA19
+42719,DE,"Solingen, Klingenstadt",DEA19
+42781,DE,"Haan, Stadt",DEA1C
+42799,DE,"Leichlingen (Rheinland), Blütenstadt",DEA2B
+42853,DE,"Remscheid, Stadt",DEA18
+42855,DE,"Remscheid, Stadt",DEA18
+42857,DE,"Remscheid, Stadt",DEA18
+42859,DE,"Remscheid, Stadt",DEA18
+42897,DE,"Remscheid, Stadt",DEA18
+42899,DE,"Remscheid, Stadt",DEA18
+42929,DE,"Wermelskirchen, Stadt",DEA2B
+44135,DE,"Dortmund, Stadt",DEA52
+44137,DE,"Dortmund, Stadt",DEA52
+44139,DE,"Dortmund, Stadt",DEA52
+44141,DE,"Dortmund, Stadt",DEA52
+44143,DE,"Dortmund, Stadt",DEA52
+44145,DE,"Dortmund, Stadt",DEA52
+44147,DE,"Dortmund, Stadt",DEA52
+44149,DE,"Dortmund, Stadt",DEA52
+44225,DE,"Dortmund, Stadt",DEA52
+44227,DE,"Dortmund, Stadt",DEA52
+44229,DE,"Dortmund, Stadt",DEA52
+44263,DE,"Dortmund, Stadt",DEA52
+44265,DE,"Dortmund, Stadt",DEA52
+44267,DE,"Dortmund, Stadt",DEA52
+44269,DE,"Dortmund, Stadt",DEA52
+44287,DE,"Dortmund, Stadt",DEA52
+44289,DE,"Dortmund, Stadt",DEA52
+44309,DE,"Dortmund, Stadt",DEA52
+44319,DE,"Dortmund, Stadt",DEA52
+44328,DE,"Dortmund, Stadt",DEA52
+44329,DE,"Dortmund, Stadt",DEA52
+44339,DE,"Dortmund, Stadt",DEA52
+44357,DE,"Dortmund, Stadt",DEA52
+44359,DE,"Dortmund, Stadt",DEA52
+44369,DE,"Dortmund, Stadt",DEA52
+44379,DE,"Dortmund, Stadt",DEA52
+44388,DE,"Dortmund, Stadt",DEA52
+44532,DE,"Lünen, Stadt",DEA5C
+44534,DE,"Lünen, Stadt",DEA5C
+44536,DE,"Lünen, Stadt",DEA5C
+44575,DE,"Castrop-Rauxel, Stadt",DEA36
+44577,DE,"Castrop-Rauxel, Stadt",DEA36
+44579,DE,"Castrop-Rauxel, Stadt",DEA36
+44581,DE,"Castrop-Rauxel, Stadt",DEA36
+44623,DE,"Herne, Stadt",DEA55
+44625,DE,"Herne, Stadt",DEA55
+44627,DE,"Herne, Stadt",DEA55
+44628,DE,"Herne, Stadt",DEA55
+44629,DE,"Herne, Stadt",DEA55
+44649,DE,"Herne, Stadt",DEA55
+44651,DE,"Herne, Stadt",DEA55
+44652,DE,"Herne, Stadt",DEA55
+44653,DE,"Herne, Stadt",DEA55
+44787,DE,"Bochum, Stadt",DEA51
+44789,DE,"Bochum, Stadt",DEA51
+44791,DE,"Bochum, Stadt",DEA51
+44793,DE,"Bochum, Stadt",DEA51
+44795,DE,"Bochum, Stadt",DEA51
+44797,DE,"Bochum, Stadt",DEA51
+44799,DE,"Bochum, Stadt",DEA51
+44801,DE,"Bochum, Stadt",DEA51
+44803,DE,"Bochum, Stadt",DEA51
+44805,DE,"Bochum, Stadt",DEA51
+44807,DE,"Bochum, Stadt",DEA51
+44809,DE,"Bochum, Stadt",DEA51
+44866,DE,"Bochum, Stadt",DEA51
+44867,DE,"Bochum, Stadt",DEA51
+44869,DE,"Bochum, Stadt",DEA51
+44879,DE,"Bochum, Stadt",DEA51
+44892,DE,"Bochum, Stadt",DEA51
+44894,DE,"Bochum, Stadt",DEA51
+45127,DE,"Essen, Stadt",DEA13
+45128,DE,"Essen, Stadt",DEA13
+45130,DE,"Essen, Stadt",DEA13
+45131,DE,"Essen, Stadt",DEA13
+45133,DE,"Essen, Stadt",DEA13
+45134,DE,"Essen, Stadt",DEA13
+45136,DE,"Essen, Stadt",DEA13
+45138,DE,"Essen, Stadt",DEA13
+45139,DE,"Essen, Stadt",DEA13
+45141,DE,"Essen, Stadt",DEA13
+45143,DE,"Essen, Stadt",DEA13
+45144,DE,"Essen, Stadt",DEA13
+45145,DE,"Essen, Stadt",DEA13
+45147,DE,"Essen, Stadt",DEA13
+45149,DE,"Essen, Stadt",DEA13
+45219,DE,"Essen, Stadt",DEA13
+45239,DE,"Essen, Stadt",DEA13
+45257,DE,"Essen, Stadt",DEA13
+45259,DE,"Essen, Stadt",DEA13
+45276,DE,"Essen, Stadt",DEA13
+45277,DE,"Essen, Stadt",DEA13
+45279,DE,"Essen, Stadt",DEA13
+45289,DE,"Essen, Stadt",DEA13
+45307,DE,"Essen, Stadt",DEA13
+45309,DE,"Essen, Stadt",DEA13
+45326,DE,"Essen, Stadt",DEA13
+45327,DE,"Essen, Stadt",DEA13
+45329,DE,"Essen, Stadt",DEA13
+45355,DE,"Essen, Stadt",DEA13
+45356,DE,"Essen, Stadt",DEA13
+45357,DE,"Essen, Stadt",DEA13
+45359,DE,"Essen, Stadt",DEA13
+45403,DE,"Mülheim an der Ruhr, Stadt",DEA16
+45468,DE,"Mülheim an der Ruhr, Stadt",DEA16
+45470,DE,"Mülheim an der Ruhr, Stadt",DEA16
+45472,DE,"Mülheim an der Ruhr, Stadt",DEA16
+45473,DE,"Mülheim an der Ruhr, Stadt",DEA16
+45475,DE,"Mülheim an der Ruhr, Stadt",DEA16
+45476,DE,"Mülheim an der Ruhr, Stadt",DEA16
+45478,DE,"Mülheim an der Ruhr, Stadt",DEA16
+45479,DE,"Mülheim an der Ruhr, Stadt",DEA16
+45481,DE,"Mülheim an der Ruhr, Stadt",DEA16
+45525,DE,"Hattingen, Stadt",DEA56
+45527,DE,"Hattingen, Stadt",DEA56
+45529,DE,"Hattingen, Stadt",DEA56
+45549,DE,"Sprockhövel, Stadt",DEA56
+45657,DE,"Recklinghausen, Stadt",DEA36
+45659,DE,"Recklinghausen, Stadt",DEA36
+45661,DE,"Recklinghausen, Stadt",DEA36
+45663,DE,"Recklinghausen, Stadt",DEA36
+45665,DE,"Recklinghausen, Stadt",DEA36
+45699,DE,"Herten, Stadt",DEA36
+45701,DE,"Herten, Stadt",DEA36
+45711,DE,"Datteln, Stadt",DEA36
+45721,DE,"Haltern am See, Stadt",DEA36
+45731,DE,"Waltrop, Stadt",DEA36
+45739,DE,"Oer-Erkenschwick, Stadt",DEA36
+45768,DE,"Marl, Stadt",DEA36
+45770,DE,"Marl, Stadt",DEA36
+45772,DE,"Marl, Stadt",DEA36
+45879,DE,"Gelsenkirchen, Stadt",DEA32
+45881,DE,"Gelsenkirchen, Stadt",DEA32
+45883,DE,"Gelsenkirchen, Stadt",DEA32
+45884,DE,"Gelsenkirchen, Stadt",DEA32
+45886,DE,"Gelsenkirchen, Stadt",DEA32
+45888,DE,"Gelsenkirchen, Stadt",DEA32
+45889,DE,"Gelsenkirchen, Stadt",DEA32
+45891,DE,"Gelsenkirchen, Stadt",DEA32
+45892,DE,"Gelsenkirchen, Stadt",DEA32
+45894,DE,"Gelsenkirchen, Stadt",DEA32
+45896,DE,"Gelsenkirchen, Stadt",DEA32
+45897,DE,"Gelsenkirchen, Stadt",DEA32
+45899,DE,"Gelsenkirchen, Stadt",DEA32
+45964,DE,"Gladbeck, Stadt",DEA36
+45966,DE,"Gladbeck, Stadt",DEA36
+45968,DE,"Gladbeck, Stadt",DEA36
+46045,DE,"Oberhausen, Stadt",DEA17
+46047,DE,"Oberhausen, Stadt",DEA17
+46049,DE,"Oberhausen, Stadt",DEA17
+46117,DE,"Oberhausen, Stadt",DEA17
+46119,DE,"Oberhausen, Stadt",DEA17
+46145,DE,"Oberhausen, Stadt",DEA17
+46147,DE,"Oberhausen, Stadt",DEA17
+46149,DE,"Oberhausen, Stadt",DEA17
+46236,DE,"Bottrop, Stadt",DEA31
+46238,DE,"Bottrop, Stadt",DEA31
+46240,DE,"Bottrop, Stadt",DEA31
+46242,DE,"Bottrop, Stadt",DEA31
+46244,DE,"Bottrop, Stadt",DEA31
+46282,DE,"Dorsten, Stadt",DEA36
+46284,DE,"Dorsten, Stadt",DEA36
+46286,DE,"Dorsten, Stadt",DEA36
+46325,DE,"Borken, Stadt",DEA34
+46342,DE,"Velen, Stadt",DEA34
+46348,DE,Raesfeld,DEA34
+46354,DE,Südlohn,DEA34
+46359,DE,Heiden,DEA34
+46395,DE,"Bocholt, Stadt",DEA34
+46397,DE,"Bocholt, Stadt",DEA34
+46399,DE,"Bocholt, Stadt",DEA34
+46414,DE,"Rhede, Stadt",DEA34
+46419,DE,"Isselburg, Stadt",DEA34
+46446,DE,"Emmerich am Rhein, Stadt",DEA1B
+46459,DE,"Rees, Stadt",DEA1B
+46483,DE,"Wesel, Stadt",DEA1F
+46485,DE,"Wesel, Stadt",DEA1F
+46487,DE,"Wesel, Stadt",DEA1F
+46499,DE,"Hamminkeln, Stadt",DEA1F
+46509,DE,"Xanten, Stadt",DEA1F
+46514,DE,Schermbeck,DEA1F
+46519,DE,Alpen,DEA1F
+46535,DE,"Dinslaken, Stadt",DEA1F
+46537,DE,"Dinslaken, Stadt",DEA1F
+46539,DE,"Dinslaken, Stadt",DEA1F
+46562,DE,"Voerde (Niederrhein), Stadt",DEA1F
+46569,DE,Hünxe,DEA1F
+47051,DE,"Duisburg, Stadt",DEA12
+47053,DE,"Duisburg, Stadt",DEA12
+47055,DE,"Duisburg, Stadt",DEA12
+47057,DE,"Duisburg, Stadt",DEA12
+47058,DE,"Duisburg, Stadt",DEA12
+47059,DE,"Duisburg, Stadt",DEA12
+47119,DE,"Duisburg, Stadt",DEA12
+47137,DE,"Duisburg, Stadt",DEA12
+47138,DE,"Duisburg, Stadt",DEA12
+47139,DE,"Duisburg, Stadt",DEA12
+47166,DE,"Duisburg, Stadt",DEA12
+47167,DE,"Duisburg, Stadt",DEA12
+47169,DE,"Duisburg, Stadt",DEA12
+47178,DE,"Duisburg, Stadt",DEA12
+47179,DE,"Duisburg, Stadt",DEA12
+47198,DE,"Duisburg, Stadt",DEA12
+47199,DE,"Duisburg, Stadt",DEA12
+47226,DE,"Duisburg, Stadt",DEA12
+47228,DE,"Duisburg, Stadt",DEA12
+47229,DE,"Duisburg, Stadt",DEA12
+47239,DE,"Duisburg, Stadt",DEA12
+47249,DE,"Duisburg, Stadt",DEA12
+47259,DE,"Duisburg, Stadt",DEA12
+47269,DE,"Duisburg, Stadt",DEA12
+47279,DE,"Duisburg, Stadt",DEA12
+47441,DE,"Moers, Stadt",DEA1F
+47443,DE,"Moers, Stadt",DEA1F
+47445,DE,"Moers, Stadt",DEA1F
+47447,DE,"Moers, Stadt",DEA1F
+47475,DE,"Kamp-Lintfort, Stadt",DEA1F
+47495,DE,"Rheinberg, Stadt",DEA1F
+47506,DE,"Neukirchen-Vluyn, Stadt",DEA1F
+47509,DE,Rheurdt,DEA1B
+47533,DE,"Kleve, Stadt",DEA1B
+47546,DE,"Kalkar, Stadt",DEA1B
+47551,DE,Bedburg-Hau,DEA1B
+47559,DE,Kranenburg,DEA1B
+47574,DE,"Goch, Stadt",DEA1B
+47589,DE,Uedem,DEA1B
+47608,DE,"Geldern, Stadt",DEA1B
+47623,DE,"Kevelaer, Stadt",DEA1B
+47624,DE,"Kevelaer, Stadt",DEA1B
+47625,DE,"Kevelaer, Stadt",DEA1B
+47626,DE,"Kevelaer, Stadt",DEA1B
+47627,DE,"Kevelaer, Stadt",DEA1B
+47638,DE,"Straelen, Stadt",DEA1B
+47647,DE,Kerken,DEA1B
+47652,DE,Weeze,DEA1B
+47661,DE,Issum,DEA1B
+47665,DE,Sonsbeck,DEA1F
+47669,DE,Wachtendonk,DEA1B
+47798,DE,"Krefeld, Stadt",DEA14
+47799,DE,"Krefeld, Stadt",DEA14
+47800,DE,"Krefeld, Stadt",DEA14
+47802,DE,"Krefeld, Stadt",DEA14
+47803,DE,"Krefeld, Stadt",DEA14
+47804,DE,"Krefeld, Stadt",DEA14
+47805,DE,"Krefeld, Stadt",DEA14
+47807,DE,"Krefeld, Stadt",DEA14
+47809,DE,"Krefeld, Stadt",DEA14
+47829,DE,"Krefeld, Stadt",DEA14
+47839,DE,"Krefeld, Stadt",DEA14
+47877,DE,"Willich, Stadt",DEA1E
+47906,DE,"Kempen, Stadt",DEA1E
+47918,DE,"Tönisvorst, Stadt",DEA1E
+47929,DE,"Grefrath, Sport- und Freizeitgemeinde",DEA1E
+48079,DE,"Münster, Stadt",DEA33
+48143,DE,"Münster, Stadt",DEA33
+48145,DE,"Münster, Stadt",DEA33
+48147,DE,"Münster, Stadt",DEA33
+48149,DE,"Münster, Stadt",DEA33
+48151,DE,"Münster, Stadt",DEA33
+48153,DE,"Münster, Stadt",DEA33
+48155,DE,"Münster, Stadt",DEA33
+48157,DE,"Münster, Stadt",DEA33
+48159,DE,"Münster, Stadt",DEA33
+48161,DE,"Münster, Stadt",DEA33
+48163,DE,"Münster, Stadt",DEA33
+48165,DE,"Münster, Stadt",DEA33
+48167,DE,"Münster, Stadt",DEA33
+48231,DE,"Warendorf, Stadt",DEA38
+48249,DE,"Dülmen, Stadt",DEA35
+48268,DE,"Greven, Stadt",DEA37
+48282,DE,"Emsdetten, Stadt",DEA37
+48291,DE,"Telgte, Stadt",DEA38
+48301,DE,Nottuln,DEA35
+48308,DE,Senden,DEA35
+48317,DE,"Drensteinfurt, Stadt",DEA38
+48324,DE,"Sendenhorst, Stadt",DEA38
+48329,DE,Havixbeck,DEA35
+48336,DE,"Sassenberg, Stadt",DEA38
+48341,DE,Altenberge,DEA37
+48346,DE,Ostbevern,DEA38
+48351,DE,Everswinkel,DEA38
+48356,DE,Nordwalde,DEA37
+48361,DE,Beelen,DEA38
+48366,DE,Laer,DEA37
+48369,DE,"Saerbeck, NRW-Klimakommune",DEA37
+48429,DE,"Rheine, Stadt",DEA37
+48431,DE,"Rheine, Stadt",DEA37
+48432,DE,"Rheine, Stadt",DEA37
+48477,DE,"Hörstel, Stadt",DEA37
+48485,DE,Neuenkirchen,DEA37
+48493,DE,Wettringen,DEA37
+48496,DE,Hopsten,DEA37
+48565,DE,"Steinfurt, Stadt",DEA37
+48599,DE,"Gronau (Westf.), Stadt",DEA34
+48607,DE,"Ochtrup, Stadt",DEA37
+48612,DE,"Horstmar, Stadt der Burgmannshöfe",DEA37
+48619,DE,Heek,DEA34
+48624,DE,Schöppingen,DEA34
+48629,DE,Metelen,DEA37
+48653,DE,"Coesfeld, Stadt",DEA35
+48683,DE,"Ahaus, Stadt",DEA34
+48691,DE,"Vreden, Stadt",DEA34
+48703,DE,"Stadtlohn, Stadt",DEA34
+48712,DE,"Gescher, Glockenstadt",DEA34
+48720,DE,Rosendahl,DEA35
+48727,DE,"Billerbeck, Stadt",DEA35
+48734,DE,Reken,DEA34
+48739,DE,Legden,DEA34
+49477,DE,"Ibbenbüren, Stadt",DEA37
+49479,DE,"Ibbenbüren, Stadt",DEA37
+49492,DE,Westerkappeln,DEA37
+49497,DE,Mettingen,DEA37
+49504,DE,Lotte,DEA37
+49509,DE,Recke,DEA37
+49525,DE,"Lengerich, Stadt",DEA37
+49536,DE,Lienen,DEA37
+49545,DE,"Tecklenburg, Stadt",DEA37
+49549,DE,Ladbergen,DEA37
+50126,DE,"Bergheim, Stadt",DEA27
+50127,DE,"Bergheim, Stadt",DEA27
+50129,DE,"Bergheim, Stadt",DEA27
+50169,DE,"Kerpen, Kolpingstadt",DEA27
+50170,DE,"Kerpen, Kolpingstadt",DEA27
+50171,DE,"Kerpen, Kolpingstadt",DEA27
+50181,DE,"Bedburg, Stadt",DEA27
+50189,DE,"Elsdorf, Stadt",DEA27
+50226,DE,"Frechen, Stadt",DEA27
+50259,DE,"Pulheim, Stadt",DEA27
+50321,DE,"Brühl, Stadt",DEA27
+50354,DE,"Hürth, Stadt",DEA27
+50374,DE,"Erftstadt, Stadt",DEA27
+50389,DE,"Wesseling, Stadt",DEA27
+50667,DE,"Köln, Stadt",DEA23
+50668,DE,"Köln, Stadt",DEA23
+50670,DE,"Köln, Stadt",DEA23
+50672,DE,"Köln, Stadt",DEA23
+50674,DE,"Köln, Stadt",DEA23
+50676,DE,"Köln, Stadt",DEA23
+50677,DE,"Köln, Stadt",DEA23
+50678,DE,"Köln, Stadt",DEA23
+50679,DE,"Köln, Stadt",DEA23
+50733,DE,"Köln, Stadt",DEA23
+50735,DE,"Köln, Stadt",DEA23
+50737,DE,"Köln, Stadt",DEA23
+50739,DE,"Köln, Stadt",DEA23
+50765,DE,"Köln, Stadt",DEA23
+50767,DE,"Köln, Stadt",DEA23
+50769,DE,"Köln, Stadt",DEA23
+50823,DE,"Köln, Stadt",DEA23
+50825,DE,"Köln, Stadt",DEA23
+50827,DE,"Köln, Stadt",DEA23
+50829,DE,"Köln, Stadt",DEA23
+50858,DE,"Köln, Stadt",DEA23
+50859,DE,"Köln, Stadt",DEA23
+50931,DE,"Köln, Stadt",DEA23
+50933,DE,"Köln, Stadt",DEA23
+50935,DE,"Köln, Stadt",DEA23
+50937,DE,"Köln, Stadt",DEA23
+50939,DE,"Köln, Stadt",DEA23
+50968,DE,"Köln, Stadt",DEA23
+50969,DE,"Köln, Stadt",DEA23
+50996,DE,"Köln, Stadt",DEA23
+50997,DE,"Köln, Stadt",DEA23
+50999,DE,"Köln, Stadt",DEA23
+51061,DE,"Köln, Stadt",DEA23
+51063,DE,"Köln, Stadt",DEA23
+51065,DE,"Köln, Stadt",DEA23
+51067,DE,"Köln, Stadt",DEA23
+51069,DE,"Köln, Stadt",DEA23
+51103,DE,"Köln, Stadt",DEA23
+51105,DE,"Köln, Stadt",DEA23
+51107,DE,"Köln, Stadt",DEA23
+51109,DE,"Köln, Stadt",DEA23
+51143,DE,"Köln, Stadt",DEA23
+51145,DE,"Köln, Stadt",DEA23
+51147,DE,"Köln, Stadt",DEA23
+51149,DE,"Köln, Stadt",DEA23
+51371,DE,"Leverkusen, Stadt",DEA24
+51373,DE,"Leverkusen, Stadt",DEA24
+51375,DE,"Leverkusen, Stadt",DEA24
+51377,DE,"Leverkusen, Stadt",DEA24
+51379,DE,"Leverkusen, Stadt",DEA24
+51381,DE,"Leverkusen, Stadt",DEA24
+51399,DE,"Burscheid, Stadt",DEA2B
+51427,DE,"Bergisch Gladbach, Stadt",DEA2B
+51429,DE,"Bergisch Gladbach, Stadt",DEA2B
+51465,DE,"Bergisch Gladbach, Stadt",DEA2B
+51467,DE,"Bergisch Gladbach, Stadt",DEA2B
+51469,DE,"Bergisch Gladbach, Stadt",DEA2B
+51491,DE,"Overath, Stadt",DEA2B
+51503,DE,"Rösrath, Stadt",DEA2B
+51515,DE,Kürten,DEA2B
+51519,DE,Odenthal,DEA2B
+51545,DE,"Waldbröl, Stadt",DEA2A
+51570,DE,Windeck,DEA2C
+51580,DE,Reichshof,DEA2A
+51588,DE,Nümbrecht,DEA2A
+51597,DE,Morsbach,DEA2A
+51643,DE,"Gummersbach, Stadt",DEA2A
+51645,DE,"Gummersbach, Stadt",DEA2A
+51647,DE,"Gummersbach, Stadt",DEA2A
+51674,DE,"Wiehl, Stadt",DEA2A
+51688,DE,"Wipperfürth, Hansestadt",DEA2A
+51702,DE,"Bergneustadt, Stadt",DEA2A
+51709,DE,Marienheide,DEA2A
+51766,DE,Engelskirchen,DEA2A
+51789,DE,Lindlar,DEA2A
+52062,DE,"Aachen, Stadt",DEA2D
+52064,DE,"Aachen, Stadt",DEA2D
+52066,DE,"Aachen, Stadt",DEA2D
+52068,DE,"Aachen, Stadt",DEA2D
+52070,DE,"Aachen, Stadt",DEA2D
+52072,DE,"Aachen, Stadt",DEA2D
+52074,DE,"Aachen, Stadt",DEA2D
+52076,DE,"Aachen, Stadt",DEA2D
+52078,DE,"Aachen, Stadt",DEA2D
+52080,DE,"Aachen, Stadt",DEA2D
+52134,DE,"Herzogenrath, Stadt",DEA2D
+52146,DE,"Würselen, Stadt",DEA2D
+52152,DE,Simmerath,DEA2D
+52156,DE,"Monschau, Stadt",DEA2D
+52159,DE,"Roetgen, Tor zur Eifel",DEA2D
+52222,DE,"Stolberg (Rhld.), Kupferstadt",DEA2D
+52223,DE,"Stolberg (Rhld.), Kupferstadt",DEA2D
+52224,DE,"Stolberg (Rhld.), Kupferstadt",DEA2D
+52249,DE,"Eschweiler, Stadt",DEA2D
+52349,DE,"Düren, Stadt",DEA26
+52351,DE,"Düren, Stadt",DEA26
+52353,DE,"Düren, Stadt",DEA26
+52355,DE,"Düren, Stadt",DEA26
+52372,DE,Kreuzau,DEA26
+52379,DE,Langerwehe,DEA26
+52382,DE,Niederzier,DEA26
+52385,DE,"Nideggen, Stadt",DEA26
+52388,DE,Nörvenich,DEA26
+52391,DE,Vettweiß,DEA26
+52393,DE,Hürtgenwald,DEA26
+52396,DE,"Heimbach, Stadt",DEA26
+52399,DE,Merzenich,DEA26
+52428,DE,"Jülich, Stadt",DEA26
+52441,DE,"Linnich, Stadt",DEA26
+52445,DE,Titz,DEA26
+52457,DE,Aldenhoven,DEA26
+52459,DE,Inden,DEA26
+52477,DE,"Alsdorf, Stadt",DEA2D
+52499,DE,"Baesweiler, Stadt",DEA2D
+52511,DE,"Geilenkirchen, Stadt",DEA29
+52525,DE,"Heinsberg, Stadt",DEA29
+52531,DE,"Übach-Palenberg, Stadt",DEA29
+52538,DE,Gangelt,DEA29
+53111,DE,"Bonn, Stadt",DEA22
+53113,DE,"Bonn, Stadt",DEA22
+53115,DE,"Bonn, Stadt",DEA22
+53117,DE,"Bonn, Stadt",DEA22
+53119,DE,"Bonn, Stadt",DEA22
+53121,DE,"Bonn, Stadt",DEA22
+53123,DE,"Bonn, Stadt",DEA22
+53125,DE,"Bonn, Stadt",DEA22
+53127,DE,"Bonn, Stadt",DEA22
+53129,DE,"Bonn, Stadt",DEA22
+53173,DE,"Bonn, Stadt",DEA22
+53175,DE,"Bonn, Stadt",DEA22
+53177,DE,"Bonn, Stadt",DEA22
+53179,DE,"Bonn, Stadt",DEA22
+53225,DE,"Bonn, Stadt",DEA22
+53227,DE,"Bonn, Stadt",DEA22
+53229,DE,"Bonn, Stadt",DEA22
+53332,DE,"Bornheim, Stadt",DEA2C
+53340,DE,"Meckenheim, Stadt",DEA2C
+53343,DE,Wachtberg,DEA2C
+53347,DE,Alfter,DEA2C
+53359,DE,"Rheinbach, Stadt",DEA2C
+53604,DE,"Bad Honnef, Stadt",DEA2C
+53639,DE,"Königswinter, Stadt",DEA2C
+53721,DE,"Siegburg, Stadt",DEA2C
+53757,DE,"Sankt Augustin, Stadt",DEA2C
+53773,DE,"Hennef (Sieg), Stadt",DEA2C
+53783,DE,Eitorf,DEA2C
+53797,DE,"Lohmar, Stadt",DEA2C
+53804,DE,Much,DEA2C
+53809,DE,Ruppichteroth,DEA2C
+53819,DE,Neunkirchen-Seelscheid,DEA2C
+53840,DE,"Troisdorf, Stadt",DEA2C
+53842,DE,"Troisdorf, Stadt",DEA2C
+53844,DE,"Troisdorf, Stadt",DEA2C
+53859,DE,"Niederkassel, Stadt",DEA2C
+53879,DE,"Euskirchen, Stadt",DEA28
+53881,DE,"Euskirchen, Stadt",DEA28
+53894,DE,"Mechernich, Stadt",DEA28
+53902,DE,"Bad Münstereifel, Stadt",DEA28
+53909,DE,"Zülpich, Stadt",DEA28
+53913,DE,Swisttal,DEA2C
+53919,DE,Weilerswist,DEA28
+53925,DE,Kall,DEA28
+53937,DE,"Schleiden, Stadt",DEA28
+53940,DE,Hellenthal,DEA28
+53945,DE,Blankenheim,DEA28
+53947,DE,Nettersheim,DEA28
+53949,DE,Dahlem,DEA28
+57072,DE,"Siegen, Universitätsstadt",DEA5A
+57074,DE,"Siegen, Universitätsstadt",DEA5A
+57076,DE,"Siegen, Universitätsstadt",DEA5A
+57078,DE,"Siegen, Universitätsstadt",DEA5A
+57080,DE,"Siegen, Universitätsstadt",DEA5A
+57223,DE,"Kreuztal, Stadt",DEA5A
+57234,DE,Wilnsdorf,DEA5A
+57250,DE,"Netphen, Stadt",DEA5A
+57258,DE,"Freudenberg, Stadt",DEA5A
+57271,DE,"Hilchenbach, Stadt",DEA5A
+57290,DE,Neunkirchen,DEA5A
+57299,DE,Burbach,DEA5A
+57319,DE,"Bad Berleburg, Stadt",DEA5A
+57334,DE,"Bad Laasphe, Stadt",DEA5A
+57339,DE,Erndtebrück,DEA5A
+57368,DE,"Lennestadt, Stadt",DEA59
+57392,DE,"Schmallenberg, Stadt",DEA57
+57399,DE,Kirchhundem,DEA59
+57413,DE,Finnentrop,DEA59
+57439,DE,"Attendorn, Hansestadt",DEA59
+57462,DE,"Olpe, Stadt",DEA59
+57482,DE,Wenden,DEA59
+57489,DE,"Drolshagen, Stadt",DEA59
+58089,DE,"Hagen, Stadt der FernUniversität",DEA53
+58091,DE,"Hagen, Stadt der FernUniversität",DEA53
+58093,DE,"Hagen, Stadt der FernUniversität",DEA53
+58095,DE,"Hagen, Stadt der FernUniversität",DEA53
+58097,DE,"Hagen, Stadt der FernUniversität",DEA53
+58099,DE,"Hagen, Stadt der FernUniversität",DEA53
+58119,DE,"Hagen, Stadt der FernUniversität",DEA53
+58135,DE,"Hagen, Stadt der FernUniversität",DEA53
+58239,DE,"Schwerte, Hansestadt an der Ruhr",DEA5C
+58256,DE,"Ennepetal, Stadt der Kluterthöhle",DEA56
+58285,DE,"Gevelsberg, Stadt",DEA56
+58300,DE,"Wetter (Ruhr), Stadt",DEA56
+58313,DE,"Herdecke, Stadt",DEA56
+58332,DE,"Schwelm, Stadt",DEA56
+58339,DE,"Breckerfeld, Hansestadt",DEA56
+58452,DE,"Witten, Stadt",DEA56
+58453,DE,"Witten, Stadt",DEA56
+58454,DE,"Witten, Stadt",DEA56
+58455,DE,"Witten, Stadt",DEA56
+58456,DE,"Witten, Stadt",DEA56
+58507,DE,"Lüdenscheid, Stadt",DEA58
+58509,DE,"Lüdenscheid, Stadt",DEA58
+58511,DE,"Lüdenscheid, Stadt",DEA58
+58513,DE,"Lüdenscheid, Stadt",DEA58
+58515,DE,"Lüdenscheid, Stadt",DEA58
+58540,DE,"Meinerzhagen, Stadt",DEA58
+58553,DE,"Halver, Stadt",DEA58
+58566,DE,"Kierspe, Stadt",DEA58
+58579,DE,Schalksmühle,DEA58
+58636,DE,"Iserlohn, Stadt",DEA58
+58638,DE,"Iserlohn, Stadt",DEA58
+58640,DE,"Iserlohn, Stadt",DEA58
+58642,DE,"Iserlohn, Stadt",DEA58
+58644,DE,"Iserlohn, Stadt",DEA58
+58675,DE,"Hemer, Stadt",DEA58
+58706,DE,"Menden (Sauerland), Stadt",DEA58
+58708,DE,"Menden (Sauerland), Stadt",DEA58
+58710,DE,"Menden (Sauerland), Stadt",DEA58
+58730,DE,"Fröndenberg/Ruhr, Stadt",DEA5C
+58739,DE,Wickede (Ruhr),DEA5B
+58762,DE,"Altena, Stadt",DEA58
+58769,DE,Nachrodt-Wiblingwerde,DEA58
+58791,DE,"Werdohl, Stadt",DEA58
+58802,DE,"Balve, Stadt",DEA58
+58809,DE,"Neuenrade, Stadt",DEA58
+58840,DE,"Plettenberg, Stadt",DEA58
+58849,DE,Herscheid,DEA58
+59063,DE,"Hamm, Stadt",DEA54
+59065,DE,"Hamm, Stadt",DEA54
+59067,DE,"Hamm, Stadt",DEA54
+59069,DE,"Hamm, Stadt",DEA54
+59071,DE,"Hamm, Stadt",DEA54
+59073,DE,"Hamm, Stadt",DEA54
+59075,DE,"Hamm, Stadt",DEA54
+59077,DE,"Hamm, Stadt",DEA54
+59174,DE,"Kamen, Stadt",DEA5C
+59192,DE,"Bergkamen, Stadt",DEA5C
+59199,DE,Bönen,DEA5C
+59227,DE,"Ahlen, Stadt",DEA38
+59229,DE,"Ahlen, Stadt",DEA38
+59269,DE,"Beckum, Stadt",DEA38
+59302,DE,"Oelde, Stadt",DEA38
+59320,DE,"Ennigerloh, Stadt",DEA38
+59329,DE,Wadersloh,DEA38
+59348,DE,"Lüdinghausen, Stadt",DEA35
+59368,DE,"Werne, Stadt",DEA5C
+59379,DE,"Selm, Stadt",DEA5C
+59387,DE,Ascheberg,DEA35
+59394,DE,Nordkirchen,DEA35
+59399,DE,"Olfen, Stadt",DEA35
+59423,DE,"Unna, Stadt",DEA5C
+59425,DE,"Unna, Stadt",DEA5C
+59427,DE,"Unna, Stadt",DEA5C
+59439,DE,Holzwickede,DEA5C
+59457,DE,"Werl, Stadt",DEA5B
+59469,DE,Ense,DEA5B
+59494,DE,"Soest, Stadt",DEA5B
+59505,DE,Bad Sassendorf,DEA5B
+59510,DE,Lippetal,DEA5B
+59514,DE,Welver,DEA5B
+59519,DE,Möhnesee,DEA5B
+59555,DE,"Lippstadt, Stadt",DEA5B
+59556,DE,"Lippstadt, Stadt",DEA5B
+59557,DE,"Lippstadt, Stadt",DEA5B
+59558,DE,"Lippstadt, Stadt",DEA5B
+59581,DE,"Warstein, Stadt",DEA5B
+59590,DE,"Geseke, Stadt",DEA5B
+59597,DE,"Erwitte, Stadt",DEA5B
+59602,DE,"Rüthen, Stadt",DEA5B
+59609,DE,Anröchte,DEA5B
+59755,DE,"Arnsberg, Stadt",DEA57
+59757,DE,"Arnsberg, Stadt",DEA57
+59759,DE,"Arnsberg, Stadt",DEA57
+59821,DE,"Arnsberg, Stadt",DEA57
+59823,DE,"Arnsberg, Stadt",DEA57
+59846,DE,"Sundern (Sauerland), Stadt",DEA57
+59872,DE,"Meschede, Kreis- und  Hochschulstadt",DEA57
+59889,DE,Eslohe (Sauerland),DEA57
+59909,DE,Bestwig,DEA57
+59929,DE,"Brilon, Stadt",DEA57
+59939,DE,"Olsberg, Stadt",DEA57
+59955,DE,"Winterberg, Stadt",DEA57
+59964,DE,"Medebach, Hansestadt",DEA57
+59969,DE,"Hallenberg, Stadt",DEA57

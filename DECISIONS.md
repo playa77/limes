@@ -5,6 +5,46 @@ reversibility: **R1** reversible in under an hour, **R2** bounded recoverable
 cost, **R3** one-way door. Written when each decision is made, latest first.
 Nothing here is a status report; unlogged decisions are unmade decisions.
 
+## 2026-11-17 — D-108 (R1) — Publish the BE-59 NRW rescope for review
+
+The user chose "Commit, push, open PR" for the rescope. This authorizes staging,
+cohesive commits, pushing `claude/gracious-sagan-hfh9fq` and opening a PR for
+review. No merge, deployment, production ingestion, archive purge or paid run.
+
+## 2026-11-17 — D-107 (R3) — Rescope the product to Nordrhein-Westfalen
+
+**Context.** After extensive ingestion work the user concluded that the volume of
+Germany- and EU-wide corpora makes the portfolio/demonstration project needlessly
+unviable. **Decision.** The product scope shrinks from Germany and the EU to
+Nordrhein-Westfalen only. The 2020-01-01 acquisition floor, entity types and
+relation types are unchanged. NRW is selected at the source: no source downloads
+a nationwide or EU-wide corpus to search it for NRW rows. Approved dispositions
+(user answers 2026-11-17): retarget sources with an NRW slice (GISCO, GLEIF API,
+TED Search API, OSM area, Landtag NRW, NRW Bundestag and Bundesrat members, NRW
+feeds); keep FSD and the EU Transparency Register filtered to NRW addresses;
+retire EUR-Lex, GDELT, OffeneRegister, Gesetze im Internet, Bundestag DIP, the
+other 15 Landtage, both BVerfG Senates and the Bundespräsident roster; add a
+bounded Wikidata SPARQL source for NRW-headquartered companies and Vereine.
+
+**Rationale.** Server-side selection reduces TED from ≈2.2M to ≈76k notices and
+GLEIF from the global golden copy to ≈44k API records, and removes unbounded
+global/nationwide downloads. Small single-file sources without a query interface
+(FSD, Transparency Register) remain because the user chose relevance filtering
+for them; GISCO's EU-wide 127 MB postcode file is replaced by a pinned NRW
+extract with recorded source hash, rebuilt by `tools/build_nrw_postcodes.py`.
+
+**Alternatives rejected.** Keeping every source and filtering locally (still
+downloads everything); GDELT through BigQuery (adds a paid cloud dependency);
+scraping recht.nrw.de's undocumented internal search backend for NRW state law
+(not an authorized interface — recorded as OI-37 instead).
+
+**Consequences.** Supersedes D-105's "every source remains mandatory" and the
+BE-56 21-scope coverage target for the retired scopes; BE-58's time rule stands.
+`DATA_SCOPE_VERSION` gains the geographic scope, so legacy journals cannot
+certify the NRW corpus. Archived evidence of retired sources is retained, not
+purged; deployed graphs need separate reconciliation. Package BE-59,
+[contract](docs/NRW_SCOPE.md). Status: accepted.
+
 ## 2026-11-12 — D-106 (R1) — Publish the complete BE-58 source-scope package
 
 The user requests: "prepare and open a pr with your work." This authorizes
